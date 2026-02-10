@@ -1,5 +1,6 @@
 # Block 52 Poker UI
 
+[![CI](https://github.com/block52/ui/actions/workflows/ci.yml/badge.svg)](https://github.com/block52/ui/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg)](https://www.typescriptlang.org/)
