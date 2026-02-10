@@ -1,0 +1,369 @@
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { getCosmosClient } from "../../utils/cosmos/client";
+import { colors, hexToRgba } from "../../utils/colorConfig";
+import { useNetwork } from "../../context/NetworkContext";
+import { microToUsdc } from "../../constants/currency";
+import { Coin } from "./types";
+import { formatTimestampRelative } from "../../utils/formatUtils";
+import { AnimatedBackground } from "../../components/common/AnimatedBackground";
+import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
+
+export default function AddressPage() {
+    const { address: urlAddress } = useParams<{ address: string }>();
+    const navigate = useNavigate();
+    const { currentNetwork } = useNetwork();
+
+    const [address, setAddress] = useState(urlAddress || "");
+    const [balances, setBalances] = useState<Coin[]>([]);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<"balances" | "transactions">("balances");
+
+    const handleSearch = useCallback(
+        async (addressToSearch?: string) => {
+            const searchAddress = addressToSearch || address;
+
+            if (!searchAddress.trim()) {
+                setError("Please enter a Block 52 address");
+                return;
+            }
+
+            // Validate address format (should start with the chain prefix, e.g., "b52")
+            if (!searchAddress.startsWith("b52")) {
+                setError("Invalid address format. Address should start with 'b52'");
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError(null);
+                const cosmosClient = getCosmosClient({
+                    rpc: currentNetwork.rpc,
+                    rest: currentNetwork.rest
+                });
+
+                if (!cosmosClient) {
+                    throw new Error("Cosmos client not initialized.");
+                }
+
+                // Fetch balances
+                const addressBalances = await cosmosClient.getAllBalances(searchAddress.trim());
+                setBalances(addressBalances);
+
+                // Fetch transactions - try multiple event types to catch all transactions
+                try {
+                    const restEndpoint = currentNetwork.rest;
+
+                    // Query for transactions where this address is the sender OR recipient
+                    const senderQuery = `message.sender='${searchAddress.trim()}'`;
+                    const recipientQuery = `transfer.recipient='${searchAddress.trim()}'`;
+
+                    // Fetch both sent and received transactions
+                    // Note: Cosmos SDK uses 'query=' parameter, not 'events='
+                    const [sentResponse, receivedResponse] = await Promise.all([
+                        fetch(`${restEndpoint}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(senderQuery)}&order_by=2&limit=50`),
+                        fetch(`${restEndpoint}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(recipientQuery)}&order_by=2&limit=50`)
+                    ]);
+
+                    const sentData = sentResponse.ok ? await sentResponse.json() : { tx_responses: [] };
+                    const receivedData = receivedResponse.ok ? await receivedResponse.json() : { tx_responses: [] };
+
+                    // Combine and deduplicate transactions by hash
+                    const allTxs = [...(sentData.tx_responses || []), ...(receivedData.tx_responses || [])];
+                    const uniqueTxs = Array.from(new Map(allTxs.map((tx: any) => [tx.txhash, tx])).values());
+
+                    // Sort by height (descending)
+                    uniqueTxs.sort((a: any, b: any) => parseInt(b.height) - parseInt(a.height));
+
+                    setTransactions(uniqueTxs);
+                } catch (txError) {
+                    console.error("Error fetching transactions:", txError);
+                    // Don't fail the whole query if transactions fail
+                    setTransactions([]);
+                }
+            } catch (err: any) {
+                let errorMessage = "Failed to fetch address data";
+
+                if (err.message?.includes("timeout")) {
+                    errorMessage = "Request timeout - network may be slow";
+                } else if (err.code === "ERR_NETWORK" || err.message?.includes("ECONNREFUSED")) {
+                    errorMessage = `Cannot connect to ${currentNetwork.name}`;
+                } else if (err.message) {
+                    errorMessage = err.message;
+                }
+
+                setError(errorMessage);
+                setBalances([]);
+                setTransactions([]);
+                console.error("Error fetching address data:", err);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [address, currentNetwork]
+    );
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
+    };
+
+    // Auto-search if address is in URL
+    useEffect(() => {
+        if (urlAddress) {
+            handleSearch(urlAddress);
+        }
+    }, [urlAddress, currentNetwork, handleSearch]);
+
+    // Set page title
+    useEffect(() => {
+        if (urlAddress) {
+            const shortAddress = `${urlAddress.substring(0, 10)}...${urlAddress.substring(urlAddress.length - 6)}`;
+            document.title = `Address ${shortAddress} - Block52 Explorer`;
+        } else {
+            document.title = "Address Search - Block52 Explorer";
+        }
+
+        return () => {
+            document.title = "Block52 Chain";
+        };
+    }, [urlAddress]);
+
+    // Memoized styles
+    const containerStyle = useMemo(
+        () => ({
+            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
+            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
+        }),
+        []
+    );
+
+    const inputStyle = useMemo(
+        () => ({
+            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.8),
+            border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
+        }),
+        []
+    );
+
+    const buttonStyle = useMemo(
+        () => ({
+            background: loading
+                ? `linear-gradient(135deg, ${hexToRgba(colors.ui.bgDark, 0.5)} 0%, ${hexToRgba(colors.ui.bgDark, 0.3)} 100%)`
+                : `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
+        }),
+        [loading]
+    );
+
+    const formatDenom = (denom: string) => {
+        if (denom.toLowerCase() === "usdc") return "USDC";
+        if (denom.startsWith("u")) return denom.slice(1).toUpperCase();
+        return denom.toUpperCase();
+    };
+
+    const formatAmount = (amount: string, denom: string) => {
+        // Assuming micro-denominations (6 decimals)
+        const value = microToUsdc(amount);
+        return `${value.toFixed(6)} ${formatDenom(denom)}`;
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard
+            .writeText(text)
+            .then(() => {
+                alert("Copied to clipboard!");
+            })
+            .catch(err => {
+                console.error("Failed to copy:", err);
+                alert("Failed to copy address");
+            });
+    };
+
+    return (
+        <div className="min-h-screen p-8 relative">
+            <AnimatedBackground />
+
+            <div className="max-w-7xl mx-auto relative z-10">
+                {/* Explorer Navigation Header */}
+                <ExplorerHeader title="Block Explorer" />
+
+                {/* Search Card */}
+                <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                    <div className="space-y-4">
+                        <div className="flex gap-3">
+                            <input
+                                type="text"
+                                value={address}
+                                onChange={e => setAddress(e.target.value)}
+                                onKeyDown={handleKeyPress}
+                                placeholder="Enter Block 52 address (e.g., b521234...)"
+                                className="flex-1 px-4 py-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all"
+                                style={{
+                                    ...inputStyle,
+                                    boxShadow: `0 0 20px ${hexToRgba(colors.brand.primary, 0.3)}`
+                                }}
+                            />
+                            {address && (
+                                <button
+                                    onClick={() => copyToClipboard(address)}
+                                    className="px-4 py-3 rounded-lg text-white font-medium transition-all hover:opacity-90"
+                                    style={{
+                                        backgroundColor: hexToRgba(colors.brand.primary, 0.5),
+                                        border: `1px solid ${colors.brand.primary}`
+                                    }}
+                                >
+                                    Copy
+                                </button>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => handleSearch()}
+                            disabled={loading}
+                            className="w-full px-6 py-3 rounded-lg text-white font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={buttonStyle}
+                        >
+                            {loading ? "Searching..." : "Search Address"}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Error Display */}
+                {error && (
+                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 border-2 border-red-500" style={containerStyle}>
+                        <p className="text-red-400 text-center">{error}</p>
+                    </div>
+                )}
+
+                {/* Results */}
+                {!loading && !error && (balances.length > 0 || transactions.length > 0) && (
+                    <>
+                        {/* Tabs */}
+                        <div className="backdrop-blur-md p-2 rounded-xl shadow-2xl mb-6 flex gap-2" style={containerStyle}>
+                            <button
+                                onClick={() => setActiveTab("balances")}
+                                className="flex-1 px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90"
+                                style={{
+                                    backgroundColor: activeTab === "balances" ? colors.brand.primary : "transparent",
+                                    color: "white"
+                                }}
+                            >
+                                Balances
+                            </button>
+                            <button
+                                onClick={() => setActiveTab("transactions")}
+                                className="flex-1 px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90"
+                                style={{
+                                    backgroundColor: activeTab === "transactions" ? colors.brand.primary : "transparent",
+                                    color: "white"
+                                }}
+                            >
+                                Transactions
+                            </button>
+                        </div>
+
+                        {/* Balances Tab */}
+                        {activeTab === "balances" && (
+                            <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                                <h2 className="text-2xl font-bold text-white mb-4">Token Balances</h2>
+                                {balances.length === 0 ? (
+                                    <p className="text-gray-400 text-center py-8">No balances found for this address</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {balances.map((balance, index) => (
+                                            <div
+                                                key={index}
+                                                className="p-4 rounded-lg"
+                                                style={{
+                                                    backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5),
+                                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
+                                                }}
+                                            >
+                                                <div className="flex justify-between items-center">
+                                                    <div>
+                                                        <p className="text-white font-bold">{formatDenom(balance.denom)}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-gray-400 text-sm">Amount</p>
+                                                        <p className="text-white font-bold text-lg">{formatAmount(balance.amount, balance.denom)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Transactions Tab */}
+                        {activeTab === "transactions" && (
+                            <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                                <h2 className="text-2xl font-bold text-white mb-4">Transaction History</h2>
+                                {transactions.length === 0 ? (
+                                    <p className="text-gray-400 text-center py-8">No transactions found for this address</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {transactions.map((tx: any, index) => {
+                                            const currentAddress = urlAddress || address;
+                                            return (
+                                                <div
+                                                    key={index}
+                                                    onClick={() =>
+                                                        navigate(`/explorer/tx/${tx.txhash}`, {
+                                                            state: { fromAddress: currentAddress }
+                                                        })
+                                                    }
+                                                    className="p-4 rounded-lg cursor-pointer hover:opacity-80 transition-all"
+                                                    style={{
+                                                        backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5),
+                                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
+                                                    }}
+                                                >
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex-1">
+                                                            <p className="text-gray-400 text-sm">Transaction Hash</p>
+                                                            <p className="text-white font-mono text-sm break-all">{tx.txhash}</p>
+                                                        </div>
+                                                        <div
+                                                            className="px-3 py-1 rounded-full text-xs font-bold ml-4"
+                                                            style={{
+                                                                backgroundColor:
+                                                                    tx.code === 0 ? hexToRgba(colors.accent.success, 0.2) : hexToRgba(colors.accent.danger, 0.2),
+                                                                color: tx.code === 0 ? colors.accent.success : colors.accent.danger
+                                                            }}
+                                                        >
+                                                            {tx.code === 0 ? "Success" : "Failed"}
+                                                        </div>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                                        <div>
+                                                            <p className="text-gray-400">Block Height</p>
+                                                            <p className="text-white">{tx.height}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-gray-400">Timestamp</p>
+                                                            <p className="text-white">{formatTimestampRelative(tx.timestamp)}</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {/* No Results */}
+                {!loading && !error && balances.length === 0 && transactions.length === 0 && urlAddress && (
+                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                        <p className="text-gray-400 text-center">No data found for this address</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

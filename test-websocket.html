@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>WebSocket Test</title>
+        <style>
+            body {
+                font-family: monospace;
+                padding: 20px;
+                background: #1a1a1a;
+                color: #0f0;
+            }
+            .log {
+                margin: 5px 0;
+                padding: 5px;
+                background: #000;
+                border-left: 3px solid #0f0;
+            }
+            .error {
+                border-left-color: #f00;
+                color: #f00;
+            }
+            .success {
+                border-left-color: #0f0;
+            }
+            .info {
+                border-left-color: #0ff;
+                color: #0ff;
+            }
+            input,
+            button {
+                padding: 10px;
+                margin: 5px;
+                font-family: monospace;
+                font-size: 14px;
+            }
+            button {
+                background: #0f0;
+                border: none;
+                cursor: pointer;
+            }
+            button:hover {
+                background: #0c0;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>WebSocket Connection Test</h1>
+
+        <div>
+            <input type="text" id="wsUrl" value="wss://node1.block52.xyz/ws" placeholder="WebSocket URL" style="width: 400px" />
+            <br />
+            <input type="text" id="tableId" value="" placeholder="Table Address" />
+            <input type="text" id="playerId" value="" placeholder="Player Address" />
+            <br />
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div id="logs"></div>
+
+        <script>
+            let ws = null;
+
+            function log(message, type = "info") {
+                const logDiv = document.createElement("div");
+                logDiv.className = `log ${type}`;
+                logDiv.textContent = `[${new Date().toISOString()}] ${message}`;
+                document.getElementById("logs").appendChild(logDiv);
+                console.log(message);
+            }
+
+            function clearLogs() {
+                document.getElementById("logs").innerHTML = "";
+            }
+
+            function connect() {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    log("WebSocket already connected", "info");
+                    return;
+                }
+
+                const baseUrl = document.getElementById("wsUrl").value;
+                const tableId = document.getElementById("tableId").value;
+                const playerId = document.getElementById("playerId").value;
+
+                let fullUrl = baseUrl;
+                if (tableId || playerId) {
+                    const params = new URLSearchParams();
+                    if (tableId) params.append("tableAddress", tableId);
+                    if (playerId) params.append("playerId", playerId);
+                    fullUrl = `${baseUrl}?${params.toString()}`;
+                }
+
+                log(`Connecting to: ${fullUrl}`, "info");
+
+                try {
+                    ws = new WebSocket(fullUrl);
+
+                    ws.onopen = () => {
+                        log("✅ WebSocket CONNECTED", "success");
+                        log(`ReadyState: ${ws.readyState}`, "info");
+                    };
+
+                    ws.onmessage = event => {
+                        log(`📨 Message received: ${event.data}`, "success");
+                        try {
+                            const parsed = JSON.parse(event.data);
+                            log(`Parsed: ${JSON.stringify(parsed, null, 2)}`, "info");
+                        } catch (e) {
+                            log(`Could not parse as JSON`, "info");
+                        }
+                    };
+
+                    ws.onerror = error => {
+                        log(`❌ WebSocket ERROR: ${error}`, "error");
+                        console.error("WebSocket error:", error);
+                    };
+
+                    ws.onclose = event => {
+                        log(`🔌 WebSocket CLOSED - Code: ${event.code}, Reason: ${event.reason}`, "error");
+                    };
+                } catch (error) {
+                    log(`❌ Failed to create WebSocket: ${error.message}`, "error");
+                    console.error(error);
+                }
+            }
+
+            function disconnect() {
+                if (ws) {
+                    ws.close();
+                    log("Disconnecting...", "info");
+                } else {
+                    log("No active WebSocket connection", "info");
+                }
+            }
+
+            // Auto-load from localStorage if available
+            window.addEventListener("load", () => {
+                const savedTableId = localStorage.getItem("user_cosmos_address") || localStorage.getItem("user_eth_public_key");
+                if (savedTableId) {
+                    document.getElementById("playerId").value = savedTableId;
+                    log(`Loaded player address from localStorage: ${savedTableId.substring(0, 20)}...`, "info");
+                }
+            });
+        </script>
+    </body>
+</html>

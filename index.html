@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <base href="/" />
+        <link rel="icon" href="/b52favicon.svg" />
+        <link rel="apple-touch-icon" href="/b52favicon.svg" />
+        <link rel="mask-icon" href="/b52favicon.svg" color="#000000" />
+        <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap" rel="stylesheet" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="description" content="Block 52" />
+        <link rel="manifest" href="/manifest.json" />
+        <title>Block 52</title>
+    </head>
+    <body>
+        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <div id="app"></div>
+        <script>
+            // Browser polyfills for Node.js modules
+            if (typeof global === "undefined") {
+                var global = globalThis;
+            }
+            if (typeof process === "undefined") {
+                var process = { env: {}, browser: true };
+            }
+        </script>
+        <script type="module" src="/src/index.tsx"></script>
+    </body>
+</html>

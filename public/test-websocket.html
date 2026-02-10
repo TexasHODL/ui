@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block52 Poker VM - WebSocket Test Client</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-connect {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-disconnect {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-subscribe {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-clear {
+            background: #6b7280;
+            color: white;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-disconnected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-connecting {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .log-container {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .log-info {
+            border-left-color: #60a5fa;
+        }
+
+        .log-success {
+            border-left-color: #10b981;
+        }
+
+        .log-error {
+            border-left-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .log-data {
+            border-left-color: #a78bfa;
+        }
+
+        .timestamp {
+            color: #9ca3af;
+            margin-right: 10px;
+        }
+
+        .network-info {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .network-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        .network-info strong {
+            color: #667eea;
+        }
+
+        .instructions {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+
+        .instructions h3 {
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎰 Block52 Poker VM - WebSocket Test Client</h1>
+            <p>Test real-time game state updates via WebSocket</p>
+        </div>
+
+        <div class="content">
+            <div class="instructions">
+                <h3>Quick Start Instructions</h3>
+                <ol>
+                    <li>Select a network endpoint from the dropdown</li>
+                    <li>Click "Connect" to establish WebSocket connection</li>
+                    <li>Enter a valid table address (game ID)</li>
+                    <li>Enter your player ID (Cosmos or Ethereum address)</li>
+                    <li>Click "Subscribe to Table" to receive real-time game updates</li>
+                    <li>Watch the message log for incoming game state updates</li>
+                </ol>
+            </div>
+
+            <div class="section">
+                <h2>
+                    Connection Settings
+                    <span id="status" class="status status-disconnected">DISCONNECTED</span>
+                </h2>
+
+                <div class="form-group">
+                    <label for="network">Network:</label>
+                    <select id="network" onchange="updateNetworkInfo()">
+                        <option value="ws://localhost:26657/ws">Localhost (ws://localhost:26657/ws)</option>
+                        <option value="wss://node.texashodl.net/ws">Texas Hodl (wss://node.texashodl.net/ws)</option>
+                        <option value="wss://node1.block52.xyz/ws" selected>Block52 (wss://node1.block52.xyz/ws)</option>
+                    </select>
+                </div>
+
+                <div id="networkInfo" class="network-info"></div>
+
+                <div class="button-group">
+                    <button class="btn-connect" onclick="connect()">Connect</button>
+                    <button class="btn-disconnect" onclick="disconnect()">Disconnect</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Table Subscription</h2>
+
+                <div class="form-group">
+                    <label for="tableAddress">Table Address (Game ID):</label>
+                    <input
+                        type="text"
+                        id="tableAddress"
+                        placeholder="e.g., 0x89a7c217580fb3fcd84d541e30538374c2974bc57e59c7c4cdb6b38714771df1"
+                        value=""
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="playerId">Player ID (Your Address):</label>
+                    <input
+                        type="text"
+                        id="playerId"
+                        placeholder="e.g., cosmos1... or 0x..."
+                        value=""
+                    >
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-subscribe" onclick="subscribeToTable()">Subscribe to Table</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>
+                    Message Log
+                    <button class="btn-clear" onclick="clearLog()" style="float: right;">Clear Log</button>
+                </h2>
+                <div id="log" class="log-container">
+                    <div class="log-entry log-info">
+                        <span class="timestamp">[System]</span>
+                        WebSocket Test Client initialized. Ready to connect.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let messageCount = 0;
+
+        function updateNetworkInfo() {
+            const network = document.getElementById('network').value;
+            const infoDiv = document.getElementById('networkInfo');
+
+            let networkName = '';
+            let description = '';
+
+            if (network.includes('localhost')) {
+                networkName = 'Localhost Development';
+                description = 'Local development environment. Requires "ignite chain serve" to be running.';
+            } else if (network.includes('texashodl')) {
+                networkName = 'Texas Hodl Network';
+                description = 'Production testing network. Recommended for testing.';
+            } else if (network.includes('block52')) {
+                networkName = 'Block52 Network';
+                description = 'Official production network.';
+            }
+
+            infoDiv.innerHTML = `
+                <p><strong>Network:</strong> ${networkName}</p>
+                <p><strong>Endpoint:</strong> ${network}</p>
+                <p><strong>Description:</strong> ${description}</p>
+            `;
+        }
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span class="timestamp">[${timestamp}]</span>${message}`;
+
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+
+            messageCount++;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+            messageCount = 0;
+            log('Log cleared', 'info');
+        }
+
+        function updateStatus(status) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status';
+
+            switch(status) {
+                case 'CONNECTING':
+                    statusEl.classList.add('status-connecting');
+                    break;
+                case 'CONNECTED':
+                    statusEl.classList.add('status-connected');
+                    break;
+                default:
+                    statusEl.classList.add('status-disconnected');
+            }
+
+            statusEl.textContent = status;
+        }
+
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected!', 'info');
+                return;
+            }
+
+            const wsUrl = document.getElementById('network').value;
+            log(`Connecting to ${wsUrl}...`, 'info');
+            updateStatus('CONNECTING');
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = () => {
+                    log('✅ WebSocket connection established!', 'success');
+                    updateStatus('CONNECTED');
+                    log('Connection ready. You can now subscribe to a table.', 'info');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        log('📨 Received message from server', 'info');
+                        const message = JSON.parse(event.data);
+                        log(`<pre>${JSON.stringify(message, null, 2)}</pre>`, 'data');
+
+                        // Check for game state updates
+                        if (message.type === 'gameStateUpdate') {
+                            log(`🎰 Game State Update received for table: ${message.tableAddress}`, 'success');
+                            if (message.gameState) {
+                                log(`Round: ${message.gameState.round || 'N/A'}`, 'info');
+                                log(`Players: ${message.gameState.players?.length || 0}`, 'info');
+                                log(`Pot: ${message.gameState.pot || 0}`, 'info');
+                            }
+                        } else if (message.type === 'error') {
+                            log(`❌ Error from server: ${message.message}`, 'error');
+                            if (message.details) {
+                                log(`Details: ${JSON.stringify(message.details)}`, 'error');
+                            }
+                        }
+                    } catch (err) {
+                        log(`❌ Error parsing message: ${err.message}`, 'error');
+                        log(`Raw data: ${event.data}`, 'error');
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    log(`❌ WebSocket error occurred`, 'error');
+                    console.error('WebSocket error:', error);
+                };
+
+                ws.onclose = (event) => {
+                    log(`🔌 WebSocket connection closed (Code: ${event.code}, Reason: ${event.reason || 'No reason provided'})`, 'info');
+                    updateStatus('DISCONNECTED');
+                    ws = null;
+                };
+
+            } catch (err) {
+                log(`❌ Failed to create WebSocket: ${err.message}`, 'error');
+                updateStatus('DISCONNECTED');
+            }
+        }
+
+        function disconnect() {
+            if (!ws) {
+                log('No active connection to disconnect', 'info');
+                return;
+            }
+
+            log('Closing WebSocket connection...', 'info');
+            ws.close();
+            ws = null;
+            updateStatus('DISCONNECTED');
+        }
+
+        function subscribeToTable() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ Please connect to WebSocket first!', 'error');
+                return;
+            }
+
+            const tableAddress = document.getElementById('tableAddress').value.trim();
+            const playerId = document.getElementById('playerId').value.trim();
+
+            if (!tableAddress) {
+                log('❌ Please enter a table address!', 'error');
+                return;
+            }
+
+            if (!playerId) {
+                log('❌ Please enter a player ID!', 'error');
+                return;
+            }
+
+            // The subscription is handled via URL query parameters in this implementation
+            // But we'll log the attempt and show the proper URL format
+            const wsUrl = document.getElementById('network').value;
+            const subscriptionUrl = `${wsUrl}?tableAddress=${tableAddress}&playerId=${playerId}`;
+
+            log(`📡 To subscribe to this table, connect with these parameters:`, 'info');
+            log(`Table: ${tableAddress}`, 'info');
+            log(`Player: ${playerId}`, 'info');
+            log(`Full URL: ${subscriptionUrl}`, 'data');
+            log(``, 'info');
+            log(`Note: Please disconnect and reconnect using the full URL with query parameters.`, 'info');
+            log(`The current WebSocket implementation uses URL query parameters for subscription.`, 'info');
+
+            // Close current connection
+            disconnect();
+
+            // Reconnect with parameters
+            setTimeout(() => {
+                log(`Reconnecting with subscription parameters...`, 'info');
+                updateStatus('CONNECTING');
+
+                try {
+                    ws = new WebSocket(subscriptionUrl);
+
+                    ws.onopen = () => {
+                        log('✅ WebSocket connected!', 'success');
+                        updateStatus('CONNECTED');
+
+                        // Send subscription message (required by server)
+                        const subscriptionMessage = {
+                            type: 'subscribe',
+                            gameId: tableAddress
+                        };
+                        log(`📤 Sending subscription message: ${JSON.stringify(subscriptionMessage)}`, 'info');
+                        ws.send(JSON.stringify(subscriptionMessage));
+
+                        log(`Listening for updates on table: ${tableAddress}`, 'success');
+                    };
+
+                    ws.onmessage = (event) => {
+                        try {
+                            log('📨 Received game state update', 'info');
+                            const message = JSON.parse(event.data);
+                            log(`<pre>${JSON.stringify(message, null, 2)}</pre>`, 'data');
+
+                            if (message.type === 'gameStateUpdate') {
+                                log(`🎰 Game State Update for table: ${message.tableAddress}`, 'success');
+                                if (message.gameState) {
+                                    const gs = message.gameState;
+                                    log(`📊 Round: ${gs.round || 'N/A'} | Players: ${gs.players?.length || 0} | Pot: ${gs.pot || 0}`, 'info');
+                                }
+                            } else if (message.type === 'error') {
+                                log(`❌ Server error: ${message.message}`, 'error');
+                            }
+                        } catch (err) {
+                            log(`❌ Parse error: ${err.message}`, 'error');
+                            log(`Raw: ${event.data}`, 'error');
+                        }
+                    };
+
+                    ws.onerror = (error) => {
+                        log(`❌ WebSocket error`, 'error');
+                        console.error('WebSocket error:', error);
+                    };
+
+                    ws.onclose = (event) => {
+                        log(`🔌 Connection closed (Code: ${event.code})`, 'info');
+                        updateStatus('DISCONNECTED');
+                        ws = null;
+                    };
+
+                } catch (err) {
+                    log(`❌ Connection failed: ${err.message}`, 'error');
+                    updateStatus('DISCONNECTED');
+                }
+            }, 500);
+        }
+
+        // Initialize network info on load
+        updateNetworkInfo();
+
+        // Auto-populate player ID from localStorage if available
+        window.addEventListener('load', () => {
+            const cosmosAddress = localStorage.getItem('user_cosmos_address');
+            const ethAddress = localStorage.getItem('user_eth_public_key');
+            const playerAddress = cosmosAddress || ethAddress;
+
+            if (playerAddress) {
+                document.getElementById('playerId').value = playerAddress;
+                log(`Auto-populated player ID from localStorage: ${playerAddress.substring(0, 12)}...`, 'info');
+            }
+        });
+    </script>
+</body>
+</html>

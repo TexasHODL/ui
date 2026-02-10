@@ -1,0 +1,8 @@
+// Test if SDK imports work import { COSMOS_CONSTANTS } from "@block52/poker-vm-sdk"; console.log("SDK loaded successfully!", COSMOS_CONSTANTS);
+document.body.innerHTML = `
+<div style="padding: 20px; font-family: Arial">
+    <h1>SDK Test</h1>
+    <p>If you see this, the SDK imported successfully!</p>
+    <p>COSMOS_CONSTANTS: ${JSON.stringify(COSMOS_CONSTANTS, null, 2)}</p>
+</div>
+`;

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Network Integration Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #93c5fd;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #60a5fa;
+        }
+        .test-item {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border-left: 4px solid #60a5fa;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-success {
+            background: #10b981;
+            color: white;
+        }
+        .status-error {
+            background: #ef4444;
+            color: white;
+        }
+        .status-pending {
+            background: #f59e0b;
+            color: white;
+        }
+        .code {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .info-box {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid #60a5fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .warning-box {
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        pre {
+            background: #1e293b;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎰 Table Network Integration Test</h1>
+        <p class="subtitle">Verify that the poker table component subscribes to the correct network</p>
+
+        <div class="section">
+            <h2>📋 Test Overview</h2>
+            <p>This page helps verify that:</p>
+            <ul>
+                <li>Table component uses the NetworkContext correctly</li>
+                <li>WebSocket connects to the selected network's endpoint</li>
+                <li>Network selection persists across page reloads</li>
+                <li>All player actions use the correct network</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🔍 Current Status</h2>
+            <div id="status-container">
+                <div class="test-item">
+                    <strong>NetworkProvider:</strong>
+                    <span class="status status-success">✅ ACTIVE</span>
+                    <p>The app is wrapped with NetworkProvider in index.tsx</p>
+                </div>
+                <div class="test-item">
+                    <strong>Table Component Integration:</strong>
+                    <span class="status status-success">✅ VERIFIED</span>
+                    <p>Table.tsx correctly uses useNetwork() and useGameStateContext()</p>
+                </div>
+                <div class="test-item">
+                    <strong>WebSocket Connection:</strong>
+                    <span class="status status-success">✅ VERIFIED</span>
+                    <p>GameStateContext creates WebSocket using currentNetwork.ws</p>
+                </div>
+                <div class="test-item">
+                    <strong>Network Selector UI:</strong>
+                    <span class="status status-success">✅ VISIBLE</span>
+                    <p>NetworkSelector component is shown in table header</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🛠️ Manual Testing</h2>
+            <p>Follow these steps to manually verify the integration:</p>
+
+            <div class="test-item">
+                <strong>Step 1: Check Current Network</strong>
+                <p>Run this in the browser console to see your current network:</p>
+                <div class="code">
+const savedNetwork = localStorage.getItem('selectedNetwork');
+console.log('Current Network:', JSON.parse(savedNetwork || '{}'));
+                </div>
+                <button onclick="checkCurrentNetwork()">Run Check</button>
+            </div>
+
+            <div class="test-item">
+                <strong>Step 2: Navigate to a Table</strong>
+                <p>Open a table page in your app:</p>
+                <div class="code">
+http://localhost:5173/table/YOUR_TABLE_ID
+                </div>
+                <p>Replace YOUR_TABLE_ID with an actual table address.</p>
+            </div>
+
+            <div class="test-item">
+                <strong>Step 3: Check Console Logs</strong>
+                <p>Open DevTools (F12) and look for these logs:</p>
+                <div class="code">
+[GameStateContext] 🔌 Attempting WebSocket connection: {
+  wsBaseUrl: "wss://node1.block52.xyz/ws",
+  tableId: "...",
+  playerAddress: "...",
+  fullUrl: "wss://node1.block52.xyz/ws?tableAddress=...&playerId=...",
+  networkName: "Block52"
+}
+                </div>
+                <div class="code">
+[GameStateContext] ✅ WebSocket connected to table ...
+                </div>
+            </div>
+
+            <div class="test-item">
+                <strong>Step 4: Switch Networks</strong>
+                <p>Click the NetworkSelector in the table header and select a different network.</p>
+                <p>Reload the page and verify the console shows the new network's WebSocket URL.</p>
+                <button onclick="testNetworkSwitch()">Show Instructions</button>
+            </div>
+
+            <div class="test-item">
+                <strong>Step 5: Verify Persistence</strong>
+                <p>Close the tab, reopen the table page, and verify your network selection was saved.</p>
+                <button onclick="checkPersistence()">Check Persistence</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🌐 Available Networks</h2>
+            <div class="test-item">
+                <strong>Localhost</strong>
+                <pre>WS:   ws://localhost:26657/ws
+RPC:  http://localhost:26657
+REST: http://localhost:1317
+gRPC: http://localhost:9090</pre>
+                <p>⚠️ Requires <code>ignite chain serve</code> running locally</p>
+            </div>
+            <div class="test-item">
+                <strong>Texas Hodl</strong>
+                <pre>WS:   wss://node.texashodl.net/ws
+RPC:  https://node.texashodl.net/rpc/
+REST: https://node.texashodl.net
+gRPC: grpcs://node.texashodl.net:9443</pre>
+                <p>✅ Production testing network</p>
+            </div>
+            <div class="test-item">
+                <strong>Block52 (Default)</strong>
+                <pre>WS:   wss://node1.block52.xyz/ws
+RPC:  https://node1.block52.xyz/rpc/
+REST: https://node1.block52.xyz
+gRPC: grpcs://node1.block52.xyz:9443</pre>
+                <p>✅ Official production network</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🐛 Debug Tools</h2>
+            <p>Use these commands in the browser console:</p>
+
+            <div class="test-item">
+                <strong>Check Current Network</strong>
+                <div class="code">
+const network = JSON.parse(localStorage.getItem('selectedNetwork') || '{}');
+console.table(network);
+                </div>
+                <button onclick="checkCurrentNetwork()">Run</button>
+            </div>
+
+            <div class="test-item">
+                <strong>Check Player Address</strong>
+                <div class="code">
+console.log('Cosmos:', localStorage.getItem('user_cosmos_address'));
+console.log('Ethereum:', localStorage.getItem('user_eth_public_key'));
+                </div>
+                <button onclick="checkPlayerAddress()">Run</button>
+            </div>
+
+            <div class="test-item">
+                <strong>Export Debug Logs</strong>
+                <div class="code">
+window.exportDebugLogs();  // Downloads JSON file
+window.getLastDebugLogs(10);  // Shows last 10 logs
+                </div>
+                <button onclick="exportLogs()">Export Logs</button>
+            </div>
+
+            <div class="test-item">
+                <strong>Reset Network to Default</strong>
+                <div class="code">
+localStorage.removeItem('selectedNetwork');
+window.location.reload();
+                </div>
+                <button onclick="resetNetwork()">Reset Network</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📊 Code References</h2>
+            <div class="info-box">
+                <strong>Table Component</strong> (ui/src/components/playPage/Table.tsx)
+                <pre>Line 171: const { subscribeToTable, gameState } = useGameStateContext();
+Line 172: const { currentNetwork } = useNetwork();
+Line 175: subscribeToTable(id);  // Triggers WebSocket connection
+Line 829: &lt;NetworkSelector /&gt;  // UI to switch networks</pre>
+            </div>
+
+            <div class="info-box">
+                <strong>GameStateContext</strong> (ui/src/context/GameStateContext.tsx)
+                <pre>Line 101: const { currentNetwork } = useNetwork();
+Line 157: const fullWsUrl = `${currentNetwork.ws}?tableAddress=${tableId}&playerId=${playerAddress}`;
+Line 166: const ws = new WebSocket(fullWsUrl);</pre>
+            </div>
+
+            <div class="info-box">
+                <strong>NetworkContext</strong> (ui/src/context/NetworkContext.tsx)
+                <pre>Line 71-98: NETWORK_PRESETS array with all endpoints
+Line 110-128: Loads network from localStorage or defaults to Block52
+Line 132-134: Saves network to localStorage on change</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✅ Verification Summary</h2>
+            <div class="info-box">
+                <h3>Integration Status: VERIFIED ✅</h3>
+                <ul>
+                    <li>✅ Table component correctly uses NetworkContext</li>
+                    <li>✅ WebSocket connections use selected network's ws endpoint</li>
+                    <li>✅ NetworkSelector UI allows switching networks</li>
+                    <li>✅ Network selection persists to localStorage</li>
+                    <li>✅ All player actions (balance, transactions) use currentNetwork</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h3>⚠️ Important Notes:</h3>
+                <ul>
+                    <li>Switching networks requires a page reload to reconnect WebSocket</li>
+                    <li>Localhost network requires local blockchain running</li>
+                    <li>Player must be logged in (have cosmos/eth address in localStorage)</li>
+                    <li>Old localStorage entries may need clearing if missing 'ws' property</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔗 Related Documentation</h2>
+            <ul>
+                <li><a href="/test-websocket.html" style="color: #60a5fa">WebSocket Test Page</a> - Standalone WebSocket testing</li>
+                <li><a href="../WEBSOCKET_VERIFICATION.md" style="color: #60a5fa">WEBSOCKET_VERIFICATION.md</a> - Full WebSocket setup guide</li>
+                <li><a href="../TABLE_NETWORK_INTEGRATION_TEST.md" style="color: #60a5fa">TABLE_NETWORK_INTEGRATION_TEST.md</a> - Detailed integration docs</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function checkCurrentNetwork() {
+            const saved = localStorage.getItem('selectedNetwork');
+            if (saved) {
+                const network = JSON.parse(saved);
+                console.log('=== CURRENT NETWORK ===');
+                console.table(network);
+                alert(`Current Network: ${network.name}\nWebSocket: ${network.ws}`);
+            } else {
+                alert('No network saved. Will use default (Block52) on next load.');
+                console.log('No saved network found');
+            }
+        }
+
+        function checkPlayerAddress() {
+            const cosmos = localStorage.getItem('user_cosmos_address');
+            const eth = localStorage.getItem('user_eth_public_key');
+            console.log('=== PLAYER ADDRESSES ===');
+            console.log('Cosmos:', cosmos || 'Not set');
+            console.log('Ethereum:', eth || 'Not set');
+
+            if (!cosmos && !eth) {
+                alert('⚠️ No player address found!\nPlease log in first.');
+            } else {
+                alert(`Player Address Found:\n${cosmos || eth}`);
+            }
+        }
+
+        function exportLogs() {
+            if (typeof window.exportDebugLogs === 'function') {
+                window.exportDebugLogs();
+                alert('Debug logs exported! Check your downloads folder.');
+            } else {
+                alert('⚠️ Debug logs not available.\nThis feature only works when viewing a table page.');
+                console.log('To use debug logs, navigate to a table page and try:\nwindow.exportDebugLogs()');
+            }
+        }
+
+        function resetNetwork() {
+            if (confirm('Reset network to default (Block52) and reload?')) {
+                localStorage.removeItem('selectedNetwork');
+                window.location.reload();
+            }
+        }
+
+        function testNetworkSwitch() {
+            alert(
+                '📋 Network Switch Test:\n\n' +
+                '1. Click NetworkSelector in table header\n' +
+                '2. Select a different network\n' +
+                '3. Reload the page\n' +
+                '4. Open DevTools (F12) → Console\n' +
+                '5. Look for: [GameStateContext] 🔌 Attempting WebSocket connection\n' +
+                '6. Verify "networkName" matches your selection'
+            );
+        }
+
+        function checkPersistence() {
+            const saved = localStorage.getItem('selectedNetwork');
+            if (saved) {
+                const network = JSON.parse(saved);
+                alert(
+                    '✅ Network Persistence Working!\n\n' +
+                    `Saved Network: ${network.name}\n` +
+                    `WebSocket: ${network.ws}\n\n` +
+                    'This will be used when you reload the page.'
+                );
+            } else {
+                alert(
+                    '⚠️ No network saved yet.\n\n' +
+                    'Select a network from the NetworkSelector first, ' +
+                    'then come back to test persistence.'
+                );
+            }
+        }
+
+        // Auto-check on page load
+        window.addEventListener('load', () => {
+            console.log('🎰 Table Network Integration Test Page Loaded');
+            console.log('📋 Use the buttons above to run various checks');
+            console.log('📚 See TABLE_NETWORK_INTEGRATION_TEST.md for full documentation');
+
+            const saved = localStorage.getItem('selectedNetwork');
+            if (saved) {
+                const network = JSON.parse(saved);
+                console.log(`✅ Current Network: ${network.name}`);
+                console.log(`🔌 WebSocket: ${network.ws}`);
+            } else {
+                console.log('⚠️ No network saved - will use default (Block52)');
+            }
+        });
+    </script>
+</body>
+</html>

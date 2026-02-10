@@ -1,0 +1,215 @@
+/* Badge Component Styles */
+.badge-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #c0d6d9;
+  border-radius: 9999px;
+  padding: 0.125rem 0.125rem;
+  box-shadow: 1px 2px 6px 3px rgba(0, 0, 0, 0.3);
+}
+
+.badge-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 9999px;
+}
+
+.badge-value {
+  margin-left: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: black;
+  display: flex;
+  justify-content: space-between;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .badge-value {
+    font-size: 1.125rem;
+  }
+}
+
+.timer-extension-button {
+  margin-left: 0.5rem;
+  margin-right: 0.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: #2563eb;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  transform: scale(1);
+}
+
+.timer-extension-button:hover {
+  background-color: #3b82f6;
+  transform: scale(1.1);
+}
+
+.timer-extension-icon {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: white;
+}
+
+/* Action Display Styles */
+.action-display-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0.25rem;
+  z-index: 30;
+  transition: all 0.5s ease-in-out;
+}
+
+.action-display-box {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-width: 1px;
+  border-style: solid;
+  border-opacity: 0.8;
+  color: white;
+  font-weight: 700;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  backdrop-filter: blur(4px);
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.action-display-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.action-display-text {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.action-display-amount {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+/* Performance optimized animations */
+.action-display-enter {
+  animation: actionDropDown 0.3s ease-out forwards;
+}
+
+.action-display-exit {
+  animation: actionRollAway 0.5s ease-in forwards;
+}
+
+.action-display-pulse {
+  animation: actionPulse 1s ease-in-out;
+}
+
+@keyframes actionDropDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes actionRollAway {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+}
+
+@keyframes actionPulse {
+  0%, 100% { 
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3); 
+  }
+  50% { 
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6), 0 4px 8px rgba(0, 0, 0, 0.4); 
+  }
+}
+
+/* Tournament Results Styles */
+.badge-tournament-results {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  z-index: 40;
+  animation: tournamentResultsFadeIn 0.5s ease-in-out;
+}
+
+.tournament-place {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-weight: 800;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tournament-payout {
+  padding: 0.125rem 0.5rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 0.375rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes tournamentResultsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .action-display-enter,
+  .action-display-exit,
+  .action-display-pulse,
+  .badge-tournament-results {
+    animation: none;
+  }
+
+  .timer-extension-button {
+    transition: none;
+  }
+} 

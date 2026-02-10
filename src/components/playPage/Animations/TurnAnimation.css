@@ -1,0 +1,54 @@
+@keyframes ripple {
+    0% {
+        transform: scale(0.6);
+        opacity: 0.4;
+    }
+    80% {
+        transform: scale(1.1);
+        opacity: 0.05;
+    }
+    100% {
+        transform: scale(1.1);
+        opacity: 0;
+    }
+}
+
+.turn-animation-container {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    width: 240px;
+    height: 130px;
+    transform: translate(-50%, calc(-50% - 20px));
+    will-change: transform;
+}
+
+.turn-animation-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 9999px;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+}
+
+.turn-animation-ring-0 {
+    animation: ripple 2000ms linear infinite;
+    animation-delay: 0ms;
+}
+
+.turn-animation-ring-1 {
+    animation: ripple 2000ms linear infinite;
+    animation-delay: -455ms;
+}
+
+.turn-animation-ring-2 {
+    animation: ripple 2000ms linear infinite;
+    animation-delay: -910ms;
+}
+
+.turn-animation-ring-3 {
+    animation: ripple 2000ms linear infinite;
+    animation-delay: -1365ms;
+} 

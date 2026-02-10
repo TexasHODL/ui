@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SDK Import Test</title>
+        <script type="module">
+            console.log("=== Testing SDK imports ===");
+
+            try {
+                // Test importing the SDK
+                import("@block52/poker-vm-sdk")
+                    .then(sdk => {
+                        console.log("✅ SDK imported successfully!", sdk);
+                        document.getElementById("status").innerHTML = `
+                    <h2 style="color: green;">✅ SDK Loaded Successfully!</h2>
+                    <pre>${JSON.stringify(Object.keys(sdk), null, 2)}</pre>
+                `;
+                    })
+                    .catch(error => {
+                        console.error("❌ SDK import failed:", error);
+                        document.getElementById("status").innerHTML = `
+                    <h2 style="color: red;">❌ SDK Import Failed</h2>
+                    <pre>${error.message}\n${error.stack}</pre>
+                `;
+                    });
+            } catch (error) {
+                console.error("❌ Error:", error);
+                document.getElementById("status").innerHTML = `
+                <h2 style="color: red;">❌ Error</h2>
+                <pre>${error.message}\n${error.stack}</pre>
+            `;
+            }
+        </script>
+    </head>
+    <body>
+        <div style="padding: 20px; font-family: Arial, sans-serif">
+            <h1>SDK Import Test</h1>
+            <div id="status">
+                <p>Loading SDK...</p>
+            </div>
+            <div style="margin-top: 20px; padding: 10px; background: #f0f0f0">
+                <p><strong>Instructions:</strong> Open browser DevTools console (F12) to see detailed logs.</p>
+            </div>
+        </div>
+    </body>
+</html>

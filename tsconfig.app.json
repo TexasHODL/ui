@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "useDefineForClassFields": true,
+        "lib": ["ES2020", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "composite": true,
+        /* Bundler mode */
+        "moduleResolution": "node",
+        "isolatedModules": true,
+        "moduleDetection": "force",
+        "jsx": "react-jsx",
+
+        /* Linting */
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+
+        /* Prevent JS or declaration files generation */
+        "noEmit": true
+    },
+    "include": ["src"]
+}

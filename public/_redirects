@@ -1,0 +1,6 @@
+/* /index.html 200
+/table/* /index.html 200
+/qr-deposit /index.html 200
+/deposit /index.html 200
+/assets/* /assets/:splat 200
+/static/* /static/:splat 200

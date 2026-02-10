@@ -1,0 +1,220 @@
+/* Button styles for poker actions */
+
+/* Deal button */
+.btn-deal {
+  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  border: 2px solid var(--brand-primary);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+/* New hand button */
+.btn-new-hand {
+  background: linear-gradient(to right, var(--brand-secondary), var(--brand-primary));
+  border: 2px solid var(--brand-primary);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+}
+
+/* Muck button */
+.btn-muck {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  transition: all 0.3s ease;
+}
+
+.btn-muck:hover {
+  background: linear-gradient(to right, var(--ui-bg-dark), var(--ui-bg-medium));
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+}
+
+/* Show button */
+.btn-show {
+  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  border: 2px solid var(--brand-primary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-show:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+}
+
+/* Small blind button */
+.btn-small-blind {
+  background: linear-gradient(to right, var(--accent-success), rgba(16, 185, 129, 0.8));
+  border: 2px solid var(--accent-success);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-small-blind:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  transform: scale(1.05);
+}
+
+.btn-small-blind-amount {
+  background-color: rgba(31, 41, 55, 0.8);
+  color: var(--brand-primary);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Big blind button */
+.btn-big-blind {
+  background: linear-gradient(to right, var(--accent-success), rgba(16, 185, 129, 0.8));
+  border: 2px solid var(--accent-success);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s ease;
+}
+
+.btn-big-blind:hover {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  transform: scale(1.05);
+}
+
+.btn-big-blind-amount {
+  background-color: rgba(31, 41, 55, 0.8);
+  color: var(--brand-primary);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+/* Check button */
+.btn-check {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-check:hover {
+  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  transform: scale(1.05);
+}
+
+/* Fold button */
+.btn-fold {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-fold:hover {
+  background: linear-gradient(to right, var(--accent-danger), rgba(239, 68, 68, 0.8));
+  border-color: var(--accent-danger);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+  transform: scale(1.05);
+}
+
+/* Call button */
+.btn-call {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-call:hover {
+  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  transform: scale(1.05);
+}
+
+/* Raise button */
+.btn-raise {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-raise:hover {
+  background: linear-gradient(to right, var(--accent-glow), rgba(100, 255, 218, 0.9));
+  border-color: var(--accent-glow);
+  box-shadow: 0 0 20px rgba(100, 255, 218, 0.4);
+  transform: scale(1.05);
+}
+
+/* Slider buttons */
+.btn-slider {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-slider:hover {
+  background: linear-gradient(to right, var(--ui-bg-dark), var(--ui-bg-medium));
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
+}
+
+/* Pot buttons */
+.btn-pot {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-pot:hover {
+  background: linear-gradient(to right, var(--ui-bg-dark), var(--ui-bg-medium));
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
+}
+
+/* All-in button */
+.btn-all-in {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-all-in:hover {
+  background: linear-gradient(to right, var(--accent-glow), rgba(100, 255, 218, 0.9));
+  border-color: var(--accent-glow);
+  box-shadow: 0 0 20px rgba(100, 255, 218, 0.4);
+  transform: scale(1.05);
+}
+
+/* Dynamic input styles */
+.input-field {
+  background-color: var(--ui-bg-medium);
+  border-color: var(--ui-border-color);
+  color: white;
+}
+
+.input-field.invalid {
+  border-color: var(--accent-danger);
+  color: var(--accent-danger);
+}
+
+/* Min/max text styles */
+.min-max-text {
+  color: var(--ui-text-secondary);
+}
+
+.min-max-text.invalid {
+  color: var(--accent-danger);
+}
+
+/* Sit out button */
+.btn-sit-out {
+  background: linear-gradient(to right, var(--brand-secondary), var(--ui-bg-medium));
+  border: 2px solid var(--ui-border-color);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-sit-out:hover {
+  background: linear-gradient(to right, var(--ui-bg-medium), var(--brand-secondary));
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
+}
