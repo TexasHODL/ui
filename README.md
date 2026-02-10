@@ -20,7 +20,7 @@ A modern, customizable React-based poker interface for online poker rooms. Built
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - Yarn package manager
 
 ### Installation
