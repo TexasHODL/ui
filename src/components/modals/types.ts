@@ -56,7 +56,7 @@ export interface DealEntropyModalProps extends BaseModalProps {
 /**
  * Props for WithdrawalModal
  */
-export interface WithdrawalModalProps extends ControlledModalWithSuccessProps {}
+export type WithdrawalModalProps = ControlledModalWithSuccessProps;
 
 /**
  * Props for LeaveTableModal
@@ -95,7 +95,7 @@ export interface TopUpModalProps extends BaseModalProps {
 /**
  * Props for USDCDepositModal
  */
-export interface USDCDepositModalProps extends ControlledModalWithSuccessProps {}
+export type USDCDepositModalProps = ControlledModalWithSuccessProps;
 
 /**
  * Props for BuyInModal
