@@ -9,7 +9,7 @@ import { getSigningClient, getCosmosUrls } from "../utils/cosmos/client";
 import { BRIDGE_DEPOSITS_ABI } from "../utils/bridge/abis";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
-import { PROXY_URL } from "../config/constants";
+import { PROXY_URL, COSMOS_BRIDGE_ADDRESS } from "../config/constants";
 
 // Minimum STAKE needed for gas fees (transaction costs ~2000 stake)
 const MIN_STAKE_FOR_GAS = 2000;
@@ -70,8 +70,8 @@ export default function BridgeAdminDashboard() {
     } | null>(null);
     const [isLoadingHotWallet, setIsLoadingHotWallet] = useState(false);
 
-    // Ethereum configuration
-    const bridgeContractAddress = "0xcc391c8f1aFd6DB5D8b0e064BA81b1383b14FE5B"; // Base Chain production
+    // Ethereum Mainnet configuration
+    const bridgeContractAddress = COSMOS_BRIDGE_ADDRESS;
     const ethRpcUrl = import.meta.env.VITE_ALCHEMY_URL || import.meta.env.VITE_MAINNET_RPC_URL;
 
     // Get STAKE balance from wallet for gas fees
@@ -497,7 +497,7 @@ export default function BridgeAdminDashboard() {
                                 <h3 className="text-red-200 font-semibold mb-1">Configuration Required</h3>
                                 <p className="text-red-300 text-sm">{configError}</p>
                                 <div className="mt-2 text-red-300 text-xs font-mono bg-red-950/50 p-2 rounded">
-                                    Add to .env: VITE_ALCHEMY_URL="https://base-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
+                                    Add to .env: VITE_ALCHEMY_URL="https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
                                 </div>
                             </div>
                         </div>
@@ -619,7 +619,7 @@ export default function BridgeAdminDashboard() {
                                 {/* Manual Bridge Form */}
                                 <form onSubmit={handleManualBridge} className="bg-gray-900/50 rounded-lg p-4">
                                     <h4 className="text-gray-300 font-semibold mb-3 flex items-center gap-2">
-                                        <span>📤</span> Send USDC to Cosmos
+                                        <span>📤</span> Send USDC to Block52
                                     </h4>
                                     <div className="space-y-3">
                                         <div>
@@ -655,7 +655,7 @@ export default function BridgeAdminDashboard() {
                                                     Bridging...
                                                 </>
                                             ) : (
-                                                <>🚀 Bridge to Cosmos</>
+                                                <>🚀 Bridge to Block52</>
                                             )}
                                         </button>
                                     </div>
@@ -693,7 +693,7 @@ export default function BridgeAdminDashboard() {
                                 <span className="text-2xl">🔄</span>
                                 <div>
                                     <p className="text-white font-semibold">Bridge Sync Status</p>
-                                    <p className="text-gray-400 text-xs">Base Chain → Cosmos</p>
+                                    <p className="text-gray-400 text-xs">Ethereum → Block52</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 text-sm">
@@ -944,10 +944,10 @@ export default function BridgeAdminDashboard() {
                 <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
                     <h3 className="text-blue-200 font-semibold mb-2">ℹ️ How This Works</h3>
                     <ul className="text-blue-300 text-sm space-y-1 list-disc list-inside">
-                        <li>This dashboard queries the Base Chain bridge contract for all deposit events</li>
+                        <li>This dashboard queries the Ethereum bridge contract for all deposit events</li>
                         <li>Each deposit shows the Cosmos recipient address and USDC amount</li>
-                        <li>Status indicates whether the deposit has been processed on Cosmos chain</li>
-                        <li>Click "Process" to mint USDC on Cosmos for pending deposits</li>
+                        <li>Status indicates whether the deposit has been processed on Block52 chain</li>
+                        <li>Click "Process" to mint USDC on Block52 for pending deposits</li>
                         <li>Processed deposits cannot be processed again (idempotency protection)</li>
                     </ul>
                 </div>

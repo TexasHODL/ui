@@ -33,8 +33,8 @@ This directory contains all modal components used throughout the poker applicati
 
 ### Wallet-Related Modals
 
-- **USDCDepositModal** - Modal for depositing USDC from Base Chain
-  - Bridge from Base Chain to game wallet
+- **USDCDepositModal** - Modal for depositing USDC from Ethereum
+  - Bridge from Ethereum to game wallet
   - MetaMask integration
   - Network switching support
 

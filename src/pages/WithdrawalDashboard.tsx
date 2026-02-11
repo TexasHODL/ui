@@ -9,14 +9,15 @@ import { useAccount } from "wagmi";
 import { BRIDGE_WITHDRAWAL_ABI } from "../utils/bridge/abis";
 import { base64ToHex } from "../utils/encodingUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
+import { COSMOS_BRIDGE_ADDRESS } from "../config/constants";
 
 /**
- * WithdrawalDashboard - Interface for managing USDC withdrawals to Base Chain
+ * WithdrawalDashboard - Interface for managing USDC withdrawals to Ethereum
  *
  * Features:
- * - Initiate new withdrawals from Cosmos to Base
+ * - Initiate new withdrawals from Block52 to Ethereum
  * - View withdrawal status (pending/signed/completed)
- * - Complete signed withdrawals on Base chain
+ * - Complete signed withdrawals on Ethereum
  * - 2-step withdrawal flow with automatic validator signing
  */
 
@@ -47,8 +48,8 @@ export default function WithdrawalDashboard() {
     const [withdrawalBaseAddress, setWithdrawalBaseAddress] = useState("");
     const [isInitiating, setIsInitiating] = useState(false);
 
-    // Bridge configuration
-    const bridgeContractAddress = "0xcc391c8f1aFd6DB5D8b0e064BA81b1383b14FE5B"; // Base Chain production
+    // Bridge configuration - Ethereum Mainnet
+    const bridgeContractAddress = COSMOS_BRIDGE_ADDRESS;
 
     // Load withdrawal base address from connected wallet
     useEffect(() => {
@@ -102,7 +103,7 @@ export default function WithdrawalDashboard() {
         }
 
         if (!withdrawalBaseAddress) {
-            toast.error("Please enter your Base chain address");
+            toast.error("Please enter your Ethereum address");
             return;
         }
 
@@ -113,7 +114,7 @@ export default function WithdrawalDashboard() {
 
         // Validate Base address format
         if (!ethers.isAddress(withdrawalBaseAddress)) {
-            toast.error("Invalid Base chain address");
+            toast.error("Invalid Ethereum address");
             return;
         }
 
@@ -157,10 +158,10 @@ export default function WithdrawalDashboard() {
         }
     };
 
-    // Complete a signed withdrawal on Base chain
+    // Complete a signed withdrawal on Ethereum
     const handleCompleteWithdrawal = async (withdrawal: Withdrawal) => {
         if (!isConnected || !baseAddress) {
-            toast.error("Please connect your Base wallet first");
+            toast.error("Please connect your Ethereum wallet first");
             return;
         }
 
@@ -182,9 +183,9 @@ export default function WithdrawalDashboard() {
             // Convert base64 signature to hex format for ethers
             const hexSignature = withdrawal.signature ? base64ToHex(withdrawal.signature) : "0x";
 
-            console.log("🌉 Completing withdrawal on Base chain - DETAILED PARAMETERS:");
+            console.log("Completing withdrawal on Ethereum - DETAILED PARAMETERS:");
             console.log("  📍 Cosmos Address:", withdrawal.cosmosAddress);
-            console.log("  📍 Base Receiver:", withdrawal.baseAddress);
+            console.log("  Receiver:", withdrawal.baseAddress);
             console.log("  💰 Amount (micro):", withdrawal.amount);
             console.log("  🔢 Nonce:", withdrawal.nonce);
             console.log("  ✍️  Signature (base64):", withdrawal.signature);
@@ -270,7 +271,7 @@ export default function WithdrawalDashboard() {
                 <div className="mb-8 text-center">
                     <h1 className="text-4xl font-bold text-white mb-2">USDC Withdrawals</h1>
                     <p className="text-gray-400">
-                        Withdraw USDC from Cosmos to Base Chain
+                        Withdraw USDC from Block52 to Ethereum
                         <span className="ml-2 font-mono text-sm text-gray-500">({bridgeContractAddress})</span>
                     </p>
                 </div>
@@ -285,7 +286,7 @@ export default function WithdrawalDashboard() {
                             </p>
                         </div>
                         <div>
-                            <p className="text-gray-400 text-sm mb-1">Base Wallet</p>
+                            <p className="text-gray-400 text-sm mb-1">Ethereum Wallet</p>
                             <p className="text-white font-mono text-sm">{baseAddress ? baseAddress : "Not connected"}</p>
                         </div>
                     </div>
@@ -358,7 +359,7 @@ export default function WithdrawalDashboard() {
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Nonce</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">
-                                        Base Address
+                                        Ethereum Address
                                     </th>
                                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 tracking-wider">
                                         Amount (USDC)
@@ -446,7 +447,7 @@ export default function WithdrawalDashboard() {
                                                     >
                                                         {processingNonce === withdrawal.nonce
                                                             ? "Completing..."
-                                                            : "Complete on Base"}
+                                                            : "Complete on Ethereum"}
                                                     </button>
                                                 ) : withdrawal.status === "pending" ? (
                                                     <span className="text-gray-500 text-sm">Waiting for validator...</span>
@@ -467,16 +468,16 @@ export default function WithdrawalDashboard() {
                     <h3 className="text-blue-200 font-semibold mb-2">ℹ️ How Withdrawals Work</h3>
                     <ul className="text-blue-300 text-sm space-y-1 list-disc list-inside">
                         <li>
-                            <strong>Step 1:</strong> Click "New Withdrawal" to burn USDC on Cosmos and create a withdrawal request
+                            <strong>Step 1:</strong> Click "New Withdrawal" to burn USDC on Block52 and create a withdrawal request
                         </li>
                         <li>
                             <strong>Step 2:</strong> Validators automatically sign your withdrawal (usually within a few blocks)
                         </li>
                         <li>
-                            <strong>Step 3:</strong> Once signed, click "Complete on Base" to receive USDC on Base chain
+                            <strong>Step 3:</strong> Once signed, click "Complete on Ethereum" to receive USDC on Ethereum
                         </li>
-                        <li>Make sure your Base wallet is connected before completing withdrawals</li>
-                        <li>Each withdrawal requires two transactions: one on Cosmos, one on Base</li>
+                        <li>Make sure your Ethereum wallet is connected before completing withdrawals</li>
+                        <li>Each withdrawal requires two transactions: one on Block52, one on Ethereum</li>
                     </ul>
                 </div>
             </div>
@@ -499,7 +500,7 @@ export default function WithdrawalDashboard() {
 
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-white text-sm font-semibold mb-2">Base Chain Address</label>
+                                <label className="block text-white text-sm font-semibold mb-2">Ethereum Address</label>
                                 <input
                                     type="text"
                                     value={withdrawalBaseAddress}
@@ -508,7 +509,7 @@ export default function WithdrawalDashboard() {
                                     className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm"
                                 />
                                 <p className="text-gray-400 text-xs mt-1">
-                                    USDC will be sent to this address on Base chain
+                                    USDC will be sent to this address on Ethereum
                                 </p>
                             </div>
 
@@ -523,7 +524,7 @@ export default function WithdrawalDashboard() {
                                     placeholder="0.00"
                                     className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white text-lg font-semibold"
                                 />
-                                <p className="text-gray-400 text-xs mt-1">Amount of USDC to withdraw from Cosmos</p>
+                                <p className="text-gray-400 text-xs mt-1">Amount of USDC to withdraw from Block52</p>
                             </div>
                         </div>
 

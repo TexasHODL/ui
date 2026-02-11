@@ -16,8 +16,8 @@ export const metadata = {
     icons: ["https://avatars.githubusercontent.com/u/179229932"]
 };
 
-// Use Base as default network, with mainnet as fallback
-export const networks = [base, mainnet] as [AppKitNetwork, ...AppKitNetwork[]];
+// Use Ethereum mainnet as default network, with Base as fallback
+export const networks = [mainnet, base] as [AppKitNetwork, ...AppKitNetwork[]];
 
 export const wagmiAdapter = new WagmiAdapter({
     projectId: projectId,
@@ -26,10 +26,10 @@ export const wagmiAdapter = new WagmiAdapter({
 });
 
 export const config = createConfig({
-    chains: [base, mainnet],
+    chains: [mainnet, base],
     connectors: [metaMask()],
     transports: {
-        [base.id]: http(),
-        [mainnet.id]: http()
+        [mainnet.id]: http(),
+        [base.id]: http()
     }
 });

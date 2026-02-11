@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Eip1193Provider, ethers, parseUnits } from "ethers";
-import { DEPOSIT_ADDRESS, TOKEN_ADDRESS } from "../../config/constants";
+import { DEPOSIT_ADDRESS, ETH_USDC_ADDRESS } from "../../config/constants";
 
 const RPC_URL = import.meta.env.VITE_MAINNET_RPC_URL || "https://eth.llamarpc.com";
 
@@ -30,7 +30,7 @@ export const useWeb3Transfer = (web3Address: string | undefined): UseWeb3Transfe
 
         try {
             const provider = new ethers.JsonRpcProvider(RPC_URL);
-            const usdcContract = new ethers.Contract(TOKEN_ADDRESS, USDC_ABI, provider);
+            const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, provider);
             const balance = await usdcContract.balanceOf(web3Address);
             const formattedBalance = ethers.formatUnits(balance, 6);
             const roundedBalance = parseFloat(formattedBalance).toFixed(2);
@@ -57,7 +57,7 @@ export const useWeb3Transfer = (web3Address: string | undefined): UseWeb3Transfe
         try {
             const provider = new ethers.BrowserProvider(walletProvider);
             const signer = await provider.getSigner();
-            const usdcContract = new ethers.Contract(TOKEN_ADDRESS, USDC_ABI, signer);
+            const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, signer);
 
             const amountInUnits = parseUnits(amount, 6);
             const tx = await usdcContract.transfer(DEPOSIT_ADDRESS, amountInUnits);

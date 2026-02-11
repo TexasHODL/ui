@@ -3,13 +3,13 @@ import { abi } from "../../abis/contractABI";
 import useUserWalletConnect from "./useUserWalletConnect";
 import { FunctionName } from "../../types";
 import { useCallback, useMemo, useEffect } from "react";
-import { CONTRACT_ADDRESSES } from "../../constants";
+import { COSMOS_BRIDGE_ADDRESS } from "../../config/constants";
 
 const useWithdraw = () => {
-  const BRIDGE_ADDRESS = CONTRACT_ADDRESSES.bridgeAddress;
+  const BRIDGE_ADDRESS = COSMOS_BRIDGE_ADDRESS;
   const { data: hash, isPending, writeContract, error } = useWriteContract();
   const { address: userAddress } = useUserWalletConnect();
-  
+
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash
   });
@@ -43,9 +43,9 @@ const useWithdraw = () => {
   }, [error]);
 
   const withdraw = useCallback(async (
-    nonce: string, 
-    receiver: string, 
-    amount: bigint, 
+    nonce: string,
+    receiver: string,
+    amount: bigint,
     signature: string
   ): Promise<void> => {
     console.log("[useWithdraw] Starting withdrawal transaction");
@@ -80,9 +80,9 @@ const useWithdraw = () => {
         abi: abi,
         functionName: FunctionName.Withdraw,
         args: [
-          nonce as `0x${string}`, 
-          receiver as `0x${string}`, 
-          amount, 
+          nonce as `0x${string}`,
+          receiver as `0x${string}`,
+          amount,
           signature as `0x${string}`
         ]
       });

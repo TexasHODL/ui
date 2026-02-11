@@ -3,16 +3,16 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate for naviga
 
 import "./Dashboard.css"; // Import the CSS file with animations
 
-// Base Chain imports (only for USDC deposits via bridge)
+// Ethereum Mainnet imports (USDC deposits via bridge)
 import { ethers } from "ethers";
-import { BASE_RPC_URL, BASE_USDC_ADDRESS, BASE_CHAIN_ID } from "../config/constants";
+import { ETH_RPC_URL, ETH_USDC_ADDRESS, ETH_CHAIN_ID } from "../config/constants";
 import { useAccount as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
 import { usdcToMicroBigInt, formatMicroAsUsdc } from "../constants/currency";
 
-const RPC_URL = BASE_RPC_URL; // Base Chain RPC for USDC balance queries
+const RPC_URL = ETH_RPC_URL; // Ethereum Mainnet RPC for USDC balance queries
 const USDC_ABI = ["function balanceOf(address account) view returns (uint256)"];
 
 import { WithdrawalModal, USDCDepositModal } from "../components/modals";
@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
 
     const { isConnected, open, address } = useUserWalletConnect();
 
-    // Wagmi hooks for Base Chain (USDC deposit bridge only)
+    // Wagmi hooks for Ethereum Mainnet (USDC deposit bridge)
     const { chain } = useWagmiAccount();
     const { switchChain } = useSwitchChain();
 
@@ -208,19 +208,19 @@ const Dashboard: React.FC = () => {
         return Math.max(0, STAKE_LIMIT_PER_HOUR - sentInLastHour);
     }, [getStakeSentInLastHour, STAKE_LIMIT_PER_HOUR]);
 
-    // Function to get USDC balance on Base Chain
+    // Function to get USDC balance on Ethereum Mainnet
     const fetchWeb3Balance = useCallback(async () => {
         if (!address) return;
 
         try {
             const provider = new ethers.JsonRpcProvider(RPC_URL);
-            const usdcContract = new ethers.Contract(BASE_USDC_ADDRESS, USDC_ABI, provider);
+            const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, provider);
             const balance = await usdcContract.balanceOf(address);
             const formattedBalance = ethers.formatUnits(balance, 6); // USDC has 6 decimals
             const roundedBalance = parseFloat(formattedBalance).toFixed(2);
             setWeb3Balance(roundedBalance);
         } catch (error) {
-            console.error("Error fetching Base Chain USDC balance:", error);
+            console.error("Error fetching Ethereum USDC balance:", error);
             setWeb3Balance("0.00");
         }
     }, [address]);
@@ -450,22 +450,21 @@ const Dashboard: React.FC = () => {
         return "0.00";
     }, [cosmosWallet.balance, transferTokenType]);
 
-    // Auto-switch to Base Chain when wallet connects
+    // Auto-switch to Ethereum Mainnet when wallet connects
     useEffect(() => {
-        const autoSwitchToBase = async () => {
-            if (isConnected && chain?.id !== BASE_CHAIN_ID && switchChain) {
-                console.log("🔄 Auto-switching wallet to Base Chain...");
+        const autoSwitchToEthereum = async () => {
+            if (isConnected && chain?.id !== ETH_CHAIN_ID && switchChain) {
+                console.log("Auto-switching wallet to Ethereum Mainnet...");
                 try {
-                    await switchChain({ chainId: BASE_CHAIN_ID });
-                    console.log("✅ Successfully switched to Base Chain");
+                    await switchChain({ chainId: ETH_CHAIN_ID });
+                    console.log("Successfully switched to Ethereum Mainnet");
                 } catch (err) {
-                    console.warn("⚠️ Could not auto-switch to Base Chain:", err);
-                    // Don't show error to user - they can manually switch if needed
+                    console.warn("Could not auto-switch to Ethereum Mainnet:", err);
                 }
             }
         };
 
-        autoSwitchToBase();
+        autoSwitchToEthereum();
     }, [isConnected, chain?.id, switchChain]);
 
     // Memoized Deposit callback

@@ -231,10 +231,10 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                     </button>
                 </div>
 
-                {/* Web3 Wallet Connection (for Base Chain deposits) */}
+                {/* Web3 Wallet Connection (for Ethereum deposits) */}
                 <div className="mt-4 pt-4 border-t border-gray-700">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">Base Chain Wallet</span>
+                        <span className="text-gray-400 text-sm">Ethereum Wallet</span>
                         {isWeb3Connected && (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Connected</span>
                         )}
@@ -263,7 +263,7 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                             Connect Web3 Wallet
                         </button>
                     )}
-                    <p className="text-gray-500 text-xs mt-2">Required for USDC deposits from Base Chain</p>
+                    <p className="text-gray-500 text-xs mt-2">Required for USDC deposits from Ethereum</p>
                 </div>
 
                 {/* Bridge Link */}
@@ -273,7 +273,7 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                         className="w-full text-center text-sm transition-all hover:opacity-90 flex items-center justify-center gap-2"
                         style={{ color: colors.brand.primary }}
                     >
-                        <span>Bridge from Base Chain</span>
+                        <span>Bridge from Ethereum</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                         </svg>

@@ -8,6 +8,7 @@ import { getSigningClient } from "../utils/cosmos/client";
 import { BRIDGE_DEPOSITS_ABI } from "../utils/bridge/abis";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
+import { COSMOS_BRIDGE_ADDRESS } from "../config/constants";
 /**
  * ManualBridgeTrigger - Simple page to manually process bridge deposits
  *
@@ -30,8 +31,8 @@ export default function ManualBridgeTrigger() {
     const [depositDetails, setDepositDetails] = useState<any>(null);
     const [queryResult, setQueryResult] = useState<{ recipient: string; amount: string } | null>(null);
 
-    // Bridge configuration
-    const bridgeContractAddress = "0xcc391c8f1aFd6DB5D8b0e064BA81b1383b14FE5B"; // Base Chain production
+    // Bridge configuration - Ethereum Mainnet
+    const bridgeContractAddress = COSMOS_BRIDGE_ADDRESS;
     const ethRpcUrl = import.meta.env.VITE_ALCHEMY_URL || import.meta.env.VITE_MAINNET_RPC_URL;
 
     const handleQueryDeposit = async () => {
@@ -51,9 +52,9 @@ export default function ManualBridgeTrigger() {
         setQueryResult(null);
 
         try {
-            console.log("🔍 Querying deposit from Ethereum contract...");
+            console.log("Querying deposit from Ethereum contract...");
 
-            // Connect to Base Chain
+            // Connect to Ethereum Mainnet
             const provider = new ethers.JsonRpcProvider(ethRpcUrl);
             const contract = new ethers.Contract(bridgeContractAddress, BRIDGE_DEPOSITS_ABI, provider);
 
@@ -241,7 +242,7 @@ export default function ManualBridgeTrigger() {
                                     Querying...
                                 </span>
                             ) : (
-                                "Query Deposit from Base Chain"
+                                "Query Deposit from Ethereum"
                             )}
                         </button>
 
@@ -317,12 +318,12 @@ export default function ManualBridgeTrigger() {
                 <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
                     <h3 className="text-blue-200 font-semibold mb-2">How it works:</h3>
                     <ol className="text-blue-300 text-sm space-y-1 list-decimal list-inside">
-                        <li>User deposits USDC on Base Chain to bridge contract</li>
+                        <li>User deposits USDC on Ethereum to bridge contract</li>
                         <li>Deposit is logged with an incremental index (0, 1, 2, ...)</li>
                         <li>Enter the deposit index and click "Query" to preview deposit info</li>
                         <li>Click "Process" to mint USDC on Block52 chain</li>
                         <li>Chain queries Ethereum contract for deposit data</li>
-                        <li>If valid and not processed, mints USDC on Cosmos</li>
+                        <li>If valid and not processed, mints USDC on Block52</li>
                     </ol>
                 </div>
             </div>

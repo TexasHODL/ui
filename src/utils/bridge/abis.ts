@@ -2,7 +2,7 @@
  * Bridge Contract ABIs
  * 
  * This file centralizes all Bridge contract ABIs used across the application
- * for interacting with the Cosmos Bridge on Base Chain.
+ * for interacting with the Cosmos Bridge on Ethereum Mainnet.
  */
 
 /**

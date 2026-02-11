@@ -9,7 +9,7 @@ import useApprove from "../../hooks/wallet/useApprove";
 import spinner from "../../assets/spinning-circles.svg";
 import useWalletBalance from "../../hooks/wallet/useWalletBalance";
 import { toast } from "react-toastify";
-import { BASE_USDC_ADDRESS, COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
+import { ETH_USDC_ADDRESS, COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
 import { useCosmosWallet } from "../../hooks";
 import { formatUSDCToSimpleDollars, convertAmountToBigInt } from "../../utils/numberUtils";
 import { colors, hexToRgba } from "../../utils/colorConfig";
@@ -34,7 +34,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
     onSuccess,
     showMethodSelector = true
 }) => {
-    const USDC_ADDRESS = BASE_USDC_ADDRESS;
+    const USDC_ADDRESS = ETH_USDC_ADDRESS;
     const BRIDGE_ADDRESS = COSMOS_BRIDGE_ADDRESS;
 
     const { open, disconnect, isConnected, address } = useUserWalletConnect();
@@ -262,7 +262,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                             Direct USDC
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">
-                                            Base Chain USDC
+                                            Ethereum USDC
                                         </div>
                                     </div>
                                 </button>

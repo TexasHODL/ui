@@ -512,9 +512,9 @@ export default function GenesisState() {
                     <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-4">
                         <h3 className="text-lg font-semibold text-white mb-2">⚠️ Why Export Bridge State?</h3>
                         <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
-                            <li>Withdrawals are <strong>real USDC</strong> transactions on Base chain</li>
+                            <li>Withdrawals are <strong>real USDC</strong> transactions on Ethereum</li>
                             <li>If you reset the Cosmos chain, withdrawal records will be lost</li>
-                            <li>But Base chain still knows about those nonces - must preserve them!</li>
+                            <li>But Ethereum still knows about those nonces - must preserve them!</li>
                             <li>Export before reset, then import into new genesis to maintain integrity</li>
                         </ul>
                     </div>

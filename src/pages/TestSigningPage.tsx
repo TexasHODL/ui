@@ -648,7 +648,7 @@ export default function TestSigningPage() {
                                 <div className="text-xs text-gray-400 ml-4 mt-1">
                                     • Used for game buy-ins and bets
                                     <br />
-                                    • Get from: Bridge deposit from Base Chain or mint via blockchain command
+                                    • Get from: Bridge deposit from Ethereum or mint via blockchain command
                                     <br />• ⚠️ Note: Use "usdc" denom (not "b52USDC")
                                 </div>
                             </div>
@@ -660,7 +660,7 @@ export default function TestSigningPage() {
                                 <div className="text-gray-500">pokerchaind keys list</div>
                                 <div className="mt-2"># Option 2: Send from another account</div>
                                 <div className="text-gray-500">pokerchaind tx bank send [from] {walletAddress || "[your-address]"} 1000000stake</div>
-                                <div className="mt-2"># Option 3: Bridge USDC from Base Chain</div>
+                                <div className="mt-2"># Option 3: Bridge USDC from Ethereum</div>
                                 <div className="text-gray-500">Use the bridge at /deposit page</div>
                             </div>
                         </div>
@@ -747,7 +747,7 @@ export default function TestSigningPage() {
                                     onClick={() => {
                                         const command = `pokerchaind tx bank send validator ${walletAddress} 100000000stake --chain-id pokerchain --keyring-backend test --home ~/.pokerchain-testnet/node1 --fees 2000stake -y`;
                                         navigator.clipboard.writeText(command);
-                                        alert(`Stake funding command copied!\n\nThis will send:\n• 100 stake (for gas fees)\n\nUse bridge to deposit USDC from Base chain!\n\n${command}`);
+                                        alert(`Stake funding command copied!\n\nThis will send:\n• 100 stake (for gas fees)\n\nUse bridge to deposit USDC from Ethereum!\n\n${command}`);
                                     }}
                                     className="w-full py-3 px-4 text-sm font-semibold rounded-lg transition duration-200 hover:opacity-90 active:scale-95"
                                     style={{

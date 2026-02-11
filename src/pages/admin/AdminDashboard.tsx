@@ -15,13 +15,13 @@ const bridgeMenuItems: AdminMenuItem[] = [
     {
         path: "/admin/bridge",
         label: "Deposit",
-        description: "Deposit USDC from Base Chain",
+        description: "Deposit USDC from Ethereum",
         icon: "M12 4v16m0-16l-4 4m4-4l4 4"
     },
     {
         path: "/bridge/withdrawals",
         label: "Withdrawals",
-        description: "Withdraw USDC to Base Chain",
+        description: "Withdraw USDC to Ethereum",
         icon: "M12 20V4m0 16l-4-4m4 4l4-4"
     }
 ];

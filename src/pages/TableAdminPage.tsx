@@ -353,10 +353,10 @@ export default function TableAdminPage() {
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m0-16l-4 4m4-4l4 4" />
                                         </svg>
-                                        Deposit USDC from Base Chain
+                                        Deposit USDC from Ethereum
                                     </Link>
                                     <p className="text-gray-500 text-xs mt-2">
-                                        Go to Dashboard → Bridge Deposit to transfer USDC from Base Chain to your poker account
+                                        Go to Dashboard → Bridge Deposit to transfer USDC from Ethereum to your poker account
                                     </p>
                                 </div>
                             </div>

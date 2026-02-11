@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import "./QRDeposit.css"; // Import the CSS file with animations
 import { Eip1193Provider, ethers, parseUnits } from "ethers";
 import axios from "axios";
-import { DEPOSIT_ADDRESS, PROXY_URL, TOKEN_ADDRESS } from "../config/constants";
+import { DEPOSIT_ADDRESS, PROXY_URL, ETH_USDC_ADDRESS } from "../config/constants";
 import useUserWallet from "../hooks/wallet/useUserWallet";
 import useUserWalletConnect from "../hooks/wallet/useUserWalletConnect";
 import { DepositSession, EtherscanTransaction, TransactionStatus } from "../types";
@@ -173,7 +173,7 @@ const QRDeposit: React.FC = () => {
 
         try {
             const provider = new ethers.JsonRpcProvider(RPC_URL);
-            const usdcContract = new ethers.Contract(TOKEN_ADDRESS, USDC_ABI, provider);
+            const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, provider);
             const balance = await usdcContract.balanceOf(web3Address);
             const formattedBalance = ethers.formatUnits(balance, 6); // USDC has 6 decimals
             const roundedBalance = parseFloat(formattedBalance).toFixed(2);
@@ -472,7 +472,7 @@ const QRDeposit: React.FC = () => {
                 const provider = new ethers.JsonRpcProvider(RPC_URL);
 
                 // Get token contract
-                const tokenContract = new ethers.Contract(TOKEN_ADDRESS, ["event Transfer(address indexed from, address indexed to, uint256 value)"], provider);
+                const tokenContract = new ethers.Contract(ETH_USDC_ADDRESS, ["event Transfer(address indexed from, address indexed to, uint256 value)"], provider);
 
                 // Get latest block number
                 const latestBlock = await provider.getBlockNumber();
@@ -562,7 +562,7 @@ const QRDeposit: React.FC = () => {
             const signer = await provider.getSigner();
 
             // Create USDC contract instance
-            const usdcContract = new ethers.Contract(TOKEN_ADDRESS, USDC_ABI, signer);
+            const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, signer);
 
             // Convert amount to USDC units (6 decimals)
             const amount = parseUnits(depositAmount, 6);
@@ -715,7 +715,7 @@ const QRDeposit: React.FC = () => {
                                 <strong>Deposit Address:</strong> {DEPOSIT_ADDRESS || "Not configured"}
                             </div>
                             <div>
-                                <strong>Token Address (USDC):</strong> {TOKEN_ADDRESS || "Not configured"}
+                                <strong>Token Address (USDC):</strong> {ETH_USDC_ADDRESS || "Not configured"}
                             </div>
                             <div>
                                 <strong>RPC URL:</strong> {RPC_URL || "Default: https://eth.llamarpc.com"}
