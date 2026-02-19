@@ -72,17 +72,9 @@ export const useVacantSeatData = (): VacantSeatResponse => {
         (seatIndex: number) => {
             const vacant = isSeatVacant(seatIndex);
             const canJoin = !isUserAlreadyPlaying && vacant;
-            console.log("🔍 useVacantSeatData.canJoinSeat:", {
-                seatIndex,
-                isUserAlreadyPlaying,
-                isSeatVacant: vacant,
-                canJoin,
-                userAddress,
-                playersCount: players.length
-            });
             return canJoin;
         },
-        [isSeatVacant, isUserAlreadyPlaying, userAddress, players.length]
+        [isSeatVacant, isUserAlreadyPlaying]
     );
 
     // Get array of all empty seat indexes that the user can join

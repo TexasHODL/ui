@@ -5,7 +5,6 @@ import { useRef, useMemo, useState, useEffect } from "react";
 
 // 🔍 DEBUG: Enhanced logging utility for easy data export (same as GameStateContext)
 const debugLog = (eventType: string, data: any) => {
-    console.log(`🔄 [${eventType}]`, data);
 
     // Access the global debug logs array if it exists
     if (typeof window !== "undefined" && (window as any).debugLogs) {
@@ -59,6 +58,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
             isPlayerTurn: false,
             playerStatus: null,
             playerSeat: null,
+            sitInMethod: null,
             isLoading,
             error,
             foldActionIndex: null,
@@ -110,11 +110,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
                 const allSameIndex = currentPlayer.legalActions.every((action: LegalActionDTO) => action.index === firstActionIndex);
 
                 if (!allSameIndex) {
-                    console.warn("⚠️ WARNING: Not all legal actions have the same index!");
-                    console.warn(
-                        "⚠️ Action indices:",
-                        currentPlayer.legalActions.map((a: LegalActionDTO) => `${a.action}: ${a.index}`)
-                    );
+                    // Actions have different indices - use first one
                 }
 
                 actionTurnIndex = firstActionIndex;
@@ -129,6 +125,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
                 isPlayerTurn,
                 playerStatus: currentPlayer.status || null,
                 playerSeat: currentPlayer.seat || null,
+                sitInMethod: currentPlayer.sitInMethod || null,
                 isLoading: false,
                 error: null,
                 foldActionIndex,

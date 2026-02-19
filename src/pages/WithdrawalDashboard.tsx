@@ -73,8 +73,6 @@ export default function WithdrawalDashboard() {
             // Fetch withdrawal requests for this user
             const withdrawalRequests = await signingClient.listWithdrawalRequests(cosmosWallet.address);
 
-            console.log("📤 Loaded withdrawals:", withdrawalRequests);
-
             // Map to display format
             const mappedWithdrawals: Withdrawal[] = withdrawalRequests.map((wr: any) => ({
                 nonce: wr.nonce,
@@ -122,11 +120,6 @@ export default function WithdrawalDashboard() {
 
         try {
             const { signingClient } = await getSigningClient(currentNetwork);
-
-            console.log("🌉 Initiating withdrawal:", {
-                baseAddress: withdrawalBaseAddress,
-                amount: withdrawalAmount
-            });
 
             // Convert USDC to micro (6 decimals)
             const microAmount = usdcToMicroBigInt(parseFloat(withdrawalAmount));
@@ -182,19 +175,6 @@ export default function WithdrawalDashboard() {
 
             // Convert base64 signature to hex format for ethers
             const hexSignature = withdrawal.signature ? base64ToHex(withdrawal.signature) : "0x";
-
-            console.log("Completing withdrawal on Ethereum - DETAILED PARAMETERS:");
-            console.log("  📍 Cosmos Address:", withdrawal.cosmosAddress);
-            console.log("  Receiver:", withdrawal.baseAddress);
-            console.log("  💰 Amount (micro):", withdrawal.amount);
-            console.log("  🔢 Nonce:", withdrawal.nonce);
-            console.log("  ✍️  Signature (base64):", withdrawal.signature);
-            console.log("  ✍️  Signature (hex):", hexSignature);
-            console.log("  📝 Function call parameters (in order):");
-            console.log("    1. amount:", withdrawal.amount);
-            console.log("    2. receiver (Base address):", withdrawal.baseAddress);
-            console.log("    3. nonce:", withdrawal.nonce);
-            console.log("    4. signature:", hexSignature);
 
             // Call withdraw on bridge contract with correct parameter order
             // Contract: withdraw(uint256 amount, address receiver, bytes32 nonce, bytes signature)

@@ -3,6 +3,8 @@
  * Only logs in development mode to avoid cluttering production console
  */
 
+/* eslint-disable no-console */
+
 // Check both MODE and VITE_NODE_ENV for development mode
 // MODE is used by Vite build system, VITE_NODE_ENV is a custom env variable
 const isDevelopment = import.meta.env.MODE === "development" || import.meta.env.VITE_NODE_ENV === "development";

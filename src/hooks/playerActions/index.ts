@@ -10,7 +10,8 @@ import { postBigBlind } from "./postBigBlind";
 import { postSmallBlind } from "./postSmallBlind";
 import { raiseHand } from "./raiseHand";
 import { showCards } from "./showCards";
-import { sitIn } from "./sitIn";
+import { sitIn, SIT_IN_METHOD_NEXT_BB, SIT_IN_METHOD_POST_NOW } from "./sitIn";
+import type { SitInMethod } from "./sitIn";
 import { sitOut } from "./sitOut";
 import { startNewHand } from "./startNewHand";
 import { useOptimisticAction, OptimisticAction } from "./useOptimisticAction";
@@ -32,6 +33,8 @@ export {
     raiseHand,
     showCards,
     sitIn,
+    SIT_IN_METHOD_NEXT_BB,
+    SIT_IN_METHOD_POST_NOW,
     sitOut,
     startNewHand,
     useOptimisticAction,
@@ -40,4 +43,4 @@ export {
     useAutoPostBlinds
 };
 
-export type { OptimisticActionType };
+export type { OptimisticActionType, SitInMethod };

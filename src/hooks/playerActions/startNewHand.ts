@@ -13,9 +13,6 @@ import type { PlayerActionResult } from "../../types";
 export async function startNewHand(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("🃏 Start new hand on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
 
     const transactionHash = await signingClient.performAction(
         tableId,
@@ -23,7 +20,6 @@ export async function startNewHand(tableId: string, network: NetworkEndpoints): 
         0n
     );
 
-    console.log("✅ Start new hand transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

@@ -172,7 +172,6 @@ export default function BridgeAdminDashboard() {
 
                     // If account is empty, deposit doesn't exist
                     if (!account || account === "") {
-                        console.log(`Deposit ${i} not found, reached end of deposits`);
                         setTotalDepositsFound(i); // Set total to the last found index
                         break;
                     }
@@ -231,7 +230,6 @@ export default function BridgeAdminDashboard() {
         try {
             const { signingClient } = await getSigningClient(currentNetwork);
 
-            console.log("🌉 Processing deposit index:", depositIndex);
 
             // Process the deposit
             const hash = await signingClient.processDeposit(depositIndex);
@@ -254,7 +252,6 @@ export default function BridgeAdminDashboard() {
                         setDeposits(prev => prev.map(d => (d.index === depositIndex ? { ...d, status: "processed" as const } : d)));
                     }
                 } catch (err) {
-                    console.log("Could not fetch tx details yet:", err);
                     toast.success(`Deposit ${depositIndex} processed successfully!`);
 
                     // Update deposit status to processed
@@ -422,7 +419,6 @@ export default function BridgeAdminDashboard() {
         for (const deposit of pendingDeposits) {
             try {
                 const { signingClient } = await getSigningClient(currentNetwork);
-                console.log(`🌉 Processing deposit index: ${deposit.index}`);
 
                 await signingClient.processDeposit(deposit.index);
 

@@ -33,7 +33,6 @@ export default function DistributionPage() {
 
             // Fetch all games
             const games = await cosmosClient.listGames();
-            console.log(`📊 Fetched ${games.length} games`);
 
             // Initialize distribution map with all 52 cards at 0
             const cardCounts: CardDistribution = initializeCardCounts();
@@ -47,22 +46,18 @@ export default function DistributionPage() {
                 try {
                     // Fetch game info (contains gameState with communityCards)
                     const gameResponse = await cosmosClient.getGame(gameId);
-                    console.log(`🎮 Game ${gameId} raw response:`, gameResponse);
 
                     // Parse the game JSON string
                     if (!gameResponse || !gameResponse.game) {
-                        console.warn(`⚠️ No game found for ${gameId}`);
                         continue;
                     }
 
                     const gameData = JSON.parse(gameResponse.game);
                     const gameState = gameData?.gameState;
-                    console.log(`🎮 Game ${gameId} parsed state:`, gameState);
 
                     if (gameState) {
                         // Count community cards (these are publicly visible dealt cards)
                         const communityCards = gameState.communityCards || [];
-                        console.log(`🃏 Community cards for game ${gameId}:`, communityCards);
 
                         communityCards.forEach((card: string) => {
                             // Skip masked cards (X) and validate card format
@@ -85,8 +80,8 @@ export default function DistributionPage() {
                             });
                         });
                     }
-                } catch (error) {
-                    console.warn(`Failed to fetch game for ${gameId}:`, error);
+                } catch {
+                    // Failed to fetch game - continue with others
                 }
             }
 

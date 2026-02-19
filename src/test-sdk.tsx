@@ -7,11 +7,9 @@ export function TestSdk() {
     });
 
     useEffect(() => {
-        console.log("=== Testing SDK imports ===");
 
         import("@block52/poker-vm-sdk")
             .then(sdk => {
-                console.log("✅ SDK imported successfully!", sdk);
                 setStatus({
                     success: true,
                     message: "SDK Loaded Successfully!",

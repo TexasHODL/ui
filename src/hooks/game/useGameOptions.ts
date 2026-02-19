@@ -24,10 +24,6 @@ export const useGameOptions = (): GameOptionsReturn => {
         }
 
         if (!gameState.gameOptions) {
-            console.warn("[useGameOptions] gameState exists but gameOptions is missing.", {
-                gameStateKeys: Object.keys(gameState),
-                gameOptions: gameState.gameOptions
-            });
             return null;
         }
 
@@ -37,9 +33,6 @@ export const useGameOptions = (): GameOptionsReturn => {
             // Validate game options using utility function
             const validation = validateGameOptions(options);
             if (!validation.isValid) {
-                console.warn("[useGameOptions] Validation failed:", validation.missingFields, {
-                    rawOptions: options
-                });
                 return null;
             }
 

@@ -40,7 +40,6 @@ export const useGameProgress = (_tableId?: string): GameProgressReturn => {
 
     try {
         if (!gameState.players) {
-            console.warn("No players data found in API response");
             return defaultState;
         }
 

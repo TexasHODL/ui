@@ -31,32 +31,11 @@ export const usePlayerData = (seatIndex?: number): PlayerDataReturn => {
 
     const player = gameState.players.find((p: PlayerDTO) => p.seat === seatIndex);
 
-    // Debug logging for seat mapping
-    console.log(`🔍 usePlayerData - Looking for seat ${seatIndex}: ` + JSON.stringify({
-      requestedSeat: seatIndex,
-      foundPlayer: player ? {
-        address: player.address,
-        seat: player.seat,
-        stack: player.stack,
-        status: player.status
-      } : null,
-      allPlayers: gameState.players.map((p: PlayerDTO) => ({
-        seat: p.seat,
-        address: p.address?.substring(0, 10) + "...",
-        stack: p.stack
-      }))
-    }, null, 2));
-
     return player || null;
   }, [gameState, seatIndex]);
   
   // Check if this is a tournament-style game (sit-and-go or tournament)
   const isTournament = React.useMemo((): boolean => {
-    console.log("🎯 usePlayerData - Format check:", {
-      gameFormat: gameFormat,
-      resolvedFormat: gameFormat,
-      isTournament: isTournamentFormat(gameFormat)
-    });
     return isTournamentFormat(gameFormat);
   }, [gameFormat]);
 
@@ -65,7 +44,6 @@ export const usePlayerData = (seatIndex?: number): PlayerDataReturn => {
   // - Cash games: stack is in USDC microunits (6 decimals), needs conversion
   const stackValue = React.useMemo((): number => {
     if (!playerData?.stack) {
-      console.log(`⚠️ usePlayerData - No stack for seat ${seatIndex}`);
       return 0;
     }
 
@@ -73,21 +51,13 @@ export const usePlayerData = (seatIndex?: number): PlayerDataReturn => {
 
     if (isTournament) {
       // Tournament chips are stored as whole numbers, use directly
-      console.log(`🎰 usePlayerData - Tournament stack for seat ${seatIndex}:`, {
-        rawStack: playerData.stack,
-        chipValue: rawStack
-      });
       return rawStack;
     } else {
       // Cash game stacks are in USDC microunits, need conversion
       const converted = convertUSDCToNumber(playerData.stack);
-      console.log(`💰 usePlayerData - Cash stack for seat ${seatIndex}:`, {
-        rawStack: playerData.stack,
-        convertedValue: converted
-      });
       return converted;
     }
-  }, [playerData?.stack, seatIndex, isTournament]);
+  }, [playerData?.stack, isTournament]);
   
   // Calculate derived properties
   const isFolded = React.useMemo((): boolean => {

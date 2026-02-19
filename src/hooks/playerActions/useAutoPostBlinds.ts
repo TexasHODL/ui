@@ -56,9 +56,7 @@ export function useAutoPostBlinds(
         onBlindStarted?.("small");
 
         try {
-            console.log("🤖 Auto-post small blind triggered for table:", tableId);
             const result = await postSmallBlind(tableId, smallBlindAmount, network);
-            console.log("✅ Auto-post small blind completed:", result.hash);
             onBlindComplete?.("small", result.hash);
         } catch (error) {
             console.error("❌ Auto-post small blind failed:", error);
@@ -77,9 +75,7 @@ export function useAutoPostBlinds(
         onBlindStarted?.("big");
 
         try {
-            console.log("🤖 Auto-post big blind triggered for table:", tableId);
             const result = await postBigBlind(tableId, bigBlindAmount, network);
-            console.log("✅ Auto-post big blind completed:", result.hash);
             onBlindComplete?.("big", result.hash);
         } catch (error) {
             console.error("❌ Auto-post big blind failed:", error);

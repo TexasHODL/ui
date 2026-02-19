@@ -21,22 +21,19 @@ export const useMintTokens = (): MintTokensReturn => {
     const [error, setError] = useState<Error | null>(null);
 
     const mint = useCallback(async ({ depositIndex }: MintTokensParams) => {
-        console.log("📍 [MINT-1] Starting mint RPC call");
         setIsLoading(true);
         setError(null);
 
         try {
             // Get the user's public key from storage
             const userAddress = getPublicKey();
-            console.log("📍 [MINT-2] Game account address from localStorage:", userAddress);
-            
+
             if (!userAddress) {
                 throw new Error("No user address found. Please connect your wallet.");
             }
 
             const rpcUrl = import.meta.env.VITE_NODE_RPC_URL || "https://node1.block52.xyz/";
-            console.log("📍 [MINT-3] RPC URL:", rpcUrl);
-            
+
             // Note: The backend mint RPC only expects depositIndex as a parameter
             // The transaction hash was previously passed but is not used by the backend
             const rpcPayload = {
@@ -44,10 +41,7 @@ export const useMintTokens = (): MintTokensReturn => {
                 method: "mint",
                 params: [depositIndex]
             };
-            
-            console.log("📍 [MINT-4] RPC payload being sent:", rpcPayload);
-            console.log("📍 [MINT-5] NOTE: The receiver address is determined by the Bridge contract deposit event, not passed in RPC");
-            
+
             // Make RPC call to mint tokens
             const response = await fetch(rpcUrl, {
                 method: "POST",
@@ -62,22 +56,15 @@ export const useMintTokens = (): MintTokensReturn => {
             }
 
             const data = await response.json();
-            console.log("📍 [MINT-6] RPC response received:", data);
-            
+
             // Check if we got a successful result (even if it's an existing transaction)
             if (data.result && data.result.data) {
-                console.log("✅ [MINT-7] Mint successful (may be existing transaction)");
                 // Success - either new mint or existing transaction returned
             } else if (data.error) {
-                console.error("❌ [MINT-7] RPC error:", data.error);
+                console.error("RPC error:", data.error);
                 throw new Error(data.error.message || data.error || "Failed to mint tokens");
             }
 
-            console.log("✅ [MINT-8] Mint successful:", data.result);
-            console.log("📍 [MINT-9] Mint details:", {
-                depositIndex,
-                result: data.result
-            });
             return data.result;
         } catch (err) {
             console.error("❌ Mint error:", err);

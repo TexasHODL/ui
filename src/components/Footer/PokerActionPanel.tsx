@@ -239,7 +239,6 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
             await handleActionWithTransaction("deal", async () => {
                 try {
                     const result = await dealCardsWithEntropy(tableId, network, entropy);
-                    console.log("Deal completed successfully");
                     return result?.hash || null;
                 } catch (error: any) {
                     console.error("Failed to deal:", error);

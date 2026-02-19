@@ -59,13 +59,7 @@ const useUserWallet = (): UserWalletResult => {
             // Use the SDK's getAccount method
             // Old Ethereum client for bridge only, will be updated when bridge is migrated
             const data = await client.getAccount(accountData.address);
-            console.log("[useUserWallet] Account data received:", {
-                address: data.address,
-                nonce: data.nonce,
-                balance: data.balance,
-                timestamp: new Date().toISOString()
-            });
-            
+
             // Store the full account data
             setAccountData(data);
         } catch (err) {
@@ -78,7 +72,6 @@ const useUserWallet = (): UserWalletResult => {
 
     // Manual refresh function
     const refreshBalance = useCallback(async () => {
-        console.log("[useUserWallet] Manual refresh requested");
         setRefreshCounter(prev => prev + 1);
     }, []);
 
@@ -102,9 +95,6 @@ const useUserWallet = (): UserWalletResult => {
                     // Save keys in localStorage
                     localStorage.setItem(STORAGE_PRIVATE_KEY, key);
                     localStorage.setItem(STORAGE_PUBLIC_KEY, pubKey);
-                    console.log("[useUserWallet] New wallet generated:", pubKey);
-                } else {
-                    console.log("[useUserWallet] Using existing wallet:", pubKey);
                 }
 
                 // Create wallet instance from private key

@@ -8,8 +8,6 @@
 
 A modern, customizable React-based poker interface for online poker rooms. Built with TypeScript, React 18, and TailwindCSS.
 
-<img width="2099" height="1238" alt="image" src="https://github.com/user-attachments/assets/1eaa1a72-85bc-4855-b972-b9122c506dc7" />
-
 ## Features
 
 - **Real-time Gameplay** - WebSocket-powered live game state updates

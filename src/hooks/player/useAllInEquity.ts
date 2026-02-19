@@ -189,14 +189,8 @@ export function useAllInEquity(): AllInEquityResult {
 
             setEquities(newEquities);
             lastCalculationRef.current = cacheKey;
-
-            console.log("🎲 Equity calculated:", {
-                hands: playersWithVisibleCards.map(p => ({ seat: p.seat, cards: p.cards })),
-                board: communityCards,
-                results: Array.from(newEquities.entries()).map(([seat, eq]) => ({ seat, equity: `${eq.toFixed(1)}%` }))
-            });
         } catch (err) {
-            console.error("❌ Equity calculation error:", err);
+            console.error("Equity calculation error:", err);
             setError(err as Error);
             setEquities(new Map());
         } finally {

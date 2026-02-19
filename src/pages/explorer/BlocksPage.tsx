@@ -91,7 +91,6 @@ export default function BlocksPage() {
             // Graceful degradation: Keep old blocks if we have cached data
             if (blocks.length > 0) {
                 setError(`⚠️ Network unavailable - showing cached data. ${fullMessage}`);
-                console.warn("Using cached block data due to fetch error:", err);
             } else {
                 setError(fullMessage);
                 console.error("Error fetching blocks:", err);

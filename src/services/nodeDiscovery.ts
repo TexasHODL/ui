@@ -121,7 +121,6 @@ export async function discoverPeers(seedNode: NetworkEndpoints): Promise<Discove
         );
 
         if (!response.ok) {
-            console.warn(`Failed to fetch net_info from ${seedNode.name}: ${response.status}`);
             return [];
         }
 
@@ -134,8 +133,7 @@ export async function discoverPeers(seedNode: NetworkEndpoints): Promise<Discove
             listenAddr: peer.node_info.listen_addr,
             remoteIp: peer.remote_ip
         }));
-    } catch (error) {
-        console.warn(`Error discovering peers from ${seedNode.name}:`, error);
+    } catch {
         return [];
     }
 }
@@ -295,8 +293,8 @@ export function cacheNodes(nodes: DiscoveredNode[]): void {
                 timestamp: Date.now()
             })
         );
-    } catch (error) {
-        console.warn("Failed to cache discovered nodes:", error);
+    } catch {
+        // Failed to cache discovered nodes - localStorage may be full or unavailable
     }
 }
 

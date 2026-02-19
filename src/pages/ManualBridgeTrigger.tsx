@@ -52,16 +52,12 @@ export default function ManualBridgeTrigger() {
         setQueryResult(null);
 
         try {
-            console.log("Querying deposit from Ethereum contract...");
-
             // Connect to Ethereum Mainnet
             const provider = new ethers.JsonRpcProvider(ethRpcUrl);
             const contract = new ethers.Contract(bridgeContractAddress, BRIDGE_DEPOSITS_ABI, provider);
 
             // Query the deposit
             const [recipient, amount] = await contract.deposits(index);
-
-            console.log("📦 Deposit data:", { recipient, amount: amount.toString() });
 
             if (recipient === ethers.ZeroAddress || recipient === "") {
                 setError(`Deposit ${index} not found or is empty`);
@@ -101,28 +97,15 @@ export default function ManualBridgeTrigger() {
         setDepositDetails(null);
 
         try {
-            console.log("🔗 Connecting to network:", {
-                name: currentNetwork.name,
-                rpc: currentNetwork.rpc,
-                rest: currentNetwork.rest
-            });
-
             const { signingClient } = await getSigningClient(currentNetwork);
-
-            console.log("✅ Signing client created successfully");
-            console.log("🌉 Processing deposit index:", index);
 
             // Process the deposit
             const hash = await signingClient.processDeposit(index);
 
-            console.log("✅ Deposit processed! Transaction hash:", hash);
-
             // Wait a bit then query the transaction for details and check if it succeeded
             setTimeout(async () => {
                 try {
-                    console.log("🔍 Fetching transaction details...");
                     const txResponse = await signingClient.getTx(hash);
-                    console.log("📦 Transaction response:", txResponse);
                     setDepositDetails(txResponse);
 
                     // Check if transaction actually succeeded (code 0 = success, non-zero = error)
@@ -140,28 +123,12 @@ export default function ManualBridgeTrigger() {
                         toast.success(`Deposit ${index} processed successfully!`);
                     }
                 } catch (err: any) {
-                    console.error("Error fetching tx details:", err);
-                    console.log("Error details:", {
-                        message: err.message,
-                        response: err.response,
-                        data: err.response?.data
-                    });
-
                     // If we can't fetch details, still show the hash but with a warning
                     setTxHash(hash);
                     toast.warning(`Deposit processed (hash: ${hash.substring(0, 10)}...), but couldn't verify details. Check explorer.`);
                 }
             }, 2000);
         } catch (err: any) {
-            console.error("❌ Failed to process deposit:", err);
-            console.log("Error details:", {
-                message: err.message,
-                stack: err.stack,
-                response: err.response,
-                data: err.response?.data,
-                cause: err.cause
-            });
-
             let errorMessage = err.message || "Unknown error occurred";
 
             // Add more helpful error messages for common issues

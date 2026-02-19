@@ -11,6 +11,7 @@ import useWalletBalance from "../../hooks/wallet/useWalletBalance";
 import { toast } from "react-toastify";
 import { ETH_USDC_ADDRESS, COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
 import { useCosmosWallet } from "../../hooks";
+import { useModalStyles } from "../../hooks/useModalStyles";
 import { formatUSDCToSimpleDollars, convertAmountToBigInt } from "../../utils/numberUtils";
 import { colors, hexToRgba } from "../../utils/colorConfig";
 import CurrencySelector from "./CryptoPayment/CurrencySelector";
@@ -54,11 +55,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
     const [selectedCurrency, setSelectedCurrency] = useState<string>("btc");
     const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
     const [creatingPayment, setCreatingPayment] = useState(false);
-
-    // Button style helper
-    const buttonStyle = (color: string) => ({
-        background: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.8)} 100%)`
-    });
+    const modalStyles = useModalStyles();
 
     useEffect(() => {
         if (allowance) {
@@ -319,7 +316,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                 className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${
                                     +amount < 10 || creatingPayment ? "opacity-50 cursor-not-allowed" : ""
                                 }`}
-                                style={buttonStyle(colors.accent.success)}
+                                style={{ background: modalStyles.gradient(colors.accent.success) }}
                                 disabled={+amount < 10 || creatingPayment}
                             >
                                 {creatingPayment ? "Processing..." : "Deposit Now"}
@@ -332,7 +329,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                             {!isConnected && (
                                 <button
                                     className="w-full py-3 rounded-lg text-white font-semibold mb-4 transition-all hover:opacity-90"
-                                    style={buttonStyle(colors.brand.primary)}
+                                    style={{ background: modalStyles.gradient(colors.brand.primary) }}
                                     onClick={open}
                                 >
                                     Connect Your Web3 Wallet
@@ -398,7 +395,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                     className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${
                                         +amount === 0 ? "opacity-50 cursor-not-allowed" : ""
                                     }`}
-                                    style={buttonStyle(colors.accent.success)}
+                                    style={{ background: modalStyles.gradient(colors.accent.success) }}
                                     disabled={+amount === 0 || isDepositPending || isPending}
                                 >
                                     {isDepositPending || isPending ? "Depositing..." : "Deposit"}
@@ -410,7 +407,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                     className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${
                                         +amount === 0 ? "opacity-50 cursor-not-allowed" : ""
                                     }`}
-                                    style={buttonStyle(colors.brand.primary)}
+                                    style={{ background: modalStyles.gradient(colors.brand.primary) }}
                                     disabled={+amount === 0 || isApprovePending || isLoading}
                                 >
                                     {isLoading || isApprovePending ? "Approving..." : "Approve Deposit"}
@@ -442,7 +439,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                     <button
                         onClick={handleNewPayment}
                         className="w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                        style={buttonStyle(colors.brand.primary)}
+                        style={{ background: modalStyles.gradient(colors.brand.primary) }}
                     >
                         Create New Payment
                     </button>

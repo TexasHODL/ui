@@ -48,9 +48,7 @@ export function useAutoDeal(
         onDealStarted?.();
 
         try {
-            console.log("🤖 Auto-deal triggered for table:", tableId);
             const result = await dealCardsWithEntropy(tableId, network, "");
-            console.log("✅ Auto-deal completed:", result.hash);
             onDealComplete?.(result.hash);
         } catch (error) {
             console.error("❌ Auto-deal failed:", error);

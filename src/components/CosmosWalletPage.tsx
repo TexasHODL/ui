@@ -47,17 +47,12 @@ const CosmosWalletPage = () => {
             const storedMnemonic = getCosmosMnemonic();
             let storedAddress = getCosmosAddress();
 
-            console.log("🔍 CosmosWalletPage: Loading from localStorage");
-            console.log("  - storedMnemonic:", storedMnemonic ? `${storedMnemonic.split(" ").length} words` : "null");
-            console.log("  - storedAddress:", storedAddress);
 
             // If we have a mnemonic but no address, derive and store the address
             if (storedMnemonic && !storedAddress) {
-                console.log("🔧 Address missing, deriving from mnemonic...");
                 try {
                     storedAddress = await getAddressFromMnemonic(storedMnemonic, "b52");
                     setCosmosAddress(storedAddress);
-                    console.log("✅ Address derived and stored:", storedAddress);
                 } catch (err) {
                     console.error("❌ Failed to derive address:", err);
                 }
@@ -115,8 +110,6 @@ const CosmosWalletPage = () => {
             setExistingMnemonic(newMnemonic);
             setExistingAddress(newAddress);
 
-            console.log("✅ Wallet generated successfully with proper bech32 encoding!");
-            console.log("Address:", newAddress);
         } catch (err) {
             console.error("Failed to generate wallet:", err);
             setError("Failed to generate wallet. Please try again.");
@@ -155,8 +148,6 @@ const CosmosWalletPage = () => {
             setExistingMnemonic(importMnemonic);
             setExistingAddress(importedAddress);
 
-            console.log("✅ Wallet imported successfully with proper bech32 encoding!");
-            console.log("Address:", importedAddress);
         } catch (err) {
             console.error("Failed to import wallet:", err);
             setError("Failed to import wallet. Please check your seed phrase.");
@@ -175,7 +166,6 @@ const CosmosWalletPage = () => {
             // Update state to show generate/import UI
             setExistingMnemonic(null);
             setExistingAddress(null);
-            console.log("Wallet cleared");
         }
     };
 

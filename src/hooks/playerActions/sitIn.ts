@@ -2,6 +2,11 @@ import { getSigningClient } from "../../utils/cosmos/client";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
 
+// TODO: Import from @block52/poker-vm-sdk once exported (see #1844)
+export type SitInMethod = "next-bb" | "post-now";
+export const SIT_IN_METHOD_NEXT_BB: SitInMethod = "next-bb";
+export const SIT_IN_METHOD_POST_NOW: SitInMethod = "post-now";
+
 /**
  * Sit in at a poker table using Cosmos SDK SigningCosmosClient.
  *
@@ -10,20 +15,20 @@ import type { PlayerActionResult } from "../../types";
  * @returns Promise with PlayerActionResult containing transaction details
  * @throws Error if Cosmos wallet is not initialized or if the action fails
  */
-export async function sitIn(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
+export async function sitIn(
+    tableId: string,
+    network: NetworkEndpoints,
+    method: SitInMethod = SIT_IN_METHOD_NEXT_BB
+): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
-
-    console.log("🪑 Sit in on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
 
     const transactionHash = await signingClient.performAction(
         tableId,
         "sit-in",
-        0n
+        0n,
+        `method=${method}`
     );
 
-    console.log("✅ Sit in transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

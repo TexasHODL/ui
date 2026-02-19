@@ -15,9 +15,6 @@ const ColorDebug: React.FC = () => {
     };
 
     // Debug: log all available env vars
-    console.log("All import.meta.env:", import.meta.env);
-    console.log("NODE_ENV:", import.meta.env.NODE_ENV);
-    console.log("VITE_PROJECT_ID:", import.meta.env.VITE_PROJECT_ID);
 
     return (
         <div className="fixed top-20 right-4 p-4 bg-black/90 text-white rounded-lg shadow-lg z-50 max-w-md">

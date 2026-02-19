@@ -1,21 +1,9 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { colors } from "../../utils/colorConfig";
 import { Modal, LoadingSpinner } from "../common";
+import { useModalStyles } from "../../hooks/useModalStyles";
 import CryptoJS from "crypto-js";
 import type { DealEntropyModalProps } from "./types";
-
-// Static styles to avoid recreation
-const STATIC_STYLES = {
-    input: {
-        backgroundColor: colors.ui.bgMedium,
-        border: `1px solid ${colors.ui.textSecondary}`
-    },
-    hashDisplay: {
-        backgroundColor: colors.ui.bgMedium,
-        border: `1px solid ${colors.ui.borderColor}`,
-        fontFamily: "monospace"
-    }
-};
 
 /**
  * Generates a random hex string using crypto.getRandomValues
@@ -54,6 +42,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
     const [isDealing, setIsDealing] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const modalStyles = useModalStyles();
 
     // Generate system entropy once on mount
     const [systemEntropy] = useState(() => generateSystemEntropy());
@@ -127,7 +116,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                 <label className="block text-gray-300 mb-1.5 font-medium text-sm">System Entropy</label>
                 <div
                     className="p-3 rounded-lg text-xs text-gray-300 break-all select-all cursor-text"
-                    style={STATIC_STYLES.hashDisplay}
+                    style={modalStyles.hashDisplay}
                     title={systemEntropy}
                 >
                     {truncateHash(systemEntropy, 16)}
@@ -147,7 +136,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                         onChange={e => setPassword(e.target.value)}
                         placeholder="Enter a password to add your own entropy"
                         className="w-full p-3 pr-10 text-white rounded-lg text-sm focus:outline-none"
-                        style={STATIC_STYLES.input}
+                        style={modalStyles.input}
                         onFocus={handleInputFocus}
                         onBlur={handleInputBlur}
                         disabled={isDealing}
@@ -179,7 +168,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                     <label className="block text-gray-300 mb-1.5 font-medium text-sm">Password Hash</label>
                     <div
                         className="p-3 rounded-lg text-xs text-gray-300 break-all select-all cursor-text"
-                        style={STATIC_STYLES.hashDisplay}
+                        style={modalStyles.hashDisplay}
                         title={passwordHash}
                     >
                         {truncateHash(passwordHash, 16)}
@@ -195,7 +184,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                 <div
                     className="p-3 rounded-lg text-xs break-all select-all cursor-text"
                     style={{
-                        ...STATIC_STYLES.hashDisplay,
+                        ...modalStyles.hashDisplay,
                         borderColor: colors.brand.primary,
                         color: colors.brand.primary
                     }}
@@ -212,7 +201,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                     onClick={onClose}
                     disabled={isDealing}
                     className="px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: colors.ui.textSecondary }}
+                    style={modalStyles.buttonSecondary}
                 >
                     Cancel
                 </button>
@@ -220,7 +209,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                     onClick={handleDealClick}
                     disabled={isDealing}
                     className="px-5 py-3 rounded-lg text-white font-bold flex-1 transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    style={{ backgroundColor: colors.brand.primary }}
+                    style={modalStyles.buttonPrimary}
                 >
                     {isDealing ? (
                         <>

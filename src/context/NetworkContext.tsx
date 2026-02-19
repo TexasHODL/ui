@@ -134,7 +134,6 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
                 const parsed = JSON.parse(saved);
                 // Validate that the parsed object has the ws property (for backward compatibility)
                 if (!parsed.ws) {
-                    console.warn("[NetworkContext] Saved network missing 'ws' property, resetting to default");
                     return NETWORK_PRESETS[1]; // Texas Hodl
                 }
                 return parsed;

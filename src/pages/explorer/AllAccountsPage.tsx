@@ -84,13 +84,6 @@ export default function AllAccountsPage() {
                         // Status: BOND_STATUS_BONDED, BOND_STATUS_UNBONDING, BOND_STATUS_UNBONDED
                         const status = v.status?.replace("BOND_STATUS_", "") || "Unknown";
 
-                        console.log("Validator found:", {
-                            operatorAddress,
-                            accountAddress,
-                            moniker,
-                            status
-                        });
-
                         if (accountAddress) {
                             validatorMap.set(accountAddress, {
                                 operatorAddress,
@@ -100,7 +93,6 @@ export default function AllAccountsPage() {
                             });
                         }
                     });
-                    console.log("Validator map:", Array.from(validatorMap.entries()));
                 }
             } catch (e) {
                 console.error("Error fetching validators:", e);

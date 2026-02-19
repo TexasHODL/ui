@@ -38,7 +38,6 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
         }
 
         // Log the raw timeout value to verify units
-        // console.log(`🕐 Raw timeout from gameOptions: ${gameOptions.timeout} (assuming milliseconds)`);
 
         // Timeout now comes as milliseconds directly (e.g., 3000ms = 3 seconds)
         return gameOptions.timeout;
@@ -143,7 +142,6 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
             hasUsedExtension: true
         });
 
-        // console.log(`⏰ Time extended by ${timeoutInSeconds} seconds for seat ${playerSeat}`);
     }, [isNextToAct, isCurrentUser, extensionInfo.hasUsedExtension, seatKey, lastActionTimestamp]);
 
     // Auto-action logic (check first, then fold if check not available)
@@ -165,14 +163,12 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
         // Prevent multiple auto-actions in quick succession
         const timeSinceLastAutoFold = Date.now() - lastAutoFoldTime;
         if (timeSinceLastAutoFold < 5000) { // 5 second cooldown
-            // console.log("Auto-action cooldown active, skipping");
             latestValues.current.isExecutingAutoAction = false;
             return;
         }
 
         // Check if player has legal actions (can actually act)
         if (!legalActions || legalActions.length === 0) {
-            console.log("No legal actions available for auto-action");
             latestValues.current.isExecutingAutoAction = false;
             return;
         }
@@ -182,7 +178,6 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
         const canFold = legalActions.some(action => action.action === PlayerActionType.FOLD);
 
         if (!canCheck && !canFold) {
-            console.log("Neither check nor fold is a legal action for auto-action");
             latestValues.current.isExecutingAutoAction = false;
             return;
         }
@@ -191,13 +186,9 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
             setLastAutoFoldTime(Date.now());
 
             if (canCheck) {
-                console.log(`✅ Auto-checking player at seat ${playerSeat} due to ${timeoutInSeconds}-second timeout`);
                 await checkHand(tableId!, currentNetwork);
-                console.log(`✅ Auto-check successful for seat ${playerSeat}`);
             } else if (canFold) {
-                console.log(`⏰ Auto-folding player at seat ${playerSeat} due to ${timeoutInSeconds}-second timeout`);
                 await foldHand(tableId, currentNetwork);
-                console.log(`✅ Auto-fold successful for seat ${playerSeat}`);
             }
         } catch (error) {
             console.error("❌ Failed to auto-action:", error);
@@ -251,7 +242,6 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
     useEffect(() => {
         if (process.env.NODE_ENV === "development" && isNextToAct && isCurrentUser) {
             const _extensionStatus = extensionInfo.hasUsedExtension ? " (EXTENDED)" : "";
-            // console.log(`🕐 Timer for seat ${playerSeat}: ${timeRemaining}s remaining (timeout: ${timeoutInSeconds}s)${extensionStatus}`);
         }
     }, [timeRemaining, isNextToAct, isCurrentUser, playerSeat, timeoutInSeconds, extensionInfo.hasUsedExtension]);
 

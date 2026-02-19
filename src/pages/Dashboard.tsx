@@ -10,7 +10,7 @@ import { useAccount as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
-import { usdcToMicroBigInt, formatMicroAsUsdc } from "../constants/currency";
+import { usdcToMicroBigInt, formatMicroAsUsdc, microToUsdc } from "../constants/currency";
 
 const RPC_URL = ETH_RPC_URL; // Ethereum Mainnet RPC for USDC balance queries
 const USDC_ABI = ["function balanceOf(address account) view returns (uint256)"];
@@ -30,7 +30,7 @@ import { useUserWalletConnect, useNewTable, useCosmosWallet } from "../hooks";
 import type { CreateTableOptions } from "../hooks/game/useNewTable"; // Import type separately
 
 // Cosmos wallet utils
-import { isValidSeedPhrase, getCosmosMnemonic } from "../utils/cosmos";
+import { isValidSeedPhrase } from "../utils/cosmos";
 import { isTournamentFormat } from "../utils/gameFormatUtils";
 
 // Password protection utils
@@ -42,6 +42,9 @@ import {
 
 // Club branding imports
 import { colors, hexToRgba } from "../utils/colorConfig";
+
+// Bech32 address regex: "b52" prefix + "1" separator + valid bech32 data characters
+const B52_ADDRESS_REGEX = /^b521[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,}$/;
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -118,28 +121,6 @@ const Dashboard: React.FC = () => {
     const [isCreatingWallet, setIsCreatingWallet] = useState(false);
     const [seedPhraseCopied, setSeedPhraseCopied] = useState(false);
 
-    // Auto-create Block52 wallet if none exists
-    useEffect(() => {
-        const autoCreateWallet = async () => {
-            const existingMnemonic = getCosmosMnemonic();
-            if (!existingMnemonic) {
-                try {
-                    console.log("🔐 No Block52 wallet found, auto-generating...");
-                    const walletInfo = await generateWalletSDK("b52", 24);
-                    // Use importSeedPhrase to properly update the hook's state
-                    // This saves to localStorage AND updates the address state
-                    await cosmosWallet.importSeedPhrase(walletInfo.mnemonic);
-                    console.log("✅ Block52 wallet auto-generated:", walletInfo.address);
-                    setShowWalletGeneratedNotification(true);
-                    // Auto-hide notification after 10 seconds
-                    setTimeout(() => setShowWalletGeneratedNotification(false), 10000);
-                } catch (err) {
-                    console.error("❌ Failed to auto-generate wallet:", err);
-                }
-            }
-        };
-        autoCreateWallet();
-    }, []); // Run once on mount
     const [cosmosSeedPhrase, setCosmosSeedPhrase] = useState("");
     const [cosmosImportError, setCosmosImportError] = useState("");
     const [transferRecipient, setTransferRecipient] = useState("");
@@ -206,16 +187,6 @@ const Dashboard: React.FC = () => {
             const isTournament = isTournamentFormat(modalGameFormat);
 
             // Log the modal values before creating game options
-            console.log("🎲 Modal Values:");
-            console.log("  Game Format:", modalGameFormat);
-            console.log("  Min Buy-In (BB):", modalMinBuyInBB);
-            console.log("  Max Buy-In (BB):", modalMaxBuyInBB);
-            console.log("  Calculated Min Buy-In ($):", calculatedMinBuyIn);
-            console.log("  Calculated Max Buy-In ($):", calculatedMaxBuyIn);
-            console.log("  Sit & Go Buy-In:", modalSitAndGoBuyIn);
-            console.log("  Player Count:", modalPlayerCount);
-            console.log("  Is Tournament:", isTournament);
-            console.log("  Cosmos Address:", cosmosWallet.address);
 
             const gameOptions: CreateTableOptions = {
                 format: modalGameFormat,
@@ -227,18 +198,11 @@ const Dashboard: React.FC = () => {
                 bigBlind: modalBigBlind
             };
 
-            console.log("📦 Final CreateTableOptions being sent to Cosmos:");
-            console.log("  format:", gameOptions.format);
-            console.log("  minBuyIn:", gameOptions.minBuyIn);
-            console.log("  maxBuyIn:", gameOptions.maxBuyIn);
-            console.log("  minPlayers:", gameOptions.minPlayers);
-            console.log("  maxPlayers:", gameOptions.maxPlayers);
 
             // Use the createTable function from the hook (Cosmos SDK)
             const txHash = await createTable(gameOptions);
 
             if (txHash) {
-                console.log("✅ Game created! Transaction hash:", txHash);
                 setShowCreateGameModal(false);
             }
         } catch (error: any) {
@@ -329,8 +293,8 @@ const Dashboard: React.FC = () => {
                 return;
             }
 
-            if (!transferRecipient.startsWith("b52")) {
-                setTransferError("Recipient address must start with 'b52'");
+            if (!B52_ADDRESS_REGEX.test(transferRecipient)) {
+                setTransferError("Please enter a valid b52 bech32 address");
                 return;
             }
 
@@ -345,7 +309,6 @@ const Dashboard: React.FC = () => {
 
             const txHash = await cosmosWallet.sendTokens(transferRecipient, amountInSmallestUnit, "usdc");
 
-            console.log("Transfer successful:", txHash);
 
             // Reset form and close modal
             setTransferRecipient("");
@@ -353,8 +316,8 @@ const Dashboard: React.FC = () => {
             setTransferError("");
             setShowCosmosTransferModal(false);
         } catch (err) {
-            console.error("Failed to send USDC:", err);
-            setTransferError(err instanceof Error ? err.message : "Failed to send USDC");
+            console.error("Failed to send:", err);
+            setTransferError(err instanceof Error ? err.message : "Failed to send");
         } finally {
             setIsTransferring(false);
         }
@@ -369,16 +332,33 @@ const Dashboard: React.FC = () => {
         return "0.00";
     }, [cosmosWallet.balance]);
 
+    // Numeric USDC balance for transfer validation
+    const numericUsdcBalance = useMemo(() => {
+        const balance = cosmosWallet.balance.find(b => b.denom === "usdc");
+        return balance ? microToUsdc(balance.amount) : 0;
+    }, [cosmosWallet.balance]);
+
+    // Check if transfer amount exceeds available balance
+    const isAmountExceedingBalance = useMemo(() => {
+        const amount = parseFloat(transferAmount);
+        if (isNaN(amount) || amount <= 0) return false;
+        return amount > numericUsdcBalance;
+    }, [transferAmount, numericUsdcBalance]);
+
+    // Validate recipient is a valid b52 bech32 address
+    const isValidRecipient = useMemo(() => {
+        if (!transferRecipient) return false;
+        return B52_ADDRESS_REGEX.test(transferRecipient);
+    }, [transferRecipient]);
+
     // Auto-switch to Ethereum Mainnet when wallet connects
     useEffect(() => {
         const autoSwitchToEthereum = async () => {
             if (isConnected && chain?.id !== ETH_CHAIN_ID && switchChain) {
-                console.log("Auto-switching wallet to Ethereum Mainnet...");
                 try {
                     await switchChain({ chainId: ETH_CHAIN_ID });
-                    console.log("Successfully switched to Ethereum Mainnet");
                 } catch (err) {
-                    console.warn("Could not auto-switch to Ethereum Mainnet:", err);
+                    // Don't show error to user - they can manually switch if needed
                 }
             }
         };
@@ -750,7 +730,7 @@ const Dashboard: React.FC = () => {
                                 className="p-6 rounded-xl w-96 shadow-2xl border"
                                 style={{ backgroundColor: colors.ui.bgDark, borderColor: hexToRgba(colors.brand.primary, 0.2) }}
                             >
-                                <h3 className="text-xl font-bold text-white mb-4">Transfer USDC</h3>
+                                <h3 className="text-xl font-bold text-white mb-4">Send</h3>
                                 <div className="space-y-4">
                                     {/* Available Balance Display */}
                                     <div
@@ -793,7 +773,7 @@ const Dashboard: React.FC = () => {
                                     <div className="flex flex-col space-y-3">
                                         <button
                                             onClick={handleCosmosTransfer}
-                                            disabled={isTransferring || !transferRecipient || !transferAmount}
+                                            disabled={isTransferring || !isValidRecipient || !transferAmount || isAmountExceedingBalance}
                                             className="w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50"
                                             style={{ backgroundColor: colors.brand.primary }}
                                         >

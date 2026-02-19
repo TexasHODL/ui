@@ -43,13 +43,6 @@ export async function signQueryMessage(timestamp: number): Promise<string | null
         // "\x19Ethereum Signed Message:\n<length><message>"
         const signature = await hdWallet.signMessage(message);
 
-        console.log("[signing] Query message signed successfully", {
-            timestamp,
-            message,
-            hdPath: COSMOS_HD_PATH,
-            signerAddress: hdWallet.address.substring(0, 10) + "..."
-        });
-
         return signature;
     } catch (error) {
         console.error("[signing] Failed to sign query message:", error);

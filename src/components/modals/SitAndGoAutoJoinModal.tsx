@@ -145,18 +145,12 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 return;
             }
 
-            console.log("🎰 Sit & Go Join Attempt");
-            console.log(`📊 Game Options maxBuyIn (USDC microunits): ${gameOptions.maxBuyIn}`);
-            console.log("🎲 Will use random seat selection");
 
             // STEP 1: Convert USDC microunits from gameOptions to dollar amount (number)
             // gameOptions.maxBuyIn is in USDC microunits (e.g., "1000000" for $1)
             const buyInAmountInMicrounits = gameOptions.maxBuyIn;
             const buyInAmountInDollars = microToUsdc(buyInAmountInMicrounits);
 
-            console.log("💰 Converting from gameOptions:");
-            console.log(`   USDC microunits: "${buyInAmountInMicrounits}"`);
-            console.log(`   Dollar amount: $${buyInAmountInDollars}`);
 
             // STEP 2: Pass the dollar amount (number) to the hook
             // The hook will handle the conversion back to USDC microunits internally
@@ -166,7 +160,6 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 // No need to specify seat - SDK will pick randomly
             });
 
-            console.log("✅ Join successful - updating UI");
 
             // Mark as joined and notify parent
             setHasJoined(true);
@@ -176,12 +169,10 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
             localStorage.setItem("wait_for_big_blind", JSON.stringify(false));
 
             // Force a re-subscription to get the latest state
-            console.log("🔄 Re-subscribing to table for fresh state");
             subscribeToTable(tableId);
 
             // Small delay to allow backend to process and state to update
             setTimeout(() => {
-                console.log("🔄 Closing modal and triggering parent refresh");
                 onJoinSuccess();
 
                 // COMMENTED OUT: Fallback refresh after 3 seconds
@@ -189,7 +180,6 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 // setTimeout(() => {
                 //     // Check if we have players in the game state
                 //     if (!gameState?.players || gameState.players.length === 0) {
-                //         console.log("⚠️ State not updated after 3 seconds, forcing reload");
                 //         window.location.reload();
                 //     }
                 // }, 3000);

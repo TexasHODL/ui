@@ -88,8 +88,7 @@ export const GlobalHeader: React.FC = () => {
                     setLatestBlockHeight(blocks[0].block.header.height);
                     setHasError(false);
                 }
-            } catch (error) {
-                console.debug("Failed to fetch block height:", error);
+            } catch {
                 setHasError(true);
             }
         };

@@ -88,24 +88,20 @@ export const useCosmosWallet = (): UseCosmosWalletReturn => {
 
     // Import seed phrase
     const importSeedPhrase = useCallback(async (mnemonic: string) => {
-        console.log("🔑 importSeedPhrase called with mnemonic:", mnemonic ? `${mnemonic.split(" ").length} words` : "empty");
         setIsLoading(true);
         setError(null);
 
         try {
             // Get address from mnemonic
             const addr = await getAddressFromMnemonic(mnemonic, "b52");
-            console.log("🔑 Address derived:", addr);
 
             // Store mnemonic AND address in localStorage
             setCosmosMnemonic(mnemonic);
             setCosmosAddress(addr);
-            console.log("🔑 Stored in localStorage - mnemonic:", mnemonic ? "yes" : "no", "address:", addr);
 
             // Verify storage worked
             const verifyMnemonic = getCosmosMnemonic();
             const verifyAddress = getCosmosAddress();
-            console.log("🔑 Verification - mnemonic in storage:", verifyMnemonic ? "yes" : "no", "address in storage:", verifyAddress);
 
             // Update state
             setAddress(addr);
@@ -139,7 +135,6 @@ export const useCosmosWallet = (): UseCosmosWalletReturn => {
                 `Transfer ${denom.toUpperCase()} via Dashboard`  // memo
             );
 
-            console.log(`✅ ${denom.toUpperCase()} sent successfully:`, txHash);
 
             // Refresh balance after sending
             await refreshBalance();

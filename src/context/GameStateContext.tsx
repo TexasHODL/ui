@@ -165,19 +165,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         // Extract game state, format, and variant from message
                         const { gameState: gameStateData, format: rawFormat, variant: rawVariant } = extractGameDataFromMessage(message);
 
-                        // Log raw extraction results for debugging blind/gameOptions issues
-                        if (!gameStateData || !(gameStateData as TexasHoldemStateDTO)?.gameOptions) {
-                            console.warn("[GameStateContext] State update missing data:", {
-                                event: message.event,
-                                hasData: !!message.data,
-                                hasGameState: !!gameStateData,
-                                hasGameOptions: !!(gameStateData as TexasHoldemStateDTO)?.gameOptions,
-                                format: rawFormat,
-                                variant: rawVariant,
-                                dataKeys: message.data ? Object.keys(message.data) : [],
-                                gameStateKeys: gameStateData ? Object.keys(gameStateData) : []
-                            });
-                        }
 
                         if (!gameStateData) {
                             setValidationError({
@@ -197,7 +184,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
 
                         if (!validation.valid) {
                             // Per Commandment 7: NO defaults. Surface the validation error.
-                            console.warn("[GameStateContext] Incomplete game data from chain:", validation.message);
                             setValidationError({
                                 missingFields: validation.missingFields,
                                 message: validation.message,

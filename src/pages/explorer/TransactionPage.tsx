@@ -40,7 +40,6 @@ export default function TransactionPage() {
 
                 const tx = await cosmosClient.getTx(hashToSearch.trim());
 
-                console.log("Raw transaction response:", tx);
 
                 // Validate transaction structure
                 if (!tx) {

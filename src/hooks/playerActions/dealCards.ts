@@ -13,9 +13,6 @@ import type { PlayerActionResult } from "../../types";
 export async function dealCards(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("🃏 Deal cards on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
 
     const transactionHash = await signingClient.performAction(
         tableId,
@@ -23,7 +20,6 @@ export async function dealCards(tableId: string, network: NetworkEndpoints): Pro
         0n
     );
 
-    console.log("✅ Deal cards transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,
@@ -48,10 +44,6 @@ export async function dealCardsWithEntropy(
 ): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("🃏 Deal cards with entropy on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
-    console.log("  Entropy:", entropy);
 
     const transactionHash = await signingClient.performAction(
         tableId,
@@ -60,7 +52,6 @@ export async function dealCardsWithEntropy(
         entropy  // Pass entropy as optional data parameter
     );
 
-    console.log("✅ Deal cards with entropy transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

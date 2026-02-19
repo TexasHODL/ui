@@ -74,14 +74,10 @@ export const getCosmosBalance = async (network: NetworkEndpoints, denom: string 
     }
 
     try {
-        console.log("💰 cosmosAccountUtils - Fetching balance for:", address);
-        console.log("   Denomination:", denom);
 
         // getBalance returns bigint directly
         const balance = await client.getBalance(address, denom);
 
-        console.log("💰 cosmosAccountUtils - Balance (bigint):", balance);
-        console.log("   Amount (string):", balance.toString());
 
         return balance.toString();
     } catch (error) {
@@ -111,7 +107,6 @@ export const getAllCosmosBalances = async (network: NetworkEndpoints): Promise<A
 
     try {
         const balances = await client.getAllBalances(address);
-        console.log("💰 cosmosAccountUtils - All balances:", balances);
 
         // Convert Coin[] to our format
         return balances.map(coin => ({

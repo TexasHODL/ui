@@ -15,9 +15,6 @@ import type { LeaveTableResult } from "../../types";
 export async function leaveTable(tableId: string, value: string, network: NetworkEndpoints, _nonce?: number): Promise<LeaveTableResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("👋 Leave table on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
 
     // Call SigningCosmosClient.performAction() with "leave" action
     const transactionHash = await signingClient.performAction(
@@ -26,7 +23,6 @@ export async function leaveTable(tableId: string, value: string, network: Networ
         BigInt(value)
     );
 
-    console.log("✅ Leave table transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

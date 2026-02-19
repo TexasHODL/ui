@@ -72,9 +72,6 @@ export const getCosmosClient = (
         currentEndpoints &&
         (currentEndpoints.rpc !== newEndpoints.rpc || currentEndpoints.rest !== newEndpoints.rest)
     ) {
-        console.log("🔄 [CosmosClient] Network changed, clearing cached client");
-        console.log("   Old:", currentEndpoints);
-        console.log("   New:", newEndpoints);
         clientInstance = null;
     }
 
@@ -93,7 +90,6 @@ export const getCosmosClient = (
 
         // Track current endpoints for change detection
         currentEndpoints = newEndpoints;
-        console.log("✅ [CosmosClient] Created new client for:", newEndpoints);
     }
 
     return clientInstance;

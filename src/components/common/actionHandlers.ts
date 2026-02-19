@@ -7,12 +7,14 @@ import {
     muckCards,
     showCards,
     sitIn,
+    SIT_IN_METHOD_NEXT_BB,
     sitOut,
     startNewHand,
     postSmallBlind,
     postBigBlind,
     raiseHand
 } from "../../hooks/playerActions";
+import type { SitInMethod } from "../../hooks/playerActions";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 
 /**
@@ -55,10 +57,6 @@ function createSimpleHandler(
         try {
             const result = await actionFn(tableId, network);
 
-            if (options.successLog) {
-                console.log(options.successLog);
-            }
-
             return result?.hash || null;
         } catch (error: any) {
             console.error(`Failed to ${actionName}:`, error);
@@ -86,10 +84,6 @@ function createAmountFirstHandler(
         try {
             const result = await actionFn(tableId, amount, network);
 
-            if (options.successLog) {
-                console.log(options.successLog);
-            }
-
             return result?.hash || null;
         } catch (error: any) {
             console.error(`Failed to ${actionName}:`, error);
@@ -115,15 +109,7 @@ function createTableIdAmountHandler(
         if (!tableId) return null;
 
         try {
-            if (options.attemptLog) {
-                console.log(options.attemptLog, amount.toString());
-            }
-
             const result = await actionFn(tableId, amount, network);
-
-            if (options.successLog) {
-                console.log(options.successLog);
-            }
 
             return result?.hash || null;
         } catch (error: any) {
@@ -160,9 +146,21 @@ const handleSitOut = createSimpleHandler("sit out", sitOut, {
     successLog: "Sit out completed successfully"
 });
 
-const handleSitIn = createSimpleHandler("sit in", sitIn, {
-    successLog: "Sit in completed successfully"
-});
+const handleSitIn = async (
+    tableId: string | undefined,
+    network: NetworkEndpoints,
+    method: SitInMethod = SIT_IN_METHOD_NEXT_BB
+): Promise<string | null> => {
+    if (!tableId) return null;
+    try {
+        const result = await sitIn(tableId, network, method);
+        console.log("Sit in completed successfully");
+        return result?.hash || null;
+    } catch (error: unknown) {
+        console.error("Failed to sit in:", error);
+        return null;
+    }
+};
 
 // =============================================================================
 // Amount-first handlers (amount, tableId, network) -> Promise<string | null>

@@ -127,27 +127,12 @@ export default function TestSigningPage() {
                 throw new Error("No mnemonic found. Please create a wallet first at /wallet");
             }
 
-            console.log("🔐 Initializing SigningCosmosClient...");
-            console.log("Mnemonic:", mnemonic.substring(0, 20) + "...");
-
-            // Log configuration for debugging (using NetworkContext)
-            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-            console.log("📡 Cosmos SDK Configuration:");
-            console.log("   Network:", currentNetwork.name);
-            console.log("   RPC:    ", currentNetwork.rpc);
-            console.log("   REST:   ", currentNetwork.rest);
-            console.log("   Chain:  ", "pokerchain");
-            console.log("   Prefix: ", "b52");
-            console.log("   Denom:  ", "stake");
-            console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-
             // Create wallet from mnemonic
             const hdWallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
                 prefix: "b52"
             });
 
             const [account] = await hdWallet.getAccounts();
-            console.log("✅ Wallet address:", account.address);
 
             // Create SigningCosmosClient using NetworkContext
             const client = new SigningCosmosClient({
@@ -165,9 +150,7 @@ export default function TestSigningPage() {
             setWalletAddress(account.address);
 
             // Fetch balances
-            console.log("💰 Fetching balances...");
             const userBalances = await client.getAllBalances(account.address);
-            console.log("✅ Balances:", userBalances);
             setBalances(userBalances);
 
             addResult({
@@ -212,7 +195,6 @@ export default function TestSigningPage() {
 
         try {
             const address = await signingClient.getWalletAddress();
-            console.log("✅ getWalletAddress():", address);
 
             addResult({
                 functionName: "getWalletAddress()",
@@ -265,17 +247,7 @@ export default function TestSigningPage() {
             // Convert dollars to micro-units (multiply by 1,000,000)
             const microUnits = Math.floor(dollarAmount * USDC_TO_MICRO);
 
-            console.log("💸 sendTokens():", {
-                from: walletAddress,
-                to: recipientAddress,
-                dollarAmount: dollarAmount,
-                microUnits: microUnits,
-                denom: sendDenom
-            });
-
             const txHash = await signingClient.sendTokens(walletAddress, recipientAddress, BigInt(microUnits), sendDenom, "Test transfer via SDK");
-
-            console.log("✅ sendTokens() successful:", txHash);
 
             addResult({
                 functionName: "sendTokens()",
@@ -344,17 +316,6 @@ export default function TestSigningPage() {
                 throw new Error("Big blind must be a positive integer (micro-units)");
             }
 
-            console.log("🎮 createGame():", {
-                gameFormat,
-                minPlayers,
-                maxPlayers,
-                minBuyIn: cleanMinBuyIn,
-                maxBuyIn: cleanMaxBuyIn,
-                smallBlind: cleanSmallBlind,
-                bigBlind: cleanBigBlind,
-                timeout
-            });
-
             const txHash = await signingClient.createGame(
                 gameFormat,
                 "texas-holdem", // gameVariant - default to texas-holdem for now
@@ -366,8 +327,6 @@ export default function TestSigningPage() {
                 BigInt(cleanBigBlind),
                 timeout
             );
-
-            console.log("✅ createGame() successful:", txHash);
 
             addResult({
                 functionName: "createGame()",
@@ -427,16 +386,7 @@ export default function TestSigningPage() {
                 throw new Error("Buy-in amount must be a positive integer (micro-units)");
             }
 
-            console.log("🪑 joinGame():", {
-                gameId,
-                seat,
-                buyInAmount: cleanBuyInAmount,
-                originalInput: buyInAmount
-            });
-
             const txHash = await signingClient.joinGame(gameId, seat, BigInt(cleanBuyInAmount));
-
-            console.log("✅ joinGame() successful:", txHash);
 
             addResult({
                 functionName: "joinGame()",
@@ -487,16 +437,7 @@ export default function TestSigningPage() {
                 throw new Error("Action amount must be a non-negative integer (micro-units)");
             }
 
-            console.log("🃏 performAction():", {
-                gameId,
-                action,
-                amount: cleanActionAmount,
-                originalInput: actionAmount
-            });
-
             const txHash = await signingClient.performAction(gameId, action, BigInt(cleanActionAmount));
-
-            console.log("✅ performAction() successful:", txHash);
 
             addResult({
                 functionName: "performAction()",
@@ -533,8 +474,6 @@ export default function TestSigningPage() {
 
         try {
             const games = await signingClient.queryGames();
-
-            console.log("✅ queryGames() successful:", games);
 
             addResult({
                 functionName: "queryGames()",
@@ -579,8 +518,6 @@ export default function TestSigningPage() {
 
         try {
             const gameState = await signingClient.queryGameState(gameId);
-
-            console.log("✅ queryGameState() successful:", gameState);
 
             addResult({
                 functionName: "queryGameState()",

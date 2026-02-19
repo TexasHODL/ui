@@ -39,14 +39,9 @@ export const useSitAndGoPlayerJoinRandomSeat = (): UseSitAndGoPlayerJoinRandomSe
         try {
             const { signingClient, userAddress } = await getSigningClient(currentNetwork);
 
-            console.log("🎮 [SIT & GO JOIN] Starting join process with random seat");
-            console.log(`📍 Game ID: ${options.tableId}`);
-            console.log(`💰 Amount (USDC): $${options.amount}`);
-            console.log(`👤 Player: ${userAddress}`);
 
             // Convert USDC to microunits (1 USDC = 1,000,000 microunits)
             const amountInMicrounits = options.amount * USDC_TO_MICRO;
-            console.log(`📊 Amount in microunits: ${amountInMicrounits}`);
 
             // Join game with seat = 0 to indicate random seat selection
             // The blockchain/PVM will automatically assign an available seat
@@ -56,7 +51,6 @@ export const useSitAndGoPlayerJoinRandomSeat = (): UseSitAndGoPlayerJoinRandomSe
                 BigInt(amountInMicrounits)
             );
 
-            console.log("✅ [SIT & GO JOIN] Successfully joined at random seat:", transactionHash);
 
             return {
                 hash: transactionHash,

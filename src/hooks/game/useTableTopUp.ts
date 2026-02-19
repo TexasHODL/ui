@@ -39,10 +39,6 @@ export const useTableTopUp = (tableId: string, network: NetworkEndpoints) => {
 
             const { signingClient, userAddress } = await getSigningClient(network);
 
-            console.log("💰 useTableTopUp - Topping up on Cosmos blockchain:");
-            console.log("  Player:", userAddress);
-            console.log("  Game ID:", tableId);
-            console.log("  Amount (USDC):", amount);
 
             // Convert amount from USDC to micro-USDC (b52usdc)
             // amount is in USDC (e.g., "10.00"), need to convert to micro-units (e.g., 10000000)
@@ -53,14 +49,10 @@ export const useTableTopUp = (tableId: string, network: NetworkEndpoints) => {
 
             const topUpAmount = BigInt(Math.floor(amountInUsdc * Math.pow(10, COSMOS_CONSTANTS.USDC_DECIMALS)));
 
-            console.log("💰 Calling SigningCosmosClient.topUp:");
-            console.log("  Game ID:", tableId);
-            console.log("  Top-up amount:", topUpAmount.toString(), "microunits");
 
             // Call SigningCosmosClient.topUp()
             const transactionHash = await signingClient.topUp(tableId, topUpAmount);
 
-            console.log("✅ Top-up transaction submitted:", transactionHash);
 
             return {
                 hash: transactionHash,

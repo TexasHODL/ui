@@ -2,11 +2,13 @@ import React, { useState, useCallback } from "react";
 import { colors } from "../../utils/colorConfig";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { Modal, LoadingSpinner } from "../common";
+import { useModalStyles } from "../../hooks/useModalStyles";
 import type { LeaveTableModalProps } from "./types";
 
 const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, onClose, onConfirm, playerStack, isInActiveHand }) => {
     const [isLeaving, setIsLeaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const modalStyles = useModalStyles();
 
     const handleConfirm = useCallback(async () => {
         setIsLeaving(true);
@@ -39,13 +41,7 @@ const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, on
                 <p className="text-gray-300 text-sm mb-4">Are you sure you want to leave this table?</p>
 
                 {isInActiveHand && (
-                    <div
-                        className="p-4 rounded-lg mb-4"
-                        style={{
-                            backgroundColor: `${colors.accent.danger}20`,
-                            border: `1px solid ${colors.accent.danger}`
-                        }}
-                    >
+                    <div className="p-4 rounded-lg mb-4" style={modalStyles.dangerAlertStrong}>
                         <p className="text-white text-sm font-semibold mb-2">⚠️ Active Hand Warning</p>
                         <p className="text-gray-300 text-xs">
                             You are currently in an active hand. Leaving now will automatically <strong>fold your hand</strong> and forfeit any
@@ -55,13 +51,7 @@ const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, on
                 )}
 
                 {/* Stack info */}
-                <div
-                    className="p-4 rounded-lg"
-                    style={{
-                        backgroundColor: colors.ui.bgMedium,
-                        border: `1px solid ${colors.ui.borderColor}`
-                    }}
-                >
+                <div className="p-4 rounded-lg" style={modalStyles.panel}>
                     <div className="flex justify-between items-center">
                         <span className="text-gray-400 text-sm">Your Stack:</span>
                         <span className="text-white font-bold text-lg">${stackFormatted}</span>
@@ -76,7 +66,7 @@ const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, on
                     disabled={isLeaving}
                     className="w-full px-5 py-3 rounded-lg font-medium text-white shadow-md transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-80"
                     style={{
-                        backgroundColor: colors.accent.danger,
+                        ...modalStyles.buttonDanger,
                         cursor: isLeaving ? "not-allowed" : "pointer"
                     }}
                 >
@@ -93,7 +83,7 @@ const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, on
                     onClick={onClose}
                     disabled={isLeaving}
                     className="w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80"
-                    style={{ backgroundColor: colors.ui.textSecondary }}
+                    style={modalStyles.buttonSecondary}
                 >
                     Cancel
                 </button>

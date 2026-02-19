@@ -27,8 +27,6 @@ export const useGameStartCountdown = (): UseGameStartCountdownReturn => {
           cleanedParam = cleanedParam.replace(/\s(\d{2}:\d{2})$/, "+$1");
         }
         
-        console.log("Original gameStart param:", gameStartParam);
-        console.log("Cleaned gameStart param:", cleanedParam);
         
         // Validate the date string
         const startDate = new Date(cleanedParam);
@@ -36,12 +34,9 @@ export const useGameStartCountdown = (): UseGameStartCountdownReturn => {
         if (!isNaN(startDate.getTime())) {
           setGameStartTime(cleanedParam);
           setShowCountdown(true);
-          console.log("✅ Valid gameStart time set:", cleanedParam);
-        } else {
-          console.warn("❌ Invalid gameStart date format:", cleanedParam);
         }
-      } catch (error) {
-        console.warn("❌ Error parsing gameStart parameter:", error);
+      } catch {
+        // Invalid date format - ignore
       }
     }
   }, [searchParams]);

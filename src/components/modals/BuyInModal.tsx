@@ -8,48 +8,12 @@ import { HexagonPattern } from "../common/Modal";
 import { joinTable } from "../../hooks/playerActions/joinTable";
 import { JoinTableOptions } from "../../hooks/playerActions/types";
 import { useCosmosWallet } from "../../hooks";
+import { useModalStyles } from "../../hooks/useModalStyles";
 import { usdcToMicroBigInt, microToUsdc } from "../../constants/currency";
 import { useNetwork } from "../../context/NetworkContext";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getBlindsForDisplay } from "../../utils/gameFormatUtils";
 import { GameFormat } from "@block52/poker-vm-sdk";
-
-// Move static styles outside component to avoid recreation
-const STATIC_STYLES = {
-    modal: {
-        backgroundColor: colors.ui.bgDark,
-        border: `1px solid ${colors.ui.borderColor}`
-    },
-    divider: {
-        background: `linear-gradient(to right, transparent, ${colors.brand.primary}, transparent)`
-    },
-    playableBalance: {
-        backgroundColor: colors.ui.bgDark + "/60",
-        border: `1px solid ${colors.ui.borderColor}`
-    },
-    balanceIcon: {
-        backgroundColor: colors.brand.primary + "/20"
-    },
-    select: {
-        backgroundColor: colors.ui.bgMedium,
-        border: `1px solid ${colors.ui.textSecondary}`
-    },
-    button: {
-        backgroundColor: colors.ui.bgMedium,
-        border: `1px solid ${colors.ui.borderColor}`
-    },
-    input: {
-        backgroundColor: colors.ui.bgMedium,
-        border: `1px solid ${colors.ui.textSecondary}`
-    },
-    checkbox: {
-        accentColor: colors.brand.primary,
-        backgroundColor: colors.ui.bgMedium,
-        borderColor: colors.ui.textSecondary
-    },
-    joinButtonGradient: `linear-gradient(to bottom right, ${colors.brand.primary}, ${colors.brand.secondary})`,
-    joinButtonGradientHover: `linear-gradient(to bottom right, ${colors.brand.primary}aa, ${colors.brand.secondary}aa)`
-};
 
 import type { BuyInModalProps } from "./types";
 
@@ -57,6 +21,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
     const [buyInError, setBuyInError] = useState("");
     const [waitForBigBlind, setWaitForBigBlind] = useState(true);
     const [isJoiningRandomSeat, setIsJoiningRandomSeat] = useState(false);
+    const modalStyles = useModalStyles();
 
     // Get Cosmos wallet hook and network context
     const cosmosWallet = useCosmosWallet();
@@ -150,12 +115,12 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             },
             takeSeat: {
                 disabled: takeSeatDisabled,
-                background: takeSeatDisabled ? colors.brand.primary : STATIC_STYLES.joinButtonGradient,
+                background: takeSeatDisabled ? colors.brand.primary : modalStyles.joinButtonGradient,
                 opacity: takeSeatDisabled ? 0.5 : 1,
                 cursor: takeSeatDisabled ? "not-allowed" : "pointer"
             }
         };
-    }, [exceedsBalance, canJoinRandomSeat]);
+    }, [exceedsBalance, canJoinRandomSeat, modalStyles]);
 
     // Memoized event handlers
     const handleBuyInChange = useCallback((amount: string) => {
@@ -292,7 +257,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose} />
-                <div className="relative p-8 rounded-xl shadow-2xl w-96" style={STATIC_STYLES.modal}>
+                <div className="relative p-8 rounded-xl shadow-2xl w-96" style={modalStyles.modalContainer}>
                     <h2 className="text-xl font-bold mb-4 text-white">Buy In</h2>
                     <div className="text-red-400 mb-4">
                         Unable to load buy-in limits from the game. Please try again.
@@ -315,7 +280,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative p-8 rounded-xl shadow-2xl w-96 overflow-hidden" style={STATIC_STYLES.modal}>
+            <div className="relative p-8 rounded-xl shadow-2xl w-96 overflow-hidden" style={modalStyles.modalContainer}>
                 {/* Hexagon pattern background */}
                 <HexagonPattern patternId="hexagons-buyin" />
 
@@ -331,7 +296,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                         ♦
                     </span>
                 </h2>
-                <div className="w-full h-0.5 mb-4 opacity-50" style={STATIC_STYLES.divider}></div>
+                <div className="w-full h-0.5 mb-4 opacity-50" style={modalStyles.dividerPrimary}></div>
 
                 {/* Cosmos Wallet Balances Section */}
                 <div className="mb-5 space-y-2">
@@ -401,7 +366,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 {/* Stake Dropdown */}
                 <div className="mb-6">
                     <label className="block text-gray-300 mb-1 font-medium text-sm">Select Stake</label>
-                    <select disabled value={stakeLabel} className="w-full p-2 rounded text-white focus:outline-none text-sm" style={STATIC_STYLES.select}>
+                    <select disabled value={stakeLabel} className="w-full p-2 rounded text-white focus:outline-none text-sm" style={modalStyles.select}>
                         <option>{stakeLabel}</option>
                     </select>
                 </div>
@@ -484,7 +449,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                     <input
                         type="checkbox"
                         className="w-4 h-4 rounded mr-2"
-                        style={STATIC_STYLES.checkbox}
+                        style={modalStyles.checkbox}
                         checked={waitForBigBlind}
                         onChange={() => setWaitForBigBlind(!waitForBigBlind)}
                     />

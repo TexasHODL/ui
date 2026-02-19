@@ -55,10 +55,6 @@ async function executeAction(
 ): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log(`🎯 [executeAction] ${action} on Cosmos blockchain`);
-    console.log(`  Player: ${userAddress}`);
-    console.log(`  Game ID: ${tableId}`);
-    console.log(`  Amount: ${amount}`);
 
     const transactionHash = await signingClient.performAction(
         tableId,
@@ -66,7 +62,6 @@ async function executeAction(
         amount
     );
 
-    console.log(`✅ [executeAction] Transaction submitted: ${transactionHash}`);
 
     return {
         hash: transactionHash,
@@ -99,7 +94,6 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
             action: OptimisticActionType,
             amount?: bigint
         ): Promise<PlayerActionResult> => {
-            console.log(`🚀 [useOptimisticAction] Starting optimistic action: ${action}`);
 
             // Validate amount for actions that require it
             if (ACTIONS_REQUIRING_AMOUNT.has(action) && amount === undefined) {
@@ -109,10 +103,8 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
             // Step 1: Send via WebSocket for immediate optimistic broadcast
             try {
                 await sendAction(action, amount?.toString());
-                console.log(`✅ [useOptimisticAction] WebSocket notification sent for: ${action}`);
             } catch (wsError) {
                 // WebSocket notification failed - continue with transaction anyway
-                console.warn("⚠️ [useOptimisticAction] WebSocket notification failed:", wsError);
             }
 
             // Step 2: Execute the blockchain transaction via SDK
@@ -123,7 +115,6 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
                 currentNetwork
             );
 
-            console.log(`✅ [useOptimisticAction] Transaction submitted: ${result.hash}`);
             return result;
         },
         [sendAction, currentNetwork]

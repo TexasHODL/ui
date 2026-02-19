@@ -52,7 +52,6 @@ export const colors = {
 // Helper function to convert hex to rgba
 export const hexToRgba = (hex: string | undefined, alpha: number): string => {
   if (!hex || !hex.startsWith("#")) {
-    console.warn("hexToRgba received invalid hex color:", hex);
     return `rgba(0, 0, 0, ${alpha})`; // Fallback to transparent black
   }
   const r = parseInt(hex.slice(1, 3), 16);

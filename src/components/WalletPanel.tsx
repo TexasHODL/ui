@@ -2,9 +2,7 @@ import React, { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { colors, hexToRgba } from "../utils/colorConfig";
 import { useCosmosWallet, useUserWalletConnect } from "../hooks";
-import { microToUsdc, formatMicroAsUsdc } from "../constants/currency";
-
-// Note: STAKE balance display kept for gas monitoring (users still need to see their gas balance)
+import { microToUsdc } from "../constants/currency";
 
 // Copy to clipboard utility
 const copyToClipboard = (text: string, label: string) => {
@@ -41,13 +39,6 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
         const balance = cosmosWallet.balance.find(b => b.denom === "usdc");
         if (!balance) return "0.00";
         return microToUsdc(balance.amount).toFixed(2);
-    }, [cosmosWallet.balance]);
-
-    // Get STAKE balance
-    const stakeBalance = useMemo(() => {
-        const balance = cosmosWallet.balance.find(b => b.denom === "stake");
-        if (!balance) return "0";
-        return formatMicroAsUsdc(balance.amount, 2);
     }, [cosmosWallet.balance]);
 
     // Button style helper
@@ -148,9 +139,8 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                     </div>
                 </div>
 
-                {/* Balances */}
-                <div className="space-y-2 mb-4">
-                    {/* USDC Balance */}
+                {/* USDC Balance */}
+                <div className="mb-4">
                     <div className="p-3 rounded-lg bg-gray-900 border border-gray-700">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -171,12 +161,6 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                                 <p className="text-2xl font-bold text-white">${usdcBalance}</p>
                             </div>
                         </div>
-                    </div>
-
-                    {/* STAKE Balance (for gas) */}
-                    <div className="p-2 rounded-lg flex items-center justify-between bg-gray-900/50 border border-gray-700/50">
-                        <span className="text-gray-400 text-sm">Gas (STAKE)</span>
-                        <span className="text-gray-300 text-sm font-mono">{stakeBalance}</span>
                     </div>
                 </div>
 
@@ -201,7 +185,7 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                         className="flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
                         style={buttonStyle(colors.brand.primary)}
                     >
-                        Transfer
+                        Send
                     </button>
                 </div>
 

@@ -13,9 +13,6 @@ import type { PlayerActionResult } from "../../types";
 export async function sitOut(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("🪑 Sit out on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
 
     const transactionHash = await signingClient.performAction(
         tableId,
@@ -23,7 +20,6 @@ export async function sitOut(tableId: string, network: NetworkEndpoints): Promis
         0n
     );
 
-    console.log("✅ Sit out transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

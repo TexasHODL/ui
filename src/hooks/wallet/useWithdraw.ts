@@ -14,27 +14,6 @@ const useWithdraw = () => {
     hash
   });
 
-  // Log transaction hash when it's created
-  useEffect(() => {
-    if (hash) {
-      console.log("[useWithdraw] Transaction hash created:", hash);
-    }
-  }, [hash]);
-
-  // Log when transaction is pending
-  useEffect(() => {
-    if (isPending) {
-      console.log("[useWithdraw] Transaction is pending confirmation");
-    }
-  }, [isPending]);
-
-  // Log when transaction is confirmed
-  useEffect(() => {
-    if (isConfirmed) {
-      console.log("[useWithdraw] Transaction confirmed successfully!");
-    }
-  }, [isConfirmed]);
-
   // Log errors
   useEffect(() => {
     if (error) {
@@ -48,16 +27,6 @@ const useWithdraw = () => {
     amount: bigint,
     signature: string
   ): Promise<void> => {
-    console.log("[useWithdraw] Starting withdrawal transaction");
-    console.log("[useWithdraw] Parameters:", {
-      nonce,
-      receiver,
-      amount: amount.toString(),
-      signature,
-      userAddress,
-      bridgeAddress: BRIDGE_ADDRESS
-    });
-
     if (!userAddress) {
       console.error("[useWithdraw] User wallet is not connected");
       throw new Error("MetaMask wallet is not connected");
@@ -69,12 +38,6 @@ const useWithdraw = () => {
     }
 
     try {
-      console.log("[useWithdraw] Calling writeContract with args:", {
-        address: BRIDGE_ADDRESS,
-        functionName: FunctionName.Withdraw,
-        args: [nonce, receiver, amount.toString(), signature]
-      });
-
       writeContract({
         address: BRIDGE_ADDRESS as `0x${string}`,
         abi: abi,
@@ -86,8 +49,6 @@ const useWithdraw = () => {
           signature as `0x${string}`
         ]
       });
-
-      console.log("[useWithdraw] writeContract called successfully");
     } catch (err) {
       console.error("[useWithdraw] Withdrawal transaction failed:", err);
       throw err;

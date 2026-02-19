@@ -28,8 +28,7 @@ export default defineConfig({
         host: "0.0.0.0", // Allow external access in Docker
         port: 5173, // Use default Vite port
         strictPort: true,
-        middlewareMode: false,
-        allowedHosts: true
+        middlewareMode: false
     },
     base: "/",
     preview: {

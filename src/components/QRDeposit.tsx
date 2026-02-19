@@ -230,7 +230,6 @@ const QRDeposit: React.FC = () => {
                 setIsBitcoinLoading(true);
                 const response = await axios.post(`${BITCOIN_PAYMENTS}/invoices`, payload, config);
                 setIsBitcoinLoading(false);
-                console.log("🔷 QRDeposit: Bitcoin payment response:", response.data);
 
                 // Navigate to the payment URL in a new tab
                 if (response.data && response.data.checkoutLink) {
@@ -283,7 +282,6 @@ const QRDeposit: React.FC = () => {
                 setIsBitcoinLoading(true);
                 const response = await axios.post(`${BITCOIN_PAYMENTS}/invoices`, payload, config);
                 setIsBitcoinLoading(false);
-                console.log("🔷 QRDeposit: Bitcoin payment response:", response.data);
 
                 // Navigate to the payment URL in a new tab
                 if (response.data && response.data.checkoutLink) {
@@ -301,12 +299,7 @@ const QRDeposit: React.FC = () => {
                     depositAddress: DEPOSIT_ADDRESS
                 };
 
-                console.log("🔵 Creating deposit session:", {
-                    url: `${PROXY_URL}/deposit-sessions`,
-                    payload
-                });
                 const response = await axios.post(`${PROXY_URL}/deposit-sessions`, payload);
-                console.log("🟢 Deposit session created:", response.data);
 
                 setCurrentSession(response.data);
                 setSessionId(response.data._id);
@@ -333,29 +326,24 @@ const QRDeposit: React.FC = () => {
         if (!sessionId || !currentSession || isDepositCompleted) return;
 
         try {
-            console.log("🔷 QRDeposit: Checking session status");
             const response = await axios.get(`${PROXY_URL}/deposit-sessions/user/${loggedInAccount}`);
             const session = response.data;
 
             if (session) {
-                console.log("🔷 QRDeposit: Session status update:", session);
                 setCurrentSession(session);
 
                 // Update transaction status if it changed
                 if (session.txStatus && session.txStatus !== transactionStatus) {
-                    console.log("🔷 QRDeposit: Transaction status changed to:", session.txStatus);
                     setTransactionStatus(session.txStatus);
 
                     // Set completed flag when we reach COMPLETED state
                     if (session.txStatus === "COMPLETED") {
-                        console.log("🔷 QRDeposit: Deposit completed, stopping further checks");
                         setIsDepositCompleted(true);
                     }
                 }
 
                 // If session is completed, request a balance refresh
                 if (session.status === "COMPLETED" && currentSession.status !== "COMPLETED") {
-                    console.log("🔷 QRDeposit: Session completed, refreshing balance");
                     refreshBalance();
                     setIsDepositCompleted(true);
                 }
@@ -363,7 +351,6 @@ const QRDeposit: React.FC = () => {
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 404) {
                 // Session not found, stop polling
-                console.log("🔷 QRDeposit: Session no longer exists, stopping checks");
                 setIsDepositCompleted(true);
                 // Clear the current session if it was removed from the server
                 if (currentSession.status !== "COMPLETED") {
@@ -380,10 +367,8 @@ const QRDeposit: React.FC = () => {
     useEffect(() => {
         if (!currentSession || !sessionId || isDepositCompleted) return;
 
-        console.log("🔷 QRDeposit: Starting session polling");
         const interval = setInterval(checkSessionStatus, 5000);
         return () => {
-            console.log("🔷 QRDeposit: Stopping session polling");
             clearInterval(interval);
         };
     }, [currentSession, sessionId, loggedInAccount, isDepositCompleted, checkSessionStatus]);
@@ -405,7 +390,6 @@ const QRDeposit: React.FC = () => {
                 const response = await axios.put(`${PROXY_URL}/deposit-sessions/${sessionId}/complete`, {
                     amount
                 });
-                console.log("Session completed request:", response.data);
                 setCurrentSession(response.data);
 
                 // Update transaction status if available
@@ -422,8 +406,6 @@ const QRDeposit: React.FC = () => {
     );
 
     const startPolling = useCallback(() => {
-        console.log("Starting transaction polling");
-
         const interval = setInterval(async () => {
             setIsQuerying(true);
             try {
@@ -483,13 +465,7 @@ const QRDeposit: React.FC = () => {
                 if (events.length > 0) {
                     const lastTransfer = events[events.length - 1] as ethers.EventLog;
                     if (!lastTransfer.args) return;
-                    const [from, to, value] = lastTransfer.args;
-
-                    console.log("=== Transfer Detected ===");
-                    console.log("From:", from);
-                    console.log("To:", to);
-                    console.log("Value:", value.toString());
-                    console.log("Session ID:", currentSession._id);
+                    const [, , value] = lastTransfer.args;
 
                     setTransactionStatus("DETECTED");
 
@@ -531,19 +507,12 @@ const QRDeposit: React.FC = () => {
                         userAddress: loggedInAccount || web3Address,
                         depositAddress: DEPOSIT_ADDRESS
                     };
-                    console.log("🔵 Creating deposit session for Web3 transfer:", {
-                        url: `${PROXY_URL}/deposit-sessions`,
-                        payload
-                    });
                     const response = await axios.post(`${PROXY_URL}/deposit-sessions`, payload);
-                    console.log("🟢 Deposit session created:", response.data);
                     sessionToUse = response.data;
                     setCurrentSession(response.data);
                     setSessionId(response.data._id);
-                } catch (error: any) {
+                } catch (error: unknown) {
                     console.error("Failed to create deposit session:", error);
-                    // If proxy fails, we can still continue with the transfer
-                    console.warn("⚠️ Proceeding without proxy session - direct transfer only");
                     // Create a minimal session object for the transfer
                     sessionToUse = {
                         _id: `web3-${Date.now()}`,
@@ -576,8 +545,6 @@ const QRDeposit: React.FC = () => {
             // Update session with amount (if proxy is available)
             if (sessionToUse && !sessionToUse._id.startsWith("web3-")) {
                 await completeSession(Number(amount.toString())); // Convert BigInt to number for USDC base units (6 decimals)
-            } else {
-                console.log("✅ Direct transfer completed without proxy session");
             }
             // Refresh balances
             fetchWeb3Balance();
@@ -624,7 +591,6 @@ const QRDeposit: React.FC = () => {
 
                     // Only set current session if it's not completed or expired
                     if (session.status === "PENDING" || session.status === "PROCESSING") {
-                        console.log("🔷 QRDeposit: Found active session:", session);
                         setCurrentSession(session);
                         setSessionId(session._id);
                         setShowQR(true);
@@ -643,12 +609,10 @@ const QRDeposit: React.FC = () => {
                         if (remainingTime > 0) {
                             startPolling();
                         }
-                    } else {
-                        console.log("🔷 QRDeposit: Found completed or expired session, not loading it:", session);
                     }
                 }
-            } catch (error) {
-                console.log("No active session found or error occurred:", error);
+            } catch {
+                // No active session found - this is expected for first-time users
             }
         };
 

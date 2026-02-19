@@ -18,3 +18,6 @@ export * from "./notifications";
 
 // Named exports from useUserWallet (for backward compatibility)
 export { STORAGE_PRIVATE_KEY } from "./wallet/useUserWallet";
+
+// Shared UI styling hooks
+export { useModalStyles } from "./useModalStyles";

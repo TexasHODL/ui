@@ -14,10 +14,6 @@ import type { PlayerActionResult } from "../../types";
 export async function postBigBlind(tableId: string, amount: bigint, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("🎰 Post big blind on Cosmos blockchain");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
-    console.log("  Big blind amount:", amount.toString());
 
     const transactionHash = await signingClient.performAction(
         tableId,
@@ -25,7 +21,6 @@ export async function postBigBlind(tableId: string, amount: bigint, network: Net
         amount
     );
 
-    console.log("✅ Post big blind transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

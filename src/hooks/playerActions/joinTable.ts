@@ -20,11 +20,6 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
 
     const { signingClient, userAddress } = await getSigningClient(network);
 
-    console.log("🪑 joinTable - Joining game on Cosmos blockchain:");
-    console.log("  Player:", userAddress);
-    console.log("  Game ID:", tableId);
-    console.log("  Buy-in amount (string):", options.amount);
-    console.log("  Seat number:", options.seatNumber);
 
     // Convert buy-in amount from USDC to micro-USDC (b52usdc)
     // options.amount is in USDC (e.g., "5.00"), need to convert to micro-units (e.g., 5000000)
@@ -36,10 +31,6 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
         ? options.seatNumber
         : 0;
 
-    console.log("🪑 Calling SigningCosmosClient.joinGame:");
-    console.log("  Game ID:", tableId);
-    console.log("  Seat:", seat);
-    console.log("  Buy-in:", buyInAmount, "usdc");
 
     // Call SigningCosmosClient.joinGame()
     const transactionHash = await signingClient.joinGame(
@@ -48,7 +39,6 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
         buyInAmount
     );
 
-    console.log("✅ Join game transaction submitted:", transactionHash);
 
     return {
         hash: transactionHash,

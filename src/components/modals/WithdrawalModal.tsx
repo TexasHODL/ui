@@ -3,8 +3,9 @@ import { ethers } from "ethers";
 import { getClient, getPublicKey } from "../../utils/b52AccountUtils";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
 import { microToUsdc } from "../../constants/currency";
-import { colors, hexToRgba } from "../../utils/colorConfig";
+import { colors } from "../../utils/colorConfig";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
+import { useModalStyles } from "../../hooks/useModalStyles";
 import { WithdrawResponseDTO } from "@block52/poker-vm-sdk";
 import useWithdraw from "../../hooks/wallet/useWithdraw";
 
@@ -68,6 +69,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
     const publicKey = getPublicKey();
     const { balance: cosmosBalance, refreshBalance: refetchAccount } = useCosmosWallet();
     const { address: web3Address, isConnected: isWeb3Connected } = useUserWalletConnect();
+    const modalStyles = useModalStyles();
 
     // Memoized USDC balance in human-readable format (avoids duplication)
     const balanceInUSDC = useMemo(() => {
@@ -103,51 +105,8 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
             setTxData(null);
             refetchAccount();
 
-            console.log("[WithdrawalModal] Modal opened");
-            console.log("[WithdrawalModal] Web3 Connected:", isWeb3Connected);
-            console.log("[WithdrawalModal] Web3 Address:", web3Address);
-            console.log("[WithdrawalModal] L2 Account Address:", publicKey);
         }
     }, [isOpen, refetchAccount, web3Address, isWeb3Connected, publicKey]);
-
-    const modalOverlayStyle = useMemo(
-        () => ({
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            backdropFilter: "blur(4px)"
-        }),
-        []
-    );
-
-    const modalContentStyle = useMemo(
-        () => ({
-            backgroundColor: colors.ui.bgDark,
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
-    const inputStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`,
-            color: "#ffffff"
-        }),
-        []
-    );
-
-    const buttonStyle = useMemo(
-        () => ({
-            background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-        }),
-        []
-    );
-
-    const cancelButtonStyle = useMemo(
-        () => ({
-            background: `linear-gradient(135deg, ${colors.accent.danger} 0%, ${hexToRgba(colors.accent.danger, 0.8)} 100%)`
-        }),
-        []
-    );
 
     /**
      * Validates if the provided string is a valid Ethereum address
@@ -210,10 +169,6 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
      */
     // Update the handleWithdraw function
     const handleWithdraw = async () => {
-        console.log("[WithdrawalModal] === Starting withdrawal process ===");
-        console.log("[WithdrawalModal] Web3 Connected:", isWeb3Connected);
-        console.log("[WithdrawalModal] Web3 Address:", web3Address);
-        console.log("[WithdrawalModal] Amount:", amount, "USDC");
 
         // STEP 1: Check if MetaMask is connected
         if (!isWeb3Connected || !web3Address) {
@@ -249,10 +204,6 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
             const client = getClient();
             const amountInWei = ethers.parseEther(amount).toString();
 
-            console.log("[WithdrawalModal] STEP 1: Calling SDK withdraw");
-            console.log("[WithdrawalModal] - Amount in Wei:", amountInWei);
-            console.log("[WithdrawalModal] - From L2 Address:", publicKey);
-            console.log("[WithdrawalModal] - To Mainnet Address:", web3Address);
 
             // STEP 1: Call the SDK to prepare the withdrawal
             // Old Ethereum client for bridge only, will be updated when bridge is migrated
@@ -262,11 +213,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                 web3Address // Use the connected MetaMask address
             );
 
-            console.log("[WithdrawalModal] SDK withdrawal response received:", result);
-            console.log("[WithdrawalModal] - Nonce:", result.nonce);
-            console.log("[WithdrawalModal] - Signature:", result.signature);
 
-            console.log("[WithdrawalModal] STEP 2: Executing Web3 transaction via MetaMask");
 
             // STEP 2: Now call the smart contract with the SDK response
             await contractWithdraw(
@@ -276,13 +223,11 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                 result.signature
             );
 
-            console.log("[WithdrawalModal] Web3 transaction submitted successfully");
             setSuccess(true);
             setTxData(result);
 
             // Refresh balance after successful withdrawal
             setTimeout(() => {
-                console.log("[WithdrawalModal] Refreshing account balance");
                 refetchAccount();
                 if (onSuccess) {
                     onSuccess();
@@ -309,14 +254,12 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
             }
         } finally {
             setIsWithdrawing(false);
-            console.log("[WithdrawalModal] === Withdrawal process completed ===");
         }
     };
 
     // // Add useEffect to handle contract confirmation
     // useEffect(() => {
     //     if (isContractConfirmed) {
-    //         console.log("Smart contract withdrawal confirmed!", contractHash);
 
     //         // Refresh account balance
     //         setTimeout(() => {
@@ -339,12 +282,12 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
     const balanceDisplay = balanceInUSDC.toFixed(2);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={modalOverlayStyle}>
-            <div className="rounded-xl p-6 w-full max-w-md mx-4" style={modalContentStyle}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={modalStyles.overlay}>
+            <div className="rounded-xl p-6 w-full max-w-md mx-4" style={modalStyles.modalPrimaryBorder}>
                 <h2 className="text-2xl font-bold mb-4 text-white">Withdraw Funds</h2>
 
                 {/* Current Balance */}
-                <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: hexToRgba(colors.ui.bgMedium, 0.3) }}>
+                <div className="mb-4 p-3 rounded-lg" style={modalStyles.surfaceMuted}>
                     <p className="text-sm" style={{ color: colors.ui.textSecondary }}>
                         Available Balance
                     </p>
@@ -355,13 +298,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
 
                 {/* Success Message */}
                 {success && (
-                    <div
-                        className="mb-4 p-3 rounded-lg"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.success, 0.1),
-                            border: `1px solid ${colors.accent.success}`
-                        }}
-                    >
+                    <div className="mb-4 p-3 rounded-lg" style={modalStyles.successAlert}>
                         <p className="font-semibold" style={{ color: colors.accent.success }}>
                             Withdrawal Successful!
                         </p>
@@ -375,13 +312,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
 
                 {/* Error Message */}
                 {error && (
-                    <div
-                        className="mb-4 p-3 rounded-lg"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.danger, 0.1),
-                            border: `1px solid ${colors.accent.danger}`
-                        }}
-                    >
+                    <div className="mb-4 p-3 rounded-lg" style={modalStyles.dangerAlert}>
                         <p style={{ color: colors.accent.danger }}>{error}</p>
                     </div>
                 )}
@@ -390,14 +321,8 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     <>
                         {/* MetaMask Connection Status */}
                         {!isWeb3Connected || !web3Address ? (
-                            <div
-                                className="mb-4 p-3 rounded-lg"
-                                style={{
-                                    backgroundColor: hexToRgba("#FFA500", 0.1),
-                                    border: "1px solid #FFA500"
-                                }}
-                            >
-                                <p className="font-semibold mb-2" style={{ color: "#FFA500" }}>
+                            <div className="mb-4 p-3 rounded-lg" style={modalStyles.warningAlert}>
+                                <p className="font-semibold mb-2" style={{ color: colors.accent.warning }}>
                                     MetaMask Not Connected
                                 </p>
                                 <p className="text-sm" style={{ color: colors.ui.textSecondary }}>
@@ -412,10 +337,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                                 </label>
                                 <div
                                     className="p-3 rounded-lg"
-                                    style={{
-                                        backgroundColor: hexToRgba(colors.ui.bgMedium, 0.3),
-                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                    }}
+                                    style={modalStyles.surfacePrimarySoft}
                                 >
                                     <p className="font-mono text-sm" style={{ color: colors.brand.primary }}>
                                         {web3Address}
@@ -440,7 +362,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                                     min="0"
                                     max={balanceInUSDC}
                                     className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
-                                    style={inputStyle}
+                                    style={modalStyles.inputPrimarySoft}
                                     disabled={isWithdrawing}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Minimum: 0.01 USDC</p>
@@ -455,7 +377,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         <button
                             onClick={handleWithdraw}
                             className="w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                            style={buttonStyle}
+                            style={{ background: modalStyles.gradient(colors.brand.primary) }}
                             disabled={isWithdrawing || !isWeb3Connected || !web3Address || !amount}
                         >
                             {isWithdrawing ? "Processing..." : !isWeb3Connected ? "Connect Wallet First" : "Withdraw"}
@@ -464,7 +386,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     <button
                         onClick={onClose}
                         className="w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-80"
-                        style={cancelButtonStyle}
+                        style={{ background: modalStyles.gradient(colors.accent.danger) }}
                         disabled={isWithdrawing}
                     >
                         Cancel

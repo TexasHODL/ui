@@ -44,7 +44,6 @@
  */
 
 import { useEffect, useState, useMemo, useCallback, memo } from "react";
-import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 // Position arrays now come from useTableLayout hook
 // // Position arrays now come from useTableLayout hook
@@ -101,10 +100,9 @@ import { useGameResults } from "../../hooks/game/useGameResults"; // Game result
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { getCosmosBalance, getCosmosAddressSync, getFormattedCosmosAddress } from "../../utils/cosmosAccountUtils";
-import { hasAction } from "../../utils/actionUtils";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useNetwork } from "../../context/NetworkContext";
-import { PlayerDTO } from "@block52/poker-vm-sdk";
+import { PlayerDTO, PlayerStatus } from "@block52/poker-vm-sdk";
 import LiveHandStrengthDisplay from "./LiveHandStrengthDisplay";
 
 // Table Error Page
@@ -266,11 +264,7 @@ const Table = React.memo(() => {
     }, []);
 
     // Use the hook directly instead of getting it from context
-    const { legalActions: playerLegalActions } = usePlayerLegalActions();
-
-    // Check if sit out/sit in actions are available
-    const hasSitOutAction = hasAction(playerLegalActions, NonPlayerActionType.SIT_OUT);
-    const hasSitInAction = hasAction(playerLegalActions, NonPlayerActionType.SIT_IN);
+    const { legalActions: playerLegalActions, playerStatus, sitInMethod } = usePlayerLegalActions();
 
     // Add the usePlayerSeatInfo hook
     const { currentUserSeat } = usePlayerSeatInfo();
@@ -472,6 +466,13 @@ const Table = React.memo(() => {
 
         return activePlayers;
     }, [tableDataValues.tableDataPlayers]);
+
+    // Check if any player is ACTIVE or ALL_IN (mirrors PVM's checkBootstrap logic)
+    const hasActivePlayers = useMemo(() => {
+        return tableActivePlayers.some((p: PlayerDTO) =>
+            p.status === PlayerStatus.ACTIVE || p.status === PlayerStatus.ALL_IN
+        );
+    }, [tableActivePlayers]);
 
     // Optimize window width detection - only check on resize
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 414);
@@ -924,10 +925,14 @@ const Table = React.memo(() => {
             <PlayerActionButtons
                 isMobile={isMobile}
                 isMobileLandscape={isMobileLandscape}
-                hasSitOutAction={hasSitOutAction}
-                hasSitInAction={hasSitInAction}
+                legalActions={playerLegalActions}
                 tableId={id}
                 currentNetwork={currentNetwork}
+                playerStatus={playerStatus}
+                sitInMethod={sitInMethod}
+                totalSeatedPlayers={tableActivePlayers.length}
+                handNumber={handNumber}
+                hasActivePlayers={hasActivePlayers}
             />
 
             {/* All Table Modals */}

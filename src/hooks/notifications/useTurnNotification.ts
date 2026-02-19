@@ -64,7 +64,6 @@ export const useTurnNotification = (
             if (!audioContextRef.current) {
                 const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
                 if (!AudioContextClass) {
-                    console.warn("AudioContext is not supported in this browser");
                     return;
                 }
                 audioContextRef.current = new AudioContextClass();
@@ -92,8 +91,8 @@ export const useTurnNotification = (
             // Play the sound
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.3);
-        } catch (error) {
-            console.warn("Failed to play notification sound:", error);
+        } catch {
+            // Audio playback failed - ignore silently
         }
     }, [soundVolume]);
 

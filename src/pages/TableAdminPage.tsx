@@ -137,8 +137,6 @@ export default function TableAdminPage() {
 
     // Create a new table using the useNewTable hook
     const handleCreateTable = async () => {
-        console.log("🎮 handleCreateTable called");
-        console.log("Cosmos wallet address:", cosmosWallet.address);
 
         if (!cosmosWallet.address) {
             toast.error("No Block52 wallet found. Please create or import a wallet first.");
@@ -164,25 +162,10 @@ export default function TableAdminPage() {
             blindLevelDuration
         } : undefined;
 
-        console.log("📋 Table configuration:", {
-            format: gameFormat,
-            minBuyIn: finalMinBuyIn,
-            maxBuyIn: finalMaxBuyIn,
-            minBuyInBB: isTournament ? "N/A" : minBuyInBB,
-            maxBuyInBB: isTournament ? "N/A" : maxBuyInBB,
-            minPlayers,
-            maxPlayers,
-            smallBlind: parseFloat(smallBlind),
-            bigBlind: parseFloat(bigBlind),
-            ...(rakeConfig && { rake: rakeConfig }),
-            ...(sngConfig && { sng: sngConfig })
-        });
-
         // Store the table count before creating to verify a new table was added
         setTableCountBeforeCreation(tables.length);
         
         try {
-            console.log("🚀 Calling createTable...");
             const result = await createTable({
                 format: gameFormat,
                 minBuyIn: finalMinBuyIn,
@@ -195,7 +178,6 @@ export default function TableAdminPage() {
                 ...(sngConfig && { sng: sngConfig })
             });
 
-            console.log("✅ createTable returned:", result);
 
             if (result) {
                 // Show success modal with transaction link
@@ -209,7 +191,6 @@ export default function TableAdminPage() {
                     refetch();
                 }, 2000);
             } else {
-                console.warn("⚠️ createTable returned null/undefined");
                 toast.error("Table creation failed - no transaction hash returned");
             }
         } catch (err: any) {
