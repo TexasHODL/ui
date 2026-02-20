@@ -1,5 +1,5 @@
 // JWT Cookie management functions
-export const setAuthCookie = () => {
+export const setAuthCookie = (): void => {
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + 100); // 100 days from now
     const simpleJWT = btoa(JSON.stringify({
@@ -10,7 +10,7 @@ export const setAuthCookie = () => {
     document.cookie = "block52_auth=" + simpleJWT + "; expires=" + expirationDate.toUTCString() + "; path=/; SameSite=Strict";
 };
 
-export const checkAuthCookie = () => {
+export const checkAuthCookie = (): boolean => {
     const cookies = document.cookie.split(";");
     const authCookie = cookies.find(cookie => cookie.trim().startsWith("block52_auth="));
 
@@ -30,7 +30,7 @@ export const checkAuthCookie = () => {
 };
 
 // Password validation function
-export const validatePassword = (password: string) => {
+export const validatePassword = (password: string): boolean => {
     return password === "123";
 };
 
@@ -40,7 +40,7 @@ export const handlePasswordSubmit = (
     setIsAuthenticated: (value: boolean) => void,
     setPasswordError: (error: string) => void,
     setPasswordInput: (value: string) => void
-) => {
+): void => {
     if (validatePassword(passwordInput)) {
         setIsAuthenticated(true);
         setPasswordError("");
@@ -60,7 +60,7 @@ export const handlePasswordKeyPress = (
     setIsAuthenticated: (value: boolean) => void,
     setPasswordError: (error: string) => void,
     setPasswordInput: (value: string) => void
-) => {
+): void => {
     if (e.key === "Enter") {
         handlePasswordSubmit(passwordInput, setIsAuthenticated, setPasswordError, setPasswordInput);
     }

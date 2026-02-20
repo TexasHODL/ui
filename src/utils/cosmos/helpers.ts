@@ -16,7 +16,7 @@ export const isValidSeedPhrase = isValidMnemonic;
  * Get test addresses (alice and bob from config)
  * These are the same addresses used in the Cosmos chain config.yml
  */
-export const getTestAddresses = () => ({
+export const getTestAddresses = (): { alice: string; bob: string } => ({
     alice: "b521rgaelup3yzxt6puf593k5wq3mz8k0m2pvkfj9p",
     bob: "b521lk6fjllpzykqhpp72vyvvskeffsjzfh97kmq75"
 });

@@ -9,6 +9,17 @@ import { CosmosClient, createSigningClientFromMnemonic, getDefaultCosmosConfig a
 import { getCosmosAddress, getCosmosMnemonic } from "./storage";
 import { getCosmosUrls, type NetworkEndpoints } from "./urls";
 
+// Local type definition (not exported from SDK main index)
+interface CosmosConfig {
+    rpcEndpoint: string;
+    restEndpoint: string;
+    chainId: string;
+    prefix: string;
+    denom: string;
+    gasPrice: string;
+    mnemonic?: string;
+}
+
 // Re-export types and constants from SDK
 export type { CosmosClient };
 export { COSMOS_CONSTANTS };
@@ -20,7 +31,7 @@ export { getCosmosUrls };
  * Get default cosmos configuration with environment variable overrides
  * Uses SDK's getDefaultCosmosConfig() and overrides with env vars if present
  */
-export const getDefaultCosmosConfig = (network: NetworkEndpoints) => {
+export const getDefaultCosmosConfig = (network: NetworkEndpoints): CosmosConfig => {
     const sdkConfig = getDefaultCosmosConfigSDK();
     const { rpcEndpoint, restEndpoint } = getCosmosUrls(network);
 
@@ -35,7 +46,7 @@ export const getDefaultCosmosConfig = (network: NetworkEndpoints) => {
  * Get cosmos configuration with custom endpoints
  * Used when switching networks dynamically
  */
-export const getCosmosConfigWithEndpoints = (rpcEndpoint: string, restEndpoint: string) => {
+export const getCosmosConfigWithEndpoints = (rpcEndpoint: string, restEndpoint: string): CosmosConfig => {
     const sdkConfig = getDefaultCosmosConfigSDK();
 
     return {

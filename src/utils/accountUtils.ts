@@ -21,7 +21,7 @@ export const getPublicKey = (privateKey: string): string => {
  * @param playerId The player's ID or address
  * @returns Formatted string with first 6 and last 4 characters
  */
-export const formatPlayerId = (playerId: string) => {
+export const formatPlayerId = (playerId: string): string => {
     return `${playerId.slice(0, 6)}...${playerId.slice(-4)}`;
 };
 

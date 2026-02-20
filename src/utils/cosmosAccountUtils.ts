@@ -6,6 +6,12 @@
 import { getCosmosClient } from "./cosmos/client";
 import type { NetworkEndpoints } from "./cosmos/urls";
 
+// Local type definition (not exported from SDK main index)
+interface Coin {
+    denom: string;
+    amount: string;
+}
+
 /**
  * Get the user's Cosmos address from the initialized client
  * @param network - The network endpoints to use
@@ -109,7 +115,7 @@ export const getAllCosmosBalances = async (network: NetworkEndpoints): Promise<A
         const balances = await client.getAllBalances(address);
 
         // Convert Coin[] to our format
-        return balances.map(coin => ({
+        return balances.map((coin: Coin) => ({
             denom: coin.denom,
             amount: coin.amount
         }));

@@ -7,12 +7,12 @@ import { microToUsdc, USDC_TO_MICRO } from "../constants/currency";
  * @param balance The balance in micro-USDC (e.g., "1500000" = $1.50)
  * @returns Formatted string with 2 decimal places
  */
-export const formatBalance = (balance: string | number) => {
+export const formatBalance = (balance: string | number): string => {
     const value = Number(balance) / USDC_TO_MICRO; // USDC uses 6 decimals
     return formatToFixed(value);
 };
 
-export const formatToFixed = (value: number | number): string => {
+export const formatToFixed = (value: number): string => {
     return value.toFixed(2);
 };
 
