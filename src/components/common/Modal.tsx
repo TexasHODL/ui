@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from "react";
 import { colors, getHexagonStroke } from "../../utils/colorConfig";
+import styles from "./Modal.module.css";
 
 /**
  * Shared hexagon pattern background for modals
@@ -35,17 +36,6 @@ const CardSuits = React.memo(() => (
 ));
 
 CardSuits.displayName = "CardSuits";
-
-// Static styles to avoid recreation
-const MODAL_STYLES = {
-    container: {
-        backgroundColor: colors.ui.bgDark,
-        border: `1px solid ${colors.ui.borderColor}`
-    },
-    errorContainer: {
-        backgroundColor: `${colors.accent.danger}20`
-    }
-};
 
 export interface BaseModalProps {
     /** Whether the modal is currently open/visible */
@@ -158,8 +148,7 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
 
                 {/* Modal Container */}
                 <div
-                    className={`relative p-6 rounded-xl shadow-2xl overflow-hidden ${widthClass} max-w-[95vw] ${className}`}
-                    style={MODAL_STYLES.container}
+                    className={`relative p-6 rounded-xl shadow-2xl overflow-hidden ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
                 >
                     {/* Hexagon pattern background */}
                     {showHexagonPattern && <HexagonPattern patternId={patternId} />}
@@ -189,8 +178,8 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
 
                     {/* Error Display */}
                     {error && (
-                        <div className="mb-4 p-3 rounded-lg" style={MODAL_STYLES.errorContainer}>
-                            <p style={{ color: colors.accent.danger }} className="text-sm">
+                        <div className={`mb-4 p-3 rounded-lg ${styles.errorContainer}`}>
+                            <p className={`text-sm ${styles.errorText}`}>
                                 ⚠️ {error}
                             </p>
                         </div>

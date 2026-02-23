@@ -1,0 +1,71 @@
+.containerCard {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.headerCard {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 20%, transparent) 0%, color-mix(in srgb, var(--brand-secondary) 20%, transparent) 100%);
+    border-bottom: 2px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.brandText {
+    color: var(--brand-primary);
+}
+
+.brandTextHover:hover {
+    color: var(--accent-glow);
+}
+
+.successText {
+    color: var(--accent-success);
+}
+
+.dangerText {
+    color: var(--accent-danger);
+}
+
+.secondaryBrandText {
+    color: var(--brand-secondary);
+}
+
+.primaryButton {
+    background-color: var(--brand-primary);
+    color: #ffffff;
+}
+
+.primaryButton:hover {
+    background-color: var(--brand-secondary);
+}
+
+.subtleBrandButton {
+    background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    color: var(--brand-primary);
+    border: 1px solid var(--brand-primary);
+}
+
+.subtleBrandButton:hover {
+    background-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.txCard {
+    background-color: color-mix(in srgb, var(--brand-primary) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.txHeader {
+    border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.copyRawButton {
+    background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    color: var(--brand-primary);
+}
+
+.copyRawButton:hover {
+    background-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.rawDataBox {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}

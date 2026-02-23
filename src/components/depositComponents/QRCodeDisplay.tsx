@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { colors, hexToRgba } from "../../utils/colorConfig";
+import styles from "./DepositComponents.module.css";
 
 interface QRCodeDisplayProps {
     depositAddress: string;
@@ -23,22 +23,12 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
     return (
         <>
             <div
-                className="backdrop-blur-sm rounded-lg p-4 mb-6 shadow-lg transition-all duration-300"
-                style={{
-                    backgroundColor: colors.ui.bgMedium,
-                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = hexToRgba(colors.brand.primary, 0.2);
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = hexToRgba(colors.brand.primary, 0.1);
-                }}
+                className={`backdrop-blur-sm rounded-lg p-4 mb-6 shadow-lg transition-all duration-300 ${styles.panelCard}`}
             >
-                <h2 className="text-lg font-semibold mb-2" style={{ color: "white" }}>
+                <h2 className={`text-lg font-semibold mb-2 ${styles.titleText}`}>
                     {title}
                 </h2>
-                <p className="text-sm mb-4" style={{ color: colors.ui.textSecondary + "dd" }}>
+                <p className={`text-sm mb-4 ${styles.secondaryText}`}>
                     {subtitle}
                 </p>
             </div>
@@ -55,14 +45,10 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
                 <div>
                     <label className="text-sm text-gray-400">Payment address</label>
                     <div
-                        className="flex items-center justify-between p-2 rounded cursor-pointer"
-                        style={{
-                            backgroundColor: colors.ui.bgMedium,
-                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                        }}
+                        className={`flex items-center justify-between p-2 rounded cursor-pointer ${styles.valuePanel}`}
                         onClick={() => copyToClipboard(depositAddress)}
                     >
-                        <span className="text-sm" style={{ color: "white" }}>
+                        <span className={`text-sm ${styles.valueText}`}>
                             {depositAddress}
                         </span>
                         <button
@@ -70,8 +56,7 @@ export const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
                             type="button"
                         >
                             <svg
-                                className="w-4 h-4"
-                                style={{ color: colors.brand.primary }}
+                                className={`w-4 h-4 ${styles.iconPrimary}`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"

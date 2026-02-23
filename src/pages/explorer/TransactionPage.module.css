@@ -1,0 +1,91 @@
+.detailsContainer {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.errorContainer {
+    background-color: color-mix(in srgb, var(--accent-danger) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-danger) 50%, transparent);
+}
+
+.errorIcon {
+    color: var(--accent-danger);
+}
+
+.backToAddressButton {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, transparent) 100%);
+}
+
+.hashBox {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.brandText {
+    color: var(--brand-primary);
+}
+
+.messageCard {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.messageDataBox {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 10%, transparent);
+    max-height: 300px;
+}
+
+.successPanel {
+    background-color: color-mix(in srgb, var(--accent-success) 10%, transparent);
+    border: 2px solid var(--accent-success);
+}
+
+.successText {
+    color: var(--accent-success);
+}
+
+.eventExplainToggle {
+    color: var(--brand-primary);
+}
+
+.eventExplainToggle:hover {
+    color: var(--accent-glow);
+}
+
+.eventExplanationContainer {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 40%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.eventExplanationPrimer {
+    border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.eventExplanationStrong {
+    color: var(--brand-primary);
+}
+
+.eventBreakdownCard {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.eventBreakdownTitle {
+    color: var(--brand-primary);
+}
+
+.eventSummaryBox {
+    background-color: color-mix(in srgb, var(--accent-success) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-success) 30%, transparent);
+}
+
+.eventSummaryTitle {
+    color: var(--accent-success);
+}
+
+.rawEventsBox {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    max-height: 400px;
+}

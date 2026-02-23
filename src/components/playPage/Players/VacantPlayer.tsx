@@ -59,11 +59,11 @@ import { useDealerPosition } from "../../../hooks/game/useDealerPosition";
 import { joinTable } from "../../../hooks/playerActions/joinTable";
 import { useGameOptions } from "../../../hooks/game/useGameOptions";
 import CustomDealer from "../../../assets/CustomDealer.svg";
-import { colors } from "../../../utils/colorConfig";
 import { formatUSDCToSimpleDollars } from "../../../utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
 import { useNetwork } from "../../../context/NetworkContext";
+import styles from "./VacantPlayer.module.css";
 
 const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo(
     ({ left, top, index, onJoin, uiPosition }) => {
@@ -274,7 +274,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                     <div className="flex justify-center mb-2">
                         <img src={PokerProfile} className="w-12 h-12" alt="Vacant Seat" />
                     </div>
-                    <div className="text-center" style={{ color: "white" }}>
+                    <div className={`text-center ${styles.seatText}`}>
                         <div className="text-lg sm:text-sm mb-1 whitespace-nowrap font-medium">{seatText.title}</div>
                         {seatText.subtitle && <div className="text-base sm:text-xs whitespace-nowrap">{seatText.subtitle}</div>}
                     </div>
@@ -314,11 +314,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
                         {/* Modal */}
                         <div
-                            className="relative p-8 rounded-xl w-96 shadow-2xl"
-                            style={{
-                                backgroundColor: colors.ui.bgDark,
-                                border: `1px solid ${colors.ui.borderColor}`
-                            }}
+                            className={`relative p-8 rounded-xl w-96 shadow-2xl ${styles.modalContainer}`}
                         >
                             <h3 className="text-2xl font-bold mb-4 text-white text-center">{isSitAndGo ? "Sit & Go Buy-In" : "Cash Game Buy-In"}</h3>
 
@@ -326,11 +322,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             {isSitAndGo ? (
                                 // Sit & Go: Fixed buy-in amount
                                 <div
-                                    className="mb-6 p-4 rounded-lg border-2"
-                                    style={{
-                                        backgroundColor: colors.ui.bgMedium,
-                                        borderColor: colors.brand.primary
-                                    }}
+                                    className={`mb-6 p-4 rounded-lg border-2 ${styles.fixedBuyInPanel}`}
                                 >
                                     <div className="text-center">
                                         <div className="text-xs text-gray-400 mb-1">Required Buy-In</div>
@@ -367,11 +359,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                             min={minBuyInNum.toString()}
                                             max={maxBuyInNum.toString()}
                                             step={bigBlindValue.toString()}
-                                            className="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                            style={{
-                                                backgroundColor: colors.ui.bgMedium,
-                                                accentColor: colors.brand.primary
-                                            }}
+                                            className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${styles.buyInSlider}`}
                                         />
                                     </div>
                                     
@@ -381,11 +369,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                         value={buyInAmount}
                                         onChange={e => setBuyInAmount(e.target.value)}
                                         placeholder="Enter amount"
-                                        className="w-full px-4 py-2 rounded-lg text-white text-center text-lg"
-                                        style={{
-                                            backgroundColor: colors.ui.bgMedium,
-                                            border: `1px solid ${colors.ui.borderColor}`
-                                        }}
+                                        className={`w-full px-4 py-2 rounded-lg text-white text-center text-lg ${styles.buyInInput}`}
                                         step={bigBlindValue.toString()}
                                         min={minBuyInNum.toString()}
                                         max={maxBuyInNum.toString()}
@@ -404,11 +388,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                         return (
                                             <div
                                                 key={idx}
-                                                className="p-3 rounded-lg"
-                                                style={{
-                                                    backgroundColor: colors.ui.bgMedium + "80",
-                                                    border: `1px solid ${colors.ui.borderColor}`
-                                                }}
+                                                className={`p-3 rounded-lg ${styles.balanceCard}`}
                                             >
                                                 <div className="flex justify-between items-center">
                                                     <span className="text-white font-semibold">USDC</span>
@@ -429,14 +409,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
                             {/* Error Message */}
                             {joinError && (
-                                <div
-                                    className="mb-4 p-3 rounded-lg text-sm"
-                                    style={{
-                                        backgroundColor: colors.accent.danger + "30",
-                                        color: colors.accent.danger,
-                                        border: `1px solid ${colors.accent.danger}40`
-                                    }}
-                                >
+                                <div className={`mb-4 p-3 rounded-lg text-sm ${styles.errorCard}`}>
                                     ⚠️ {joinError}
                                 </div>
                             )}
@@ -446,10 +419,8 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                 <button
                                     onClick={handleBuyInConfirm}
                                     disabled={isJoining || exceedsBalance}
-                                    className="w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center"
+                                    className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton}`}
                                     style={{
-                                        background: colors.brand.primary,
-                                        color: "white",
                                         opacity: exceedsBalance ? 0.5 : 1,
                                         cursor: exceedsBalance ? "not-allowed" : "pointer"
                                     }}
@@ -477,11 +448,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                 </button>
                                 <button
                                     onClick={() => setShowBuyInModal(false)}
-                                    className="w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300"
-                                    style={{
-                                        backgroundColor: colors.accent.danger,
-                                        color: "white"
-                                    }}
+                                    className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 ${styles.cancelButton}`}
                                     disabled={isJoining}
                                 >
                                     Cancel
@@ -494,7 +461,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
                 {/* Placeholder div for potential future loading animation */}
                 {joinSuccess && (
-                    <div id="loading-animation-placeholder" style={{ display: "none" }}>
+                    <div id="loading-animation-placeholder" className={styles.hiddenPlaceholder}>
                         {/* Future loading animation will go here */}
                     </div>
                 )}

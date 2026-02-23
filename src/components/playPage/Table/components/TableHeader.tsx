@@ -14,9 +14,9 @@ import { RiMoneyDollarCircleLine } from "react-icons/ri";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
 import { NetworkSelector } from "../../../NetworkSelector";
-import { colors, hexToRgba } from "../../../../utils/colorConfig";
 import { formatGameFormatDisplay } from "../../../../utils/gameFormatUtils";
 import { GameFormat, GameOptionsDTO, PlayerDTO } from "@block52/poker-vm-sdk";
+import styles from "./TableHeader.module.css";
 
 export interface TableHeaderProps {
     // Table info
@@ -54,22 +54,10 @@ export interface TableHeaderProps {
     handleLobbyClick: () => void;
     handleCopyTableLink: () => void;
     handleDepositClick: () => void;
-    handleDepositMouseEnter: (e: React.MouseEvent<HTMLDivElement>) => void;
-    handleDepositMouseLeave: (e: React.MouseEvent<HTMLDivElement>) => void;
     fetchAccountBalance: () => void;
     copyToClipboard: (text: string) => void;
     onCloseSideBar: () => void;
     handleLeaveTableClick: () => void;
-    handleLeaveTableMouseEnter: (e: React.MouseEvent<HTMLSpanElement>) => void;
-    handleLeaveTableMouseLeave: (e: React.MouseEvent<HTMLSpanElement>) => void;
-
-    // Styles
-    headerStyle: React.CSSProperties;
-    subHeaderStyle: React.CSSProperties;
-    walletInfoStyle: React.CSSProperties;
-    balanceIconStyle: React.CSSProperties;
-    depositButtonStyle: React.CSSProperties;
-    sidebarToggleStyle: React.CSSProperties;
 }
 
 export const TableHeader: React.FC<TableHeaderProps> = ({
@@ -91,20 +79,10 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     handleLobbyClick,
     handleCopyTableLink,
     handleDepositClick,
-    handleDepositMouseEnter,
-    handleDepositMouseLeave,
     fetchAccountBalance,
     copyToClipboard,
     onCloseSideBar,
     handleLeaveTableClick,
-    handleLeaveTableMouseEnter,
-    handleLeaveTableMouseLeave,
-    headerStyle,
-    subHeaderStyle,
-    walletInfoStyle,
-    balanceIconStyle,
-    depositButtonStyle,
-    sidebarToggleStyle
 }) => {
     // Hidden in mobile landscape
     if (isMobileLandscape) {
@@ -115,15 +93,13 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
         <div className="flex-shrink-0">
             {/*//! MAIN HEADER - CASINO STYLE */}
             <div
-                className="w-[100vw] h-[50px] sm:h-[65px] text-center flex items-center justify-between px-2 sm:px-4 z-[100] relative border-b-2"
-                style={headerStyle}
+                className={`w-[100vw] h-[50px] sm:h-[65px] text-center flex items-center justify-between px-2 sm:px-4 z-[100] relative border-b-2 ${styles.headerRoot}`}
             >
                 {/* Subtle animated background */}
                 <div className="absolute inset-0 z-0">
                     {/* Bottom edge glow */}
                     <div
-                        className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent to-transparent opacity-50"
-                        style={{ backgroundImage: `linear-gradient(to right, transparent, ${colors.accent.glow}, transparent)` }}
+                        className={`absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent to-transparent opacity-50 ${styles.bottomGlow}`}
                     ></div>
                 </div>
 
@@ -139,12 +115,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     {/* Copy Table Link Button */}
                     <button
                         onClick={handleCopyTableLink}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:opacity-80 border"
-                        style={{
-                            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6),
-                            borderColor: colors.brand.primary,
-                            color: colors.brand.primary
-                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 hover:opacity-80 border ${styles.copyTableButton}`}
                         title="Copy table link to clipboard"
                     >
                         <FaCopy size={12} />
@@ -153,15 +124,12 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     </button>
                     {/* Game Format & Variant Display - Desktop Only */}
                     {gameOptions && (
-                        <div
-                            className="hidden md:flex items-center ml-4 px-3 py-1 rounded-lg"
-                            style={{ backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5), border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}` }}
-                        >
-                            <span className="text-sm font-semibold" style={{ color: colors.brand.primary }}>
+                        <div className={`hidden md:flex items-center ml-4 px-3 py-1 rounded-lg ${styles.gameFormatContainer}`}>
+                            <span className={`text-sm font-semibold ${styles.brandText}`}>
                                 {gameFormat ? `${formatGameFormatDisplay(gameFormat)} • ` : ""}
                                 Texas Hold'em
                                 {gameOptions.minPlayers && gameOptions.maxPlayers && (
-                                    <span className="ml-1" style={{ color: colors.ui.textSecondary }}>
+                                    <span className={`ml-1 ${styles.secondaryText}`}>
                                         ({tableActivePlayers.length}/{gameOptions.maxPlayers} Players)
                                     </span>
                                 )}
@@ -172,7 +140,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
 
                 {/* Right Section - Wallet info */}
                 <div className="flex items-center z-10 min-w-0">
-                    <div className="flex items-center rounded-lg py-1 px-1 sm:px-2 mr-1 sm:mr-3 min-w-0" style={walletInfoStyle}>
+                    <div className={`flex items-center rounded-lg py-1 px-1 sm:px-2 mr-1 sm:mr-3 min-w-0 ${styles.walletInfo}`}>
                         {isBalanceLoading ? (
                             <span className="text-xs sm:text-sm">Loading...</span>
                         ) : (
@@ -180,14 +148,12 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                                 {/* Address */}
                                 <div className="flex items-center mr-1 sm:mr-4 min-w-0">
                                     <span
-                                        className="font-mono text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-none"
-                                        style={{ color: colors.brand.primary }}
+                                        className={`font-mono text-[10px] sm:text-xs truncate max-w-[60px] sm:max-w-none ${styles.brandText}`}
                                     >
                                         {formattedAddress}
                                     </span>
                                     <FaCopy
-                                        className="ml-1 sm:ml-1.5 cursor-pointer transition-colors duration-200 hover:opacity-80"
-                                        style={{ color: colors.brand.primary }}
+                                        className={`ml-1 sm:ml-1.5 cursor-pointer transition-colors duration-200 hover:opacity-80 ${styles.brandText}`}
                                         size={9}
                                         onClick={() => copyToClipboard(publicKey || "")}
                                         title="Copy full address"
@@ -197,10 +163,9 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                                 {/* Balance */}
                                 <div className="flex items-center flex-shrink-0">
                                     <div
-                                        className="w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center mr-0.5 sm:mr-1.5"
-                                        style={balanceIconStyle}
+                                        className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full flex items-center justify-center mr-0.5 sm:mr-1.5 ${styles.balanceIcon}`}
                                     >
-                                        <span className="font-bold text-[8px] sm:text-[10px]" style={{ color: colors.brand.primary }}>
+                                        <span className={`font-bold text-[8px] sm:text-[10px] ${styles.brandText}`}>
                                             $
                                         </span>
                                     </div>
@@ -214,8 +179,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                                     <button
                                         onClick={fetchAccountBalance}
                                         disabled={isBalanceLoading}
-                                        className="ml-1 transition-colors duration-200 disabled:opacity-50 hover:opacity-80"
-                                        style={{ color: colors.brand.primary }}
+                                        className={`ml-1 transition-colors duration-200 disabled:opacity-50 hover:opacity-80 ${styles.brandText}`}
                                         title="Refresh balance"
                                     >
                                         <span className="text-[8px]">↻</span>
@@ -226,11 +190,8 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     </div>
 
                     <div
-                        className="flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 cursor-pointer rounded-full shadow-md border transition-all duration-300 flex-shrink-0"
-                        style={depositButtonStyle}
+                        className={`flex items-center justify-center w-6 h-6 sm:w-8 sm:h-8 cursor-pointer rounded-full shadow-md border transition-all duration-300 flex-shrink-0 ${styles.depositButton}`}
                         onClick={handleDepositClick}
-                        onMouseEnter={handleDepositMouseEnter}
-                        onMouseLeave={handleDepositMouseLeave}
                     >
                         <RiMoneyDollarCircleLine className="hover:scale-110 transition-transform duration-200" size={16} />
                     </div>
@@ -239,8 +200,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
 
             {/* SUB HEADER */}
             <div
-                className="text-white flex justify-between items-center p-1 sm:p-2 h-[28px] sm:h-[35px] relative overflow-hidden shadow-lg sub-header z-[1]"
-                style={subHeaderStyle}
+                className={`text-white flex justify-between items-center p-1 sm:p-2 h-[28px] sm:h-[35px] relative overflow-hidden shadow-lg sub-header z-[1] ${styles.subHeaderRoot}`}
             >
                 {/* Animated background overlay */}
                 <div className="sub-header-overlay shimmer-animation" />
@@ -252,19 +212,19 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 <div className="flex items-center z-20">
                     <div className="flex flex-col">
                         <div className="flex items-center space-x-1 sm:space-x-2">
-                            <span className="text-[10px] sm:text-[15px] font-semibold" style={{ color: colors.ui.textSecondary }}>
+                            <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
                                 {formattedValues.isTournamentStyle
                                     ? `${formattedValues.smallBlindFormatted} / ${formattedValues.bigBlindFormatted}`
                                     : `$${formattedValues.smallBlindFormatted} / $${formattedValues.bigBlindFormatted}`}
                             </span>
 
-                            <span className="text-[10px] sm:text-[15px] font-semibold" style={{ color: colors.ui.textSecondary }}>
+                            <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
                                 Hand #{handNumber}
                             </span>
-                            <span className="hidden sm:inline-block text-[15px] font-semibold" style={{ color: colors.ui.textSecondary }}>
+                            <span className={`hidden sm:inline-block text-[15px] font-semibold ${styles.secondaryText}`}>
                                 <span className="ml-2">Actions # {actionCount}</span>
                             </span>
-                            <span className="text-[10px] sm:text-[15px] font-semibold" style={{ color: colors.ui.textSecondary }}>
+                            <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
                                 <span className="sm:ml-2">Next to act: Seat {nextToAct}</span>
                             </span>
                         </div>
@@ -274,8 +234,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 {/* Right Section */}
                 <div className="flex items-center z-10 mr-1 sm:mr-3">
                     <span
-                        className="cursor-pointer transition-colors duration-200 px-1 sm:px-2 py-0.5 sm:py-1 rounded hover:opacity-80"
-                        style={sidebarToggleStyle}
+                        className={`cursor-pointer transition-colors duration-200 px-1 sm:px-2 py-0.5 sm:py-1 rounded hover:opacity-80 ${openSidebar ? styles.sidebarToggleOpen : styles.sidebarToggleClosed}`}
                         onClick={onCloseSideBar}
                         title="Toggle Action Log"
                     >
@@ -285,10 +244,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     {/* Only show Leave Table button if user is seated */}
                     {currentPlayerData && (
                         <span
-                            className="text-xs sm:text-[16px] cursor-pointer flex items-center gap-0.5 transition-colors duration-300 ml-2 sm:ml-3"
-                            style={{ color: colors.ui.textSecondary }}
-                            onMouseEnter={handleLeaveTableMouseEnter}
-                            onMouseLeave={handleLeaveTableMouseLeave}
+                            className={`text-xs sm:text-[16px] cursor-pointer flex items-center gap-0.5 transition-colors duration-300 ml-2 sm:ml-3 ${styles.leaveTableButton}`}
                             onClick={handleLeaveTableClick}
                             title="Leave Table"
                         >

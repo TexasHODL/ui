@@ -1,0 +1,33 @@
+.cancelButton {
+    background-color: var(--ui-text-secondary);
+}
+
+.infoCard {
+    background-color: var(--ui-bg-medium);
+}
+
+.maxButton {
+    background-color: var(--ui-bg-medium);
+}
+
+.amountInput {
+    background-color: var(--ui-bg-medium);
+    border: 1px solid var(--ui-text-secondary);
+}
+
+.amountInput:focus {
+    border-color: var(--brand-primary);
+}
+
+.buyButton {
+    background: var(--brand-primary);
+}
+
+.buyButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.noteText {
+    color: var(--ui-text-secondary);
+}

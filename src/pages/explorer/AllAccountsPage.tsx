@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { getCosmosClient } from "../../utils/cosmos/client";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { useNetwork } from "../../context/NetworkContext";
 import { microToUsdc } from "../../constants/currency";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
+import styles from "./AllAccountsPage.module.css";
 
 interface ValidatorInfo {
     operatorAddress: string;
@@ -235,14 +235,6 @@ export default function AllAccountsPage() {
         return { totalAccounts, totalUsdc, accountsWithBalance, validatorCount };
     }, [accounts]);
 
-    const containerStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
     const formatBalance = (amount: string, denom: string) => {
         const value = microToUsdc(amount);
         // Map known denoms to display names
@@ -280,48 +272,40 @@ export default function AllAccountsPage() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-sm mb-1">Total Accounts</p>
                         <p className="text-3xl font-bold text-white">{stats.totalAccounts.toLocaleString()}</p>
                     </div>
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-sm mb-1">Accounts With Balance</p>
                         <p className="text-3xl font-bold text-white">{stats.accountsWithBalance.toLocaleString()}</p>
                     </div>
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-sm mb-1">Validators</p>
                         <p className="text-3xl font-bold text-purple-400">{stats.validatorCount.toLocaleString()}</p>
                     </div>
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-sm mb-1">Total USDC</p>
-                        <p className="text-3xl font-bold" style={{ color: colors.brand.primary }}>
+                        <p className={`text-3xl font-bold ${styles.brandText}`}>
                             ${stats.totalUsdc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                     </div>
                 </div>
 
                 {/* Search and Refresh */}
-                <div className="backdrop-blur-md p-4 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                <div className={`backdrop-blur-md p-4 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                     <div className="flex flex-col md:flex-row gap-4">
                         <input
                             type="text"
                             value={searchFilter}
                             onChange={e => setSearchFilter(e.target.value)}
                             placeholder="Search by address or account type..."
-                            className="flex-1 px-4 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all"
-                            style={{
-                                backgroundColor: hexToRgba(colors.ui.bgMedium, 0.8),
-                                border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-                            }}
+                            className={`flex-1 px-4 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${styles.searchInput}`}
                         />
                         <button
                             onClick={fetchAllAccounts}
                             disabled={loading}
-                            className="px-6 py-2 rounded-lg font-bold transition-all disabled:opacity-50"
-                            style={{
-                                backgroundColor: colors.brand.primary,
-                                color: "white"
-                            }}
+                            className={`px-6 py-2 rounded-lg font-bold transition-all disabled:opacity-50 ${styles.refreshButton}`}
                         >
                             {loading ? "Loading..." : "Refresh"}
                         </button>
@@ -330,17 +314,17 @@ export default function AllAccountsPage() {
 
                 {/* Error Display */}
                 {error && (
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 border-2 border-red-500" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard} ${styles.errorContainer}`}>
                         <p className="text-red-400 text-center">{error}</p>
                     </div>
                 )}
 
                 {/* Accounts Table */}
                 {!error && (
-                    <div className="backdrop-blur-md rounded-xl shadow-2xl overflow-hidden" style={containerStyle}>
+                    <div className={`backdrop-blur-md rounded-xl shadow-2xl overflow-hidden ${styles.containerCard}`}>
                         {loading ? (
                             <div className="p-8 text-center">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: colors.brand.primary }}></div>
+                                <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${styles.loadingSpinner}`}></div>
                                 <p className="text-gray-400">Loading accounts...</p>
                             </div>
                         ) : filteredAndSortedAccounts.length === 0 ? (
@@ -351,7 +335,7 @@ export default function AllAccountsPage() {
                             <div className="overflow-x-auto">
                                 <table className="w-full">
                                     <thead>
-                                        <tr style={{ backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5) }}>
+                                        <tr className={styles.tableHeaderRow}>
                                             <th className="px-6 py-4 text-left text-gray-400 font-semibold">#</th>
                                             <th
                                                 className="px-6 py-4 text-left text-gray-400 font-semibold cursor-pointer hover:text-white transition-colors"
@@ -373,14 +357,13 @@ export default function AllAccountsPage() {
                                         {filteredAndSortedAccounts.map((account, index) => (
                                             <tr
                                                 key={account.address}
-                                                className="border-t cursor-pointer hover:bg-white/5 transition-colors"
-                                                style={{ borderColor: hexToRgba(colors.brand.primary, 0.1) }}
+                                                className={`border-t cursor-pointer hover:bg-white/5 transition-colors ${styles.tableRowBorder}`}
                                                 onClick={() => navigate(`/explorer/address/${account.address}`)}
                                             >
                                                 <td className="px-6 py-4 text-gray-500">{index + 1}</td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-white font-mono text-sm hover:underline break-all" style={{ color: colors.brand.primary }}>
+                                                        <span className={`text-white font-mono text-sm hover:underline break-all ${styles.brandText}`}>
                                                             {account.address}
                                                         </span>
                                                         {account.isValidator && (
@@ -401,11 +384,7 @@ export default function AllAccountsPage() {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span
-                                                        className="px-2 py-1 rounded text-xs font-medium"
-                                                        style={{
-                                                            backgroundColor: hexToRgba(colors.brand.primary, 0.1),
-                                                            color: colors.ui.textSecondary
-                                                        }}
+                                                        className={`px-2 py-1 rounded text-xs font-medium ${styles.typePill}`}
                                                     >
                                                         {account.type}
                                                     </span>

@@ -14,6 +14,7 @@ import { colors } from "../../../utils/colorConfig";
 import { getCardImageUrl } from "../../../utils/cardImages";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
+import styles from "./PlayersCommon.module.css";
 
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
     ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
@@ -116,28 +117,28 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         const statusText = useMemo(() => {
             if (isWinner && winnerAmount) {
                 return (
-                    <span className="font-bold flex items-center justify-center w-full h-8 mt-[22px] gap-1 text-base" style={{ color: "white" }}>
+                    <span className={`font-bold flex items-center justify-center w-full h-8 mt-[22px] gap-1 text-base ${styles.whiteText}`}>
                         WINS: {winnerAmount}
                     </span>
                 );
             }
             if (isSittingOut) {
                 return (
-                    <span className="font-bold animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center" style={{ color: "white" }}>
+                    <span className={`font-bold animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center ${styles.whiteText}`}>
                         SITTING OUT
                     </span>
                 );
             }
             if (isFolded) {
                 return (
-                    <span className="animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center" style={{ color: "white" }}>
+                    <span className={`animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center ${styles.whiteText}`}>
                         FOLD
                     </span>
                 );
             }
             if (isAllIn) {
                 return (
-                    <span className="animate-progress delay-2000 flex flex-col items-center w-full mb-2 mt-auto gap-0 justify-center" style={{ color: "white" }}>
+                    <span className={`animate-progress delay-2000 flex flex-col items-center w-full mb-2 mt-auto gap-0 justify-center ${styles.whiteText}`}>
                         <span>ALL IN</span>
                         {playerEquity !== null && (
                             <span className="text-yellow-400 font-bold text-sm">
@@ -175,8 +176,8 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         return (
             <div
                 key={index}
-                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer`}
-                style={{ ...containerStyle, color: colors.ui.textSecondary }}
+                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${styles.secondaryText}`}
+                style={containerStyle}
             >
                 {/* Development Mode Debug Info */}
                 {import.meta.env.VITE_NODE_ENV === "development" && (

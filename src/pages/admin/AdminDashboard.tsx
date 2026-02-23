@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
+import styles from "./AdminDashboard.module.css";
 
 interface AdminMenuItem {
     path: string;
@@ -46,23 +46,17 @@ const devToolsMenuItems: AdminMenuItem[] = [
 const MenuCard: React.FC<{ item: AdminMenuItem }> = ({ item }) => (
     <Link
         to={item.path}
-        className="p-6 rounded-lg border transition-all duration-200 hover:scale-[1.02]"
-        style={{
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-            borderColor: hexToRgba(colors.brand.primary, 0.2)
-        }}
+        className={`p-6 rounded-lg border transition-all duration-200 hover:scale-[1.02] ${styles.menuCard}`}
     >
         <div className="flex items-start gap-4">
             <div
-                className="p-3 rounded-lg"
-                style={{ backgroundColor: hexToRgba(colors.brand.primary, 0.1) }}
+                className={`p-3 rounded-lg ${styles.menuIconContainer}`}
             >
                 <svg
-                    className="w-6 h-6"
+                    className={`w-6 h-6 ${styles.brandIcon}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
-                    style={{ color: colors.brand.primary }}
                 >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
                 </svg>
@@ -96,11 +90,7 @@ const AdminDashboard: React.FC = () => {
             {/* Warning Banner */}
             <div className="mb-8 flex justify-center">
                 <div
-                    className="inline-flex items-center gap-3 p-4 rounded-lg border"
-                    style={{
-                        backgroundColor: hexToRgba("#FCD34D", 0.1),
-                        borderColor: hexToRgba("#FCD34D", 0.3)
-                    }}
+                    className={`inline-flex items-center gap-3 p-4 rounded-lg border ${styles.warningBanner}`}
                 >
                     <svg className="w-6 h-6 text-yellow-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -117,7 +107,7 @@ const AdminDashboard: React.FC = () => {
             {/* Bridge Management Section */}
             <div className="mb-10">
                 <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5" style={{ color: colors.brand.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-5 h-5 ${styles.brandIcon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
                     Bridge Management
@@ -132,7 +122,7 @@ const AdminDashboard: React.FC = () => {
             {/* Developer Tools Section */}
             <div>
                 <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5" style={{ color: colors.brand.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className={`w-5 h-5 ${styles.brandIcon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                     </svg>
                     Developer Tools

@@ -1,6 +1,6 @@
 import React from "react";
-import { colors } from "../../utils/colorConfig";
 import { TransactionStatus } from "../../types";
+import styles from "./DepositComponents.module.css";
 
 interface DepositProgressBarProps {
     status: TransactionStatus;
@@ -41,19 +41,18 @@ export const DepositProgressBar: React.FC<DepositProgressBarProps> = ({
     return (
         <div className="mb-6">
             <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold" style={{ color: "white" }}>
+                <h2 className={`text-lg font-semibold ${styles.titleText}`}>
                     Deposit Status
                 </h2>
-                <span className="text-sm" style={{ color: colors.accent.success }}>
+                <span className={`text-sm ${styles.statusSuccess}`}>
                     {getStatusMessage(status)}
                 </span>
             </div>
-            <div className="w-full rounded-full h-4" style={{ backgroundColor: colors.ui.bgMedium }}>
+            <div className={`w-full rounded-full h-4 ${styles.progressTrack}`}>
                 <div
-                    className="h-4 rounded-full transition-all duration-500 ease-out"
+                    className={`h-4 rounded-full transition-all duration-500 ease-out ${styles.progressFill}`}
                     style={{
-                        width: `${progressPercentage}%`,
-                        backgroundColor: colors.accent.success
+                        width: `${progressPercentage}%`
                     }}
                 ></div>
             </div>
@@ -64,8 +63,7 @@ export const DepositProgressBar: React.FC<DepositProgressBarProps> = ({
                         href={`https://etherscan.io/tx/${txHash}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:underline"
-                        style={{ color: colors.brand.primary }}
+                        className={`hover:underline ${styles.txLink}`}
                     >
                         {txHash.substring(0, 10)}...{txHash.substring(txHash.length - 8)}
                     </a>

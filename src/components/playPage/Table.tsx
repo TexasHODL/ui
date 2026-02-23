@@ -56,7 +56,7 @@ import { TableHeader, TableBoard, TableSidebar, TableModals, PlayerSeating, Tabl
 
 import Chip from "./common/Chip";
 import defaultLogo from "../../assets/YOUR_CLUB.png";
-import { colors, getTableHeaderGradient, hexToRgba } from "../../utils/colorConfig";
+import { colors, hexToRgba } from "../../utils/colorConfig";
 import { HexagonPattern } from "../common/Modal";
 
 // Use environment variable for club logo with fallback to default
@@ -334,55 +334,6 @@ const Table = React.memo(() => {
         }
     }, [gameOptions, gameFormat]);
 
-    // Memoize all inline styles to prevent re-renders
-    const headerStyle = useMemo(
-        () => ({
-            background: getTableHeaderGradient(),
-            borderColor: colors.table.borderColor
-        }),
-        []
-    );
-
-
-    const walletInfoStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-        }),
-        []
-    );
-
-    const balanceIconStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.brand.primary, 0.2)
-        }),
-        []
-    );
-
-    const depositButtonStyle = useMemo(
-        () => ({
-            backgroundColor: colors.ui.bgMedium,
-            borderColor: hexToRgba(colors.brand.primary, 0.3),
-            color: colors.brand.primary
-        }),
-        []
-    );
-
-    const subHeaderStyle = useMemo(
-        () => ({
-            background: getTableHeaderGradient()
-        }),
-        []
-    );
-
-    const sidebarToggleStyle = useMemo(
-        () => ({
-            backgroundColor: openSidebar ? hexToRgba(colors.brand.primary, 0.3) : "transparent",
-            color: openSidebar ? "white" : colors.brand.primary
-        }),
-        [openSidebar]
-    );
-
     const tableBoxShadowStyle = useMemo(
         () => ({
             boxShadow: `0 7px 15px ${hexToRgba("#000000", 0.6)}`
@@ -651,24 +602,6 @@ const Table = React.memo(() => {
         window.location.href = "/";
     }, []);
 
-    const handleDepositMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        e.currentTarget.style.borderColor = colors.brand.primary;
-        e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.1);
-    }, []);
-
-    const handleDepositMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        e.currentTarget.style.borderColor = hexToRgba(colors.brand.primary, 0.3);
-        e.currentTarget.style.backgroundColor = colors.ui.bgMedium;
-    }, []);
-
-    const handleLeaveTableMouseEnter = useCallback((e: React.MouseEvent<HTMLSpanElement>) => {
-        e.currentTarget.style.color = "white";
-    }, []);
-
-    const handleLeaveTableMouseLeave = useCallback((e: React.MouseEvent<HTMLSpanElement>) => {
-        e.currentTarget.style.color = colors.ui.textSecondary;
-    }, []);
-
     // Open leave table modal
     const handleLeaveTableClick = useCallback(() => {
         setIsLeaveModalOpen(true);
@@ -749,20 +682,10 @@ const Table = React.memo(() => {
                 handleLobbyClick={handleLobbyClick}
                 handleCopyTableLink={handleCopyTableLink}
                 handleDepositClick={handleDepositClick}
-                handleDepositMouseEnter={handleDepositMouseEnter}
-                handleDepositMouseLeave={handleDepositMouseLeave}
                 fetchAccountBalance={fetchAccountBalance}
                 copyToClipboard={copyToClipboard}
                 onCloseSideBar={onCloseSideBar}
                 handleLeaveTableClick={handleLeaveTableClick}
-                handleLeaveTableMouseEnter={handleLeaveTableMouseEnter}
-                handleLeaveTableMouseLeave={handleLeaveTableMouseLeave}
-                headerStyle={headerStyle}
-                subHeaderStyle={subHeaderStyle}
-                walletInfoStyle={walletInfoStyle}
-                balanceIconStyle={balanceIconStyle}
-                depositButtonStyle={depositButtonStyle}
-                sidebarToggleStyle={sidebarToggleStyle}
             />
 
             {/* Mobile Landscape Floating Controls */}
