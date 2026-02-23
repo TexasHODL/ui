@@ -8,11 +8,11 @@ import {
     ETH_CHAIN_ID
 } from "../../config/constants";
 
-const useWalletBalance = () => {
+const useWalletBalance = (tokenAddress: string = ETH_USDC_ADDRESS) => {
     const { address } = useUserWalletConnect();
 
     const wagmiContractConfig = {
-        address: ETH_USDC_ADDRESS as `0x${string}`,
+        address: tokenAddress as `0x${string}`,
         abi: erc20abi,
         chainId: ETH_CHAIN_ID
     };

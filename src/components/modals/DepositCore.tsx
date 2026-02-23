@@ -9,7 +9,7 @@ import useApprove from "../../hooks/wallet/useApprove";
 import spinner from "../../assets/spinning-circles.svg";
 import useWalletBalance from "../../hooks/wallet/useWalletBalance";
 import { toast } from "react-toastify";
-import { ETH_USDC_ADDRESS, COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
+import { ETH_USDC_ADDRESS, ETH_USDT_ADDRESS, COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
 import { useCosmosWallet } from "../../hooks";
 import { useModalStyles } from "../../hooks/useModalStyles";
 import { formatUSDCToSimpleDollars, convertAmountToBigInt } from "../../utils/numberUtils";
@@ -19,6 +19,7 @@ import PaymentDisplay from "./CryptoPayment/PaymentDisplay";
 import PaymentStatusMonitor from "./CryptoPayment/PaymentStatusMonitor";
 
 type DepositMethod = "crypto" | "usdc";
+type DepositToken = "USDC" | "USDT";
 
 interface PaymentData {
     payment_id: string;
@@ -35,20 +36,26 @@ const DepositCore: React.FC<DepositCoreProps> = ({
     onSuccess,
     showMethodSelector = true
 }) => {
-    const USDC_ADDRESS = ETH_USDC_ADDRESS;
     const BRIDGE_ADDRESS = COSMOS_BRIDGE_ADDRESS;
 
+    // Token selection for Web3 deposit (USDC or USDT)
+    const [selectedToken, setSelectedToken] = useState<DepositToken>("USDC");
+    const tokenAddress = selectedToken === "USDC" ? ETH_USDC_ADDRESS : ETH_USDT_ADDRESS;
+
     const { open, isConnected, address } = useUserWalletConnect();
-    const { deposit, isDepositPending, isDepositConfirmed, isPending, depositError } = useDepositUSDC();
+    const { deposit, depositToken, isDepositPending, isDepositConfirmed, isPending, depositError } = useDepositUSDC();
     const { isApprovePending, isApproveConfirmed, isLoading, approve, approveError } = useApprove();
     const [amount, setAmount] = useState<string>("0");
-    const { decimals } = useDecimal(USDC_ADDRESS);
+    const { decimals } = useDecimal(tokenAddress);
     const [walletAllowance, setWalletAllowance] = useState<bigint>(BigInt(0));
     const [tmpWalletAllowance, setTmpWalletAllowance] = useState<bigint>(BigInt(0));
     const [tmpDepositAmount, setTmpDepositAmount] = useState<bigint>(BigInt(0));
-    const { allowance } = useAllowance();
-    const { balance } = useWalletBalance();
+    const { allowance } = useAllowance(tokenAddress);
+    const { balance } = useWalletBalance(tokenAddress);
     const cosmosWallet = useCosmosWallet();
+
+    // USDT approval quirk: must reset allowance to 0 before setting new value
+    const [isResettingAllowance, setIsResettingAllowance] = useState(false);
 
     // Crypto payment state
     const [depositMethod, setDepositMethod] = useState<DepositMethod>("crypto");
@@ -65,7 +72,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
 
     useEffect(() => {
         if (isDepositConfirmed) {
-            toast.success("Deposit successful! USDC sent to your game wallet.", { autoClose: 5000 });
+            toast.success(`Deposit successful! ${selectedToken} sent to your game wallet.`, { autoClose: 5000 });
             setAmount("0");
             setWalletAllowance(w => w - tmpDepositAmount);
             cosmosWallet.refreshBalance();
@@ -76,12 +83,22 @@ const DepositCore: React.FC<DepositCoreProps> = ({
     const [approvalToastShown, setApprovalToastShown] = React.useState(false);
 
     useEffect(() => {
-        if (isApproveConfirmed && !approvalToastShown && tmpWalletAllowance > 0n) {
-            toast.success("Account activated! You can now deposit USDC anytime.", { autoClose: 5000 });
-            setWalletAllowance(tmpWalletAllowance);
-            setApprovalToastShown(true);
+        if (isApproveConfirmed && !approvalToastShown) {
+            if (isResettingAllowance) {
+                // Step 2 of USDT approval: zero-approval confirmed, now set max allowance
+                setIsResettingAllowance(false);
+                setWalletAllowance(0n);
+                const maxApproval = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+                approve(tokenAddress, BRIDGE_ADDRESS, maxApproval).then(() => {
+                    setTmpWalletAllowance(maxApproval);
+                });
+            } else if (tmpWalletAllowance > 0n) {
+                toast.success(`Account activated! You can now deposit ${selectedToken} anytime.`, { autoClose: 5000 });
+                setWalletAllowance(tmpWalletAllowance);
+                setApprovalToastShown(true);
+            }
         }
-    }, [isApproveConfirmed, tmpWalletAllowance, approvalToastShown]);
+    }, [isApproveConfirmed, tmpWalletAllowance, approvalToastShown, isResettingAllowance]);
 
     useEffect(() => {
         if (isLoading || isApprovePending) {
@@ -101,6 +118,14 @@ const DepositCore: React.FC<DepositCoreProps> = ({
         }
     }, [approveError]);
 
+    // Reset approval state when switching tokens
+    useEffect(() => {
+        setWalletAllowance(BigInt(0));
+        setTmpWalletAllowance(BigInt(0));
+        setApprovalToastShown(false);
+        setIsResettingAllowance(false);
+    }, [selectedToken]);
+
     const allowed = React.useMemo(() => {
         if (!walletAllowance || !decimals || !+amount) return false;
         const amountInBigInt = convertAmountToBigInt(amount, decimals);
@@ -115,10 +140,19 @@ const DepositCore: React.FC<DepositCoreProps> = ({
 
         try {
             const maxApproval = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-            await approve(USDC_ADDRESS, BRIDGE_ADDRESS, maxApproval);
+
+            // USDT quirk: must reset allowance to 0 before setting new value
+            if (selectedToken === "USDT" && walletAllowance > 0n) {
+                setIsResettingAllowance(true);
+                await approve(tokenAddress, BRIDGE_ADDRESS, 0n);
+                return;
+            }
+
+            await approve(tokenAddress, BRIDGE_ADDRESS, maxApproval);
             setTmpWalletAllowance(maxApproval);
         } catch (err) {
             console.error("Approval failed:", err);
+            setIsResettingAllowance(false);
         }
     };
 
@@ -132,7 +166,13 @@ const DepositCore: React.FC<DepositCoreProps> = ({
         if (allowed) {
             try {
                 const amountInBigInt = convertAmountToBigInt(amount, decimals);
-                await deposit(amountInBigInt, cosmosWallet.address);
+
+                if (selectedToken === "USDC") {
+                    await deposit(amountInBigInt, cosmosWallet.address);
+                } else {
+                    await depositToken(amountInBigInt, cosmosWallet.address, tokenAddress);
+                }
+
                 setTmpDepositAmount(amountInBigInt);
             } catch (err) {
                 console.error("Deposit failed:", err);
@@ -230,7 +270,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                             Pay with Crypto
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">
-                                            BTC or USDT
+                                            BTC or USDT (fees apply)
                                         </div>
                                     </div>
                                 </button>
@@ -256,7 +296,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                             Deposit via Web3
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1">
-                                            USDC (ERC20)
+                                            USDC or USDT (ERC20)
                                         </div>
                                     </div>
                                 </button>
@@ -297,6 +337,11 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                         </div>
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Fee Notice */}
+                            <div className="mb-3 p-2 rounded-lg bg-yellow-900/20 border border-yellow-500/30 text-yellow-400 text-xs">
+                                This method uses a third-party payment processor. A processing fee applies and will be shown before you confirm.
                             </div>
 
                             {/* Info Box */}
@@ -343,16 +388,65 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                                 </div>
                             )}
 
+                            {/* Token Selector */}
+                            {isConnected && (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        Select Token
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            onClick={() => setSelectedToken("USDC")}
+                                            className={`p-2 rounded-lg border transition-all text-center ${
+                                                selectedToken === "USDC"
+                                                    ? "border-blue-500 bg-blue-900/30 text-white"
+                                                    : "border-gray-600 bg-gray-900 text-gray-400 hover:border-gray-500"
+                                            }`}
+                                            style={
+                                                selectedToken === "USDC"
+                                                    ? { borderColor: colors.brand.primary, backgroundColor: hexToRgba(colors.brand.primary, 0.2) }
+                                                    : {}
+                                            }
+                                        >
+                                            <div className="text-sm font-semibold">USDC</div>
+                                            <div className="text-xs text-gray-400">Direct deposit</div>
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedToken("USDT")}
+                                            className={`p-2 rounded-lg border transition-all text-center ${
+                                                selectedToken === "USDT"
+                                                    ? "border-blue-500 bg-blue-900/30 text-white"
+                                                    : "border-gray-600 bg-gray-900 text-gray-400 hover:border-gray-500"
+                                            }`}
+                                            style={
+                                                selectedToken === "USDT"
+                                                    ? { borderColor: colors.brand.primary, backgroundColor: hexToRgba(colors.brand.primary, 0.2) }
+                                                    : {}
+                                            }
+                                        >
+                                            <div className="text-sm font-semibold">USDT</div>
+                                            <div className="text-xs text-gray-400">Auto-swaps to USDC</div>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             {balance !== undefined && balance !== null && (
                                 <div className="mb-4 p-3 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Web3 Wallet Balance</span>
-                                    <span className="text-white font-semibold">${formatUSDCToSimpleDollars(balance)} USDC</span>
+                                    <span className="text-white font-semibold">${formatUSDCToSimpleDollars(balance)} {selectedToken}</span>
+                                </div>
+                            )}
+
+                            {selectedToken === "USDT" && (
+                                <div className="mb-4 p-2 rounded-lg bg-blue-900/20 border border-blue-500/30 text-blue-400 text-xs">
+                                    USDT will be automatically swapped to USDC via Uniswap on deposit.
                                 </div>
                             )}
 
                             <div className="mb-4">
                                 <label htmlFor="usdc-amount" className="block text-sm font-medium text-gray-400 mb-2">
-                                    Amount to Deposit (USDC)
+                                    Amount to Deposit ({selectedToken})
                                 </label>
                                 <div className="relative">
                                     <input
