@@ -66,7 +66,7 @@ export const useTableHeader = (tableId: string): UseTableHeaderReturn => {
 
     // Handle deposit click
     const handleDepositClick = useCallback(() => {
-        window.location.href = "/deposit";
+        window.location.href = "/";
     }, []);
 
     // Handle lobby click

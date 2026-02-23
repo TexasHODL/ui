@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { colors, hexToRgba } from "../utils/colorConfig";
-import { useCosmosWallet, useUserWalletConnect } from "../hooks";
+import { useCosmosWallet } from "../hooks";
 import { microToUsdc } from "../constants/currency";
 
 // Copy to clipboard utility
@@ -32,8 +32,6 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
 }) => {
     const navigate = useNavigate();
     const cosmosWallet = useCosmosWallet();
-    const { isConnected: isWeb3Connected, open: openWeb3Modal, disconnect: disconnectWeb3, address: web3Address } = useUserWalletConnect();
-
     // Get USDC balance (formatted to 2 decimal places)
     const usdcBalance = useMemo(() => {
         const balance = cosmosWallet.balance.find(b => b.denom === "usdc");
@@ -189,39 +187,6 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                     </button>
                 </div>
 
-                {/* Web3 Wallet Connection (for Ethereum deposits) */}
-                <div className="mt-4 pt-4 border-t border-gray-700">
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-gray-400 text-sm">Ethereum Wallet</span>
-                        {isWeb3Connected && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Connected</span>
-                        )}
-                    </div>
-                    {isWeb3Connected ? (
-                        <div className="space-y-2">
-                            <div className="p-2 rounded-lg bg-gray-900/50 border border-gray-700/50">
-                                <p className="text-gray-300 text-xs font-mono truncate">{web3Address}</p>
-                            </div>
-                            <button
-                                onClick={disconnectWeb3}
-                                className="w-full py-2 rounded-lg text-sm font-medium transition-all hover:opacity-90 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-400 hover:to-red-500 text-white"
-                            >
-                                Disconnect
-                            </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={openWeb3Modal}
-                            className="w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2"
-                            style={buttonStyle(colors.brand.primary)}
-                        >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                            </svg>
-                            Connect Web3 Wallet
-                        </button>
-                    )}
-                </div>
             </div>
         </div>
     );

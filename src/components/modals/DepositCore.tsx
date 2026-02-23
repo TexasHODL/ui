@@ -9,7 +9,10 @@ import useApprove from "../../hooks/wallet/useApprove";
 import spinner from "../../assets/spinning-circles.svg";
 import useWalletBalance from "../../hooks/wallet/useWalletBalance";
 import { toast } from "react-toastify";
-import { ETH_USDC_ADDRESS, ETH_USDT_ADDRESS, COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
+import { COSMOS_BRIDGE_ADDRESS, PROXY_URL } from "../../config/constants";
+import { maxUint256 } from "viem";
+import { getTokenAddress } from "../../utils/tokenUtils";
+import type { DepositToken } from "../../utils/tokenUtils";
 import { useCosmosWallet } from "../../hooks";
 import { useModalStyles } from "../../hooks/useModalStyles";
 import { formatUSDCToSimpleDollars, convertAmountToBigInt } from "../../utils/numberUtils";
@@ -19,7 +22,6 @@ import PaymentDisplay from "./CryptoPayment/PaymentDisplay";
 import PaymentStatusMonitor from "./CryptoPayment/PaymentStatusMonitor";
 
 type DepositMethod = "crypto" | "usdc";
-type DepositToken = "USDC" | "USDT";
 
 interface PaymentData {
     payment_id: string;
@@ -40,7 +42,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
 
     // Token selection for Web3 deposit (USDC or USDT)
     const [selectedToken, setSelectedToken] = useState<DepositToken>("USDC");
-    const tokenAddress = selectedToken === "USDC" ? ETH_USDC_ADDRESS : ETH_USDT_ADDRESS;
+    const tokenAddress = getTokenAddress(selectedToken);
 
     const { open, isConnected, address } = useUserWalletConnect();
     const { deposit, depositToken, isDepositPending, isDepositConfirmed, isPending, depositError } = useDepositUSDC();
@@ -88,9 +90,8 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                 // Step 2 of USDT approval: zero-approval confirmed, now set max allowance
                 setIsResettingAllowance(false);
                 setWalletAllowance(0n);
-                const maxApproval = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-                approve(tokenAddress, BRIDGE_ADDRESS, maxApproval).then(() => {
-                    setTmpWalletAllowance(maxApproval);
+                approve(tokenAddress, BRIDGE_ADDRESS, maxUint256).then(() => {
+                    setTmpWalletAllowance(maxUint256);
                 });
             } else if (tmpWalletAllowance > 0n) {
                 toast.success(`Account activated! You can now deposit ${selectedToken} anytime.`, { autoClose: 5000 });
@@ -139,8 +140,6 @@ const DepositCore: React.FC<DepositCoreProps> = ({
         }
 
         try {
-            const maxApproval = BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-
             // USDT quirk: must reset allowance to 0 before setting new value
             if (selectedToken === "USDT" && walletAllowance > 0n) {
                 setIsResettingAllowance(true);
@@ -148,8 +147,8 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                 return;
             }
 
-            await approve(tokenAddress, BRIDGE_ADDRESS, maxApproval);
-            setTmpWalletAllowance(maxApproval);
+            await approve(tokenAddress, BRIDGE_ADDRESS, maxUint256);
+            setTmpWalletAllowance(maxUint256);
         } catch (err) {
             console.error("Approval failed:", err);
             setIsResettingAllowance(false);

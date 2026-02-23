@@ -3,17 +3,13 @@ import { useNavigate } from "react-router-dom"; // Import useNavigate for naviga
 
 import "./Dashboard.css"; // Import the CSS file with animations
 
-// Ethereum Mainnet imports (USDC deposits via bridge)
-import { ethers } from "ethers";
-import { ETH_RPC_URL, ETH_USDC_ADDRESS, ETH_CHAIN_ID } from "../config/constants";
+// Ethereum Mainnet imports (for auto-switch to correct chain)
+import { ETH_CHAIN_ID } from "../config/constants";
 import { useAccount as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
 import { usdcToMicroBigInt, formatMicroAsUsdc, microToUsdc } from "../constants/currency";
-
-const RPC_URL = ETH_RPC_URL; // Ethereum Mainnet RPC for USDC balance queries
-const USDC_ABI = ["function balanceOf(address account) view returns (uint256)"];
 
 import { WithdrawalModal, USDCDepositModal } from "../components/modals";
 import TableList from "../components/TableList";
@@ -104,11 +100,6 @@ const Dashboard: React.FC = () => {
     // USDC Deposit Modal
     const [showUSDCDepositModal, setShowUSDCDepositModal] = useState(false);
 
-    // Wallet connection warning
-    const [showWalletWarning, setShowWalletWarning] = useState(false);
-
-    // Web3 wallet balance state
-    const [web3Balance, setWeb3Balance] = useState<string>("0.00");
 
     // Cosmos wallet state and hooks
     const cosmosWallet = useCosmosWallet();
@@ -127,30 +118,6 @@ const Dashboard: React.FC = () => {
     const [transferAmount, setTransferAmount] = useState("");
     const [transferError, setTransferError] = useState("");
     const [isTransferring, setIsTransferring] = useState(false);
-
-    // Function to get USDC balance on Ethereum Mainnet
-    const fetchWeb3Balance = useCallback(async () => {
-        if (!address) return;
-
-        try {
-            const provider = new ethers.JsonRpcProvider(RPC_URL);
-            const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, provider);
-            const balance = await usdcContract.balanceOf(address);
-            const formattedBalance = ethers.formatUnits(balance, 6); // USDC has 6 decimals
-            const roundedBalance = parseFloat(formattedBalance).toFixed(2);
-            setWeb3Balance(roundedBalance);
-        } catch (error) {
-            console.error("Error fetching Ethereum USDC balance:", error);
-            setWeb3Balance("0.00");
-        }
-    }, [address]);
-
-    // Fetch balance when wallet connects
-    useEffect(() => {
-        if (address) {
-            fetchWeb3Balance();
-        }
-    }, [fetchWeb3Balance, address]);
 
     // Password validation function
     const handlePasswordSubmit = () => {
@@ -366,17 +333,10 @@ const Dashboard: React.FC = () => {
         autoSwitchToEthereum();
     }, [isConnected, chain?.id, switchChain]);
 
-    // Memoized Deposit callback
+    // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
     const handleDepositClick = useCallback(() => {
-        if (isConnected) {
-            setShowUSDCDepositModal(true);
-        } else {
-            // Show warning popup if wallet not connected
-            setShowWalletWarning(true);
-            // Auto-hide after 3 seconds
-            setTimeout(() => setShowWalletWarning(false), 3000);
-        }
-    }, [isConnected]);
+        setShowUSDCDepositModal(true);
+    }, []);
 
     // Memoized Withdrawal callback
     const handleWithdrawClick = useCallback(() => {
@@ -1099,25 +1059,6 @@ const Dashboard: React.FC = () => {
                         />
                     )}
 
-                    {/* Wallet Connection Warning Popup */}
-                    {showWalletWarning && (
-                        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
-                            <div
-                                className="px-6 py-4 rounded-lg shadow-lg flex items-center gap-3"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.ui.bgDark, 0.95),
-                                    border: `2px solid ${colors.accent.danger}`,
-                                    backdropFilter: "blur(10px)"
-                                }}
-                            >
-                                <div className="text-2xl">⚠️</div>
-                                <div>
-                                    <p className="text-white font-semibold">Please connect your Web3 wallet first</p>
-                                    <p className="text-gray-400 text-sm mt-1">Click the wallet button to connect MetaMask or WalletConnect</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </>
             )}
         </div>
