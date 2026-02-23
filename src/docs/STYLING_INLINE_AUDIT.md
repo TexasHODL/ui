@@ -373,6 +373,88 @@ Targets:
 - `src/components/Footer.css`
 - `src/components/playPage/common/Badge.css`
 
+### Wave 5 implementation status (in progress)
+
+Completed in this slice:
+
+- `src/components/playPage/Table.css` (theme-token consolidation pass)
+- `src/components/Footer.css` (theme-token consolidation pass)
+- `src/components/playPage/common/Badge.css` (theme-token consolidation pass)
+
+Wave 5 slice outcomes:
+
+- Replaced hardcoded color literals with theme-variable-driven values in key `Table.css` selectors.
+- Consolidated legacy `rgba(...)`/hex color usages to `color-mix(...)` + existing CSS variables where appropriate.
+- Preserved class names/selectors and behavior to avoid UI regressions.
+- Reviewed paired TSX consumers to preserve styling behavior and responsiveness:
+	- `src/components/Footer.tsx` + footer action-panel TSX consumers
+	- `src/components/playPage/common/Badge.tsx`
+	- No responsive breakpoints/layout classes were modified in TSX.
+
+Wave 5 slice evidence (target-local):
+
+- `Table.css`: removed legacy literals in consolidated hotspots (`text-glow`, shimmer gradients, action pulse, sit-out toggle states, reduced-motion gradient fallback).
+- `Footer.css`: replaced hardcoded hover/gradient/shadow colors with theme-variable-driven values.
+- `Badge.css`: replaced hardcoded action/timer/shadow colors with theme-variable-driven values while preserving tournament place classes.
+- Targeted lint/type checks passed for table surfaces (no errors; one pre-existing hook dependency warning in `Table.tsx`).
+- Targeted lint/type checks passed for footer and badge TSX consumers.
+
+Remaining Wave 5 targets:
+
+- ✅ Wave 5 CSS consolidation targets are complete (`Table.css`, `Footer.css`, `Badge.css`).
+
+### Wave 5 completion status
+
+- ✅ Wave 5 is complete under current acceptance criteria.
+
+### Wave 5 hardcoded/token review notes (team follow-up)
+
+Purpose:
+
+- Capture hardcoded values intentionally retained or currently mismatched with token defaults for explicit team review before token standardization.
+
+Current conflict/mismatch list:
+
+1. `src/components/playPage/Table.css` (`.text-glow`)
+	- Previous hardcoded source color: `rgba(66, 153, 225, 0.5/0.3)` (hex base `#4299e1`).
+	- Current tokenized value in file: `var(--brand-primary)` at 50%/30%.
+	- Default token value: `--brand-primary = #3b82f6` (`src/utils/colorConfig.ts`).
+	- Status: **not exact parity** (`#4299e1` vs `#3b82f6`); requires product/design sign-off if token adoption is desired.
+
+2. `src/components/playPage/Table.css` (`.sit-out-toggle*` active/hover)
+	- Hardcoded values currently used: `#f97316`, `rgba(249, 115, 22, 0.3)`, `#fb923c`.
+	- Closest token candidate: `--accent-warning`.
+	- Default token value: `--accent-warning = #f59e0b`.
+	- Status: **not exact parity**; keep hardcoded values unless UX approves warning-token alignment.
+
+3. `src/components/playPage/common/Badge.css` (`.timer-extension-button`, hover)
+	- Hardcoded values currently used: `#2563eb` (base), `#3b82f6` (hover).
+	- Closest token candidate: `--brand-primary = #3b82f6`.
+	- Status: hover is exact match to token; base is **not exact parity** if replaced directly with token.
+
+4. `src/components/playPage/common/Badge.css` (`.tournament-payout-win`)
+	- Hardcoded value currently used: `#4ade80`.
+	- Closest token candidate: `--accent-success = #10b981`.
+	- Status: **not exact parity**; requires explicit color decision before token migration.
+
+5. `src/components/Footer.css` (button gradients/shadows)
+	- Tokenized mappings use: `--brand-primary`, `--accent-success`, `--accent-danger`, `--accent-glow`, `--ui-bg-dark` + `color-mix(...)` alpha conversions.
+	- Default token values match prior literal channels used in this file (`#3b82f6`, `#10b981`, `#ef4444`, `#64ffda`, `#1f2937`).
+	- Status: **parity-safe** under default token map.
+
+Decision guidance for future cleanup:
+
+- Safe-to-tokenize now: Footer mappings.
+- Needs design/product sign-off before tokenizing: `Table.css` text glow + sit-out toggle palette, and `Badge.css` timer base + tournament payout win colors.
+
+Decision checklist (team sign-off):
+
+- [ ] `Table.css` `.text-glow`: approve replacing `#4299e1`-based glow with `--brand-primary` (`#3b82f6`).
+- [ ] `Table.css` `.sit-out-toggle*`: approve replacing `#f97316`/`#fb923c` orange palette with `--accent-warning` (`#f59e0b`).
+- [ ] `Badge.css` `.timer-extension-button` base: approve replacing `#2563eb` with `--brand-primary` (`#3b82f6`) or define a new token.
+- [ ] `Badge.css` `.tournament-payout-win`: approve replacing `#4ade80` with `--accent-success` (`#10b981`) or define a tournament-success token.
+- [ ] `Footer.css`: confirm tokenized mappings are approved as final (parity-safe under current defaults).
+
 ## Acceptance criteria (refined)
 
 1. Single architecture documented and followed: CSS Modules + Tailwind + CSS variables.

@@ -90,7 +90,7 @@
 
 /* Enhanced glow effects for text */
 .text-glow {
-    text-shadow: 0 0 5px rgba(66, 153, 225, 0.5), 0 0 10px rgba(66, 153, 225, 0.3);
+    text-shadow: 0 0 5px color-mix(in srgb, var(--brand-primary) 50%, transparent), 0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 
 /* New classes for extracted inline styles */
@@ -111,7 +111,7 @@
     inset: 0;
     z-index: 0;
     opacity: 0.3;
-    background-image: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--brand-primary-10) 25%, rgba(0,0,0,0) 50%, var(--brand-primary-10) 75%, rgba(0,0,0,0) 100%);
+    background-image: linear-gradient(90deg, transparent 0%, var(--brand-primary-10) 25%, transparent 50%, var(--brand-primary-10) 75%, transparent 100%);
     background-size: 200% 100%;
 }
 
@@ -134,7 +134,7 @@
     inset: 0;
     z-index: 0;
     opacity: 0.3;
-    background-image: linear-gradient(90deg, rgba(0,0,0,0) 0%, var(--brand-primary-10) 25%, rgba(0,0,0,0) 50%, var(--brand-primary-10) 75%, rgba(0,0,0,0) 100%);
+    background-image: linear-gradient(90deg, transparent 0%, var(--brand-primary-10) 25%, transparent 50%, var(--brand-primary-10) 75%, transparent 100%);
     background-size: 200% 100%;
 }
 
@@ -186,9 +186,9 @@
 
 .pot-display {
     font-size: 28px;
-    background-color: rgba(0,0,0,0.25);
+    background-color: color-mix(in srgb, #000000 25%, transparent);
     border-radius: 9999px;
-    color: rgb(255, 255, 255);
+    color: #ffffff;
     padding: 4px 10px;
 }
 
@@ -201,9 +201,9 @@
 
 .pot-display-secondary {
     font-size: 26px;
-    background-color: rgba(0,0,0,0.25);
+    background-color: color-mix(in srgb, #000000 25%, transparent);
     border-radius: 9999px;
-    color: rgb(255, 255, 255);
+    color: #ffffff;
     padding: 4px 10px;
     margin-top: 4px;
 }
@@ -383,9 +383,9 @@
 
 /* Action box pulse effect for emphasis */
 @keyframes actionPulse {
-    0% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 2px 4px rgba(0,0,0,0.3); }
-    50% { box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6), 0 4px 8px rgba(0,0,0,0.4); }
-    100% { box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4), 0 2px 4px rgba(0,0,0,0.3); }
+    0% { box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent), 0 2px 4px color-mix(in srgb, #000000 30%, transparent); }
+    50% { box-shadow: 0 6px 20px color-mix(in srgb, var(--brand-primary) 60%, transparent), 0 4px 8px color-mix(in srgb, #000000 40%, transparent); }
+    100% { box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent), 0 2px 4px color-mix(in srgb, #000000 30%, transparent); }
 }
 
 .action-box-pulse {
@@ -454,7 +454,7 @@
 }
 
 .sit-out-toggle input[type="checkbox"]:checked ~ div > div:first-child {
-    background-color: #f97316; /* Orange when active */
+    background-color: #f97316;
 }
 
 .sit-out-toggle input[type="checkbox"]:checked ~ div > div:last-child {
@@ -473,5 +473,5 @@
 
 /* Active state indicator */
 .sit-out-toggle input[type="checkbox"]:checked ~ span {
-    color: #fb923c; /* Lighter orange for text when active */
+    color: #fb923c;
 } 

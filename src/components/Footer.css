@@ -2,16 +2,16 @@
 
 /* Deal button */
 .btn-deal {
-  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  background: linear-gradient(to right, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 90%, transparent));
   border: 2px solid var(--brand-primary);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 
 /* New hand button */
 .btn-new-hand {
   background: linear-gradient(to right, var(--brand-secondary), var(--brand-primary));
   border: 2px solid var(--brand-primary);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 
 /* Muck button */
@@ -24,58 +24,58 @@
 .btn-muck:hover {
   background: linear-gradient(to right, var(--ui-bg-dark), var(--ui-bg-medium));
   border-color: var(--brand-primary);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-primary) 20%, transparent);
 }
 
 /* Show button */
 .btn-show {
-  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  background: linear-gradient(to right, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 90%, transparent));
   border: 2px solid var(--brand-primary);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
   transition: all 0.3s ease;
 }
 
 .btn-show:hover {
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--brand-primary) 50%, transparent);
   transform: scale(1.05);
 }
 
 /* Small blind button */
 .btn-small-blind {
-  background: linear-gradient(to right, var(--accent-success), rgba(16, 185, 129, 0.8));
+  background: linear-gradient(to right, var(--accent-success), color-mix(in srgb, var(--accent-success) 80%, transparent));
   border: 2px solid var(--accent-success);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-success) 30%, transparent);
   transition: all 0.3s ease;
 }
 
 .btn-small-blind:hover {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent-success) 50%, transparent);
   transform: scale(1.05);
 }
 
 .btn-small-blind-amount {
-  background-color: rgba(31, 41, 55, 0.8);
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
   color: var(--brand-primary);
-  border-color: rgba(16, 185, 129, 0.2);
+  border-color: color-mix(in srgb, var(--accent-success) 20%, transparent);
 }
 
 /* Big blind button */
 .btn-big-blind {
-  background: linear-gradient(to right, var(--accent-success), rgba(16, 185, 129, 0.8));
+  background: linear-gradient(to right, var(--accent-success), color-mix(in srgb, var(--accent-success) 80%, transparent));
   border: 2px solid var(--accent-success);
-  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent-success) 30%, transparent);
   transition: all 0.3s ease;
 }
 
 .btn-big-blind:hover {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent-success) 50%, transparent);
   transform: scale(1.05);
 }
 
 .btn-big-blind-amount {
-  background-color: rgba(31, 41, 55, 0.8);
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
   color: var(--brand-primary);
-  border-color: rgba(16, 185, 129, 0.2);
+  border-color: color-mix(in srgb, var(--accent-success) 20%, transparent);
 }
 
 /* Check button */
@@ -87,9 +87,9 @@
 }
 
 .btn-check:hover {
-  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  background: linear-gradient(to right, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 90%, transparent));
   border-color: var(--brand-primary);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--brand-primary) 40%, transparent);
   transform: scale(1.05);
 }
 
@@ -102,9 +102,9 @@
 }
 
 .btn-fold:hover {
-  background: linear-gradient(to right, var(--accent-danger), rgba(239, 68, 68, 0.8));
+  background: linear-gradient(to right, var(--accent-danger), color-mix(in srgb, var(--accent-danger) 80%, transparent));
   border-color: var(--accent-danger);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--accent-danger) 50%, transparent);
   transform: scale(1.05);
 }
 
@@ -117,9 +117,9 @@
 }
 
 .btn-call:hover {
-  background: linear-gradient(to right, var(--brand-primary), rgba(59, 130, 246, 0.9));
+  background: linear-gradient(to right, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 90%, transparent));
   border-color: var(--brand-primary);
-  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--brand-primary) 40%, transparent);
   transform: scale(1.05);
 }
 
@@ -132,9 +132,9 @@
 }
 
 .btn-raise:hover {
-  background: linear-gradient(to right, var(--accent-glow), rgba(100, 255, 218, 0.9));
+  background: linear-gradient(to right, var(--accent-glow), color-mix(in srgb, var(--accent-glow) 90%, transparent));
   border-color: var(--accent-glow);
-  box-shadow: 0 0 20px rgba(100, 255, 218, 0.4);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent-glow) 40%, transparent);
   transform: scale(1.05);
 }
 
@@ -149,7 +149,7 @@
 .btn-slider:hover {
   background: linear-gradient(to right, var(--ui-bg-dark), var(--ui-bg-medium));
   border-color: var(--brand-primary);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
   transform: scale(1.05);
 }
 
@@ -164,7 +164,7 @@
 .btn-pot:hover {
   background: linear-gradient(to right, var(--ui-bg-dark), var(--ui-bg-medium));
   border-color: var(--brand-primary);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
   transform: scale(1.05);
 }
 
@@ -177,9 +177,9 @@
 }
 
 .btn-all-in:hover {
-  background: linear-gradient(to right, var(--accent-glow), rgba(100, 255, 218, 0.9));
+  background: linear-gradient(to right, var(--accent-glow), color-mix(in srgb, var(--accent-glow) 90%, transparent));
   border-color: var(--accent-glow);
-  box-shadow: 0 0 20px rgba(100, 255, 218, 0.4);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent-glow) 40%, transparent);
   transform: scale(1.05);
 }
 
@@ -215,6 +215,6 @@
 .btn-sit-out:hover {
   background: linear-gradient(to right, var(--ui-bg-medium), var(--brand-secondary));
   border-color: var(--brand-primary);
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--brand-primary) 30%, transparent);
   transform: scale(1.05);
 }
