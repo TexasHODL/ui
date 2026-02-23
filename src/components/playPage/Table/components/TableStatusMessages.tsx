@@ -24,6 +24,9 @@ export interface TableStatusMessagesProps {
     playerLegalActions: LegalActionDTO[] | null;
     tableActivePlayers: PlayerDTO[];
     isSitAndGoWaitingForPlayers: boolean;
+    smallBlindPosition?: number;
+    bigBlindPosition?: number;
+    dealerPosition?: number;
 }
 
 export const TableStatusMessages: React.FC<TableStatusMessagesProps> = ({
@@ -35,7 +38,10 @@ export const TableStatusMessages: React.FC<TableStatusMessagesProps> = ({
     isCurrentUserTurn,
     playerLegalActions,
     tableActivePlayers,
-    isSitAndGoWaitingForPlayers
+    isSitAndGoWaitingForPlayers,
+    smallBlindPosition,
+    bigBlindPosition,
+    dealerPosition
 }) => {
     const messages = useMemo(() => getTableStatusMessages({
         currentUserSeat,
@@ -45,6 +51,9 @@ export const TableStatusMessages: React.FC<TableStatusMessagesProps> = ({
         hasLegalActions: (playerLegalActions?.length ?? 0) > 0,
         totalActivePlayers: tableActivePlayers.length,
         isSitAndGoWaitingForPlayers,
+        smallBlindPosition,
+        bigBlindPosition,
+        dealerPosition,
     }), [
         currentUserSeat,
         nextToActSeat,
@@ -53,6 +62,9 @@ export const TableStatusMessages: React.FC<TableStatusMessagesProps> = ({
         playerLegalActions,
         tableActivePlayers,
         isSitAndGoWaitingForPlayers,
+        smallBlindPosition,
+        bigBlindPosition,
+        dealerPosition,
     ]);
 
     const getMessageStyle = (msg: TableStatusMessage): string => {

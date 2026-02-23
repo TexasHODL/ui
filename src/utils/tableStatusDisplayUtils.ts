@@ -23,6 +23,9 @@ export interface TableStatusDisplayInput {
     hasLegalActions: boolean;
     totalActivePlayers: number;
     isSitAndGoWaitingForPlayers: boolean;
+    smallBlindPosition?: number;
+    bigBlindPosition?: number;
+    dealerPosition?: number;
 }
 
 /**
@@ -38,6 +41,9 @@ export function getTableStatusMessages(input: TableStatusDisplayInput): TableSta
         hasLegalActions,
         totalActivePlayers,
         isSitAndGoWaitingForPlayers,
+        smallBlindPosition,
+        bigBlindPosition,
+        dealerPosition,
     } = input;
 
     const messages: TableStatusMessage[] = [];
@@ -57,7 +63,7 @@ export function getTableStatusMessages(input: TableStatusDisplayInput): TableSta
         if (isCurrentUserTurn && hasLegalActions) {
             messages.push({ kind: "your-turn", text: "Your turn to act!" });
         } else {
-            const label = getWaitingForPlayerLabel(nextToActSeat);
+            const label = getWaitingForPlayerLabel(nextToActSeat, { smallBlindPosition, bigBlindPosition, dealerPosition });
             messages.push({
                 kind: "waiting-for-player",
                 seatNumber: nextToActSeat,
@@ -82,10 +88,15 @@ export function getTableStatusMessages(input: TableStatusDisplayInput): TableSta
 
 /**
  * Returns a human-readable label for the player at a given seat.
+ * Uses backend-provided position data when available; falls back to generic labels.
  */
-export function getWaitingForPlayerLabel(seatNumber: number): string {
-    if (seatNumber === 1) return "Small Blind";
-    if (seatNumber === 2) return "Big Blind";
+export function getWaitingForPlayerLabel(
+    seatNumber: number,
+    positions?: { smallBlindPosition?: number; bigBlindPosition?: number; dealerPosition?: number }
+): string {
+    if (positions?.dealerPosition === seatNumber) return "Dealer";
+    if (positions?.smallBlindPosition === seatNumber) return "Small Blind";
+    if (positions?.bigBlindPosition === seatNumber) return "Big Blind";
     return `player at seat ${seatNumber}`;
 }
 

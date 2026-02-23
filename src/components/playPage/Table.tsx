@@ -916,6 +916,9 @@ const Table = React.memo(() => {
                 playerLegalActions={playerLegalActions}
                 tableActivePlayers={tableActivePlayers}
                 isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
+                smallBlindPosition={tableDataValues.tableDataSmallBlindPosition}
+                bigBlindPosition={tableDataValues.tableDataBigBlindPosition}
+                dealerPosition={tableDataValues.tableDataDealer}
             />
 
             {/* Layout Debug Panel */}
