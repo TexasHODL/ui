@@ -18,20 +18,30 @@ const base: TableStatusDisplayInput = {
 // ===== getWaitingForPlayerLabel =====
 
 describe("getWaitingForPlayerLabel", () => {
-    it("returns 'Small Blind' for seat 1", () => {
-        expect(getWaitingForPlayerLabel(1)).toBe("Small Blind");
+    it("returns 'Small Blind' when seat matches smallBlindPosition", () => {
+        expect(getWaitingForPlayerLabel(5, { smallBlindPosition: 5 })).toBe("Small Blind");
     });
 
-    it("returns 'Big Blind' for seat 2", () => {
-        expect(getWaitingForPlayerLabel(2)).toBe("Big Blind");
+    it("returns 'Big Blind' when seat matches bigBlindPosition", () => {
+        expect(getWaitingForPlayerLabel(3, { bigBlindPosition: 3 })).toBe("Big Blind");
     });
 
-    it("returns generic label for seat 3", () => {
-        expect(getWaitingForPlayerLabel(3)).toBe("player at seat 3");
+    it("returns 'Dealer' when seat matches dealerPosition", () => {
+        expect(getWaitingForPlayerLabel(3, { dealerPosition: 3 })).toBe("Dealer");
     });
 
-    it("returns generic label for seat 7", () => {
-        expect(getWaitingForPlayerLabel(7)).toBe("player at seat 7");
+    it("returns generic label when seat matches no position", () => {
+        expect(getWaitingForPlayerLabel(7, { smallBlindPosition: 1, bigBlindPosition: 2, dealerPosition: 0 })).toBe("player at seat 7");
+    });
+
+    it("returns generic label for all seats when no positions provided", () => {
+        expect(getWaitingForPlayerLabel(1)).toBe("player at seat 1");
+        expect(getWaitingForPlayerLabel(2)).toBe("player at seat 2");
+        expect(getWaitingForPlayerLabel(5)).toBe("player at seat 5");
+    });
+
+    it("prefers Dealer over Small Blind when both match same seat", () => {
+        expect(getWaitingForPlayerLabel(1, { dealerPosition: 1, smallBlindPosition: 1 })).toBe("Dealer");
     });
 });
 
@@ -253,6 +263,9 @@ describe("getTableStatusMessages — your turn", () => {
             isCurrentUserTurn: false,
             hasLegalActions: false,
             totalActivePlayers: 6,
+            smallBlindPosition: 1,
+            bigBlindPosition: 2,
+            dealerPosition: 0,
         });
         expect(msgs).toHaveLength(2);
         expect(msgs[0].kind).toBe("seat-label");
@@ -293,11 +306,14 @@ describe("getTableStatusMessages — your turn", () => {
 // ===== Waiting for player =====
 
 describe("getTableStatusMessages — waiting for player", () => {
-    it("shows Small Blind label for seat 1", () => {
+    it("shows Small Blind label when seat matches smallBlindPosition", () => {
         const msgs = getTableStatusMessages({
             ...base,
             nextToActSeat: 1,
             isGameInProgress: true,
+            smallBlindPosition: 1,
+            bigBlindPosition: 2,
+            dealerPosition: 0,
         });
         expect(msgs).toContainEqual({
             kind: "waiting-for-player",
@@ -306,11 +322,14 @@ describe("getTableStatusMessages — waiting for player", () => {
         });
     });
 
-    it("shows Big Blind label for seat 2", () => {
+    it("shows Big Blind label when seat matches bigBlindPosition", () => {
         const msgs = getTableStatusMessages({
             ...base,
             nextToActSeat: 2,
             isGameInProgress: true,
+            smallBlindPosition: 1,
+            bigBlindPosition: 2,
+            dealerPosition: 0,
         });
         expect(msgs).toContainEqual({
             kind: "waiting-for-player",
@@ -319,7 +338,23 @@ describe("getTableStatusMessages — waiting for player", () => {
         });
     });
 
-    it("shows generic label for seat 5", () => {
+    it("shows Dealer label when seat matches dealerPosition", () => {
+        const msgs = getTableStatusMessages({
+            ...base,
+            nextToActSeat: 0,
+            isGameInProgress: true,
+            smallBlindPosition: 1,
+            bigBlindPosition: 2,
+            dealerPosition: 0,
+        });
+        expect(msgs).toContainEqual({
+            kind: "waiting-for-player",
+            seatNumber: 0,
+            text: "Waiting for Dealer to act",
+        });
+    });
+
+    it("shows generic label when no positions provided", () => {
         const msgs = getTableStatusMessages({
             ...base,
             nextToActSeat: 5,
@@ -329,6 +364,39 @@ describe("getTableStatusMessages — waiting for player", () => {
             kind: "waiting-for-player",
             seatNumber: 5,
             text: "Waiting for player at seat 5 to act",
+        });
+    });
+
+    it("shows generic label when seat matches no position", () => {
+        const msgs = getTableStatusMessages({
+            ...base,
+            nextToActSeat: 5,
+            isGameInProgress: true,
+            smallBlindPosition: 1,
+            bigBlindPosition: 2,
+            dealerPosition: 0,
+        });
+        expect(msgs).toContainEqual({
+            kind: "waiting-for-player",
+            seatNumber: 5,
+            text: "Waiting for player at seat 5 to act",
+        });
+    });
+
+    it("heads-up with rotated positions: SB at seat 7, BB at seat 2", () => {
+        const msgs = getTableStatusMessages({
+            ...base,
+            nextToActSeat: 7,
+            isGameInProgress: true,
+            smallBlindPosition: 7,
+            bigBlindPosition: 2,
+            dealerPosition: 7,
+        });
+        // Dealer takes priority over SB when same seat
+        expect(msgs).toContainEqual({
+            kind: "waiting-for-player",
+            seatNumber: 7,
+            text: "Waiting for Dealer to act",
         });
     });
 
