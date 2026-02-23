@@ -178,6 +178,31 @@ yarn lint
 yarn lint:fix
 ```
 
+### Styling Standards
+
+The UI styling system is standardized as:
+
+- **CSS Modules** for component-level visual styling
+- **TailwindCSS** for layout, spacing, and responsive utility primitives
+- **CSS variables** for theme/design tokens (generated from `src/utils/colorConfig.ts`)
+- **Inline styles** only for runtime-only dynamic values (position, size, progress, animation delay)
+
+#### Rules
+
+- Do not add new static `style={{...}}` blocks.
+- Move static visual styles (colors, borders, shadows, gradients) into CSS Modules.
+- Use CSS variables for all theme-able values.
+- Keep specificity low and avoid `!important`.
+
+#### Token direction
+
+- Color: `--surface-*`, `--text-*`, `--border-*`, `--status-*`
+- Gradient: `--gradient-primary`, `--gradient-success`, `--gradient-danger`
+- Spacing: `--space-1..8` aligned to 4px/8px scale
+- Typography: `--font-size-*`, `--line-height-*`, `--font-weight-*`
+
+See [src/docs/STYLING_INLINE_AUDIT.md](src/docs/STYLING_INLINE_AUDIT.md) for migration waves, hotspots, and PR checklist.
+
 ## Contributing
 
 We welcome contributions! Please follow these steps:

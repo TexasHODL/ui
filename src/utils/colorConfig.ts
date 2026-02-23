@@ -98,6 +98,7 @@ export const generateCSSVariables = (): string => {
       --accent-glow: ${colors.accent.glow};
       --accent-success: ${colors.accent.success};
       --accent-danger: ${colors.accent.danger};
+      --accent-warning: ${colors.accent.warning};
       --ui-bg-dark: ${colors.ui.bgDark};
       --ui-bg-medium: ${colors.ui.bgMedium};
       --ui-border-color: ${colors.ui.borderColor};

@@ -1,5 +1,5 @@
 import React from "react";
-import { colors } from "../../utils/colorConfig";
+import styles from "./DepositComponents.module.css";
 
 interface DepositTimerProps {
     timeLeft: number;
@@ -20,20 +20,14 @@ const formatTime = (seconds: number): string => {
 export const DepositTimer: React.FC<DepositTimerProps> = ({ timeLeft }) => {
     return (
         <div className="text-center mb-4">
-            <div className="text-xl font-bold" style={{ color: "white" }}>
+            <div className={`text-xl font-bold ${styles.titleText}`}>
                 Time Remaining: {formatTime(timeLeft)}
             </div>
-            <div className="text-sm" style={{ color: colors.ui.textSecondary }}>
+            <div className={`text-sm ${styles.secondaryTextStrong}`}>
                 Session will expire in {Math.floor(timeLeft / 60)} minutes and {timeLeft % 60} seconds
             </div>
-            <div
-                className="mt-2 p-2 backdrop-blur-sm rounded-lg"
-                style={{
-                    backgroundColor: colors.ui.bgMedium,
-                    border: `1px solid ${colors.accent.danger}50`
-                }}
-            >
-                <div className="flex items-center" style={{ color: "#eab308" }}>
+            <div className={`mt-2 p-2 backdrop-blur-sm rounded-lg ${styles.warningPanel}`}>
+                <div className={`flex items-center ${styles.warningText}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                         <path
                             fillRule="evenodd"

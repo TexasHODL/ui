@@ -1,5 +1,5 @@
 import React from "react";
-import { colors, hexToRgba } from "../../utils/colorConfig";
+import styles from "./DepositComponents.module.css";
 
 interface Web3DepositSectionProps {
     isConnected: boolean;
@@ -32,27 +32,17 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
     const isTransferDisabled = !depositAmount || isTransferring || parseFloat(depositAmount) <= 0;
 
     return (
-        <div className="mt-8 pt-6 border-t" style={{ borderColor: hexToRgba(colors.brand.primary, 0.1) }}>
+        <div className={`mt-8 pt-6 border-t ${styles.sectionBorderTop}`}>
             <div className="text-center mb-4">
                 <div className="flex items-center justify-center gap-3">
-                    <div className="h-px flex-1" style={{ backgroundColor: hexToRgba(colors.brand.primary, 0.1) }}></div>
+                    <div className={`h-px flex-1 ${styles.sectionDivider}`}></div>
                     <span className="text-gray-400 text-sm px-2">OR</span>
-                    <div className="h-px flex-1" style={{ backgroundColor: hexToRgba(colors.brand.primary, 0.1) }}></div>
+                    <div className={`h-px flex-1 ${styles.sectionDivider}`}></div>
                 </div>
             </div>
 
             <div
-                className="backdrop-blur-sm rounded-xl p-5 shadow-lg transition-all duration-300"
-                style={{
-                    backgroundColor: hexToRgba(colors.ui.bgMedium, 0.9),
-                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.borderColor = hexToRgba(colors.brand.primary, 0.2);
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.borderColor = hexToRgba(colors.brand.primary, 0.1);
-                }}
+                className={`backdrop-blur-sm rounded-xl p-5 shadow-lg transition-all duration-300 ${styles.web3Panel}`}
             >
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -66,10 +56,10 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                             </g>
                         </svg>
                         <div>
-                            <h2 className="text-lg font-bold" style={{ color: "white" }}>
+                            <h2 className={`text-lg font-bold ${styles.titleText}`}>
                                 USDC via Web3 Wallet
                             </h2>
-                            <p className="text-xs" style={{ color: colors.ui.textSecondary }}>
+                            <p className={`text-xs ${styles.secondaryTextStrong}`}>
                                 Metamask, Coinbase Wallet, etc.
                             </p>
                         </div>
@@ -77,13 +67,9 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                 </div>
 
                 <div
-                    className="p-3 rounded-lg mb-4"
-                    style={{
-                        backgroundColor: hexToRgba(colors.ui.bgDark, 0.4),
-                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                    }}
+                    className={`p-3 rounded-lg mb-4 ${styles.methodInfoPanel}`}
                 >
-                    <p className="text-xs" style={{ color: colors.ui.textSecondary }}>
+                    <p className={`text-xs ${styles.secondaryTextStrong}`}>
                         <strong>How it works:</strong> Connect wallet → Send USDC directly → No conversion fees → Credits your gaming account
                     </p>
                 </div>
@@ -91,10 +77,7 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                 {!isConnected ? (
                     <button
                         onClick={onConnect}
-                        className="w-full py-3 px-4 rounded-lg transition duration-300 shadow-md hover:opacity-90"
-                        style={{
-                            background: `linear-gradient(135deg, ${hexToRgba(colors.brand.primary, 0.7)} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-                        }}
+                        className={`w-full py-3 px-4 rounded-lg transition duration-300 shadow-md hover:opacity-90 ${styles.connectButton}`}
                     >
                         <div className="flex items-center justify-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,7 +88,7 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                     </button>
                 ) : (
                     <div className="space-y-4">
-                        <div className="flex justify-between items-center" style={{ color: "white" }}>
+                        <div className={`flex justify-between items-center ${styles.connectedText}`}>
                             <span>
                                 Connected: {web3Address?.slice(0, 6)}...{web3Address?.slice(-4)}
                             </span>
@@ -118,35 +101,30 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                         </div>
 
                         <div
-                            className="p-3 rounded-lg"
-                            style={{
-                                backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-                                border: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-                            }}
+                            className={`p-3 rounded-lg ${styles.balancePanel}`}
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div
-                                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                                        style={{ backgroundColor: hexToRgba(colors.brand.primary, 0.2) }}
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center ${styles.balanceIconWrap}`}
                                     >
-                                        <span className="font-bold text-lg" style={{ color: colors.brand.primary }}>$</span>
+                                        <span className={`font-bold text-lg ${styles.primaryText}`}>$</span>
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold" style={{ color: "white" }}>Web3 Wallet USDC Balance</p>
-                                        <p className="text-xs" style={{ color: colors.ui.textSecondary }}>Available on Ethereum Mainnet</p>
+                                        <p className={`text-sm font-bold ${styles.titleText}`}>Web3 Wallet USDC Balance</p>
+                                        <p className={`text-xs ${styles.secondaryTextStrong}`}>Available on Ethereum Mainnet</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="text-right">
-                                        <p className="text-lg font-bold" style={{ color: colors.brand.primary }}>${web3Balance || "0.00"}</p>
+                                        <p className={`text-lg font-bold ${styles.primaryText}`}>${web3Balance || "0.00"}</p>
                                     </div>
                                     <button
                                         onClick={onRefreshBalance}
                                         className="p-1.5 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
                                         title="Refresh balance"
                                     >
-                                        <svg className="w-4 h-4" style={{ color: colors.brand.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className={`w-4 h-4 ${styles.iconPrimary}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
                                     </button>
@@ -155,18 +133,13 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                            <p className="text-sm mb-2" style={{ color: colors.ui.textSecondary + "dd" }}>Enter amount in USD:</p>
+                            <p className={`text-sm mb-2 ${styles.secondaryText}`}>Enter amount in USD:</p>
                             <input
                                 type="number"
                                 value={depositAmount}
                                 onChange={e => onAmountChange(e.target.value)}
                                 placeholder="100.00"
-                                className="w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`,
-                                    color: "white"
-                                }}
+                                className={`w-full p-3 rounded-lg focus:outline-none focus:ring-2 transition-all ${styles.amountInput}`}
                                 min="0"
                                 step="0.01"
                             />
@@ -174,22 +147,7 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                             <button
                                 onClick={onTransfer}
                                 disabled={isTransferDisabled}
-                                className="w-full py-3 px-4 rounded-lg transition duration-300 shadow-md"
-                                style={{
-                                    backgroundColor: isTransferDisabled ? colors.ui.textSecondary : colors.brand.primary,
-                                    color: "white",
-                                    cursor: isTransferDisabled ? "not-allowed" : "pointer"
-                                }}
-                                onMouseEnter={e => {
-                                    if (!isTransferDisabled) {
-                                        e.currentTarget.style.backgroundColor = colors.brand.secondary;
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    if (!isTransferDisabled) {
-                                        e.currentTarget.style.backgroundColor = colors.brand.primary;
-                                    }
-                                }}
+                                className={`w-full py-3 px-4 rounded-lg transition duration-300 shadow-md ${styles.transferButton}`}
                             >
                                 {isTransferring ? "Processing..." : "Deposit USDC"}
                             </button>

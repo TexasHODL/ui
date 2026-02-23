@@ -2,18 +2,17 @@ import React, { useState, useMemo, useCallback } from "react";
 import { useMinAndMaxBuyIns } from "../../hooks/game/useMinAndMaxBuyIns";
 import { useNavigate } from "react-router-dom";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { HexagonPattern } from "../common/Modal";
 import { joinTable } from "../../hooks/playerActions/joinTable";
 import { JoinTableOptions } from "../../hooks/playerActions/types";
 import { useCosmosWallet } from "../../hooks";
-import { useModalStyles } from "../../hooks/useModalStyles";
 import { usdcToMicroBigInt, microToUsdc } from "../../constants/currency";
 import { useNetwork } from "../../context/NetworkContext";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getBlindsForDisplay } from "../../utils/gameFormatUtils";
 import { GameFormat } from "@block52/poker-vm-sdk";
+import styles from "./BuyInModal.module.css";
 
 import type { BuyInModalProps } from "./types";
 
@@ -21,7 +20,6 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
     const [buyInError, setBuyInError] = useState("");
     const [waitForBigBlind, setWaitForBigBlind] = useState(true);
     const [isJoiningRandomSeat, setIsJoiningRandomSeat] = useState(false);
-    const modalStyles = useModalStyles();
 
     // Get Cosmos wallet hook and network context
     const cosmosWallet = useCosmosWallet();
@@ -101,65 +99,14 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
         return !isUserAlreadyPlaying && emptySeatIndexes.length > 0 && !isDisabled && !isJoiningRandomSeat && !exceedsBalance;
     }, [isUserAlreadyPlaying, emptySeatIndexes.length, isDisabled, isJoiningRandomSeat, exceedsBalance]);
 
-    // Memoize button disabled states and styles
-    const buttonStates = useMemo(() => {
-        const viewTableDisabled = exceedsBalance;
-        const takeSeatDisabled = !canJoinRandomSeat || exceedsBalance;
-        
-        return {
-            viewTable: {
-                disabled: viewTableDisabled,
-                background: colors.brand.primary,
-                opacity: viewTableDisabled ? 0.5 : 1,
-                cursor: viewTableDisabled ? "not-allowed" : "pointer"
-            },
-            takeSeat: {
-                disabled: takeSeatDisabled,
-                background: takeSeatDisabled ? colors.brand.primary : modalStyles.joinButtonGradient,
-                opacity: takeSeatDisabled ? 0.5 : 1,
-                cursor: takeSeatDisabled ? "not-allowed" : "pointer"
-            }
-        };
-    }, [exceedsBalance, canJoinRandomSeat, modalStyles]);
+    const viewTableDisabled = exceedsBalance;
+    const takeSeatDisabled = !canJoinRandomSeat || exceedsBalance;
 
     // Memoized event handlers
     const handleBuyInChange = useCallback((amount: string) => {
         setBuyInAmount(amount);
         setBuyInError("");
         localStorage.setItem("buy_in_amount", amount);
-    }, []);
-
-    const handleMaxClick = useCallback(() => {
-        handleBuyInChange(maxBuyInFormatted);
-    }, [maxBuyInFormatted, handleBuyInChange]);
-
-    const handleMinClick = useCallback(() => {
-        handleBuyInChange(minBuyInFormatted);
-    }, [minBuyInFormatted, handleBuyInChange]);
-
-    // Simplified mouse event handlers
-    const handleButtonMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.backgroundColor = colors.ui.textSecondary;
-    }, []);
-
-    const handleButtonMouseLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.backgroundColor = colors.ui.bgMedium;
-    }, []);
-
-    const handleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-        e.currentTarget.style.borderColor = colors.brand.primary;
-    }, []);
-
-    const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-        e.currentTarget.style.borderColor = colors.ui.textSecondary;
-    }, []);
-
-    const handleCancelMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.backgroundColor = colors.ui.bgMedium;
-    }, []);
-
-    const handleCancelMouseLeave = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-        e.currentTarget.style.backgroundColor = colors.ui.textSecondary;
     }, []);
 
     const handleDepositClick = useCallback(() => {
@@ -257,15 +204,14 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose} />
-                <div className="relative p-8 rounded-xl shadow-2xl w-96" style={modalStyles.modalContainer}>
+                <div className={`relative p-8 rounded-xl shadow-2xl w-96 ${styles.modalContainer}`}>
                     <h2 className="text-xl font-bold mb-4 text-white">Buy In</h2>
                     <div className="text-red-400 mb-4">
                         Unable to load buy-in limits from the game. Please try again.
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-full py-3 rounded-lg text-white font-semibold"
-                        style={{ backgroundColor: colors.ui.bgMedium }}
+                        className={`w-full py-3 rounded-lg text-white font-semibold ${styles.closeButton}`}
                     >
                         Close
                     </button>
@@ -280,7 +226,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative p-8 rounded-xl shadow-2xl w-96 overflow-hidden" style={modalStyles.modalContainer}>
+            <div className={`relative p-8 rounded-xl shadow-2xl w-96 overflow-hidden ${styles.modalContainer}`}>
                 {/* Hexagon pattern background */}
                 <HexagonPattern patternId="hexagons-buyin" />
 
@@ -288,15 +234,15 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 <div className="absolute -left-8 -bottom-8 text-6xl opacity-10 -rotate-12">♥</div>
 
                 <h2 className="text-2xl font-bold mb-4 text-white flex items-center">
-                    <span style={{ color: colors.brand.primary }} className="mr-2">
+                    <span className={`mr-2 ${styles.suitClub}`}>
                         ♣
                     </span>
                     Buy In
-                    <span style={{ color: colors.accent.danger }} className="ml-2">
+                    <span className={`ml-2 ${styles.suitDiamond}`}>
                         ♦
                     </span>
                 </h2>
-                <div className="w-full h-0.5 mb-4 opacity-50" style={modalStyles.dividerPrimary}></div>
+                <div className={`w-full h-0.5 mb-4 opacity-50 ${styles.dividerPrimary}`}></div>
 
                 {/* Cosmos Wallet Balances Section */}
                 <div className="mb-5 space-y-2">
@@ -338,11 +284,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                                 return (
                                     <div
                                         key={idx}
-                                        className="flex items-center justify-between p-3 rounded-lg"
-                                        style={{
-                                            backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-                                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-                                        }}
+                                        className={`flex items-center justify-between p-3 rounded-lg ${styles.balanceCard}`}
                                     >
                                         <div>
                                             <p className="text-white text-sm font-bold">{balance.denom}</p>
@@ -366,7 +308,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 {/* Stake Dropdown */}
                 <div className="mb-6">
                     <label className="block text-gray-300 mb-1 font-medium text-sm">Select Stake</label>
-                    <select disabled value={stakeLabel} className="w-full p-2 rounded text-white focus:outline-none text-sm" style={modalStyles.select}>
+                    <select disabled value={stakeLabel} className={`w-full p-2 rounded text-white focus:outline-none text-sm ${styles.selectField}`}>
                         <option>{stakeLabel}</option>
                     </select>
                 </div>
@@ -376,13 +318,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                     <label className="block text-gray-300 mb-2 font-medium text-sm">{isSitAndGo ? "Fixed Buy-In (Sit & Go)" : "Buy-In Amount"}</label>
                     {isSitAndGo ? (
                         // Sit & Go: Show fixed buy-in amount (non-editable)
-                        <div
-                            className="p-4 rounded-lg border-2"
-                            style={{
-                                backgroundColor: colors.ui.bgMedium,
-                                borderColor: colors.brand.primary
-                            }}
-                        >
+                        <div className={`p-4 rounded-lg border-2 ${styles.fixedBuyInPanel}`}>
                             <div className="text-center">
                                 <div className="text-xs text-gray-400 mb-1">Required Buy-In</div>
                                 <div className="text-3xl font-bold text-white">${maxBuyInFormatted}</div>
@@ -412,11 +348,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                                     min={minBuyInNumber.toString()}
                                     max={_maxBuyInNumber.toString()}
                                     step={bigBlindValue.toString()}
-                                    className="w-full h-2 rounded-lg appearance-none cursor-pointer"
-                                    style={{
-                                        backgroundColor: colors.ui.bgMedium,
-                                        accentColor: colors.brand.primary
-                                    }}
+                                    className={`w-full h-2 rounded-lg appearance-none cursor-pointer ${styles.buyInSlider}`}
                                 />
                             </div>
                             
@@ -426,11 +358,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                                 value={buyInAmount}
                                 onChange={e => handleBuyInChange(e.target.value)}
                                 placeholder="Enter amount"
-                                className="w-full px-4 py-2 rounded-lg text-white text-center text-lg focus:outline-none"
-                                style={{
-                                    backgroundColor: colors.ui.bgMedium,
-                                    border: `1px solid ${colors.ui.borderColor}`
-                                }}
+                                className={`w-full px-4 py-2 rounded-lg text-white text-center text-lg focus:outline-none ${styles.buyInInput}`}
                                 step={bigBlindValue.toString()}
                                 min={minBuyInNumber.toString()}
                                 max={_maxBuyInNumber.toString()}
@@ -438,7 +366,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                         </div>
                     )}
                     {buyInError && (
-                        <p style={{ color: colors.accent.danger }} className="mt-2 text-sm">
+                        <p className={`mt-2 text-sm ${styles.errorText}`}>
                             ⚠️ {buyInError}
                         </p>
                     )}
@@ -448,8 +376,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 <div className="flex items-center mb-6">
                     <input
                         type="checkbox"
-                        className="w-4 h-4 rounded mr-2"
-                        style={modalStyles.checkbox}
+                        className={`w-4 h-4 rounded mr-2 ${styles.waitCheckbox}`}
                         checked={waitForBigBlind}
                         onChange={() => setWaitForBigBlind(!waitForBigBlind)}
                     />
@@ -460,50 +387,37 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 <div className="flex justify-between space-x-4 mb-4">
                     <button
                         onClick={onClose}
-                        className="px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200"
-                        style={{ backgroundColor: colors.ui.textSecondary }}
-                        onMouseEnter={handleCancelMouseEnter}
-                        onMouseLeave={handleCancelMouseLeave}
+                        className={`px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 ${styles.cancelButton}`}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleJoinClick}
-                        disabled={buttonStates.viewTable.disabled}
-                        className="px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm"
-                        style={{
-                            background: buttonStates.viewTable.background,
-                            opacity: buttonStates.viewTable.opacity,
-                            cursor: buttonStates.viewTable.cursor
-                        }}
+                        disabled={viewTableDisabled}
+                        className={`px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm ${styles.viewTableButton}`}
                     >
                         View Table
                     </button>
                     <button
                         onClick={handleRandomSeatJoin}
-                        disabled={buttonStates.takeSeat.disabled}
-                        className="px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm"
-                        style={{
-                            background: buttonStates.takeSeat.background,
-                            opacity: buttonStates.takeSeat.opacity,
-                            cursor: buttonStates.takeSeat.cursor
-                        }}
+                        disabled={takeSeatDisabled}
+                        className={`px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm ${styles.takeSeatButton} ${takeSeatDisabled ? styles.takeSeatButtonDisabled : ""}`}
                     >
                         {isJoiningRandomSeat ? "Joining..." : "Take My Seat"}
                     </button>
                 </div>
 
                 {isDisabled && (
-                    <div style={{ color: colors.accent.danger }} className="text-sm mb-4">
+                    <div className={`text-sm mb-4 ${styles.balanceError}`}>
                         Your available balance does not reach the minimum buy-in amount for this game. Please{" "}
-                        <span className="underline cursor-pointer" style={{ color: colors.brand.primary }} onClick={handleDepositClick}>
+                        <span className={`underline cursor-pointer ${styles.depositLink}`} onClick={handleDepositClick}>
                             deposit
                         </span>{" "}
                         to continue.
                     </div>
                 )}
 
-                <div style={{ color: colors.ui.textSecondary }} className="text-xs">
+                <div className={`text-xs ${styles.noteText}`}>
                     <strong>Please Note:</strong> This table has no all-in protection.
                 </div>
             </div>

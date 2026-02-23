@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateWallet as generateWalletSDK, createWalletFromMnemonic as createWalletSDK, getAddressFromMnemonic } from "@block52/poker-vm-sdk";
 import { setCosmosMnemonic, setCosmosAddress, getCosmosMnemonic, getCosmosAddress, clearCosmosData, isValidSeedPhrase } from "../utils/cosmos";
-import { colors, hexToRgba } from "../utils/colorConfig";
 import { AnimatedBackground } from "./common/AnimatedBackground";
+import styles from "./CosmosWalletPage.module.css";
 
 // Seed phrase word grid component
 const SeedPhraseGrid = ({ mnemonic, hidden = false }: { mnemonic: string; hidden?: boolean }) => {
@@ -13,13 +13,9 @@ const SeedPhraseGrid = ({ mnemonic, hidden = false }: { mnemonic: string; hidden
             {words.map((word, index) => (
                 <div
                     key={index}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-sm"
-                    style={{
-                        backgroundColor: hexToRgba(colors.table.bgBase, 0.6),
-                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                    }}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-sm ${styles.seedWordCard}`}
                 >
-                    <span className="text-xs" style={{ color: colors.ui.textSecondary }}>{index + 1}.</span>
+                    <span className={`text-xs ${styles.seedWordIndex}`}>{index + 1}.</span>
                     <span className="text-white">{hidden ? "••••" : word}</span>
                 </div>
             ))}
@@ -65,25 +61,6 @@ const CosmosWalletPage = () => {
 
         loadWallet();
     }, []);
-
-    // Card style matching Dashboard
-    const cardStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-            borderColor: hexToRgba(colors.brand.primary, 0.2),
-            boxShadow: `0 10px 40px ${hexToRgba(colors.brand.primary, 0.1)}`
-        }),
-        []
-    );
-
-    // Input style matching Dashboard
-    const inputStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.table.bgBase, 0.6),
-            borderColor: hexToRgba(colors.brand.primary, 0.2)
-        }),
-        []
-    );
 
     // Generate new wallet
     const generateWalletHandler = async () => {
@@ -182,7 +159,7 @@ const CosmosWalletPage = () => {
                 <AnimatedBackground />
                 <div className="relative z-10 w-full max-w-xl mx-auto text-center">
                     <div className="animate-pulse">
-                        <div className="w-12 h-12 mx-auto mb-4 rounded-full" style={{ backgroundColor: colors.brand.primary }}></div>
+                        <div className={`w-12 h-12 mx-auto mb-4 rounded-full ${styles.loadingDot}`}></div>
                         <p className="text-white">Loading wallet...</p>
                     </div>
                 </div>
@@ -198,7 +175,7 @@ const CosmosWalletPage = () => {
             {/* Content */}
             <div className="relative z-10 w-full max-w-xl mx-auto mb-6">
                 <h1 className="text-3xl font-bold text-white mb-2 text-center">Block52 Wallet Manager</h1>
-                <p className="text-center mb-6 text-sm" style={{ color: colors.ui.textSecondary }}>
+                <p className={`text-center mb-6 text-sm ${styles.textSecondary}`}>
                     Generate or import a wallet to receive deposits and play poker
                 </p>
             </div>
@@ -207,25 +184,22 @@ const CosmosWalletPage = () => {
                 {/* Existing Wallet Display */}
                 {existingAddress && (
                     <div
-                        className="backdrop-blur-sm rounded-xl p-5 mb-4 border shadow-lg"
-                        style={cardStyle}
+                        className={`backdrop-blur-sm rounded-xl p-5 mb-4 border shadow-lg ${styles.mainCard}`}
                     >
                         <h2 className="text-xl font-bold text-white mb-4">Current Wallet</h2>
                         <div className="space-y-4">
                             <div>
-                                <label className="text-sm" style={{ color: colors.ui.textSecondary }}>Address</label>
+                                <label className={`text-sm ${styles.textSecondary}`}>Address</label>
                                 <div className="flex gap-2 items-center mt-1">
                                     <input
                                         type="text"
                                         value={existingAddress}
                                         readOnly
-                                        className="flex-1 text-white px-4 py-2 rounded-lg border font-mono text-sm"
-                                        style={inputStyle}
+                                        className={`flex-1 text-white px-4 py-2 rounded-lg border font-mono text-sm ${styles.inputField}`}
                                     />
                                     <button
                                         onClick={() => copyToClipboard(existingAddress, "Address")}
-                                        className="text-white px-4 py-2 rounded-lg transition-all hover:opacity-80"
-                                        style={{ backgroundColor: colors.brand.primary }}
+                                        className={`text-white px-4 py-2 rounded-lg transition-all hover:opacity-80 ${styles.primaryButton}`}
                                     >
                                         Copy
                                     </button>
@@ -235,19 +209,17 @@ const CosmosWalletPage = () => {
                             {existingMnemonic && (
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm" style={{ color: colors.ui.textSecondary }}>Seed Phrase</label>
+                                        <label className={`text-sm ${styles.textSecondary}`}>Seed Phrase</label>
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setShowMnemonic(!showMnemonic)}
-                                                className="text-white px-3 py-1 rounded-lg transition-all hover:opacity-80 text-sm"
-                                                style={{ backgroundColor: hexToRgba(colors.ui.bgMedium, 0.8) }}
+                                                className={`text-white px-3 py-1 rounded-lg transition-all hover:opacity-80 text-sm ${styles.secondaryButton}`}
                                             >
                                                 {showMnemonic ? "Hide" : "Show"}
                                             </button>
                                             <button
                                                 onClick={() => copyToClipboard(existingMnemonic, "Seed Phrase")}
-                                                className="text-white px-3 py-1 rounded-lg transition-all hover:opacity-80 text-sm"
-                                                style={{ backgroundColor: colors.brand.primary }}
+                                                className={`text-white px-3 py-1 rounded-lg transition-all hover:opacity-80 text-sm ${styles.primaryButton}`}
                                             >
                                                 Copy
                                             </button>
@@ -260,15 +232,13 @@ const CosmosWalletPage = () => {
                             <div className="flex flex-col space-y-3 mt-4">
                                 <button
                                     onClick={() => navigate("/")}
-                                    className="w-full text-white px-6 py-3 rounded-xl font-semibold transition-all hover:opacity-80"
-                                    style={{ backgroundColor: colors.brand.primary }}
+                                    className={`w-full text-white px-6 py-3 rounded-xl font-semibold transition-all hover:opacity-80 ${styles.primaryButton}`}
                                 >
                                     Return to Dashboard
                                 </button>
                                 <button
                                     onClick={handleClearWallet}
-                                    className="w-full text-white px-6 py-3 rounded-xl font-semibold transition-all hover:opacity-80"
-                                    style={{ backgroundColor: colors.accent.danger }}
+                                    className={`w-full text-white px-6 py-3 rounded-xl font-semibold transition-all hover:opacity-80 ${styles.dangerButton}`}
                                 >
                                     Clear Wallet
                                 </button>
@@ -280,19 +250,17 @@ const CosmosWalletPage = () => {
                 {/* Generate New Wallet */}
                 {!existingAddress && (
                     <div
-                        className="backdrop-blur-sm rounded-xl p-5 mb-4 border shadow-lg"
-                        style={cardStyle}
+                        className={`backdrop-blur-sm rounded-xl p-5 mb-4 border shadow-lg ${styles.mainCard}`}
                     >
                         <h2 className="text-xl font-bold text-white mb-3">Generate New Wallet</h2>
-                        <p className="mb-4 text-sm" style={{ color: colors.ui.textSecondary }}>
+                        <p className={`mb-4 text-sm ${styles.textSecondary}`}>
                             Create a new Block52 wallet with a 24-word seed phrase. This will be saved in your browser.
                         </p>
 
                         <button
                             onClick={generateWalletHandler}
                             disabled={isGenerating}
-                            className="w-full text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-80"
-                            style={{ backgroundColor: colors.brand.primary }}
+                            className={`w-full text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-80 ${styles.primaryButton}`}
                         >
                             {isGenerating ? "Generating..." : "Generate New Wallet"}
                         </button>
@@ -300,25 +268,20 @@ const CosmosWalletPage = () => {
                         {mnemonic && (
                             <div className="mt-6 space-y-4">
                                 <div
-                                    className="rounded-xl p-4"
-                                    style={{
-                                        backgroundColor: hexToRgba(colors.accent.warning, 0.1),
-                                        border: `1px solid ${hexToRgba(colors.accent.warning, 0.3)}`
-                                    }}
+                                    className={`rounded-xl p-4 ${styles.warningCard}`}
                                 >
-                                    <p className="font-semibold" style={{ color: colors.accent.warning }}>⚠️ Important!</p>
-                                    <p className="text-sm mt-2" style={{ color: hexToRgba(colors.accent.warning, 0.8) }}>
+                                    <p className={`font-semibold ${styles.warningText}`}>⚠️ Important!</p>
+                                    <p className={`text-sm mt-2 ${styles.warningTextMuted}`}>
                                         Write down your seed phrase and store it safely. This is the only way to recover your wallet.
                                     </p>
                                 </div>
 
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <label className="text-sm" style={{ color: colors.ui.textSecondary }}>Your Seed Phrase</label>
+                                        <label className={`text-sm ${styles.textSecondary}`}>Your Seed Phrase</label>
                                         <button
                                             onClick={() => copyToClipboard(mnemonic, "Seed Phrase")}
-                                            className="text-white px-3 py-1 rounded-lg transition-all hover:opacity-80 text-sm"
-                                            style={{ backgroundColor: colors.brand.primary }}
+                                            className={`text-white px-3 py-1 rounded-lg transition-all hover:opacity-80 text-sm ${styles.primaryButton}`}
                                         >
                                             Copy
                                         </button>
@@ -327,18 +290,16 @@ const CosmosWalletPage = () => {
                                 </div>
 
                                 <div>
-                                    <label className="text-sm" style={{ color: colors.ui.textSecondary }}>Your Address</label>
+                                    <label className={`text-sm ${styles.textSecondary}`}>Your Address</label>
                                     <input
                                         type="text"
                                         value={address}
                                         readOnly
-                                        className="w-full text-white px-4 py-2 rounded-lg border font-mono text-sm mt-1"
-                                        style={inputStyle}
+                                        className={`w-full text-white px-4 py-2 rounded-lg border font-mono text-sm mt-1 ${styles.inputField}`}
                                     />
                                     <button
                                         onClick={() => copyToClipboard(address, "Address")}
-                                        className="mt-2 text-white px-4 py-2 rounded-lg transition-all hover:opacity-80"
-                                        style={{ backgroundColor: colors.brand.primary }}
+                                        className={`mt-2 text-white px-4 py-2 rounded-lg transition-all hover:opacity-80 ${styles.primaryButton}`}
                                     >
                                         Copy Address
                                     </button>
@@ -351,32 +312,29 @@ const CosmosWalletPage = () => {
                 {/* Import Existing Wallet */}
                 {!existingAddress && (
                     <div
-                        className="backdrop-blur-sm rounded-xl p-5 border shadow-lg"
-                        style={cardStyle}
+                        className={`backdrop-blur-sm rounded-xl p-5 border shadow-lg ${styles.mainCard}`}
                     >
                         <h2 className="text-xl font-bold text-white mb-3">Import Existing Wallet</h2>
-                        <p className="mb-4 text-sm" style={{ color: colors.ui.textSecondary }}>
+                        <p className={`mb-4 text-sm ${styles.textSecondary}`}>
                             Import an existing wallet using your 12 or 24-word seed phrase.
                         </p>
 
                         <div className="space-y-4">
                             <div>
-                                <label className="text-sm" style={{ color: colors.ui.textSecondary }}>Seed Phrase</label>
+                                <label className={`text-sm ${styles.textSecondary}`}>Seed Phrase</label>
                                 <textarea
                                     value={importMnemonic}
                                     onChange={e => setImportMnemonic(e.target.value)}
                                     placeholder="Enter your seed phrase (12 or 24 words)"
                                     rows={3}
-                                    className="w-full text-white px-4 py-3 rounded-lg border font-mono text-sm mt-1 placeholder-gray-500"
-                                    style={inputStyle}
+                                    className={`w-full text-white px-4 py-3 rounded-lg border font-mono text-sm mt-1 placeholder-gray-500 ${styles.inputField}`}
                                 />
                             </div>
 
                             <button
                                 onClick={handleImportWallet}
                                 disabled={isGenerating || !importMnemonic.trim()}
-                                className="w-full text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-80"
-                                style={{ backgroundColor: colors.brand.primary }}
+                                className={`w-full text-white px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:opacity-80 ${styles.primaryButton}`}
                             >
                                 {isGenerating ? "Importing..." : "Import Wallet"}
                             </button>
@@ -387,13 +345,9 @@ const CosmosWalletPage = () => {
                 {/* Error Display */}
                 {error && (
                     <div
-                        className="mt-6 rounded-xl p-4"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.danger, 0.1),
-                            border: `1px solid ${hexToRgba(colors.accent.danger, 0.3)}`
-                        }}
+                        className={`mt-6 rounded-xl p-4 ${styles.errorCard}`}
                     >
-                        <p style={{ color: colors.accent.danger }}>{error}</p>
+                        <p className={styles.errorText}>{error}</p>
                     </div>
                 )}
             </div>

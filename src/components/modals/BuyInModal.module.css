@@ -1,0 +1,101 @@
+.modalContainer {
+    background-color: var(--ui-bg-dark);
+    border: 1px solid var(--ui-border-color);
+}
+
+.closeButton {
+    background-color: var(--ui-bg-medium);
+}
+
+.suitClub {
+    color: var(--brand-primary);
+}
+
+.suitDiamond {
+    color: var(--accent-danger);
+}
+
+.dividerPrimary {
+    background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
+}
+
+.balanceCard {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+    border: 1px solid var(--brand-primary-10);
+}
+
+.selectField {
+    background-color: var(--ui-bg-medium);
+    border: 1px solid var(--ui-text-secondary);
+}
+
+.fixedBuyInPanel {
+    background-color: var(--ui-bg-medium);
+    border-color: var(--brand-primary);
+}
+
+.buyInSlider {
+    background-color: var(--ui-bg-medium);
+    accent-color: var(--brand-primary);
+}
+
+.buyInInput {
+    background-color: var(--ui-bg-medium);
+    border: 1px solid var(--ui-border-color);
+}
+
+.buyInInput:focus {
+    border-color: var(--brand-primary);
+}
+
+.errorText {
+    color: var(--accent-danger);
+}
+
+.waitCheckbox {
+    accent-color: var(--brand-primary);
+    background-color: var(--ui-bg-medium);
+    border-color: var(--ui-text-secondary);
+}
+
+.cancelButton {
+    background-color: var(--ui-text-secondary);
+}
+
+.cancelButton:hover {
+    background-color: var(--ui-bg-medium);
+}
+
+.viewTableButton {
+    background: var(--brand-primary);
+}
+
+.viewTableButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.takeSeatButton {
+    background: linear-gradient(to bottom right, var(--brand-primary), var(--brand-secondary));
+}
+
+.takeSeatButtonDisabled {
+    background: var(--brand-primary);
+}
+
+.takeSeatButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.balanceError {
+    color: var(--accent-danger);
+}
+
+.depositLink {
+    color: var(--brand-primary);
+}
+
+.noteText {
+    color: var(--ui-text-secondary);
+}

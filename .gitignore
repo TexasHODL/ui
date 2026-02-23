@@ -28,3 +28,4 @@ yarn-error.log*
 button-demo.html
 demo-transaction.html
 demo-transaction-no-arrow.html
+node_modules
