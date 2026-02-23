@@ -6,6 +6,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { CardDistribution } from "./types";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
+import styles from "./DistributionPage.module.css";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -212,7 +213,7 @@ export default function DistributionPage() {
 
                     {/* Chart */}
                     <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
-                        <div style={{ height: "600px" }}>
+                        <div className={styles.chartContainer}>
                             <Bar data={chartData} options={chartOptions} />
                         </div>
                     </div>

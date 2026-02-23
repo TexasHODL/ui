@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
-import { colors, hexToRgba } from "../../utils/colorConfig";
+import { colors } from "../../utils/colorConfig";
 import { renderJSONWithClickableAddresses } from "../../components/explorer/ClickableAddress";
 import { CosmosTransaction } from "./types";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
+import styles from "./TransactionPage.module.css";
 
 export default function TransactionPage() {
     // Check if hash is provided via URL params (for /explorer/tx/:hash route)
@@ -92,15 +93,6 @@ export default function TransactionPage() {
         };
     }, [urlHash, transaction]);
 
-    // Memoized styles
-    const containerStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
     return (
         <div className="min-h-screen flex flex-col items-center relative overflow-hidden p-6">
             <AnimatedBackground />
@@ -111,16 +103,11 @@ export default function TransactionPage() {
                 {/* Error Display */}
                 {error && (
                     <div
-                        className="backdrop-blur-md p-4 rounded-xl shadow-2xl mb-6"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.danger, 0.2),
-                            border: `1px solid ${hexToRgba(colors.accent.danger, 0.5)}`
-                        }}
+                        className={`backdrop-blur-md p-4 rounded-xl shadow-2xl mb-6 ${styles.errorContainer}`}
                     >
                         <div className="flex items-center gap-3">
                             <svg
-                                className="h-6 w-6 flex-shrink-0"
-                                style={{ color: colors.accent.danger }}
+                                className={`h-6 w-6 flex-shrink-0 ${styles.errorIcon}`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -134,16 +121,13 @@ export default function TransactionPage() {
 
                 {/* Transaction Details */}
                 {transaction && transaction.tx_response && (
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.detailsContainer}`}>
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold text-white">Transaction Details</h2>
                             {previousAddress && (
                                 <button
                                     onClick={() => navigate(`/explorer/address/${previousAddress}`)}
-                                    className="px-4 py-2 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-                                    }}
+                                    className={`px-4 py-2 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.backToAddressButton}`}
                                 >
                                     Back to Address Lookup
                                 </button>
@@ -155,11 +139,7 @@ export default function TransactionPage() {
                             <div>
                                 <label className="block text-gray-400 text-sm font-semibold mb-2">Transaction Hash</label>
                                 <div
-                                    className="p-3 rounded-lg font-mono text-sm text-white break-all"
-                                    style={{
-                                        backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6),
-                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                    }}
+                                    className={`p-3 rounded-lg font-mono text-sm text-white break-all ${styles.hashBox}`}
                                 >
                                     {transaction.tx_response.txhash}
                                 </div>
@@ -204,7 +184,7 @@ export default function TransactionPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-gray-400 text-sm font-semibold mb-2">Block Height</label>
-                                    <div className="text-white font-mono" style={{ color: colors.brand.primary }}>
+                                    <div className={`text-white font-mono ${styles.brandText}`}>
                                         #{transaction.tx_response.height}
                                     </div>
                                 </div>
@@ -224,27 +204,18 @@ export default function TransactionPage() {
                                         {transaction.tx.body.messages.map((msg: any, index: number) => (
                                             <div
                                                 key={index}
-                                                className="p-4 rounded-lg"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6),
-                                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                                }}
+                                                className={`p-4 rounded-lg ${styles.messageCard}`}
                                             >
                                                 <div className="mb-3">
                                                     <label className="block text-gray-400 text-xs font-semibold mb-1">Type</label>
-                                                    <code className="text-sm font-mono" style={{ color: colors.brand.primary }}>
+                                                    <code className={`text-sm font-mono ${styles.brandText}`}>
                                                         {msg["@type"] || msg.typeUrl}
                                                     </code>
                                                 </div>
                                                 <div>
                                                     <label className="block text-gray-400 text-xs font-semibold mb-1">Data</label>
                                                     <div
-                                                        className="p-3 rounded text-xs overflow-auto font-mono text-gray-300"
-                                                        style={{
-                                                            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-                                                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`,
-                                                            maxHeight: "300px"
-                                                        }}
+                                                        className={`p-3 rounded text-xs overflow-auto font-mono text-gray-300 ${styles.messageDataBox}`}
                                                     >
                                                         {renderJSONWithClickableAddresses(msg)}
                                                     </div>
@@ -269,16 +240,11 @@ export default function TransactionPage() {
                                         if (gameIdAttr) {
                                             return (
                                                 <div
-                                                    className="p-5 rounded-lg"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(colors.accent.success, 0.1),
-                                                        border: `2px solid ${colors.accent.success}`
-                                                    }}
+                                                    className={`p-5 rounded-lg ${styles.successPanel}`}
                                                 >
                                                     <div className="flex items-center gap-2 mb-3">
                                                         <svg
-                                                            className="w-6 h-6"
-                                                            style={{ color: colors.accent.success }}
+                                                            className={`w-6 h-6 ${styles.successText}`}
                                                             fill="currentColor"
                                                             viewBox="0 0 20 20"
                                                         >
@@ -288,7 +254,7 @@ export default function TransactionPage() {
                                                                 clipRule="evenodd"
                                                             />
                                                         </svg>
-                                                        <h3 className="text-xl font-bold" style={{ color: colors.accent.success }}>
+                                                        <h3 className={`text-xl font-bold ${styles.successText}`}>
                                                             🎮 Game Created Successfully!
                                                         </h3>
                                                     </div>
@@ -296,8 +262,7 @@ export default function TransactionPage() {
                                                         <div>
                                                             <label className="block text-gray-300 text-xs font-semibold mb-1">Game ID</label>
                                                             <code
-                                                                className="text-sm font-mono break-all cursor-pointer transition-colors duration-200 block"
-                                                                style={{ color: colors.brand.primary }}
+                                                                className={`text-sm font-mono break-all cursor-pointer transition-colors duration-200 block ${styles.brandText}`}
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(gameIdAttr.value);
                                                                     alert("Game ID copied!");
@@ -337,16 +302,11 @@ export default function TransactionPage() {
                                         if (gameIdAttr) {
                                             return (
                                                 <div
-                                                    className="p-5 rounded-lg"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(colors.accent.success, 0.1),
-                                                        border: `2px solid ${colors.accent.success}`
-                                                    }}
+                                                    className={`p-5 rounded-lg ${styles.successPanel}`}
                                                 >
                                                     <div className="flex items-center gap-2 mb-3">
                                                         <svg
-                                                            className="w-6 h-6"
-                                                            style={{ color: colors.accent.success }}
+                                                            className={`w-6 h-6 ${styles.successText}`}
                                                             fill="currentColor"
                                                             viewBox="0 0 20 20"
                                                         >
@@ -356,7 +316,7 @@ export default function TransactionPage() {
                                                                 clipRule="evenodd"
                                                             />
                                                         </svg>
-                                                        <h3 className="text-xl font-bold" style={{ color: colors.accent.success }}>
+                                                        <h3 className={`text-xl font-bold ${styles.successText}`}>
                                                             🪑 Joined Game Successfully!
                                                         </h3>
                                                     </div>
@@ -364,8 +324,7 @@ export default function TransactionPage() {
                                                         <div>
                                                             <label className="block text-gray-300 text-xs font-semibold mb-1">Game ID</label>
                                                             <code
-                                                                className="text-sm font-mono break-all cursor-pointer transition-colors duration-200 block"
-                                                                style={{ color: colors.brand.primary }}
+                                                                className={`text-sm font-mono break-all cursor-pointer transition-colors duration-200 block ${styles.brandText}`}
                                                                 onClick={() => {
                                                                     navigator.clipboard.writeText(gameIdAttr.value);
                                                                     alert("Game ID copied!");
@@ -541,10 +500,7 @@ export default function TransactionPage() {
                                         <div className="mb-6">
                                             <button
                                                 onClick={() => setShowEventExplanation(!showEventExplanation)}
-                                                className="flex items-center gap-2 text-lg font-bold transition-colors duration-200 mb-3"
-                                                style={{ color: colors.brand.primary }}
-                                                onMouseEnter={e => (e.currentTarget.style.color = colors.accent.glow)}
-                                                onMouseLeave={e => (e.currentTarget.style.color = colors.brand.primary)}
+                                                className={`flex items-center gap-2 text-lg font-bold transition-colors duration-200 mb-3 ${styles.eventExplainToggle}`}
                                             >
                                                 <span>{showEventExplanation ? "▼" : "▶"}</span>
                                                 <span>What do these {transaction.tx_response.events.length} events mean?</span>
@@ -552,28 +508,24 @@ export default function TransactionPage() {
 
                                             {showEventExplanation && (
                                                 <div
-                                                    className="p-5 rounded-lg mb-4"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(colors.ui.bgMedium, 0.4),
-                                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                                    }}
+                                                    className={`p-5 rounded-lg mb-4 ${styles.eventExplanationContainer}`}
                                                 >
                                                     {/* Cosmos Events Primer */}
-                                                    <div className="mb-6 pb-4" style={{ borderBottom: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}` }}>
+                                                    <div className={`mb-6 pb-4 ${styles.eventExplanationPrimer}`}>
                                                         <h4 className="text-lg font-bold text-white mb-3">📚 About Cosmos Blockchain Events</h4>
                                                         <div className="text-gray-300 text-sm space-y-2">
                                                             <p>
-                                                                <strong style={{ color: colors.brand.primary }}>Events</strong> are records emitted during
+                                                                <strong className={styles.eventExplanationStrong}>Events</strong> are records emitted during
                                                                 transaction execution that describe what happened. They're stored on the blockchain and indexed
                                                                 for easy querying.
                                                             </p>
                                                             <p>
-                                                                <strong style={{ color: colors.brand.primary }}>Standard SDK events</strong> (coin_spent,
+                                                                <strong className={styles.eventExplanationStrong}>Standard SDK events</strong> (coin_spent,
                                                                 coin_received, transfer, message, tx) are automatically emitted by the Cosmos SDK for all
                                                                 transactions.
                                                             </p>
                                                             <p>
-                                                                <strong style={{ color: colors.brand.primary }}>Custom module events</strong> (game_created,
+                                                                <strong className={styles.eventExplanationStrong}>Custom module events</strong> (game_created,
                                                                 player_joined_game) are emitted by your custom poker module to track game-specific actions.
                                                             </p>
                                                             <p>
@@ -591,11 +543,7 @@ export default function TransactionPage() {
                                                             return (
                                                                 <div
                                                                     key={index}
-                                                                    className="p-3 rounded-lg"
-                                                                    style={{
-                                                                        backgroundColor: hexToRgba(colors.ui.bgDark, 0.5),
-                                                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-                                                                    }}
+                                                                    className={`p-3 rounded-lg ${styles.eventBreakdownCard}`}
                                                                 >
                                                                     <div className="flex items-start gap-3">
                                                                         {explanation && <span className="text-2xl">{explanation.icon}</span>}
@@ -603,7 +551,7 @@ export default function TransactionPage() {
                                                                             <div className="flex items-center gap-2 mb-1">
                                                                                 <span className="text-xs font-bold text-gray-400">#{index + 1}</span>
                                                                                 {explanation && (
-                                                                                    <h5 className="font-bold" style={{ color: colors.brand.primary }}>
+                                                                                    <h5 className={`font-bold ${styles.eventBreakdownTitle}`}>
                                                                                         {explanation.title}
                                                                                     </h5>
                                                                                 )}
@@ -619,13 +567,9 @@ export default function TransactionPage() {
 
                                                     {/* Summary */}
                                                     <div
-                                                        className="mt-5 p-4 rounded-lg"
-                                                        style={{
-                                                            backgroundColor: hexToRgba(colors.accent.success, 0.1),
-                                                            border: `1px solid ${hexToRgba(colors.accent.success, 0.3)}`
-                                                        }}
+                                                        className={`mt-5 p-4 rounded-lg ${styles.eventSummaryBox}`}
                                                     >
-                                                        <h5 className="font-bold mb-2" style={{ color: colors.accent.success }}>
+                                                        <h5 className={`font-bold mb-2 ${styles.eventSummaryTitle}`}>
                                                             Summary
                                                         </h5>
                                                         <p className="text-sm text-gray-300">
@@ -645,12 +589,7 @@ export default function TransactionPage() {
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-3">Raw Events Data ({transaction.tx_response.events.length})</h3>
                                     <pre
-                                        className="p-4 rounded-lg text-xs overflow-auto font-mono text-gray-300"
-                                        style={{
-                                            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6),
-                                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`,
-                                            maxHeight: "400px"
-                                        }}
+                                        className={`p-4 rounded-lg text-xs overflow-auto font-mono text-gray-300 ${styles.rawEventsBox}`}
                                     >
                                         {JSON.stringify(transaction.tx_response.events, null, 2)}
                                     </pre>

@@ -323,6 +323,48 @@ Targets:
 
 - Inline-style-heavy pages in `src/pages/explorer/*` and `src/pages/admin/*`
 
+### Wave 4 implementation status (in progress)
+
+Completed in this slice:
+
+- `src/pages/explorer/TransactionPage.tsx` + `src/pages/explorer/TransactionPage.module.css`
+- `src/pages/explorer/BlockDetailPage.tsx` + `src/pages/explorer/BlockDetailPage.module.css`
+- `src/pages/explorer/AllAccountsPage.tsx` + `src/pages/explorer/AllAccountsPage.module.css`
+- `src/pages/explorer/AddressPage.tsx` + `src/pages/explorer/AddressPage.module.css`
+- `src/pages/admin/AdminDashboard.tsx` + `src/pages/admin/AdminDashboard.module.css`
+- `src/pages/explorer/DistributionPage.tsx` + `src/pages/explorer/DistributionPage.module.css`
+
+Wave 4 slice outcomes:
+
+- Static inline styles migrated to CSS Module classes for explorer transaction detail surfaces.
+- Hover color mutation handlers replaced with CSS `:hover` class behavior.
+- Runtime-only inline style retained for transaction success/failure status color.
+
+Wave 4 slice evidence (target-local):
+
+- `src/pages/explorer/TransactionPage.tsx`: **1** `style={` match (runtime status color only; reduced from 29).
+- `src/pages/explorer/BlockDetailPage.tsx`: **0** `style={` matches (reduced from 20).
+- `src/pages/explorer/AllAccountsPage.tsx`: **0** `style={` matches (reduced from 15).
+- `src/pages/explorer/AddressPage.tsx`: **0** `style={` matches (reduced from 14).
+- `src/pages/admin/AdminDashboard.tsx`: **0** `style={` matches (reduced from 6).
+- `src/pages/explorer/DistributionPage.tsx`: **0** `style={` matches (reduced from 1).
+
+Next Wave 4 targets (by remaining inline-style density):
+
+- `src/pages/explorer/TransactionPage.tsx` — 1 (runtime-only status color)
+
+Wave 4 current aggregate:
+
+- Explorer/admin inline styles remaining: **1** (down from 57 at Wave 4 kickoff).
+
+Wave 4 closeout note:
+
+- Remaining one `style={` usage is runtime-only by policy (`TransactionPage` status color).
+
+### Wave 4 completion status
+
+- ✅ Wave 4 is complete under current acceptance criteria.
+
 ### Wave 5: Legacy global CSS consolidation
 
 Targets:

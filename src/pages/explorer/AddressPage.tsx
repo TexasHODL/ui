@@ -1,13 +1,13 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getCosmosClient } from "../../utils/cosmos/client";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { useNetwork } from "../../context/NetworkContext";
 import { microToUsdc } from "../../constants/currency";
 import { Coin } from "./types";
 import { formatTimestampRelative } from "../../utils/formatUtils";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
+import styles from "./AddressPage.module.css";
 
 export default function AddressPage() {
     const { address: urlAddress } = useParams<{ address: string }>();
@@ -132,32 +132,6 @@ export default function AddressPage() {
         };
     }, [urlAddress]);
 
-    // Memoized styles
-    const containerStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
-    const inputStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-        }),
-        []
-    );
-
-    const buttonStyle = useMemo(
-        () => ({
-            background: loading
-                ? `linear-gradient(135deg, ${hexToRgba(colors.ui.bgDark, 0.5)} 0%, ${hexToRgba(colors.ui.bgDark, 0.3)} 100%)`
-                : `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-        }),
-        [loading]
-    );
-
     const formatDenom = (denom: string) => {
         if (denom.toLowerCase() === "usdc") return "USDC";
         if (denom.startsWith("u")) return denom.slice(1).toUpperCase();
@@ -191,7 +165,7 @@ export default function AddressPage() {
                 <ExplorerHeader title="Block Explorer" />
 
                 {/* Search Card */}
-                <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                     <div className="space-y-4">
                         <div className="flex gap-3">
                             <input
@@ -200,20 +174,12 @@ export default function AddressPage() {
                                 onChange={e => setAddress(e.target.value)}
                                 onKeyDown={handleKeyPress}
                                 placeholder="Enter Block 52 address (e.g., b521234...)"
-                                className="flex-1 px-4 py-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all"
-                                style={{
-                                    ...inputStyle,
-                                    boxShadow: `0 0 20px ${hexToRgba(colors.brand.primary, 0.3)}`
-                                }}
+                                className={`flex-1 px-4 py-3 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all ${styles.searchInput}`}
                             />
                             {address && (
                                 <button
                                     onClick={() => copyToClipboard(address)}
-                                    className="px-4 py-3 rounded-lg text-white font-medium transition-all hover:opacity-90"
-                                    style={{
-                                        backgroundColor: hexToRgba(colors.brand.primary, 0.5),
-                                        border: `1px solid ${colors.brand.primary}`
-                                    }}
+                                    className={`px-4 py-3 rounded-lg text-white font-medium transition-all hover:opacity-90 ${styles.copyButton}`}
                                 >
                                     Copy
                                 </button>
@@ -222,8 +188,7 @@ export default function AddressPage() {
                         <button
                             onClick={() => handleSearch()}
                             disabled={loading}
-                            className="w-full px-6 py-3 rounded-lg text-white font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={buttonStyle}
+                            className={`w-full px-6 py-3 rounded-lg text-white font-bold transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${loading ? styles.searchButtonLoading : styles.searchButtonReady}`}
                         >
                             {loading ? "Searching..." : "Search Address"}
                         </button>
@@ -232,7 +197,7 @@ export default function AddressPage() {
 
                 {/* Error Display */}
                 {error && (
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 border-2 border-red-500" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard} ${styles.errorContainer}`}>
                         <p className="text-red-400 text-center">{error}</p>
                     </div>
                 )}
@@ -241,24 +206,16 @@ export default function AddressPage() {
                 {!loading && !error && (balances.length > 0 || transactions.length > 0) && (
                     <>
                         {/* Tabs */}
-                        <div className="backdrop-blur-md p-2 rounded-xl shadow-2xl mb-6 flex gap-2" style={containerStyle}>
+                        <div className={`backdrop-blur-md p-2 rounded-xl shadow-2xl mb-6 flex gap-2 ${styles.containerCard}`}>
                             <button
                                 onClick={() => setActiveTab("balances")}
-                                className="flex-1 px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90"
-                                style={{
-                                    backgroundColor: activeTab === "balances" ? colors.brand.primary : "transparent",
-                                    color: "white"
-                                }}
+                                className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90 ${activeTab === "balances" ? styles.tabActive : styles.tabInactive}`}
                             >
                                 Balances
                             </button>
                             <button
                                 onClick={() => setActiveTab("transactions")}
-                                className="flex-1 px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90"
-                                style={{
-                                    backgroundColor: activeTab === "transactions" ? colors.brand.primary : "transparent",
-                                    color: "white"
-                                }}
+                                className={`flex-1 px-6 py-3 rounded-lg font-bold transition-all hover:opacity-90 ${activeTab === "transactions" ? styles.tabActive : styles.tabInactive}`}
                             >
                                 Transactions
                             </button>
@@ -266,7 +223,7 @@ export default function AddressPage() {
 
                         {/* Balances Tab */}
                         {activeTab === "balances" && (
-                            <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                            <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                                 <h2 className="text-2xl font-bold text-white mb-4">Token Balances</h2>
                                 {balances.length === 0 ? (
                                     <p className="text-gray-400 text-center py-8">No balances found for this address</p>
@@ -275,11 +232,7 @@ export default function AddressPage() {
                                         {balances.map((balance, index) => (
                                             <div
                                                 key={index}
-                                                className="p-4 rounded-lg"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5),
-                                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                                }}
+                                                className={`p-4 rounded-lg ${styles.balanceItemCard}`}
                                             >
                                                 <div className="flex justify-between items-center">
                                                     <div>
@@ -299,7 +252,7 @@ export default function AddressPage() {
 
                         {/* Transactions Tab */}
                         {activeTab === "transactions" && (
-                            <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                            <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                                 <h2 className="text-2xl font-bold text-white mb-4">Transaction History</h2>
                                 {transactions.length === 0 ? (
                                     <p className="text-gray-400 text-center py-8">No transactions found for this address</p>
@@ -315,11 +268,7 @@ export default function AddressPage() {
                                                             state: { fromAddress: currentAddress }
                                                         })
                                                     }
-                                                    className="p-4 rounded-lg cursor-pointer hover:opacity-80 transition-all"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(colors.ui.bgMedium, 0.5),
-                                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                                    }}
+                                                    className={`p-4 rounded-lg cursor-pointer hover:opacity-80 transition-all ${styles.txItemCard}`}
                                                 >
                                                     <div className="flex justify-between items-start mb-2">
                                                         <div className="flex-1">
@@ -327,12 +276,7 @@ export default function AddressPage() {
                                                             <p className="text-white font-mono text-sm break-all">{tx.txhash}</p>
                                                         </div>
                                                         <div
-                                                            className="px-3 py-1 rounded-full text-xs font-bold ml-4"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    tx.code === 0 ? hexToRgba(colors.accent.success, 0.2) : hexToRgba(colors.accent.danger, 0.2),
-                                                                color: tx.code === 0 ? colors.accent.success : colors.accent.danger
-                                                            }}
+                                                            className={`px-3 py-1 rounded-full text-xs font-bold ml-4 ${tx.code === 0 ? styles.txStatusSuccess : styles.txStatusFailed}`}
                                                         >
                                                             {tx.code === 0 ? "Success" : "Failed"}
                                                         </div>
@@ -359,7 +303,7 @@ export default function AddressPage() {
 
                 {/* No Results */}
                 {!loading && !error && balances.length === 0 && transactions.length === 0 && urlAddress && (
-                    <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-center">No data found for this address</p>
                     </div>
                 )}

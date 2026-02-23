@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { ClickableAddress } from "../../components/explorer/ClickableAddress";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
+import styles from "./BlockDetailPage.module.css";
 // Define block response type locally to match Cosmos API response
 interface CosmosBlockResponse {
     block_id: {
@@ -296,32 +296,14 @@ export default function BlockDetailPage() {
         }
     };
 
-    // Memoized styles
-    const containerStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
-    const headerStyle = useMemo(
-        () => ({
-            background: `linear-gradient(135deg, ${hexToRgba(colors.brand.primary, 0.2)} 0%, ${hexToRgba(colors.brand.secondary, 0.2)} 100%)`,
-            borderBottom: `2px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-        }),
-        []
-    );
-
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
                 <AnimatedBackground />
-                <div className="backdrop-blur-md p-8 rounded-xl shadow-2xl text-center relative z-10" style={containerStyle}>
+                <div className={`backdrop-blur-md p-8 rounded-xl shadow-2xl text-center relative z-10 ${styles.containerCard}`}>
                     <div className="flex justify-center mb-4">
                         <svg
-                            className="animate-spin h-10 w-10"
-                            style={{ color: colors.brand.primary }}
+                            className={`animate-spin h-10 w-10 ${styles.brandText}`}
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -344,9 +326,9 @@ export default function BlockDetailPage() {
         return (
             <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
                 <AnimatedBackground />
-                <div className="backdrop-blur-md p-8 rounded-xl shadow-2xl text-center max-w-lg relative z-10" style={containerStyle}>
+                <div className={`backdrop-blur-md p-8 rounded-xl shadow-2xl text-center max-w-lg relative z-10 ${styles.containerCard}`}>
                     <div className="flex justify-center mb-4">
-                        <svg className="h-16 w-16" style={{ color: colors.accent.danger }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`h-16 w-16 ${styles.dangerText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
@@ -354,13 +336,7 @@ export default function BlockDetailPage() {
                     <p className="text-gray-300 mb-6">Unable to load block #{height}</p>
                     <button
                         onClick={() => navigate("/explorer")}
-                        className="px-6 py-2 rounded-lg font-bold transition-colors duration-200"
-                        style={{
-                            backgroundColor: colors.brand.primary,
-                            color: "white"
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = colors.brand.secondary)}
-                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = colors.brand.primary)}
+                        className={`px-6 py-2 rounded-lg font-bold transition-colors duration-200 ${styles.primaryButton}`}
                     >
                         Back to Explorer
                     </button>
@@ -377,18 +353,7 @@ export default function BlockDetailPage() {
                 <div className="mb-6">
                     <button
                         onClick={() => navigate("/explorer")}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-colors duration-200 mb-4"
-                        style={{
-                            backgroundColor: hexToRgba(colors.brand.primary, 0.2),
-                            color: colors.brand.primary,
-                            border: `1px solid ${colors.brand.primary}`
-                        }}
-                        onMouseEnter={e => {
-                            e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.3);
-                        }}
-                        onMouseLeave={e => {
-                            e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.2);
-                        }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold transition-colors duration-200 mb-4 ${styles.subtleBrandButton}`}
                     >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
@@ -398,18 +363,15 @@ export default function BlockDetailPage() {
                 </div>
 
                 {/* Block Details Card */}
-                <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                     <h1 className="text-3xl font-extrabold text-white mb-6">Block #{block.block.header.height}</h1>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p className="text-gray-400 text-sm mb-1">Block Hash</p>
                             <p
-                                className="font-mono text-sm cursor-pointer transition-colors duration-200 break-all"
-                                style={{ color: colors.brand.primary }}
+                                className={`font-mono text-sm cursor-pointer transition-colors duration-200 break-all ${styles.brandText} ${styles.brandTextHover}`}
                                 onClick={() => copyToClipboard(block.block_id.hash)}
-                                onMouseEnter={e => (e.currentTarget.style.color = colors.accent.glow)}
-                                onMouseLeave={e => (e.currentTarget.style.color = colors.brand.primary)}
                                 title="Click to copy"
                             >
                                 {block.block_id.hash}
@@ -435,7 +397,7 @@ export default function BlockDetailPage() {
 
                         <div>
                             <p className="text-gray-400 text-sm mb-1">Number of Transactions</p>
-                            <p className="text-white font-bold text-lg" style={{ color: colors.accent.success }}>
+                            <p className={`text-white font-bold text-lg ${styles.successText}`}>
                                 {block.block.data.txs.length}
                             </p>
                         </div>
@@ -443,8 +405,8 @@ export default function BlockDetailPage() {
                 </div>
 
                 {/* Transactions Card */}
-                <div className="backdrop-blur-md rounded-xl shadow-2xl overflow-hidden" style={containerStyle}>
-                    <div style={headerStyle} className="px-6 py-4">
+                <div className={`backdrop-blur-md rounded-xl shadow-2xl overflow-hidden ${styles.containerCard}`}>
+                    <div className={`px-6 py-4 ${styles.headerCard}`}>
                         <h2 className="text-2xl font-bold text-white">Transactions {block.block.data.txs.length > 0 && `(${block.block.data.txs.length})`}</h2>
                     </div>
 
@@ -464,20 +426,15 @@ export default function BlockDetailPage() {
                                     return (
                                         <div
                                             key={index}
-                                            className="p-5 rounded-lg transition-colors duration-200"
-                                            style={{
-                                                backgroundColor: hexToRgba(colors.brand.primary, 0.05),
-                                                border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                            }}
+                                            className={`p-5 rounded-lg transition-colors duration-200 ${styles.txCard}`}
                                         >
                                             {/* Transaction Header */}
                                             <div
-                                                className="flex items-center justify-between mb-4 pb-3"
-                                                style={{ borderBottom: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}` }}
+                                                className={`flex items-center justify-between mb-4 pb-3 ${styles.txHeader}`}
                                             >
                                                 <div className="flex-1">
                                                     <p className="text-gray-400 text-sm font-bold">Transaction #{index + 1}</p>
-                                                    <p className="text-xl font-bold mt-1" style={{ color: colors.accent.success }}>
+                                                    <p className={`text-xl font-bold mt-1 ${styles.successText}`}>
                                                         {txDetails.type}
                                                     </p>
                                                     {txHashValue !== "Computing..." && (
@@ -485,10 +442,7 @@ export default function BlockDetailPage() {
                                                             <p className="text-gray-400 text-xs mb-1">Transaction Hash</p>
                                                             <Link
                                                                 to={`/explorer/tx/${txHashValue}`}
-                                                                className="font-mono text-xs cursor-pointer transition-colors duration-200 break-all"
-                                                                style={{ color: colors.brand.primary }}
-                                                                onMouseEnter={e => (e.currentTarget.style.color = colors.accent.glow)}
-                                                                onMouseLeave={e => (e.currentTarget.style.color = colors.brand.primary)}
+                                                                className={`font-mono text-xs cursor-pointer transition-colors duration-200 break-all ${styles.brandText} ${styles.brandTextHover}`}
                                                                 title="Click to view transaction details"
                                                             >
                                                                 {txHashValue}
@@ -498,17 +452,7 @@ export default function BlockDetailPage() {
                                                 </div>
                                                 <button
                                                     onClick={() => copyToClipboard(txHex)}
-                                                    className="px-3 py-1 rounded text-xs font-bold transition-colors duration-200 ml-4"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(colors.brand.primary, 0.2),
-                                                        color: colors.brand.primary
-                                                    }}
-                                                    onMouseEnter={e => {
-                                                        e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.3);
-                                                    }}
-                                                    onMouseLeave={e => {
-                                                        e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.2);
-                                                    }}
+                                                    className={`px-3 py-1 rounded text-xs font-bold transition-colors duration-200 ml-4 ${styles.copyRawButton}`}
                                                 >
                                                     Copy Raw
                                                 </button>
@@ -539,7 +483,7 @@ export default function BlockDetailPage() {
                                                         <p className="text-gray-400 text-xs mb-1">Amount</p>
                                                         <p className="text-white font-bold text-lg">
                                                             {txDetails.amount}{" "}
-                                                            <span className="text-sm" style={{ color: colors.brand.secondary }}>
+                                                            <span className={`text-sm ${styles.secondaryBrandText}`}>
                                                                 {txDetails.denom}
                                                             </span>
                                                         </p>
@@ -550,28 +494,18 @@ export default function BlockDetailPage() {
                                             {/* Show/Hide Raw Data */}
                                             <button
                                                 onClick={() => toggleRawData(index)}
-                                                className="text-xs font-bold transition-colors duration-200 mb-2"
-                                                style={{ color: colors.brand.primary }}
-                                                onMouseEnter={e => (e.currentTarget.style.color = colors.accent.glow)}
-                                                onMouseLeave={e => (e.currentTarget.style.color = colors.brand.primary)}
+                                                className={`text-xs font-bold transition-colors duration-200 mb-2 ${styles.brandText} ${styles.brandTextHover}`}
                                             >
                                                 {showRawData ? "▼ Hide Raw Data" : "▶ Show Raw Data"}
                                             </button>
 
                                             {showRawData && (
                                                 <div
-                                                    className="p-3 rounded mt-2"
-                                                    style={{
-                                                        backgroundColor: hexToRgba(colors.ui.bgDark, 0.5),
-                                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                                    }}
+                                                    className={`p-3 rounded mt-2 ${styles.rawDataBox}`}
                                                 >
                                                     <p
-                                                        className="font-mono text-xs break-all cursor-pointer transition-colors duration-200"
-                                                        style={{ color: colors.brand.primary }}
+                                                        className={`font-mono text-xs break-all cursor-pointer transition-colors duration-200 ${styles.brandText} ${styles.brandTextHover}`}
                                                         onClick={() => copyToClipboard(txHex)}
-                                                        onMouseEnter={e => (e.currentTarget.style.color = colors.accent.glow)}
-                                                        onMouseLeave={e => (e.currentTarget.style.color = colors.brand.primary)}
                                                         title="Click to copy raw data"
                                                     >
                                                         {txHex}

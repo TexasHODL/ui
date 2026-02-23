@@ -1,0 +1,57 @@
+.containerCard {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.searchInput {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 80%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+    box-shadow: 0 0 20px color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.copyButton {
+    background-color: color-mix(in srgb, var(--brand-primary) 50%, transparent);
+    border: 1px solid var(--brand-primary);
+}
+
+.searchButtonReady {
+    background: linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, transparent) 100%);
+}
+
+.searchButtonLoading {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--ui-bg-dark) 50%, transparent) 0%, color-mix(in srgb, var(--ui-bg-dark) 30%, transparent) 100%);
+}
+
+.errorContainer {
+    border: 2px solid var(--accent-danger);
+}
+
+.tabActive {
+    background-color: var(--brand-primary);
+    color: #ffffff;
+}
+
+.tabInactive {
+    background-color: transparent;
+    color: #ffffff;
+}
+
+.balanceItemCard {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.txItemCard {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.txStatusSuccess {
+    background-color: color-mix(in srgb, var(--accent-success) 20%, transparent);
+    color: var(--accent-success);
+}
+
+.txStatusFailed {
+    background-color: color-mix(in srgb, var(--accent-danger) 20%, transparent);
+    color: var(--accent-danger);
+}
