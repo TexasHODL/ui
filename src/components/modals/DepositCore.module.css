@@ -3,6 +3,11 @@
     background-color: var(--brand-primary-10);
 }
 
+.tokenSelected {
+    border-color: var(--brand-primary);
+    background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
 .successGradientButton {
     background: linear-gradient(135deg, var(--accent-success) 0%, color-mix(in srgb, var(--accent-success) 80%, transparent) 100%);
 }

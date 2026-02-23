@@ -66,7 +66,11 @@ export const convertGameListItemToGameWithFormat = (game: GameListItem): GameWit
 export const convertGameList = (games: GameListItem[]): GameWithFormat[] => {
     return games
         .filter((game: GameListItem) => {
-            return !!game.gameOptions;
+            if (!game.gameOptions) {
+                console.warn("[convertGameList] Game missing gameOptions, skipping:", game.gameId);
+                return false;
+            }
+            return true;
         })
         .map(convertGameListItemToGameWithFormat);
 };

@@ -599,7 +599,7 @@ const Table = React.memo(() => {
     }, []);
 
     const handleDepositClick = useCallback(() => {
-        window.location.href = "/qr-deposit";
+        window.location.href = "/";
     }, []);
 
     // Open leave table modal
