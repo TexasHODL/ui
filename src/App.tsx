@@ -1,5 +1,4 @@
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Deposit from "./components/Deposit";
 import Table from "./components/playPage/Table";
 import { createAppKit } from "@reown/appkit/react";
 import { WagmiProvider } from "wagmi";
@@ -8,7 +7,6 @@ import { projectId, metadata, networks, wagmiAdapter } from "./config";
 import { base } from "@reown/appkit/networks";
 import { ToastContainer } from "react-toastify";
 import Dashboard from "./pages/Dashboard";
-import QRDeposit from "./components/QRDeposit";
 import CosmosWalletPage from "./components/CosmosWalletPage";
 import BlocksPage from "./pages/explorer/BlocksPage";
 import BlockDetailPage from "./pages/explorer/BlockDetailPage";
@@ -71,8 +69,6 @@ function AppContent() {
                 <Route path="/test-sdk" element={<TestSdk />} />
                 <Route path="/table/:id" element={<Table />} />
                 <Route path="/table/admin" element={<TableAdminPage />} /> {/* Legacy - keep for backwards compat */}
-                <Route path="/deposit" element={<Deposit />} />
-                <Route path="/qr-deposit" element={<QRDeposit />} />
                 <Route path="/wallet" element={<CosmosWalletPage />} />
                 {/* User-facing routes */}
                 <Route path="/bridge/withdrawals" element={<WithdrawalDashboard />} />

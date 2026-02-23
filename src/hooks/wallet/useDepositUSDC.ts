@@ -3,9 +3,10 @@ import { useCallback, useMemo } from "react";
 import { COSMOS_BRIDGE_ADDRESS } from "../../config/constants";
 import { parseAbi } from "viem";
 
-// CosmosBridge ABI
+// CosmosBridge ABI - includes both deposit methods
 const COSMOS_BRIDGE_ABI = parseAbi([
-    "function depositUnderlying(uint256 amount, string calldata receiver) external returns(uint256)"
+    "function depositUnderlying(uint256 amount, string calldata receiver) external returns(uint256)",
+    "function deposit(uint256 amount, string calldata receiver, address token) external returns(uint256)"
 ]);
 
 const useDepositUSDC = () => {
@@ -15,7 +16,7 @@ const useDepositUSDC = () => {
         hash
     });
 
-    // Deposit to CosmosBridge - receiver is a Cosmos address string (e.g., "b521...")
+    // Deposit USDC directly via depositUnderlying - receiver is a Cosmos address string (e.g., "b521...")
     const deposit = useCallback(async (amount: bigint, cosmosReceiver: string): Promise<void> => {
         try {
             const tx = await writeContract({
@@ -32,16 +33,34 @@ const useDepositUSDC = () => {
         }
     }, [writeContract]);
 
+    // Deposit any ERC20 token via deposit() - auto-swaps to USDC if not the underlying token
+    const depositToken = useCallback(async (amount: bigint, cosmosReceiver: string, tokenAddress: string): Promise<void> => {
+        try {
+            const tx = await writeContract({
+                address: COSMOS_BRIDGE_ADDRESS as `0x${string}`,
+                abi: COSMOS_BRIDGE_ABI,
+                functionName: "deposit",
+                args: [amount, cosmosReceiver, tokenAddress as `0x${string}`]
+            });
+
+            return tx;
+        } catch (err) {
+            console.error("CosmosBridge depositToken failed:", err);
+            throw err;
+        }
+    }, [writeContract]);
+
     return useMemo(
         () => ({
             deposit,
+            depositToken,
             isDepositPending: isConfirming,
             isDepositConfirmed: isConfirmed,
             isPending,
             hash,
             depositError: error
         }),
-        [deposit, isConfirming, isPending, isConfirmed, hash, error]
+        [deposit, depositToken, isConfirming, isPending, isConfirmed, hash, error]
     );
 };
 

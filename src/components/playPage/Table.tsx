@@ -648,7 +648,7 @@ const Table = React.memo(() => {
     }, []);
 
     const handleDepositClick = useCallback(() => {
-        window.location.href = "/qr-deposit";
+        window.location.href = "/";
     }, []);
 
     const handleDepositMouseEnter = useCallback((e: React.MouseEvent<HTMLDivElement>) => {

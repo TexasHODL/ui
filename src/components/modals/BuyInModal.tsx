@@ -163,7 +163,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
     }, []);
 
     const handleDepositClick = useCallback(() => {
-        navigate("/qr-deposit");
+        navigate("/");
     }, [navigate]);
 
     const handleJoinClick = useCallback(() => {
