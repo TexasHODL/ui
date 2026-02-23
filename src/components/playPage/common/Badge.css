@@ -179,6 +179,26 @@
   letter-spacing: 0.05em;
 }
 
+.tournament-place-first {
+  background-color: #ffd700;
+  color: #000;
+}
+
+.tournament-place-second {
+  background-color: #c0c0c0;
+  color: #000;
+}
+
+.tournament-place-third {
+  background-color: #cd7f32;
+  color: #000;
+}
+
+.tournament-place-other {
+  background-color: #666;
+  color: #fff;
+}
+
 .tournament-payout {
   padding: 0.125rem 0.5rem;
   background-color: rgba(0, 0, 0, 0.8);
@@ -187,6 +207,10 @@
   font-size: 0.75rem;
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.tournament-payout-win {
+  color: #4ade80;
 }
 
 @keyframes tournamentResultsFadeIn {

@@ -1,0 +1,69 @@
+.headerRoot {
+    background: linear-gradient(to right, var(--table-bg-gradient-start), var(--table-bg-gradient-mid), var(--table-bg-gradient-end));
+    border-color: var(--table-border-color);
+}
+
+.subHeaderRoot {
+    background: linear-gradient(to right, var(--table-bg-gradient-start), var(--table-bg-gradient-mid), var(--table-bg-gradient-end));
+}
+
+.bottomGlow {
+    background-image: linear-gradient(to right, transparent, var(--accent-glow), transparent);
+}
+
+.walletInfo {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.balanceIcon {
+    background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.copyTableButton {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.gameFormatContainer {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 50%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.brandText {
+    color: var(--brand-primary);
+}
+
+.secondaryText {
+    color: var(--ui-text-secondary);
+}
+
+.depositButton {
+    background-color: var(--ui-bg-medium);
+    border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+    color: var(--brand-primary);
+}
+
+.depositButton:hover {
+    border-color: var(--brand-primary);
+    background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.sidebarToggleOpen {
+    background-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+    color: #ffffff;
+}
+
+.sidebarToggleClosed {
+    background-color: transparent;
+    color: var(--brand-primary);
+}
+
+.leaveTableButton {
+    color: var(--ui-text-secondary);
+}
+
+.leaveTableButton:hover {
+    color: #ffffff;
+}

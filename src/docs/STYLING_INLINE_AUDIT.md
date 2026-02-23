@@ -256,6 +256,67 @@ Targets:
 - `src/components/playPage/common/Badge.tsx`
 - `src/components/common/Modal.tsx`
 
+### Wave 3 implementation status (in progress)
+
+Completed in this slice:
+
+- `src/components/common/Modal.tsx` + `src/components/common/Modal.module.css`
+- `src/components/playPage/common/Badge.tsx` + updates in `src/components/playPage/common/Badge.css`
+- `src/components/playPage/Table/components/TableHeader.tsx` + `src/components/playPage/Table/components/TableHeader.module.css`
+- `src/components/playPage/Table.tsx` (removed deprecated style prop plumbing)
+- `src/components/playPage/Players/Player.tsx`
+- `src/components/playPage/Players/OppositePlayer.tsx`
+- `src/components/playPage/Players/VacantPlayer.tsx` + `src/components/playPage/Players/VacantPlayer.module.css`
+- `src/components/playPage/Players/PlayersCommon.module.css`
+
+Wave 3 slice outcomes:
+
+- Static inline styles removed from `Modal` except runtime title divider/icon color values.
+- Static tournament result colors in `Badge` moved to class-based styles.
+- Static literal color/border styles in `TableHeader` moved to module classes.
+- Static white/secondary text color in key player seat components moved to shared player classes.
+- Static buy-in modal visual styles in `VacantPlayer` moved to CSS module classes (runtime seat/popup positioning preserved).
+
+Wave 3 slice evidence (target-local):
+
+- `src/components/common/Modal.tsx`: **2** `style={` matches (runtime title color/gradient)
+- `src/components/playPage/common/Badge.tsx`: **3** `style={` matches (runtime player-color driven)
+- `src/components/playPage/Table/components/TableHeader.tsx`: **0** `style={` matches (reduced from 20 in pre-wave baseline)
+- `src/components/playPage/Players/*`: **10** `style={` matches (reduced from 19 in this wave)
+- `src/components/playPage/Players/Player.tsx`: **2** `style={` matches (position + runtime status color)
+- `src/components/playPage/Players/OppositePlayer.tsx`: **3** `style={` matches (position + runtime status color + popup position)
+- `src/components/playPage/Players/VacantPlayer.tsx`: **3** `style={` matches (seat position + popup position + runtime disabled state)
+- `src/components/playPage/common/Badge.tsx`: **3** `style={` matches (runtime player-color driven)
+- `src/components/common/Modal.tsx`: **2** `style={` matches (runtime title color/gradient)
+
+Wave 3 parity smoke check (2026-02-23):
+
+- Build validation passed: `yarn build` completed successfully.
+- Header gradients remain token-equivalent in `TableHeader.module.css` (`--table-bg-gradient-start/mid/end`).
+- Hover behavior parity confirmed via CSS pseudo-classes replacing JS handlers:
+	- `depositButton:hover` matches prior border/background transitions.
+	- `leaveTableButton:hover` matches prior text-color transition to white.
+- Mouse event cleanup confirmed:
+	- No `onMouseEnter/onMouseLeave` in `TableHeader.tsx` for migrated controls.
+	- No `handleDepositMouseEnter/Leave` or `handleLeaveTableMouseEnter/Leave` in `Table.tsx`.
+- Alpha parity correction pass applied:
+	- `Modal.module.css`: error background adjusted to `12.5%` (`#...20` equivalent).
+	- `VacantPlayer.module.css`:
+		- `balanceCard` background adjusted to `50.2%` (`#...80` equivalent).
+		- `errorCard` background adjusted to `18.8%` (`#...30` equivalent).
+		- `errorCard` border adjusted to `25.1%` (`#...40` equivalent).
+
+Remaining Wave 3 work:
+
+- ✅ No static inline styles remain in Wave 3 targets.
+- Remaining `style={` usage in `src/components/playPage/Players/*` is runtime-only and allowed by policy:
+	- Positioning (`left/top/transform`) for seat and popup placement.
+	- Live state color (`isWinner ? success : playerColor`) and player color props (`color`) in badge/popup contexts.
+
+Wave 3 completion status:
+
+- ✅ Wave 3 is complete under current acceptance criteria.
+
 ### Wave 4: Explorer/admin pages
 
 Targets:

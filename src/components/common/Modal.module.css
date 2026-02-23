@@ -1,0 +1,12 @@
+.modalContainer {
+    background-color: var(--ui-bg-dark);
+    border: 1px solid var(--ui-border-color);
+}
+
+.errorContainer {
+    background-color: color-mix(in srgb, var(--accent-danger) 12.5%, transparent);
+}
+
+.errorText {
+    color: var(--accent-danger);
+}

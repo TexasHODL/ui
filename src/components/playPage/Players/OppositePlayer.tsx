@@ -55,6 +55,7 @@ import { colors } from "../../../utils/colorConfig";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
 import { getCardImageUrl, getCardBackUrl, CardBackStyle } from "../../../utils/cardImages";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
+import styles from "./PlayersCommon.module.css";
 
 type OppositePlayerProps = {
     left?: string;
@@ -133,12 +134,11 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
             {/* Main player display */}
             <div
                 key={index}
-                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[20]`}
+                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[20] ${styles.secondaryText}`}
                 style={{
                     left: left,
                     top: top,
-                    transition: "top 1s ease, left 1s ease",
-                    color: colors.ui.textSecondary
+                    transition: "top 1s ease, left 1s ease"
                 }}
                 onClick={() => {
                     setCardVisible(index);
@@ -182,13 +182,13 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                         {/* Progress bar is not shown in showdown */}
                         {!isWinner && round !== "showdown" && <ProgressBar index={index} />}
                         {!isWinner && isSittingOut && (
-                            <span className="font-bold animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center" style={{ color: "white" }}>SITTING OUT</span>
+                            <span className={`font-bold animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center ${styles.whiteText}`}>SITTING OUT</span>
                         )}
                         {!isWinner && isFolded && (
-                            <span className="animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center" style={{ color: "white" }}>FOLD</span>
+                            <span className={`animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center ${styles.whiteText}`}>FOLD</span>
                         )}
                         {!isWinner && isAllIn && (
-                            <span className="animate-progress delay-2000 flex flex-col items-center w-full mb-2 mt-auto gap-0 justify-center" style={{ color: "white" }}>
+                            <span className={`animate-progress delay-2000 flex flex-col items-center w-full mb-2 mt-auto gap-0 justify-center ${styles.whiteText}`}>
                                 <span>ALL IN</span>
                                 {playerEquity !== null && (
                                     <span className="text-yellow-400 font-bold text-sm">
@@ -198,7 +198,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                             </span>
                         )}
                         {isWinner && winnerAmount && (
-                            <span className="font-bold flex items-center justify-center w-full h-8 mt-[22px] gap-1 text-base" style={{ color: "white" }}>
+                            <span className={`font-bold flex items-center justify-center w-full h-8 mt-[22px] gap-1 text-base ${styles.whiteText}`}>
                                 WINS: {winnerAmount}
                             </span>
                         )}
