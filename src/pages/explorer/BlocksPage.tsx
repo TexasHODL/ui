@@ -49,7 +49,7 @@ export default function BlocksPage() {
             });
 
             if (!cosmosClient) {
-                throw new Error("Cosmos client not initialized.");
+                throw new Error("Block52 client not initialized.");
             }
 
             const recentBlocks = await cosmosClient.getLatestBlocks(50);
@@ -151,7 +151,7 @@ export default function BlocksPage() {
                                 </svg>
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-4">Error: {error}</h2>
-                            <p className="text-gray-300 mb-4">Make sure your Cosmos blockchain is running</p>
+                            <p className="text-gray-300 mb-4">Make sure your Block52 blockchain is running</p>
                             <p className="text-sm text-gray-400 mb-6">Try selecting a different network from the dropdown above</p>
 
                             {/* Retry Button */}

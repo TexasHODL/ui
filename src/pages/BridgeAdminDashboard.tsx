@@ -303,12 +303,12 @@ export default function BridgeAdminDashboard() {
         e.preventDefault();
 
         if (!manualCosmosAddress || !manualAmount) {
-            toast.error("Please enter both Cosmos address and amount");
+            toast.error("Please enter both Block52 address and amount");
             return;
         }
 
         if (!manualCosmosAddress.startsWith("b52")) {
-            toast.error("Cosmos address must start with 'b52'");
+            toast.error("Block52 address must start with 'b52'");
             return;
         }
 

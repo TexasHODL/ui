@@ -227,7 +227,6 @@ const Table = React.memo(() => {
 
     // Zoom is now managed by useTableLayout hook
     const [openSidebar, setOpenSidebar] = useState(false);
-    const [isCardVisible, setCardVisible] = useState(-1);
 
     // Leave table modal state
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -765,7 +764,6 @@ const Table = React.memo(() => {
                                         tableLayout={tableLayout}
                                         tableSize={tableSize}
                                         startIndex={startIndex}
-                                        setStartIndex={setStartIndex}
                                         tableActivePlayers={tableActivePlayers}
                                         tableDataPlayers={tableDataValues.tableDataPlayers}
                                         userWalletAddress={userWalletAddress}
@@ -773,8 +771,6 @@ const Table = React.memo(() => {
                                         hasWinner={hasWinner}
                                         isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
                                         winnerInfo={winnerInfo}
-                                        isCardVisible={isCardVisible}
-                                        setCardVisible={setCardVisible}
                                         cardBackStyle={cardBackStyle}
                                         updateBalanceOnPlayerJoin={updateBalanceOnPlayerJoin}
                                     />

@@ -45,7 +45,7 @@ export default function AddressPage() {
                 });
 
                 if (!cosmosClient) {
-                    throw new Error("Cosmos client not initialized.");
+                    throw new Error("Block52 client not initialized.");
                 }
 
                 // Fetch balances

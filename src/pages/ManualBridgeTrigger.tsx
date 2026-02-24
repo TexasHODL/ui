@@ -219,7 +219,7 @@ export default function ManualBridgeTrigger() {
                                 <p className="text-blue-200 text-sm font-medium mb-3">📦 Deposit Information</p>
                                 <div className="space-y-2">
                                     <div>
-                                        <p className="text-blue-300 text-xs">Recipient (Cosmos Address):</p>
+                                        <p className="text-blue-300 text-xs">Recipient (Block52 Address):</p>
                                         <p className="text-blue-100 text-sm font-mono break-all">{queryResult.recipient}</p>
                                     </div>
                                     <div>

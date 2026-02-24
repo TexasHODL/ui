@@ -1,51 +1,19 @@
 /**
  * OppositePlayer Component
  *
- * This component represents other players at the poker table (not the current user).
- * It displays:
- * - Player's cards (face down unless showing)
- * - Player's stack amount
- * - Player's status (folded, all-in, etc.)
- * - Winner information if applicable
- *
- * PlayerPopUpCard Integration:
- * The PlayerPopUpCard is a popup menu that appears when clicking on an opponent's position.
- * It provides:
- * 1. Seat Changing:
- *    - Shows "SIT HERE" button
- *    - Triggers table rotation when clicked
- *    - Updates player positions via setStartIndex
- *
- * 2. Player Information:
- *    - Shows the seat number
- *    - Displays player's color theme
- *    - Future: Will show player statistics and history
- *
- * 3. Interactive Features:
- *    - Note-taking capability (placeholder)
- *    - Player rating system (placeholder)
- *    - Quick actions menu (placeholder)
- *
- * The popup appears when:
- * - isCardVisible === index (meaning this specific player's card should be shown)
- * - It slides in from the top with an animation
- * - It can be closed using the X button
+ * Represents other players at the poker table (not the current user).
+ * Displays player's cards, stack, status, and winner information.
  *
  * Props:
  * - left/top: Position on the table
  * - index: Seat number
- * - currentIndex: Current round index
  * - color: Player's color theme
- * - status: Player's current status
- * - isCardVisible: Controls card visibility
- * - setCardVisible: Function to toggle card visibility
- * - setStartIndex: Function to change table rotation
+ * - cardBackStyle: Style for card backs
  */
 
 import * as React from "react";
 import Badge from "../common/Badge";
 import ProgressBar from "../common/ProgressBar";
-import PlayerPopUpCard from "./PlayerPopUpCard";
 import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { useShowingCardsByAddress } from "../../../hooks/player/useShowingCardsByAddress";
@@ -64,14 +32,11 @@ type OppositePlayerProps = {
     currentIndex: number;
     color?: string;
     status?: string;
-    isCardVisible: number;
-    setCardVisible: (index: number) => void;
-    setStartIndex: (index: number) => void;
     uiPosition?: number;
     cardBackStyle?: CardBackStyle;
 };
 
-const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, isCardVisible, setCardVisible, setStartIndex, uiPosition, cardBackStyle }) => {
+const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle }) => {
     const { playerData, stackValue, isFolded, isAllIn, isSittingOut, isBusted, holeCards, round } = usePlayerData(index);
     const { winnerInfo } = useWinnerInfo();
     const { equities, shouldShow: shouldShowEquity } = useAllInEquity();
@@ -138,9 +103,6 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                 style={{
                     left: left,
                     top: top
-                }}
-                onClick={() => {
-                    setCardVisible(index);
                 }}
             >
                 {/* Development Mode Debug Info */}
@@ -259,9 +221,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
         prevProps.left === nextProps.left &&
         prevProps.top === nextProps.top &&
         prevProps.index === nextProps.index &&
-        prevProps.color === nextProps.color &&
-        prevProps.isCardVisible === nextProps.isCardVisible
-        // Note: setCardVisible and setStartIndex are function props that shouldn't cause re-renders
+        prevProps.color === nextProps.color
     );
 });
 
