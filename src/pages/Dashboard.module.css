@@ -113,6 +113,14 @@
   border: 1px solid var(--ui-border-color);
 }
 
+.modalTitleDivider {
+  height: 2px;
+  width: 100%;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
+}
+
 .cancelBg {
   background-color: var(--ui-text-secondary);
 }

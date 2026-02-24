@@ -499,10 +499,7 @@ const Dashboard: React.FC = () => {
                                 className={`p-6 rounded-xl w-[440px] shadow-2xl border ${styles.modalPanel}`}
                             >
                                 <h3 className="text-xl font-bold text-white mb-2 whitespace-nowrap">Import B52 Wallet Seed Phrase</h3>
-                                <div
-                                    className="w-full h-0.5 mb-4 opacity-50"
-                                    style={{ background: "linear-gradient(to right, transparent, var(--brand-primary), transparent)" }}
-                                />
+                                <div className={styles.modalTitleDivider} />
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-white text-sm mb-1">Seed Phrase</label>
@@ -548,10 +545,7 @@ const Dashboard: React.FC = () => {
                                 className={`p-6 rounded-xl w-[480px] shadow-2xl border ${styles.modalPanel}`}
                             >
                                 <h3 className="text-xl font-bold text-white mb-2">New B52 Wallet Created</h3>
-                                <div
-                                    className="w-full h-0.5 mb-4 opacity-50"
-                                    style={{ background: "linear-gradient(to right, transparent, var(--brand-primary), transparent)" }}
-                                />
+                                <div className={styles.modalTitleDivider} />
                                 <p className="text-gray-400 text-sm mb-4">
                                     Write down your seed phrase and store it in a safe place. You will need it to recover your wallet.
                                 </p>
