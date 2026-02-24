@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
-import { CardStats, StatsSummary, RandomnessReport } from "./types";
+import { CardStats, StatsSummary, RandomnessReport, IndexerStatus } from "./types";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import styles from "./DistributionPage.module.css";
@@ -15,6 +15,7 @@ export default function DistributionPage() {
     const [cardStats, setCardStats] = useState<CardStats[]>([]);
     const [summary, setSummary] = useState<StatsSummary | null>(null);
     const [randomness, setRandomness] = useState<RandomnessReport | null>(null);
+    const [indexerStatus, setIndexerStatus] = useState<IndexerStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +31,17 @@ export default function DistributionPage() {
             }
             const cardsData: CardStats[] = await cardsRes.json();
             setCardStats(cardsData);
+
+            // Fetch indexer sync status (non-critical — fail silently)
+            try {
+                const statusRes = await fetch(`${INDEXER_URL}/api/v1/status`);
+                if (statusRes.ok) {
+                    const statusData: IndexerStatus = await statusRes.json();
+                    setIndexerStatus(statusData);
+                }
+            } catch {
+                // Status endpoint unavailable — not critical
+            }
 
             // Fetch summary stats (non-critical — fail silently)
             try {
@@ -166,6 +178,40 @@ export default function DistributionPage() {
                     </div>
                 ) : (
                     <>
+                        {/* Indexer Sync Progress */}
+                        {indexerStatus && (
+                            <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700 mb-8">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-medium text-white">Indexer Sync Progress</h3>
+                                    <span className="text-sm text-gray-400">
+                                        {indexerStatus.blocks_indexed.toLocaleString()} / {indexerStatus.total_blocks.toLocaleString()} blocks
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+                                    <div
+                                        className="h-4 rounded-full transition-all duration-500"
+                                        style={{
+                                            width: `${Math.min(indexerStatus.percent_complete, 100)}%`,
+                                            backgroundColor: indexerStatus.percent_complete >= 100 ? "#10b981" : "#3b82f6"
+                                        }}
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
+                                    <span>{indexerStatus.percent_complete.toFixed(1)}% complete</span>
+                                    <span>
+                                        {indexerStatus.total_blocks - indexerStatus.blocks_indexed > 0
+                                            ? `${(indexerStatus.total_blocks - indexerStatus.blocks_indexed).toLocaleString()} blocks remaining`
+                                            : "Fully synced"}
+                                    </span>
+                                </div>
+                                <div className="flex gap-6 mt-3 text-xs text-gray-500">
+                                    <span>Hands: {indexerStatus.total_hands.toLocaleString()}</span>
+                                    <span>Games: {indexerStatus.total_games.toLocaleString()}</span>
+                                    <span>Last block: #{indexerStatus.last_block_indexed.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                             <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
