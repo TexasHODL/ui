@@ -610,11 +610,19 @@ const Dashboard: React.FC = () => {
 
                                 {/* Actions */}
                                 <div className="flex flex-col space-y-3">
+                                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            checked={seedPhraseCopied}
+                                            onChange={e => setSeedPhraseCopied(e.target.checked)}
+                                            className="w-4 h-4 accent-blue-500"
+                                        />
+                                        <span className="text-gray-300 text-sm">I have written down my seed phrase and stored it safely</span>
+                                    </label>
                                     <button
                                         onClick={handleConfirmNewWallet}
                                         disabled={!seedPhraseCopied}
                                         className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
-                                        title={!seedPhraseCopied ? "Please copy your seed phrase first" : ""}
                                     >
                                         I've Saved My Seed Phrase
                                     </button>
