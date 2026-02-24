@@ -30,7 +30,7 @@ export const useFindGames = (): FindGamesReturn => {
         try {
             const cosmosClient = getCosmosClient(currentNetwork);
             if (!cosmosClient) {
-                throw new Error("Cosmos client not initialized. Please create or import a Cosmos wallet first.");
+                throw new Error("Block52 client not initialized. Please create or import a Block52 wallet first.");
             }
 
             // Fetch all games from Cosmos REST API
