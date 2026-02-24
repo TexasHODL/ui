@@ -612,9 +612,7 @@ const Dashboard: React.FC = () => {
                                 <div className="flex flex-col space-y-3">
                                     <button
                                         onClick={handleConfirmNewWallet}
-                                        disabled={!seedPhraseCopied}
-                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
-                                        title={!seedPhraseCopied ? "Please copy your seed phrase first" : ""}
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 ${styles.brandPrimaryBg}`}
                                     >
                                         I've Saved My Seed Phrase
                                     </button>
