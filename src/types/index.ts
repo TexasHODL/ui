@@ -245,18 +245,6 @@ export interface VacantPlayerProps {
     onJoin?: () => void;
 }
 
-/**
- * Props for PlayerCard component
- */
-export type PlayerCardProps = {
-    id: number;
-    label: string;
-    color?: string;
-    isVacant?: boolean; // Whether this is a vacant seat
-    onClose: () => void;
-    setStartIndex: (index: number) => void;
-};
-
 export interface PlayerProps {
     left?: string;
     top?: string;

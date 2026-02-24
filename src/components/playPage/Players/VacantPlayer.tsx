@@ -1,45 +1,11 @@
 /**
  * VacantPlayer Component
  *
- * This component represents an empty seat at the poker table.
- * It displays:
- * - Empty seat indicator
- * - Join button for available seats
- * - Confirmation modal for joining
+ * Represents an empty seat at the poker table.
  *
  * Behavior:
- * 1. For New Users (not in table):
- *    - Clicking shows join confirmation modal directly
- *    - No popup is shown
- *    - Direct path to joining the table
- *
- * 2. For Existing Users (already in table):
- *    - Clicking shows "CHANGE SEAT" popup
- *    - Popup triggers join confirmation modal
- *    - Allows seat changing functionality
- *
- * PlayerPopUpCard Integration:
- * The PlayerPopUpCard is a popup menu that appears when clicking on a vacant seat.
- * It serves several purposes:
- * 1. Seat Management:
- *    - Shows seat number and availability
- *    - Provides "CHANGE SEAT" button for future implementation
- *    - Will handle seat change confirmation
- *
- * 2. Seat Information:
- *    - Displays seat number
- *    - Shows seat status (available/taken)
- *    - Future: Will show seat preferences and history
- *
- * 3. Interactive Features:
- *    - Note-taking for seat preferences (placeholder)
- *    - Seat rating system (placeholder)
- *    - Quick actions menu (placeholder)
- *
- * The popup appears when:
- * - isCardVisible is true
- * - It slides in with an animation
- * - It can be closed using the X button
+ * - For users not yet seated: clicking opens the buy-in modal to join
+ * - For users already seated: vacant seats are non-interactive (just visual)
  *
  * Props:
  * - left/top: Position on the table
@@ -54,7 +20,6 @@ import PokerProfile from "../../../assets/PokerProfile.svg";
 
 import { useVacantSeatData } from "../../../hooks/game/useVacantSeatData";
 import type { VacantPlayerProps } from "../../../types/index";
-import PlayerPopUpCard from "./PlayerPopUpCard";
 import { useDealerPosition } from "../../../hooks/game/useDealerPosition";
 import { joinTable } from "../../../hooks/playerActions/joinTable";
 import { useGameOptions } from "../../../hooks/game/useGameOptions";
@@ -78,7 +43,6 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const [joinError, setJoinError] = useState<string | null>(null);
         const [joinSuccess, setJoinSuccess] = useState(false);
         const [, setJoinResponse] = useState<any>(null);
-        const [isCardVisible, setIsCardVisible] = useState(false);
         const [buyInAmount, setBuyInAmount] = useState<string>("");
 
         const { dealerSeat } = useDealerPosition();
@@ -102,15 +66,13 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             setJoinError(null);
             setJoinSuccess(false);
             setJoinResponse(null);
-        }, [canJoinThisSeat, index, gameOptions?.minBuyIn]);
+        }, [canJoinThisSeat, gameOptions?.minBuyIn]);
 
         const handleSeatClick = useCallback(() => {
-            if (isUserAlreadyPlaying) {
-                setIsCardVisible(true);
-            } else if (canJoinThisSeat) {
+            if (!isUserAlreadyPlaying && canJoinThisSeat) {
                 handleJoinClick();
             }
-        }, [isUserAlreadyPlaying, canJoinThisSeat, handleJoinClick, index, gameOptions]);
+        }, [isUserAlreadyPlaying, canJoinThisSeat, handleJoinClick]);
 
 
 
@@ -230,25 +192,6 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             [left, top]
         );
 
-        // Memoize popup styles
-        const popupStyle = useMemo(
-            () => ({
-                left,
-                top,
-                transform: "translate(-50%, -50%)"
-            }),
-            [left, top]
-        );
-
-        // Memoize popup class names
-        const popupClassName = useMemo(
-            () =>
-                `absolute z-[1000] transition-all duration-1000 ease-in-out transform ${
-                    isCardVisible ? "opacity-100 animate-slide-left-to-right" : "opacity-0 animate-slide-top-to-bottom"
-                }`,
-            [isCardVisible]
-        );
-
         // Memoize seat text
         const seatText = useMemo(
             () => ({
@@ -286,25 +229,6 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                         </div>
                     )}
                 </div>
-
-                {/* PlayerPopUpCard - Only show for seat changing */}
-                {isUserAlreadyPlaying && (
-                    <div className={popupClassName} style={popupStyle}>
-                        {isCardVisible && (
-                            <PlayerPopUpCard
-                                id={index + 1}
-                                label="CHANGE SEAT"
-                                color="#4a5568"
-                                isVacant={true}
-                                setStartIndex={() => {
-                                    handleJoinClick();
-                                    setIsCardVisible(false);
-                                }}
-                                onClose={() => setIsCardVisible(false)}
-                            />
-                        )}
-                    </div>
-                )}
 
                 {/* Buy-in modal - using portal to render at document body */}
                 {showBuyInModal && gameOptions && createPortal(

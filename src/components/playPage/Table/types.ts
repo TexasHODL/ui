@@ -30,8 +30,6 @@ export interface TableBoardProps {
 export interface PlayerSeatingProps {
     cardBackStyle: CardBackStyle;
     onPlayerJoin: () => void; // Callback to refresh balance after join
-    isCardVisible: number;
-    onCardVisibilityChange: (seatIndex: number) => void;
 }
 
 /**
