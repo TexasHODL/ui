@@ -443,11 +443,11 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                             <div className="mb-4 p-3 rounded-lg bg-gray-900 border border-gray-700">
                                 <div className="text-sm text-gray-400">
                                     {cosmosWallet.address
-                                        ? "b52USDC will be minted to your Cosmos address:"
-                                        : "⚠️ No Cosmos wallet found"}
+                                        ? "b52USDC will be minted to your Block52 address:"
+                                        : "⚠️ No Block52 wallet found"}
                                 </div>
                                 <div className="text-xs font-mono text-gray-300 truncate">
-                                    {cosmosWallet.address || "Visit /wallet to generate a Cosmos wallet first"}
+                                    {cosmosWallet.address || "Visit /wallet to generate a Block52 wallet first"}
                                 </div>
                             </div>
 

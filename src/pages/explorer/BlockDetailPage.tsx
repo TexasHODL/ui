@@ -88,7 +88,7 @@ export default function BlockDetailPage() {
                 const cosmosClient = getCosmosClient(currentNetwork);
 
                 if (!cosmosClient) {
-                    throw new Error("Cosmos client not initialized. Please check your wallet connection.");
+                    throw new Error("Block52 client not initialized. Please check your wallet connection.");
                 }
 
                 const blockData = await cosmosClient.getBlock(parseInt(height));

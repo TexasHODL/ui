@@ -70,13 +70,13 @@ export const getCosmosBalance = async (network: NetworkEndpoints, denom: string 
     const client = getCosmosClient(network);
 
     if (!client) {
-        throw new Error("No Cosmos wallet connected. Please create or import a wallet first.");
+        throw new Error("No Block52 wallet connected. Please create or import a wallet first.");
     }
 
     // Get address from localStorage instead of client.getWalletAddress() (which doesn't work in REST-only mode)
     const address = getCosmosAddressSync();
     if (!address) {
-        throw new Error("No Cosmos address found. Please create or import a wallet first.");
+        throw new Error("No Block52 address found. Please create or import a wallet first.");
     }
 
     try {
@@ -88,7 +88,7 @@ export const getCosmosBalance = async (network: NetworkEndpoints, denom: string 
         return balance.toString();
     } catch (error) {
         console.error("❌ Error fetching Cosmos balance:", error);
-        throw new Error(`Failed to fetch Cosmos balance: ${error instanceof Error ? error.message : "Unknown error"}`);
+        throw new Error(`Failed to fetch Block52 balance: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 };
 
@@ -102,13 +102,13 @@ export const getAllCosmosBalances = async (network: NetworkEndpoints): Promise<A
     const client = getCosmosClient(network);
 
     if (!client) {
-        throw new Error("No Cosmos wallet connected. Please create or import a wallet first.");
+        throw new Error("No Block52 wallet connected. Please create or import a wallet first.");
     }
 
     // Get address from localStorage instead of client.getWalletAddress() (which doesn't work in REST-only mode)
     const address = getCosmosAddressSync();
     if (!address) {
-        throw new Error("No Cosmos address found. Please create or import a wallet first.");
+        throw new Error("No Block52 address found. Please create or import a wallet first.");
     }
 
     try {

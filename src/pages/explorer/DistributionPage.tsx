@@ -241,7 +241,7 @@ export default function DistributionPage() {
                                     times per card (total dealt / 52 cards).
                                 </li>
                                 <li>
-                                    <strong className="text-white">Cosmos Blockchain Shuffling</strong>: Decks are shuffled using deterministic block hash,
+                                    <strong className="text-white">Block52 Shuffling</strong>: Decks are shuffled using deterministic block hash,
                                     ensuring verifiable randomness across all validators.
                                 </li>
                                 <li>
