@@ -182,37 +182,6 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                     )}
                 </div>
             </div>
-
-            {/* PlayerPopUpCard Integration
-                This popup menu appears when clicking on a player's position.
-                It provides:
-                1. Quick seat changing functionality
-                2. Player information display
-                3. Future features for notes and ratings
-                
-                The popup is positioned absolutely and uses animations for smooth transitions.
-                It's only rendered when isCardVisible matches this player's index.
-            */}
-            <div
-                className={`absolute z-[1000] transition-all duration-1000 ease-in-out transform -translate-x-1/2 -translate-y-1/2 ${
-                    isCardVisible === index ? "opacity-100 animate-slide-left-to-right" : "opacity-0 animate-slide-top-to-bottom"
-                }`}
-                style={{
-                    left: left,
-                    top: top
-                }}
-            >
-                {isCardVisible === index && (
-                    <PlayerPopUpCard
-                        id={index + 1}
-                        label="SIT HERE"
-                        color={color}
-                        isVacant={false}
-                        setStartIndex={(index: number) => setStartIndex(index)}
-                        onClose={() => setCardVisible(-1)}
-                    />
-                )}
-            </div>
         </>
     );
 }, (prevProps, nextProps) => {

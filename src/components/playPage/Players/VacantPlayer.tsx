@@ -192,24 +192,6 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             [left, top]
         );
 
-        // Memoize popup styles
-        const popupStyle = useMemo(
-            () => ({
-                left,
-                top
-            }),
-            [left, top]
-        );
-
-        // Memoize popup class names
-        const popupClassName = useMemo(
-            () =>
-                `absolute z-[1000] transition-all duration-1000 ease-in-out transform -translate-x-1/2 -translate-y-1/2 ${
-                    isCardVisible ? "opacity-100 animate-slide-left-to-right" : "opacity-0 animate-slide-top-to-bottom"
-                }`,
-            [isCardVisible]
-        );
-
         // Memoize seat text
         const seatText = useMemo(
             () => ({

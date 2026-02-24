@@ -23,14 +23,14 @@ Baseline (Phase 2 kickoff)
 - TSX files with inline styles: 42
 
 Final (full workspace re-audit)
-- style=: 34
-- style={{...}}: 26
-- TSX files with inline styles: 19
+- style=: 30
+- style={{...}}: 24
+- TSX files with inline styles: 17
 
 Net reduction
-- style=: -191 (84.9%)
-- style={{...}}: -141 (84.4%)
-- files with inline styles: -23 (54.8%)
+- style=: -195 (86.7%)
+- style={{...}}: -143 (85.6%)
+- files with inline styles: -25 (59.5%)
 
 ## Scope and policy used
 
@@ -152,22 +152,16 @@ All remaining inline styles are approved runtime exceptions after full re-audit.
 13) src/components/playPage/Players/VacantPlayer.tsx
 - Runtime reason: live seat/popup coordinates.
 
-14) src/components/playPage/Players/PlayerCard.tsx
-- Runtime reason: runtime player color prop.
-
-15) src/components/playPage/Players/PlayerPopUpCard.tsx
-- Runtime reason: runtime player color prop.
-
-16) src/components/playPage/SitAndGoWaitingModal.tsx
+14) src/components/playPage/SitAndGoWaitingModal.tsx
 - Runtime reason: progress width from joined/max players.
 
-17) src/components/playPage/common/Badge.tsx
+15) src/components/playPage/common/Badge.tsx
 - Runtime reason: runtime action/player/status color mapping.
 
-18) src/components/playPage/common/ProgressBar.tsx
+16) src/components/playPage/common/ProgressBar.tsx
 - Runtime reason: live timer width.
 
-19) src/components/Footer/RaiseSlider.tsx
+17) src/components/Footer/RaiseSlider.tsx
 - Runtime reason: value-driven slider gradient fill.
 
 ## Token value parity status
@@ -199,15 +193,15 @@ Intentional semantic literals retained
 
 ## Current review status
 
-- Manual visual style review is currently in progress across touched surfaces.
-- Any visual parity mismatches found during manual review are to be logged and resolved in follow-up updates before final merge approval.
+- Manual visual style review is currently in progress across affected surfaces.
+- Any visual parity mismatches identified during manual review are logged for follow-up before final merge approval.
 
 ## Pre-PR actions
 
 Required before opening PR
 - Re-run yarn lint.
 - Re-run yarn build.
-- Confirm exception list (19 files) still matches latest scan.
+- Confirm exception list (17 files) still matches latest scan.
 - Ensure non-exact parity items are explicitly called out in PR description.
 
 Recommended hygiene

@@ -14,17 +14,17 @@ Scope: Phase 1 + Phase 2 inline-style migration and parity verification
 ## Current status
 
 - Manual visual style review is currently in progress across affected surfaces.
-- Any visual mismatches identified during this pass will be logged and addressed in follow-up updates before final merge approval.
+- Any visual parity mismatches found during this pass will be logged and addressed in follow-up updates before final merge approval.
 
 ## Final metrics (full workspace)
 
-- `style=`: **225 → 34** (**-191**, **84.9% reduction**)
-- `style={{...}}`: **167 → 26** (**-141**, **84.4% reduction**)
-- TSX files with inline styles: **42 → 19** (**-23**, **54.8% reduction**)
+- `style=`: **225 → 30** (**-195**, **86.7% reduction**)
+- `style={{...}}`: **167 → 24** (**-143**, **85.6% reduction**)
+- TSX files with inline styles: **42 → 17** (**-25**, **59.5% reduction**)
 
 ## Runtime exception status
 
-- Runtime-only exception files: **19**
+- Runtime-only exception files: **17**
 - Canonical exception registry and reasons:
   - See `src/docs/STYLING_INLINE_AUDIT_PHASE2.md` → **Final runtime exception registry (normalized, 2026-02-24)**
 
@@ -40,8 +40,8 @@ Scope: Phase 1 + Phase 2 inline-style migration and parity verification
 ## Pre-PR checklist (recommended)
 
 - [X] Run `yarn lint` and confirm no new errors in this branch.
-- [X] Run `yarn build` and confirm green build from current HEAD.
-- [X] Confirm the runtime exception list (19 files) matches latest grep scan.
+- [ ] Run `yarn build` and confirm green build from current HEAD.
+- [X] Confirm the runtime exception list (17 files) matches latest grep scan.
 - [ ] Confirm non-exact parity items are explicitly approved (or marked deferred) in PR description.
 - [ ] Exclude generated artifacts from PR if not needed (e.g., `tsconfig.tsbuildinfo`).
 - [ ] Add before/after metrics and links to the Phase 2 registry in PR description.
