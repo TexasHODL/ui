@@ -11,6 +11,11 @@ Scope: Phase 1 + Phase 2 inline-style migration and parity verification
 - Build validation passed (`yarn build`).
 - Lint validation returned warnings only (0 errors) at last verification.
 
+## Current status
+
+- Manual visual style review is currently in progress across affected surfaces.
+- Any visual mismatches identified during this pass will be logged and addressed in follow-up updates before final merge approval.
+
 ## Final metrics (full workspace)
 
 - `style=`: **225 → 34** (**-191**, **84.9% reduction**)
@@ -34,9 +39,9 @@ Scope: Phase 1 + Phase 2 inline-style migration and parity verification
 
 ## Pre-PR checklist (recommended)
 
-- [ ] Run `yarn lint` and confirm no new errors in this branch.
-- [ ] Run `yarn build` and confirm green build from current HEAD.
-- [ ] Confirm the runtime exception list (19 files) matches latest grep scan.
+- [X] Run `yarn lint` and confirm no new errors in this branch.
+- [X] Run `yarn build` and confirm green build from current HEAD.
+- [X] Confirm the runtime exception list (19 files) matches latest grep scan.
 - [ ] Confirm non-exact parity items are explicitly approved (or marked deferred) in PR description.
 - [ ] Exclude generated artifacts from PR if not needed (e.g., `tsconfig.tsbuildinfo`).
 - [ ] Add before/after metrics and links to the Phase 2 registry in PR description.

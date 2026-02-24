@@ -201,8 +201,12 @@ The UI styling system is standardized as:
 - Spacing: `--space-1..8` aligned to 4px/8px scale
 - Typography: `--font-size-*`, `--line-height-*`, `--font-weight-*`
 
-See [src/docs/STYLING_INLINE_AUDIT.md](src/docs/STYLING_INLINE_AUDIT.md) for migration waves, hotspots, and PR checklist.
-See [src/docs/STYLING_INLINE_AUDIT_PHASE2.md](src/docs/STYLING_INLINE_AUDIT_PHASE2.md) for Phase 2 plan, batch logs, and parity workflow.
+Styling refactor documentation map:
+
+- [src/docs/STYLING_INLINE_AUDIT.md](src/docs/STYLING_INLINE_AUDIT.md): Phase 1 context, wave history, and legacy sign-off notes.
+- [src/docs/STYLING_INLINE_AUDIT_PHASE2.md](src/docs/STYLING_INLINE_AUDIT_PHASE2.md): condensed Phase 2 source of truth (outcomes, metrics, exception registry, parity status).
+- [src/docs/STYLING_INLINE_AUDIT_PHASE2_PR_READY.md](src/docs/STYLING_INLINE_AUDIT_PHASE2_PR_READY.md): reviewer quick-start and pre-PR checklist.
+- [src/docs/STYLING_INLINE_AUDIT_PHASE2_DETAILED_LOG_2026-02-24.md](src/docs/STYLING_INLINE_AUDIT_PHASE2_DETAILED_LOG_2026-02-24.md): archived detailed per-file migration log.
 
 ## Contributing
 

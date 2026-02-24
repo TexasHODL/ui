@@ -457,8 +457,10 @@ Decision checklist (team sign-off):
 
 ## Phase 2 records (moved)
 
-All Phase 2 planning, batch logs, parity workflow, acceptance criteria, and checklists were moved to:
+Phase 2 documentation is split by audience:
 
-- `src/docs/STYLING_INLINE_AUDIT_PHASE2.md`
+- `src/docs/STYLING_INLINE_AUDIT_PHASE2.md` (condensed source of truth)
+- `src/docs/STYLING_INLINE_AUDIT_PHASE2_PR_READY.md` (reviewer quick-start)
+- `src/docs/STYLING_INLINE_AUDIT_PHASE2_DETAILED_LOG_2026-02-24.md` (full archived per-file log)
 
 Keep this file focused on pre-Phase 2 context and earlier wave notes.

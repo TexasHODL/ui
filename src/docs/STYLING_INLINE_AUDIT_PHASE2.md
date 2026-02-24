@@ -197,6 +197,11 @@ Intentional semantic literals retained
 - Lint: warnings-only (0 errors) at last full validation.
 - Line-by-line and git-level re-audit performed for final exception normalization.
 
+## Current review status
+
+- Manual visual style review is currently in progress across touched surfaces.
+- Any visual parity mismatches found during manual review are to be logged and resolved in follow-up updates before final merge approval.
+
 ## Pre-PR actions
 
 Required before opening PR
