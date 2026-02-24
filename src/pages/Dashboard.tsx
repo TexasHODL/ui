@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
 import "./Dashboard.css"; // Import the CSS file with animations
+import styles from "./Dashboard.module.css";
 
 // Ethereum Mainnet imports (for auto-switch to correct chain)
 import { ETH_CHAIN_ID } from "../config/constants";
@@ -357,11 +358,7 @@ const Dashboard: React.FC = () => {
             {showWalletGeneratedNotification && (
                 <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
                     <div
-                        className="px-6 py-4 rounded-xl shadow-2xl border flex items-center gap-4"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.success, 0.95),
-                            borderColor: colors.accent.success
-                        }}
+                        className={`px-6 py-4 rounded-xl shadow-2xl border flex items-center gap-4 ${styles.walletGeneratedNotice}`}
                     >
                         <span className="text-2xl">🎉</span>
                         <div>
@@ -384,27 +381,14 @@ const Dashboard: React.FC = () => {
             {!isAuthenticated && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                     <div
-                        className="backdrop-blur-md p-8 rounded-xl w-96 shadow-2xl relative overflow-hidden"
-                        style={{
-                            backgroundColor: hexToRgba(colors.ui.bgDark, 0.9),
-                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                        }}
+                        className={`backdrop-blur-md p-8 rounded-xl w-96 shadow-2xl relative overflow-hidden ${styles.passwordModal}`}
                     >
                         {/* Web3 styled background */}
                         <div
-                            className="absolute inset-0 rounded-xl"
-                            style={{
-                                background: `linear-gradient(135deg, ${hexToRgba(colors.brand.primary, 0.1)} 0%, ${hexToRgba(
-                                    colors.brand.secondary,
-                                    0.1
-                                )} 100%)`
-                            }}
+                            className={`absolute inset-0 rounded-xl ${styles.passwordModalOverlay}`}
                         ></div>
                         <div
-                            className="absolute top-0 left-0 w-full h-1 animate-pulse"
-                            style={{
-                                background: `linear-gradient(90deg, ${colors.brand.primary}, ${colors.accent.glow}, ${colors.brand.primary})`
-                            }}
+                            className={`absolute top-0 left-0 w-full h-1 animate-pulse ${styles.passwordModalTopBar}`}
                         ></div>
 
                         <div className="relative z-10">
@@ -414,16 +398,9 @@ const Dashboard: React.FC = () => {
 
                             <div className="flex items-center justify-center mb-6">
                                 <div
-                                    className="w-16 h-16 rounded-full flex items-center justify-center"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${hexToRgba(colors.brand.primary, 0.2)} 0%, ${hexToRgba(
-                                            colors.brand.secondary,
-                                            0.2
-                                        )} 100%)`,
-                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-                                    }}
+                                    className={`w-16 h-16 rounded-full flex items-center justify-center ${styles.passwordIconCircle}`}
                                 >
-                                    <svg className="w-8 h-8" style={{ color: colors.brand.primary }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className={`w-8 h-8 ${styles.brandPrimaryText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
@@ -445,14 +422,7 @@ const Dashboard: React.FC = () => {
                                         value={passwordInput}
                                         onChange={e => setPasswordInput(e.target.value)}
                                         onKeyDown={handlePasswordKeyPress}
-                                        className="w-full p-3 rounded-lg backdrop-blur-sm text-white focus:outline-none transition-all duration-200 pr-12"
-                                        style={{
-                                            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.8),
-                                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`,
-                                            boxShadow: `0 0 0 2px ${hexToRgba(colors.brand.primary, 0.5)}`
-                                        }}
-                                        onFocus={e => (e.target.style.border = `1px solid ${colors.brand.primary}`)}
-                                        onBlur={e => (e.target.style.border = `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`)}
+                                        className={`w-full p-3 rounded-lg backdrop-blur-sm text-white focus:outline-none transition-all duration-200 pr-12 ${styles.passwordInput}`}
                                         autoFocus
                                     />
                                     <button
@@ -491,23 +461,7 @@ const Dashboard: React.FC = () => {
 
                                 <button
                                     onClick={handlePasswordSubmit}
-                                    className="w-full py-3 text-white rounded-lg transition duration-300 transform hover:scale-105 shadow-md font-semibold"
-                                    style={{
-                                        background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`,
-                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                    }}
-                                    onMouseEnter={e => {
-                                        (e.target as HTMLButtonElement).style.background = `linear-gradient(135deg, ${hexToRgba(
-                                            colors.brand.primary,
-                                            0.9
-                                        )} 0%, ${hexToRgba(colors.brand.primary, 0.7)} 100%)`;
-                                    }}
-                                    onMouseLeave={e => {
-                                        (e.target as HTMLButtonElement).style.background = `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(
-                                            colors.brand.primary,
-                                            0.8
-                                        )} 100%)`;
-                                    }}
+                                    className={`w-full py-3 text-white rounded-lg transition duration-300 transform hover:scale-105 shadow-md font-semibold ${styles.passwordSubmitButton}`}
                                 >
                                     <div className="flex items-center justify-center gap-2">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,7 +480,7 @@ const Dashboard: React.FC = () => {
                             <div className="mt-6 text-center">
                                 <p className="text-xs text-gray-400">Block52 Blockchain Infrastructure Demo</p>
                                 <div className="flex items-center justify-center gap-1 mt-2">
-                                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: colors.brand.primary }}></div>
+                                    <div className={`w-2 h-2 rounded-full animate-pulse ${styles.brandPrimaryDot}`}></div>
                                     <span className="text-xs text-gray-400">Secured by Block52</span>
                                 </div>
                             </div>
@@ -542,13 +496,12 @@ const Dashboard: React.FC = () => {
                     {showCosmosImportModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
-                                className="p-6 rounded-xl w-[440px] shadow-2xl border"
-                                style={{ backgroundColor: colors.ui.bgDark, borderColor: hexToRgba(colors.brand.primary, 0.2) }}
+                                className={`p-6 rounded-xl w-[440px] shadow-2xl border ${styles.modalPanel}`}
                             >
                                 <h3 className="text-xl font-bold text-white mb-2 whitespace-nowrap">Import B52 Wallet Seed Phrase</h3>
                                 <div
                                     className="w-full h-0.5 mb-4 opacity-50"
-                                    style={{ background: `linear-gradient(to right, transparent, ${colors.brand.primary}, transparent)` }}
+                                    style={{ background: "linear-gradient(to right, transparent, var(--brand-primary), transparent)" }}
                                 />
                                 <div className="space-y-4">
                                     <div>
@@ -566,8 +519,7 @@ const Dashboard: React.FC = () => {
                                         <button
                                             onClick={handleImportCosmosSeed}
                                             disabled={cosmosWallet.isLoading}
-                                            className="w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            style={{ backgroundColor: colors.brand.primary }}
+                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
                                         >
                                             {cosmosWallet.isLoading ? "Importing..." : "Import"}
                                         </button>
@@ -577,8 +529,7 @@ const Dashboard: React.FC = () => {
                                                 setCosmosSeedPhrase("");
                                                 setCosmosImportError("");
                                             }}
-                                            className="w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80"
-                                            style={{ backgroundColor: colors.ui.textSecondary }}
+                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 ${styles.cancelBg}`}
                                         >
                                             Cancel
                                         </button>
@@ -594,13 +545,12 @@ const Dashboard: React.FC = () => {
                     {showNewWalletModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
-                                className="p-6 rounded-xl w-[480px] shadow-2xl border"
-                                style={{ backgroundColor: colors.ui.bgDark, borderColor: hexToRgba(colors.brand.primary, 0.2) }}
+                                className={`p-6 rounded-xl w-[480px] shadow-2xl border ${styles.modalPanel}`}
                             >
                                 <h3 className="text-xl font-bold text-white mb-2">New B52 Wallet Created</h3>
                                 <div
                                     className="w-full h-0.5 mb-4 opacity-50"
-                                    style={{ background: `linear-gradient(to right, transparent, ${colors.brand.primary}, transparent)` }}
+                                    style={{ background: "linear-gradient(to right, transparent, var(--brand-primary), transparent)" }}
                                 />
                                 <p className="text-gray-400 text-sm mb-4">
                                     Write down your seed phrase and store it in a safe place. You will need it to recover your wallet.
@@ -608,13 +558,12 @@ const Dashboard: React.FC = () => {
 
                                 {/* Warning */}
                                 <div
-                                    className="p-3 rounded-lg mb-4 flex items-start gap-3"
-                                    style={{ backgroundColor: hexToRgba(colors.accent.danger, 0.1), border: `1px solid ${hexToRgba(colors.accent.danger, 0.3)}` }}
+                                    className={`p-3 rounded-lg mb-4 flex items-start gap-3 ${styles.dangerWarningBox}`}
                                 >
-                                    <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: colors.accent.danger }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className={`w-5 h-5 flex-shrink-0 mt-0.5 ${styles.dangerText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                     </svg>
-                                    <p className="text-sm" style={{ color: colors.accent.danger }}>
+                                    <p className={`text-sm ${styles.dangerText}`}>
                                         Never share your seed phrase with anyone. Anyone with this phrase can access your funds.
                                     </p>
                                 </div>
@@ -627,29 +576,25 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Seed Phrase with copy icon */}
+                                {/* Seed Phrase with inline copy icon */}
                                 <div className="mb-6">
                                     <div className="flex items-center justify-between mb-1">
                                         <label className="block text-gray-400 text-sm">Seed Phrase (24 words)</label>
                                         <button
                                             onClick={handleCopySeedPhrase}
-                                            className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:opacity-80"
-                                            style={{
-                                                color: seedPhraseCopied ? colors.accent.success : colors.ui.textSecondary,
-                                                backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6)
-                                            }}
+                                            className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:opacity-80 ${styles.copyIconBtn} ${seedPhraseCopied ? styles.copyIconBtnCopied : ""}`}
                                             title="Copy seed phrase"
                                         >
                                             {seedPhraseCopied ? (
                                                 <>
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                                     </svg>
                                                     Copied!
                                                 </>
                                             ) : (
                                                 <>
-                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                                     </svg>
                                                     Copy
@@ -674,8 +619,7 @@ const Dashboard: React.FC = () => {
                                     <button
                                         onClick={handleConfirmNewWallet}
                                         disabled={!seedPhraseCopied}
-                                        className="w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{ backgroundColor: colors.brand.primary }}
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
                                         title={!seedPhraseCopied ? "Please copy your seed phrase first" : ""}
                                     >
                                         I've Saved My Seed Phrase
@@ -687,8 +631,7 @@ const Dashboard: React.FC = () => {
                                             setNewWalletAddress("");
                                             setSeedPhraseCopied(false);
                                         }}
-                                        className="w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80"
-                                        style={{ backgroundColor: colors.ui.textSecondary }}
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 ${styles.cancelBg}`}
                                     >
                                         Cancel
                                     </button>
@@ -701,18 +644,13 @@ const Dashboard: React.FC = () => {
                     {showCosmosTransferModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
-                                className="p-6 rounded-xl w-96 shadow-2xl border"
-                                style={{ backgroundColor: colors.ui.bgDark, borderColor: hexToRgba(colors.brand.primary, 0.2) }}
+                                className={`p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}
                             >
                                 <h3 className="text-xl font-bold text-white mb-4">Send</h3>
                                 <div className="space-y-4">
                                     {/* Available Balance Display */}
                                     <div
-                                        className="p-3 rounded-lg"
-                                        style={{
-                                            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6),
-                                            border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-                                        }}
+                                        className={`p-3 rounded-lg ${styles.balanceBox}`}
                                     >
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-400 text-sm">Available Balance:</span>
@@ -748,8 +686,7 @@ const Dashboard: React.FC = () => {
                                         <button
                                             onClick={handleCosmosTransfer}
                                             disabled={isTransferring || !isValidRecipient || !transferAmount || isAmountExceedingBalance}
-                                            className="w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50"
-                                            style={{ backgroundColor: colors.brand.primary }}
+                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 ${styles.brandPrimaryBg}`}
                                         >
                                             {isTransferring ? "Sending..." : "Send USDC"}
                                         </button>
@@ -760,10 +697,7 @@ const Dashboard: React.FC = () => {
                                                 setTransferAmount("");
                                                 setTransferError("");
                                             }}
-                                            className="w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90"
-                                            style={{
-                                                background: `linear-gradient(135deg, ${colors.accent.danger} 0%, ${hexToRgba(colors.accent.danger, 0.8)} 100%)`
-                                            }}
+                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 ${styles.cancelGradientButton}`}
                                         >
                                             Cancel
                                         </button>
@@ -777,8 +711,7 @@ const Dashboard: React.FC = () => {
                     {showCreateGameModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
-                                className="p-6 rounded-xl w-96 shadow-2xl border"
-                                style={{ backgroundColor: colors.ui.bgDark, borderColor: hexToRgba(colors.brand.primary, 0.2) }}
+                                className={`p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}
                             >
                                 <h3 className="text-xl font-bold text-white mb-4">Create New Table</h3>
                                 <div className="space-y-4">
@@ -988,9 +921,8 @@ const Dashboard: React.FC = () => {
                                             onClick={handleCreateNewGame}
                                             disabled={isCreatingTable}
                                             className={`px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md flex items-center ${
-                                                isCreatingTable ? "bg-gray-500" : "hover:opacity-90"
+                                                isCreatingTable ? "bg-gray-500" : `${styles.brandPrimaryBg} hover:opacity-90`
                                             }`}
-                                            style={isCreatingTable ? {} : { backgroundColor: colors.brand.primary }}
                                         >
                                             {isCreatingTable ? (
                                                 <>
