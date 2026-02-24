@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { colors } from "../../../utils/colorConfig";
 import { toast } from "react-toastify";
 import type { PaymentDisplayProps } from "../types";
+import styles from "./PaymentDisplay.module.css";
 
 const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
     paymentAddress,
@@ -75,11 +75,9 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
                     />
                     <button
                         onClick={() => handleCopy(paymentAddress)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded text-xs font-semibold transition-all"
-                        style={{
-                            backgroundColor: copied ? colors.accent.success : colors.brand.primary,
-                            color: "white"
-                        }}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded text-xs font-semibold transition-all text-white ${
+                            copied ? styles.copyButtonCopied : styles.copyButtonDefault
+                        }`}
                     >
                         {copied ? "✓ Copied" : "Copy"}
                     </button>

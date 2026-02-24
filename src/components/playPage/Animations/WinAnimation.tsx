@@ -6,8 +6,6 @@ import { winAnimationPosition } from "../../../utils/PositionArray";
 import { WinAnimationProps } from "../../../types/index";
 import "./WinAnimation.css";
 
-import DollarChip from "./../../../assets/DollarChip.svg";
-
 const WinAnimation: React.FC<WinAnimationProps> = React.memo(({ index }) => {
     const { id: _id } = useParams<{ id: string }>();
     const { tableSize } = useTableAnimations();
@@ -41,14 +39,7 @@ const WinAnimation: React.FC<WinAnimationProps> = React.memo(({ index }) => {
             {/* Placeholder bubbles (will become SVG icons) */}
             <ul className="bubbles">
                 {[0, 1, 2, 3, 4].map((_, i) => (
-                    <li
-                        key={i}
-                        className="bubble"
-                        style={{
-                            backgroundImage: `url(${DollarChip})`
-                            // you can still override size, timing, etc. in CSS
-                        }}
-                    />
+                    <li key={i} className="bubble" />
                 ))}
             </ul>
         </div>

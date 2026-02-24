@@ -1,5 +1,6 @@
 import React from "react";
 import { colors } from "../utils/colorConfig";
+import styles from "./ColorDebug.module.css";
 
 const ColorDebug: React.FC = () => {
     // Get all environment variables
@@ -35,20 +36,20 @@ const ColorDebug: React.FC = () => {
             <div className="mb-4">
                 <h4 className="font-semibold mb-1">Loaded Colors:</h4>
                 <div className="text-xs space-y-1">
-                    <div>Brand Primary: <span style={{ color: colors.brand.primary }}>{colors.brand.primary}</span></div>
-                    <div>Brand Secondary: <span style={{ color: colors.brand.secondary }}>{colors.brand.secondary}</span></div>
-                    <div>Table Border: <span style={{ color: colors.table.borderColor }}>{colors.table.borderColor}</span></div>
-                    <div>Accent Glow: <span style={{ color: colors.accent.glow }}>{colors.accent.glow}</span></div>
+                    <div>Brand Primary: <span className={styles.brandPrimary}>{colors.brand.primary}</span></div>
+                    <div>Brand Secondary: <span className={styles.brandSecondary}>{colors.brand.secondary}</span></div>
+                    <div>Table Border: <span className={styles.tableBorder}>{colors.table.borderColor}</span></div>
+                    <div>Accent Glow: <span className={styles.accentGlow}>{colors.accent.glow}</span></div>
                 </div>
             </div>
 
             <div className="mb-4">
                 <h4 className="font-semibold mb-1">Color Swatches:</h4>
                 <div className="grid grid-cols-4 gap-2">
-                    <div className="w-12 h-12 rounded" style={{ backgroundColor: colors.brand.primary }} title="Primary" />
-                    <div className="w-12 h-12 rounded" style={{ backgroundColor: colors.brand.secondary }} title="Secondary" />
-                    <div className="w-12 h-12 rounded" style={{ backgroundColor: colors.table.bgBase }} title="Base" />
-                    <div className="w-12 h-12 rounded" style={{ backgroundColor: colors.accent.glow }} title="Glow" />
+                    <div className={`w-12 h-12 rounded ${styles.swatchPrimary}`} title="Primary" />
+                    <div className={`w-12 h-12 rounded ${styles.swatchSecondary}`} title="Secondary" />
+                    <div className={`w-12 h-12 rounded ${styles.swatchBase}`} title="Base" />
+                    <div className={`w-12 h-12 rounded ${styles.swatchGlow}`} title="Glow" />
                 </div>
             </div>
 

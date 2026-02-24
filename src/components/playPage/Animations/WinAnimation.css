@@ -86,6 +86,7 @@
   bottom: 80px;
   list-style: none;
   overflow: visible;
+  background-image: url("../../../assets/DollarChip.svg");
   background-size: contain;
   background-repeat: no-repeat;
   animation: bubble-rise linear infinite;

@@ -343,11 +343,9 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                 <button
                                     onClick={handleBuyInConfirm}
                                     disabled={isJoining || exceedsBalance}
-                                    className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton}`}
-                                    style={{
-                                        opacity: exceedsBalance ? 0.5 : 1,
-                                        cursor: exceedsBalance ? "not-allowed" : "pointer"
-                                    }}
+                                    className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton} ${
+                                        exceedsBalance ? styles.confirmButtonDisabled : ""
+                                    }`}
                                 >
                                     {isJoining ? (
                                         <>

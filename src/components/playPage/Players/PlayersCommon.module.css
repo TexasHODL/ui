@@ -5,3 +5,7 @@
 .whiteText {
     color: #ffffff;
 }
+
+.positionTransition {
+    transition: top 1s ease, left 1s ease;
+}

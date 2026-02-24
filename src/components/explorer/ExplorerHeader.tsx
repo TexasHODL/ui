@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { colors, hexToRgba } from "../../utils/colorConfig";
+import styles from "./ExplorerHeader.module.css";
 
 interface ExplorerHeaderProps {
     title?: string;
@@ -70,28 +70,16 @@ export const ExplorerHeader = ({ title = "Block Explorer" }: ExplorerHeaderProps
                     <a
                         key={link.href}
                         href={link.href}
-                        className="p-4 rounded-lg border transition-colors duration-200 flex items-start gap-3 flex-shrink-0"
-                        style={{
-                            backgroundColor: isActive(link.href)
-                                ? hexToRgba(colors.brand.primary, 0.15)
-                                : hexToRgba(colors.ui.bgDark, 0.6),
-                            borderColor: isActive(link.href)
-                                ? colors.brand.primary
-                                : hexToRgba(colors.brand.primary, 0.2),
-                            minWidth: "180px",
-                            maxWidth: "220px"
-                        }}
+                        className={`p-4 rounded-lg border transition-colors duration-200 flex items-start gap-3 flex-shrink-0 ${styles.navCard} ${
+                            isActive(link.href) ? styles.navCardActive : styles.navCardInactive
+                        }`}
                     >
-                        <div
-                            className="p-2 rounded-lg flex-shrink-0"
-                            style={{ backgroundColor: hexToRgba(colors.brand.primary, 0.1) }}
-                        >
+                        <div className={`p-2 rounded-lg flex-shrink-0 ${styles.iconWrapper}`}>
                             <svg
-                                className="w-5 h-5"
+                                className={`w-5 h-5 ${styles.iconColor}`}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
-                                style={{ color: colors.brand.primary }}
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={link.icon} />
                             </svg>

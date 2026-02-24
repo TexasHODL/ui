@@ -1,9 +1,9 @@
 import React from "react";
 import { useFindGames, GameWithFormat } from "../hooks/game/useFindGames";
 import { formatMicroAsUsdc } from "../constants/currency";
-import { colors, hexToRgba } from "../utils/colorConfig";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
+import styles from "./TableList.module.css";
 
 /**
  * Format buy-in display based on game format
@@ -49,11 +49,6 @@ const TableList: React.FC = () => {
     // Clubs can override by setting VITE_CLUB_LOGO and VITE_CLUB_NAME in .env
     const clubLogo = import.meta.env.VITE_CLUB_LOGO || "/poker.svg";
     const clubName = import.meta.env.VITE_CLUB_NAME || "Texas Hodl";
-
-    // Button style using standard blue
-    const buttonStyle = {
-        background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-    };
 
     // Copy to clipboard utility with error handling
     const copyToClipboard = async (text: string) => {
@@ -110,8 +105,7 @@ const TableList: React.FC = () => {
                     <p className="text-gray-300 mb-4">{error.message}</p>
                     <button
                         onClick={refetch}
-                        className="px-4 py-2 rounded-lg text-white transition-all hover:opacity-90"
-                        style={buttonStyle}
+                        className={`px-4 py-2 rounded-lg text-white transition-all hover:opacity-90 ${styles.actionButton}`}
                     >
                         Retry
                     </button>
@@ -236,8 +230,7 @@ const TableList: React.FC = () => {
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             aria-label={`Join ${formatGameFormatDisplay(game.gameFormat)} table with ${game.currentPlayers} of ${game.maxPlayers} players, blinds $${formatMicroAsUsdc(game.smallBlind, 2)}/$${formatMicroAsUsdc(game.bigBlind, 2)}`}
-                                            className="inline-block px-4 py-2 text-white text-sm font-semibold rounded-lg transition-all hover:opacity-90"
-                                            style={buttonStyle}
+                                            className={`inline-block px-4 py-2 text-white text-sm font-semibold rounded-lg transition-all hover:opacity-90 ${styles.actionButton}`}
                                         >
                                             Join
                                         </a>

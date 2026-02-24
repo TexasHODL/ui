@@ -1,0 +1,8 @@
+.container {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.dot {
+    background-color: var(--brand-primary);
+}

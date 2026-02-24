@@ -1,0 +1,40 @@
+.logoFallback {
+  color: var(--brand-primary);
+}
+
+.blockHeightLink {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+}
+
+.blockHeightText {
+  color: var(--ui-text-secondary);
+}
+
+.headerShell {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 95%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.navItemActive {
+  color: var(--brand-primary);
+  background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.navItemInactive {
+  color: var(--ui-text-secondary);
+  background-color: transparent;
+}
+
+.badgePill {
+  background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  color: var(--brand-primary);
+}
+
+.mobileMenuButton {
+  color: var(--brand-primary);
+}
+
+.mobileMenuNav {
+  border-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}

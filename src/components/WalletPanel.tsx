@@ -1,8 +1,8 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { colors, hexToRgba } from "../utils/colorConfig";
 import { useCosmosWallet } from "../hooks";
 import { microToUsdc } from "../constants/currency";
+import styles from "./WalletPanel.module.css";
 
 // Copy to clipboard utility
 const copyToClipboard = (text: string, label: string) => {
@@ -39,14 +39,6 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
         return microToUsdc(balance.amount).toFixed(2);
     }, [cosmosWallet.balance]);
 
-    // Button style helper
-    const buttonStyle = useCallback(
-        (color: string) => ({
-            background: `linear-gradient(135deg, ${color} 0%, ${hexToRgba(color, 0.8)} 100%)`
-        }),
-        []
-    );
-
     if (!cosmosWallet.address) {
         // No wallet - show create/import options
         return (
@@ -63,8 +55,7 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                     <div className="space-y-3">
                         <button
                             onClick={onCreateWallet}
-                            className="w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                            style={buttonStyle(colors.brand.primary)}
+                            className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
                         >
                             Create New Wallet
                         </button>
@@ -129,8 +120,7 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                         />
                         <button
                             onClick={() => copyToClipboard(cosmosWallet.address || "", "Address")}
-                            className="text-white px-3 py-2 rounded-lg transition-all hover:opacity-90 text-sm"
-                            style={buttonStyle(colors.brand.primary)}
+                            className={`text-white px-3 py-2 rounded-lg transition-all hover:opacity-90 text-sm ${styles.primaryButton}`}
                         >
                             Copy
                         </button>
@@ -143,10 +133,9 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div
-                                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                                    style={{ backgroundColor: hexToRgba(colors.brand.primary, 0.2) }}
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${styles.balanceIconContainer}`}
                                 >
-                                    <span className="font-bold text-lg" style={{ color: colors.brand.primary }}>
+                                    <span className={`font-bold text-lg ${styles.balanceIconDollar}`}>
                                         $
                                     </span>
                                 </div>
@@ -166,22 +155,19 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
                 <div className="flex gap-2">
                     <button
                         onClick={onDeposit}
-                        className="flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                        style={buttonStyle(colors.brand.primary)}
+                        className={`flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
                     >
                         Deposit
                     </button>
                     <button
                         onClick={onWithdraw}
-                        className="flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                        style={buttonStyle(colors.brand.primary)}
+                        className={`flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
                     >
                         Withdraw
                     </button>
                     <button
                         onClick={onTransfer}
-                        className="flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                        style={buttonStyle(colors.brand.primary)}
+                        className={`flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
                     >
                         Send
                     </button>

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { NetworkSelector } from "./NetworkSelector";
-import { colors, hexToRgba } from "../utils/colorConfig";
 import { useNetwork } from "../context/NetworkContext";
 import { getCosmosClient } from "../utils/cosmos/client";
+import styles from "./GlobalHeader.module.css";
 
 interface MenuItem {
     path: string;
@@ -25,10 +25,7 @@ const LogoComponent: React.FC = React.memo(() => {
 
     if (imageError) {
         return (
-            <span
-                className="text-xl font-bold"
-                style={{ color: colors.brand.primary }}
-            >
+            <span className={`text-xl font-bold ${styles.logoFallback}`}>
                 {clubName}
             </span>
         );
@@ -51,11 +48,10 @@ const NetworkStatusAndSelector: React.FC<{ latestBlockHeight: string | null; has
         {latestBlockHeight && (
             <Link
                 to={`/explorer/block/${latestBlockHeight}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:opacity-80 transition-opacity"
-                style={{ backgroundColor: hexToRgba(colors.ui.bgDark, 0.6) }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg hover:opacity-80 transition-opacity ${styles.blockHeightLink}`}
             >
                 <div className={`w-2 h-2 rounded-full animate-pulse ${hasError ? "bg-red-400" : "bg-green-400"}`}></div>
-                <span className="text-sm font-mono" style={{ color: colors.ui.textSecondary }}>
+                <span className={`text-sm font-mono ${styles.blockHeightText}`}>
                     #{latestBlockHeight}
                 </span>
             </Link>
@@ -126,12 +122,7 @@ export const GlobalHeader: React.FC = () => {
 
     return (
         <header
-            className="sticky top-0 z-40 w-full"
-            style={{
-                backgroundColor: hexToRgba(colors.ui.bgDark, 0.95),
-                borderBottom: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`,
-                backdropFilter: "blur(10px)"
-            }}
+            className={`sticky top-0 z-40 w-full ${styles.headerShell}`}
         >
             <div className="container mx-auto px-4 py-3">
                 {/* Desktop Layout: 3-column flexbox with logo+nav on left, network status on right */}
@@ -150,11 +141,7 @@ export const GlobalHeader: React.FC = () => {
                                     to={item.path}
                                     target={item.newTab ? "_blank" : undefined}
                                     rel={item.newTab ? "noopener noreferrer" : undefined}
-                                    className={`${item.iconOnly ? "px-2" : "px-3"} py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:opacity-80 flex items-center gap-1.5`}
-                                    style={{
-                                        color: location.pathname === item.path ? colors.brand.primary : colors.ui.textSecondary,
-                                        backgroundColor: location.pathname === item.path ? hexToRgba(colors.brand.primary, 0.1) : "transparent"
-                                    }}
+                                    className={`${item.iconOnly ? "px-2" : "px-3"} py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:opacity-80 flex items-center gap-1.5 ${location.pathname === item.path ? styles.navItemActive : styles.navItemInactive}`}
                                     title={item.iconOnly ? item.label : undefined}
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,11 +150,7 @@ export const GlobalHeader: React.FC = () => {
                                     {!item.iconOnly && item.label}
                                     {item.badge && (
                                         <span
-                                            className="ml-1 px-1.5 py-0.5 rounded text-xs font-semibold"
-                                            style={{
-                                                backgroundColor: hexToRgba(colors.brand.primary, 0.2),
-                                                color: colors.brand.primary
-                                            }}
+                                            className={`ml-1 px-1.5 py-0.5 rounded text-xs font-semibold ${styles.badgePill}`}
                                         >
                                             {item.badge}
                                         </span>
@@ -183,11 +166,7 @@ export const GlobalHeader: React.FC = () => {
                         {/* Admin icon - discreet access */}
                         <Link
                             to="/admin"
-                            className="p-2 rounded-lg transition-all duration-200 hover:opacity-80"
-                            style={{
-                                color: location.pathname === "/admin" ? colors.brand.primary : colors.ui.textSecondary,
-                                backgroundColor: location.pathname === "/admin" ? hexToRgba(colors.brand.primary, 0.1) : "transparent"
-                            }}
+                            className={`p-2 rounded-lg transition-all duration-200 hover:opacity-80 ${location.pathname === "/admin" ? styles.navItemActive : styles.navItemInactive}`}
                             title="Admin"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -216,8 +195,7 @@ export const GlobalHeader: React.FC = () => {
                         {/* Mobile Menu Button */}
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 rounded-lg hover:opacity-80 transition-opacity"
-                            style={{ color: colors.brand.primary }}
+                            className={`p-2 rounded-lg hover:opacity-80 transition-opacity ${styles.mobileMenuButton}`}
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 {isMenuOpen ? (
@@ -232,7 +210,7 @@ export const GlobalHeader: React.FC = () => {
 
                 {/* Mobile Navigation Menu */}
                 {isMenuOpen && (
-                    <nav className="lg:hidden mt-4 pb-2 border-t pt-4" style={{ borderColor: hexToRgba(colors.brand.primary, 0.2) }}>
+                    <nav className={`lg:hidden mt-4 pb-2 border-t pt-4 ${styles.mobileMenuNav}`}>
                         <div className="flex flex-col gap-2">
                             {[...menuItems, ...adminMenuItems].map(item => (
                                 <Link
@@ -241,11 +219,7 @@ export const GlobalHeader: React.FC = () => {
                                     target={item.newTab ? "_blank" : undefined}
                                     rel={item.newTab ? "noopener noreferrer" : undefined}
                                     onClick={() => setIsMenuOpen(false)}
-                                    className="px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:opacity-80 flex items-center gap-2"
-                                    style={{
-                                        color: location.pathname === item.path ? colors.brand.primary : colors.ui.textSecondary,
-                                        backgroundColor: location.pathname === item.path ? hexToRgba(colors.brand.primary, 0.1) : "transparent"
-                                    }}
+                                    className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 hover:opacity-80 flex items-center gap-2 ${location.pathname === item.path ? styles.navItemActive : styles.navItemInactive}`}
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={item.icon} />
@@ -253,11 +227,7 @@ export const GlobalHeader: React.FC = () => {
                                     {item.label}
                                     {item.badge && (
                                         <span
-                                            className="ml-auto px-2 py-0.5 rounded text-xs font-semibold"
-                                            style={{
-                                                backgroundColor: hexToRgba(colors.brand.primary, 0.2),
-                                                color: colors.brand.primary
-                                            }}
+                                            className={`ml-auto px-2 py-0.5 rounded text-xs font-semibold ${styles.badgePill}`}
                                         >
                                             {item.badge}
                                         </span>

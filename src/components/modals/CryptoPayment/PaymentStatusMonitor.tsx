@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { PROXY_URL } from "../../../config/constants";
-import { colors } from "../../../utils/colorConfig";
 import spinner from "../../../assets/spinning-circles.svg";
 import type { PaymentStatusMonitorProps } from "../types";
+import styles from "./PaymentStatusMonitor.module.css";
 
 interface PaymentStatus {
     payment_status: string;
@@ -26,15 +26,31 @@ const STATUS_MESSAGES = {
     expired: "Payment expired. Please create a new payment."
 };
 
-const STATUS_COLORS = {
-    waiting: colors.accent.warning,
-    confirming: colors.brand.primary,
-    confirmed: colors.brand.primary,
-    sending: colors.accent.success,
-    finished: colors.accent.success,
-    failed: colors.accent.withdraw,
-    refunded: colors.accent.warning,
-    expired: colors.accent.warning
+const STATUS_VARIANTS = {
+    waiting: "warning",
+    confirming: "primary",
+    confirmed: "primary",
+    sending: "success",
+    finished: "success",
+    failed: "danger",
+    refunded: "warning",
+    expired: "warning"
+} as const;
+
+type StatusVariant = (typeof STATUS_VARIANTS)[keyof typeof STATUS_VARIANTS];
+
+const STATUS_HEADER_CLASSES: Record<StatusVariant, string> = {
+    warning: styles.statusHeaderWarning,
+    primary: styles.statusHeaderPrimary,
+    success: styles.statusHeaderSuccess,
+    danger: styles.statusHeaderDanger
+};
+
+const STATUS_ICON_CLASSES: Record<StatusVariant, string> = {
+    warning: styles.statusIconWarning,
+    primary: styles.statusIconPrimary,
+    success: styles.statusIconSuccess,
+    danger: styles.statusIconDanger
 };
 
 const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, onPaymentComplete }) => {
@@ -97,7 +113,7 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
 
     if (!status) return null;
 
-    const statusColor = STATUS_COLORS[status.payment_status as keyof typeof STATUS_COLORS] || colors.brand.primary;
+    const statusVariant: StatusVariant = STATUS_VARIANTS[status.payment_status as keyof typeof STATUS_VARIANTS] ?? "primary";
     const statusMessage = STATUS_MESSAGES[status.payment_status as keyof typeof STATUS_MESSAGES] || "Processing...";
     const isComplete = status.payment_status === "finished";
     const isFailed = ["failed", "refunded", "expired"].includes(status.payment_status);
@@ -106,11 +122,11 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
     return (
         <div className="space-y-4">
             {/* Status Header */}
-            <div className="p-4 rounded-lg border" style={{ borderColor: statusColor, backgroundColor: `${statusColor}20` }}>
+            <div className={`p-4 rounded-lg border ${styles.statusHeader} ${STATUS_HEADER_CLASSES[statusVariant]}`}>
                 <div className="flex items-center gap-3">
                     {isProcessing && <img src={spinner} className="w-6 h-6" alt="loading" />}
                     {isComplete && (
-                        <svg className="w-6 h-6" style={{ color: statusColor }} fill="currentColor" viewBox="0 0 20 20">
+                        <svg className={`w-6 h-6 ${STATUS_ICON_CLASSES[statusVariant]}`} fill="currentColor" viewBox="0 0 20 20">
                             <path
                                 fillRule="evenodd"
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -119,7 +135,7 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
                         </svg>
                     )}
                     {isFailed && (
-                        <svg className="w-6 h-6" style={{ color: statusColor }} fill="currentColor" viewBox="0 0 20 20">
+                        <svg className={`w-6 h-6 ${STATUS_ICON_CLASSES[statusVariant]}`} fill="currentColor" viewBox="0 0 20 20">
                             <path
                                 fillRule="evenodd"
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
@@ -128,7 +144,7 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
                         </svg>
                     )}
                     <div className="flex-1">
-                        <p className="font-semibold" style={{ color: statusColor }}>
+                        <p className={`font-semibold ${STATUS_ICON_CLASSES[statusVariant]}`}>
                             {statusMessage}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">Payment ID: {paymentId}</p>
@@ -159,8 +175,7 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
                                 href={`https://basescan.org/tx/${status.bridge_tx_hash}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs font-mono hover:underline"
-                                style={{ color: colors.brand.primary }}
+                                className={`text-xs font-mono hover:underline ${styles.baseScanLink}`}
                             >
                                 View on BaseScan ↗
                             </a>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNetwork } from "../context/NetworkContext";
-import { colors, hexToRgba } from "../utils/colorConfig";
+import styles from "./NetworkSelector.module.css";
 
 export const NetworkSelector: React.FC = () => {
     const { currentNetwork, setNetwork, availableNetworks, discoveredNetworks } = useNetwork();
@@ -29,20 +29,7 @@ export const NetworkSelector: React.FC = () => {
             {/* Dropdown Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200"
-                style={{
-                    backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`,
-                    color: colors.brand.primary
-                }}
-                onMouseEnter={e => {
-                    e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.1);
-                    e.currentTarget.style.borderColor = colors.brand.primary;
-                }}
-                onMouseLeave={e => {
-                    e.currentTarget.style.backgroundColor = hexToRgba(colors.ui.bgDark, 0.8);
-                    e.currentTarget.style.borderColor = hexToRgba(colors.brand.primary, 0.3);
-                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${styles.dropdownButton}`}
             >
                 {/* Network Icon */}
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,11 +58,7 @@ export const NetworkSelector: React.FC = () => {
             {/* Dropdown Menu */}
             {isOpen && (
                 <div
-                    className="absolute top-full mt-2 right-0 min-w-[280px] rounded-lg shadow-2xl overflow-hidden z-[10001]"
-                    style={{
-                        backgroundColor: hexToRgba(colors.ui.bgDark, 0.95),
-                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-                    }}
+                    className={`absolute top-full mt-2 right-0 min-w-[280px] rounded-lg shadow-2xl overflow-hidden z-[10001] ${styles.dropdownMenu}`}
                 >
                     {/* Preset Networks */}
                     {availableNetworks.map((network, index) => {
@@ -87,33 +70,16 @@ export const NetworkSelector: React.FC = () => {
                                     setNetwork(network);
                                     setIsOpen(false);
                                 }}
-                                className="w-full text-left px-4 py-3 transition-all duration-200"
-                                style={{
-                                    backgroundColor: isSelected ? hexToRgba(colors.brand.primary, 0.2) : "transparent",
-                                    borderBottom: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-                                }}
-                                onMouseEnter={e => {
-                                    if (!isSelected) {
-                                        e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.1);
-                                    }
-                                }}
-                                onMouseLeave={e => {
-                                    if (!isSelected) {
-                                        e.currentTarget.style.backgroundColor = "transparent";
-                                    }
-                                }}
+                                className={`w-full text-left px-4 py-3 transition-all duration-200 ${styles.networkItem} ${styles.networkItemBorder} ${isSelected ? styles.networkItemSelected : styles.networkItemUnselected}`}
                             >
                                 <div className="flex items-center justify-between mb-1">
                                     <span
-                                        className="font-semibold text-sm"
-                                        style={{
-                                            color: isSelected ? colors.brand.primary : "#ffffff"
-                                        }}
+                                        className={`font-semibold text-sm ${isSelected ? styles.networkNameSelected : styles.networkNameDefault}`}
                                     >
                                         {network.name}
                                     </span>
                                     {isSelected && (
-                                        <svg className="w-4 h-4" style={{ color: colors.brand.primary }} fill="currentColor" viewBox="0 0 20 20">
+                                        <svg className={`w-4 h-4 ${styles.checkIcon}`} fill="currentColor" viewBox="0 0 20 20">
                                             <path
                                                 fillRule="evenodd"
                                                 d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -122,7 +88,7 @@ export const NetworkSelector: React.FC = () => {
                                         </svg>
                                     )}
                                 </div>
-                                <div className="text-xs" style={{ color: colors.ui.textSecondary }}>
+                                <div className={`text-xs ${styles.networkEndpointText}`}>
                                     <div className="font-mono">{network.rest}</div>
                                 </div>
                             </button>
@@ -134,12 +100,7 @@ export const NetworkSelector: React.FC = () => {
                         <>
                             {/* Section Header */}
                             <div
-                                className="px-4 py-2 text-xs font-semibold uppercase tracking-wider"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.brand.primary, 0.05),
-                                    color: colors.ui.textSecondary,
-                                    borderBottom: `1px solid ${hexToRgba(colors.brand.primary, 0.1)}`
-                                }}
+                                className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider ${styles.discoveredHeader}`}
                             >
                                 Discovered
                             </div>
@@ -152,33 +113,16 @@ export const NetworkSelector: React.FC = () => {
                                             setNetwork(network);
                                             setIsOpen(false);
                                         }}
-                                        className="w-full text-left px-4 py-3 transition-all duration-200"
-                                        style={{
-                                            backgroundColor: isSelected ? hexToRgba(colors.brand.primary, 0.2) : "transparent",
-                                            borderBottom: index < discoveredNetworks.length - 1 ? `1px solid ${hexToRgba(colors.brand.primary, 0.1)}` : "none"
-                                        }}
-                                        onMouseEnter={e => {
-                                            if (!isSelected) {
-                                                e.currentTarget.style.backgroundColor = hexToRgba(colors.brand.primary, 0.1);
-                                            }
-                                        }}
-                                        onMouseLeave={e => {
-                                            if (!isSelected) {
-                                                e.currentTarget.style.backgroundColor = "transparent";
-                                            }
-                                        }}
+                                        className={`w-full text-left px-4 py-3 transition-all duration-200 ${styles.networkItem} ${isSelected ? styles.networkItemSelected : styles.networkItemUnselected} ${index < discoveredNetworks.length - 1 ? styles.networkItemBorder : ""}`}
                                     >
                                         <div className="flex items-center justify-between mb-1">
                                             <span
-                                                className="font-semibold text-sm"
-                                                style={{
-                                                    color: isSelected ? colors.brand.primary : "#ffffff"
-                                                }}
+                                                className={`font-semibold text-sm ${isSelected ? styles.networkNameSelected : styles.networkNameDefault}`}
                                             >
                                                 {network.name}
                                             </span>
                                             {isSelected && (
-                                                <svg className="w-4 h-4" style={{ color: colors.brand.primary }} fill="currentColor" viewBox="0 0 20 20">
+                                                <svg className={`w-4 h-4 ${styles.checkIcon}`} fill="currentColor" viewBox="0 0 20 20">
                                                     <path
                                                         fillRule="evenodd"
                                                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -187,7 +131,7 @@ export const NetworkSelector: React.FC = () => {
                                                 </svg>
                                             )}
                                         </div>
-                                        <div className="text-xs" style={{ color: colors.ui.textSecondary }}>
+                                        <div className={`text-xs ${styles.networkEndpointText}`}>
                                             <div className="font-mono">{network.rest}</div>
                                         </div>
                                     </button>

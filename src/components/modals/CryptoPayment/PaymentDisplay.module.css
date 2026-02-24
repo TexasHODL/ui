@@ -1,0 +1,7 @@
+.copyButtonDefault {
+    background-color: var(--brand-primary);
+}
+
+.copyButtonCopied {
+    background-color: var(--accent-success);
+}

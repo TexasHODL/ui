@@ -1,10 +1,10 @@
 import React from "react";
 import { LoadingSpinner } from "../common";
 import { TexasHoldemRound, ActionDTO, PlayerStatus } from "@block52/poker-vm-sdk";
-import { colors } from "../../utils/colorConfig";
 import { FoldButton } from "./FoldButton";
 import { getRaiseToAmount } from "../../utils/raiseUtils";
 import type { MainActionButtonsProps } from "./types";
+import styles from "./MainActionButtons.module.css";
 
 export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
     canFold,
@@ -83,7 +83,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                         </>
                     ) : (
                         <>
-                            CALL <span style={{ color: colors.brand.primary }}>${callAmount}</span>
+                            CALL <span className={styles.amountAccent}>${callAmount}</span>
                         </>
                     )}
                 </button>
@@ -105,7 +105,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     ) : (
                         <>
                             {canRaise ? "RAISE TO" : "BET"}{" "}
-                            <span style={{ color: colors.brand.primary }}>${raiseToAmount.toFixed(2)}</span>
+                            <span className={styles.amountAccent}>${raiseToAmount.toFixed(2)}</span>
                         </>
                     )}
                 </button>

@@ -66,13 +66,13 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                     <>
                         <div className="pot-display">
                             Total Pot:
-                            <span style={{ fontWeight: "700px" }}>
+                            <span className="pot-value-bold">
                                 {potDisplayValues.isTournamentStyle ? ` ${potDisplayValues.totalPot}` : ` $${potDisplayValues.totalPot}`}
                             </span>
                         </div>
                         <div className="pot-display-secondary">
                             Main Pot:
-                            <span style={{ fontWeight: "700px" }}>
+                            <span className="pot-value-bold">
                                 {potDisplayValues.isTournamentStyle ? ` ${potDisplayValues.mainPot}` : ` $${potDisplayValues.mainPot}`}
                             </span>
                         </div>

@@ -1,0 +1,11 @@
+.topUpEnabled {
+    background: linear-gradient(to right, var(--brand-primary), var(--brand-secondary));
+    cursor: pointer;
+    opacity: 1;
+}
+
+.topUpDisabled {
+    background: var(--ui-bg-medium);
+    cursor: not-allowed;
+    opacity: 0.5;
+}

@@ -1,0 +1,4 @@
+.selectedCurrency {
+    border-color: var(--brand-primary);
+    background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
