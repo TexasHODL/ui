@@ -101,7 +101,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 setIsBalanceLoading(true);
 
                 if (!publicKey) {
-                    setBuyInError("No Cosmos wallet address available");
+                    setBuyInError("No Block52 wallet address available");
                     setIsBalanceLoading(false);
                     return;
                 }

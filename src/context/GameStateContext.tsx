@@ -100,7 +100,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             const playerAddress = localStorage.getItem("user_cosmos_address");
 
             if (!playerAddress) {
-                setError(new Error("No Cosmos wallet address found. Please connect your wallet."));
+                setError(new Error("No Block52 wallet address found. Please connect your wallet."));
                 setIsLoading(false);
                 return;
             }
@@ -294,7 +294,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             const playerAddress = localStorage.getItem("user_cosmos_address");
 
             if (!playerAddress) {
-                throw new Error("No Cosmos wallet address found. Please connect your wallet.");
+                throw new Error("No Block52 wallet address found. Please connect your wallet.");
             }
 
             const actionMessage = {
