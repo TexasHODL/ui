@@ -53,7 +53,53 @@ export interface CosmosTransaction {
     };
 }
 
-// Card distribution analytics
-export interface CardDistribution {
-    [cardMnemonic: string]: number; // e.g., { "AS": 42, "KD": 38, ... }
+// Indexer API response types
+
+// GET /api/v1/stats/cards
+export interface CardStats {
+    card: string;               // "2h", "AS", etc.
+    rank: string;               // "A", "K", "2", etc.
+    suit: string;               // "h", "d", "c", "s"
+    total_appearances: number;
+    expected_frequency: number;
+    actual_frequency: number;
+    deviation: number;
+    deviation_percent: number;
+}
+
+// GET /api/v1/stats/summary
+export interface StatsSummary {
+    total_hands: number;
+    total_completed_hands: number;
+    total_revealed_cards: number;
+    unique_games: number;
+}
+
+// GET /api/v1/analysis/randomness
+export interface RandomnessReport {
+    summary: StatsSummary;
+    card_chi_squared: ChiSquaredResult;
+    suit_chi_squared: ChiSquaredResult;
+    rank_chi_squared: ChiSquaredResult;
+    outlier_cards: CardStats[];
+    duplicate_seeds: number;
+}
+
+export interface ChiSquaredResult {
+    chi_squared: number;
+    degrees_of_freedom: number;
+    p_value: number;
+    result: string;         // "PASS", "MARGINAL", "FAIL"
+    interpretation: string;
+}
+
+// GET /api/v1/status
+export interface IndexerStatus {
+    total_blocks: number;
+    blocks_indexed: number;
+    percent_complete: number;
+    last_block_indexed: number;
+    first_block_indexed: number;
+    total_hands: number;
+    total_games: number;
 }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { colors, hexToRgba } from "../utils/colorConfig";
 import { useCosmosWallet } from "../hooks";
 import { useNetwork } from "../context/NetworkContext";
 import { formatTimestampRelative } from "../utils/formatUtils";
 import { microToUsdc } from "../constants/currency";
+import styles from "./TransactionPanel.module.css";
 import {
     formatTransactionLabel,
     formatTransferDirection,
@@ -185,10 +185,7 @@ const TransactionPanel: React.FC = () => {
                 <button
                     onClick={fetchTransactions}
                     disabled={loading}
-                    className="p-2 rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50"
-                    style={{
-                        background: `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-                    }}
+                    className={`p-2 rounded-lg text-white transition-all hover:opacity-90 disabled:opacity-50 ${styles.refreshButton}`}
                     title="Refresh transactions"
                 >
                     <svg
@@ -230,8 +227,7 @@ const TransactionPanel: React.FC = () => {
                         <p className="text-gray-400 text-sm">{error}</p>
                         <button
                             onClick={fetchTransactions}
-                            className="mt-2 text-sm transition-colors hover:opacity-80"
-                            style={{ color: colors.brand.primary }}
+                            className={`mt-2 text-sm transition-colors hover:opacity-80 ${styles.primaryText}`}
                         >
                             Try again
                         </button>
@@ -261,11 +257,7 @@ const TransactionPanel: React.FC = () => {
                                         {formatTransactionLabel(tx.action, tx.messageType)}
                                     </span>
                                     <span
-                                        className="text-xs px-2 py-0.5 rounded-full"
-                                        style={{
-                                            backgroundColor: tx.code === 0 ? hexToRgba(colors.accent.success, 0.2) : hexToRgba(colors.accent.danger, 0.2),
-                                            color: tx.code === 0 ? colors.accent.success : colors.accent.danger
-                                        }}
+                                        className={`text-xs px-2 py-0.5 rounded-full ${tx.code === 0 ? styles.statusSuccess : styles.statusFailed}`}
                                     >
                                         {tx.code === 0 ? "Success" : "Failed"}
                                     </span>
@@ -278,7 +270,7 @@ const TransactionPanel: React.FC = () => {
                                                 {formatTransferDirection(tx.transferDirection)}
                                             </span>
                                         )}
-                                        <span className="text-sm font-medium" style={{ color: colors.brand.primary }}>
+                                        <span className={`text-sm font-medium ${styles.primaryText}`}>
                                             {microToUsdc(tx.amount || tx.transferAmount || "0")} USDC
                                         </span>
                                         {tx.gameId && (
@@ -303,8 +295,7 @@ const TransactionPanel: React.FC = () => {
                 {transactions.length > 0 && cosmosWallet.address && (
                     <button
                         onClick={() => navigate(`/explorer/address/${cosmosWallet.address}`)}
-                        className="w-full mt-4 text-center text-sm transition-all hover:opacity-80 flex items-center justify-center gap-2"
-                        style={{ color: colors.brand.primary }}
+                        className={`w-full mt-4 text-center text-sm transition-all hover:opacity-80 flex items-center justify-center gap-2 ${styles.primaryText}`}
                     >
                         <span>View All Transactions</span>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

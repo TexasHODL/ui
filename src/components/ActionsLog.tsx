@@ -3,10 +3,10 @@ import { useParams } from "react-router-dom";
 import { useGameProgress } from "../hooks/game/useGameProgress";
 import { formatPlayerId, formatAmount } from "../utils/accountUtils";
 import { ActionDTO } from "@block52/poker-vm-sdk";
-import { colors } from "../utils/colorConfig";
 import { FaCopy, FaCheck, FaFileDownload } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useGameStateContext } from "../context/GameStateContext";
+import styles from "./ActionsLog.module.css";
 
 // Function to format action names with proper capitalization and spacing
 const formatActionName = (action: string): string => {
@@ -176,31 +176,24 @@ const ActionsLog: React.FC = () => {
 
     return (
         <div 
-            className="rounded w-full h-full overflow-y-auto scrollbar-hide backdrop-blur-sm"
-            style={{
-                color: "white",
-                backgroundColor: colors.table.bgBase + "/30"
-            }}
+            className={`rounded w-full h-full overflow-y-auto scrollbar-hide backdrop-blur-sm ${styles.container}`}
         >
             <div 
-                className="flex justify-between items-center p-2 border-b"
-                style={{ borderColor: "rgba(255,255,255,0.2)" }}
+                className={`flex justify-between items-center p-2 border-b ${styles.header}`}
             >
                 <h3 className="text-sm font-semibold">History</h3>
                 <div className="flex gap-2">
                     <button
                         onClick={handleCopyLog}
-                        className="p-1.5 rounded hover:bg-white/10 transition-colors duration-200"
                         title="Copy history to clipboard"
-                        style={{ color: copied ? colors.accent.success : colors.brand.primary }}
+                        className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copied ? styles.copyButtonCopied : styles.copyButtonDefault}`}
                     >
                         {copied ? <FaCheck size={12} /> : <FaCopy size={12} />}
                     </button>
                     <button
                         onClick={handleCopyJSON}
-                        className="p-1.5 rounded hover:bg-white/10 transition-colors duration-200"
                         title="Copy hand history as JSON"
-                        style={{ color: copiedJSON ? colors.accent.success : colors.brand.primary }}
+                        className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copiedJSON ? styles.copyButtonCopied : styles.copyButtonDefault}`}
                     >
                         {copiedJSON ? <FaCheck size={12} /> : <FaFileDownload size={12} />}
                     </button>
@@ -212,31 +205,27 @@ const ActionsLog: React.FC = () => {
                     {previousActions.map((action: ActionDTO, index: number) => (
                         <div 
                             key={index} 
-                            className="text-xs py-1 border-b" 
-                            style={{ borderColor: "rgba(255,255,255,0.1)" }}
+                            className={`text-xs py-1 border-b ${styles.actionRow}`}
                         >
                             <div className="flex justify-between">
                                 <span 
-                                    className="font-mono"
-                                    style={{ color: colors.brand.primary + "e6" }}
+                                    className={`font-mono ${styles.playerId}`}
                                 >
                                     {formatPlayerId(action.playerId)}
                                 </span>
                                 <span 
-                                    className="text-[10px]"
-                                    style={{ color: colors.ui.textSecondary }}
+                                    className={`text-[10px] ${styles.secondaryText}`}
                                 >
                                     Seat {action.seat}
                                 </span>
                             </div>
                             <div className="flex justify-between mt-0.5">
-                                <span style={{ color: "#e5e7eb" }}>
+                                <span className={styles.actionText}>
                                     {formatActionName(action.action)}
                                     {action.amount && ` ${formatAmount(action.amount)}`}
                                 </span>
                                 <span 
-                                    className="text-[10px]"
-                                    style={{ color: colors.ui.textSecondary }}
+                                    className={`text-[10px] ${styles.secondaryText}`}
                                 >
                                     {formatRoundName(action.round)}
                                 </span>
@@ -246,8 +235,7 @@ const ActionsLog: React.FC = () => {
                 </div>
             ) : (
                 <p 
-                    className="text-xs p-3"
-                    style={{ color: colors.ui.textSecondary }}
+                    className={`text-xs p-3 ${styles.secondaryText}`}
                 >
                     No actions recorded yet.
                 </p>

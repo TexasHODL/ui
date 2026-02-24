@@ -12,7 +12,7 @@
  * - Manages card visibility state
  */
 
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback } from "react";
 import { PlayerDTO } from "@block52/poker-vm-sdk";
 import { PositionArray } from "../../../../types";
 import { UseTableLayoutReturn } from "../../../../hooks/game/useTableLayout";
@@ -31,7 +31,6 @@ export interface PlayerSeatingProps {
     tableLayout: UseTableLayoutReturn;
     tableSize: number;
     startIndex: number;
-    setStartIndex: (index: number) => void;
 
     // Player data
     tableActivePlayers: PlayerDTO[];
@@ -44,9 +43,7 @@ export interface PlayerSeatingProps {
     isSitAndGoWaitingForPlayers: boolean;
     winnerInfo: Array<{ seat: number }> | null;
 
-    // Card visibility
-    isCardVisible: number;
-    setCardVisible: (index: number) => void;
+    // Card back style
     cardBackStyle: CardBackStyle;
 
     // Handlers
@@ -57,7 +54,6 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
     tableLayout,
     tableSize,
     startIndex,
-    setStartIndex,
     tableActivePlayers,
     tableDataPlayers,
     userWalletAddress,
@@ -65,8 +61,6 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
     hasWinner,
     isSitAndGoWaitingForPlayers,
     winnerInfo,
-    isCardVisible,
-    setCardVisible,
     cardBackStyle,
     updateBalanceOnPlayerJoin
 }) => {
@@ -133,15 +127,9 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
             return isCurrentUser ? (
                 <Player {...playerProps} uiPosition={positionIndex} />
             ) : (
-                // OppositePlayer includes the "SIT HERE" button in PlayerPopUpCard
-                // When clicked, it calls setStartIndex(seatNumber - 1) to rotate the table
-                // This makes the clicked seat appear at the bottom position
                 <OppositePlayer
                     {...playerProps}
                     uiPosition={positionIndex}
-                    setStartIndex={setStartIndex}
-                    isCardVisible={isCardVisible}
-                    setCardVisible={setCardVisible}
                     cardBackStyle={cardBackStyle}
                 />
             );
@@ -152,12 +140,9 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
             currentIndex,
             tableDataPlayers,
             tableSize,
-            isCardVisible,
             startIndex,
             updateBalanceOnPlayerJoin,
             tableLayout,
-            setStartIndex,
-            setCardVisible,
             cardBackStyle
         ]
     );

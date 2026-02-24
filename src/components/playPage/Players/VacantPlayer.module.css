@@ -38,6 +38,11 @@
     color: #ffffff;
 }
 
+.confirmButtonDisabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 .cancelButton {
     background-color: var(--accent-danger);
     color: #ffffff;

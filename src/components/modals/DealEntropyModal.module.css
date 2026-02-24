@@ -1,0 +1,33 @@
+.titleIcon {
+  color: var(--brand-primary);
+}
+
+.hashDisplay {
+  background-color: var(--ui-bg-medium);
+  border: 1px solid var(--ui-border-color);
+  font-family: monospace;
+}
+
+.passwordInput {
+  background-color: var(--ui-bg-medium);
+  border: 1px solid var(--ui-text-secondary);
+}
+
+.passwordInput:focus {
+  border-color: var(--brand-primary);
+}
+
+.finalEntropyDisplay {
+  background-color: var(--ui-bg-medium);
+  border: 1px solid var(--brand-primary);
+  font-family: monospace;
+  color: var(--brand-primary);
+}
+
+.buttonSecondary {
+  background-color: var(--ui-text-secondary);
+}
+
+.buttonPrimary {
+  background-color: var(--brand-primary);
+}

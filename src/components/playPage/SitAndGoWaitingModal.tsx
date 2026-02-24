@@ -8,6 +8,7 @@ import React, { useMemo } from "react";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getGameTypeMnemonic } from "../../utils/gameFormatUtils";
+import styles from "./SitAndGoWaitingModal.module.css";
 
 const SitAndGoWaitingModal: React.FC = () => {
     const { gameOptions } = useGameOptions();
@@ -82,9 +83,9 @@ const SitAndGoWaitingModal: React.FC = () => {
                             {/* Waiting indicator */}
                             <div className="flex items-center justify-center gap-2 mt-4">
                                 <div className="flex gap-1">
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                                    <div className={`w-2 h-2 bg-blue-400 rounded-full animate-bounce ${styles.waitingDotDelay0}`}></div>
+                                    <div className={`w-2 h-2 bg-blue-400 rounded-full animate-bounce ${styles.waitingDotDelay150}`}></div>
+                                    <div className={`w-2 h-2 bg-blue-400 rounded-full animate-bounce ${styles.waitingDotDelay300}`}></div>
                                 </div>
                                 <span className="text-gray-400 text-sm">
                                     Waiting for {maxPlayers - playersJoined} more {maxPlayers - playersJoined === 1 ? "player" : "players"}

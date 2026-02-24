@@ -208,6 +208,10 @@
     margin-top: 4px;
 }
 
+.pot-value-bold {
+    font-weight: 700;
+}
+
 @media (min-width: 640px) {
     .pot-display-secondary {
         font-size: 18px;
@@ -287,6 +291,19 @@
     left: 1rem;
     width: 16rem;
     z-index: 50;
+}
+
+.network-display {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.network-display-dot-devnet {
+    background-color: var(--brand-primary);
+}
+
+.table-surface-shadow {
+    box-shadow: 0 7px 15px color-mix(in srgb, #000000 60%, transparent);
 }
 
 /* Performance optimized styles - moved from inline */

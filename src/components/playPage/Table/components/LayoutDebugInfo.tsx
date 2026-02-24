@@ -11,6 +11,7 @@
  */
 
 import React from "react";
+import styles from "./LayoutDebugInfo.module.css";
 
 export interface LayoutDebugInfoProps {
     viewportMode: "mobile-portrait" | "mobile-landscape" | "tablet" | "desktop";
@@ -27,7 +28,7 @@ export const LayoutDebugInfo: React.FC<LayoutDebugInfoProps> = ({ viewportMode, 
     }
 
     return (
-        <div className="fixed top-20 right-4 z-50 bg-black bg-opacity-80 text-white px-3 py-2 rounded-lg text-xs border border-gray-600" style={{ maxWidth: "180px" }}>
+        <div className={`fixed top-20 right-4 z-50 bg-black bg-opacity-80 text-white px-3 py-2 rounded-lg text-xs border border-gray-600 ${styles.debugPanel}`}>
             <div className="font-bold mb-1">Layout Debug Info</div>
             <div>
                 Mode: <span className="text-yellow-400 font-mono">{viewportMode}</span>
@@ -70,7 +71,7 @@ export const LayoutDebugInfo: React.FC<LayoutDebugInfoProps> = ({ viewportMode, 
             </div>
             <div className="mt-2 pt-2 border-t border-gray-700">
                 <div className="font-bold mb-1">Results</div>
-                <pre className="text-gray-300 break-words whitespace-pre-wrap" style={{ wordBreak: "break-word", fontSize: "10px" }}>
+                <pre className={`text-gray-300 break-words whitespace-pre-wrap ${styles.resultsPre}`}>
                     {results ? JSON.stringify(results, null, 2) : "empty"}
                 </pre>
             </div>

@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { LoadingSpinner } from "../common";
-import { colors } from "../../utils/colorConfig";
 import { DealEntropyModal } from "../modals";
 import type { DealButtonGroupProps } from "./types";
+import styles from "./DealButtonGroup.module.css";
 
 export const DealButtonGroup: React.FC<DealButtonGroupProps> = ({
     tableId,
@@ -66,8 +66,7 @@ export const DealButtonGroup: React.FC<DealButtonGroupProps> = ({
                     <button
                         onClick={() => setShowEntropyModal(true)}
                         disabled={disabled || loading}
-                        className="text-white font-bold py-2 lg:py-3 px-4 lg:px-6 rounded-lg shadow-md text-sm lg:text-base backdrop-blur-sm transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ backgroundColor: colors.ui.bgMedium, border: `1px solid ${colors.ui.borderColor}` }}
+                        className={`text-white font-bold py-2 lg:py-3 px-4 lg:px-6 rounded-lg shadow-md text-sm lg:text-base backdrop-blur-sm transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${styles.entropyButton}`}
                     >
                         {entropyIcon}
                         <span className="text-xs lg:text-sm">Show Entropy</span>

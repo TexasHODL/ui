@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { colors } from "../../utils/colorConfig";
+import styles from "./ClickableAddress.module.css";
 
 interface ClickableAddressProps {
     address: string;
@@ -32,8 +32,7 @@ export const ClickableAddress: React.FC<ClickableAddressProps> = ({ address, cla
     return (
         <span
             onClick={handleClick}
-            className={`cursor-pointer hover:underline transition-colors ${className}`}
-            style={{ color: colors.brand.primary }}
+            className={`cursor-pointer hover:underline transition-colors ${styles.addressLink} ${className}`}
             title={`View address ${address}`}
         >
             {displayAddress}

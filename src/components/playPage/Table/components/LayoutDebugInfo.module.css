@@ -1,0 +1,8 @@
+.debugPanel {
+    max-width: 180px;
+}
+
+.resultsPre {
+    word-break: break-word;
+    font-size: 10px;
+}
