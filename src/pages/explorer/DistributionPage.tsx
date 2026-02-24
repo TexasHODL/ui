@@ -241,6 +241,7 @@ export default function DistributionPage() {
                             </div>
                         </div>
 
+
                         {/* Chi-Squared Randomness Result */}
                         {randomness && (
                             <div className="mt-8 bg-gray-800 rounded-lg p-6 border border-gray-700">

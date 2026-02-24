@@ -36,7 +36,7 @@ export default function TransactionPage() {
                 const cosmosClient = getCosmosClient(currentNetwork);
 
                 if (!cosmosClient) {
-                    throw new Error("Cosmos client not initialized. Please check your wallet connection.");
+                    throw new Error("Block52 client not initialized. Please check your wallet connection.");
                 }
 
                 const tx = await cosmosClient.getTx(hashToSearch.trim());
@@ -512,7 +512,7 @@ export default function TransactionPage() {
                                                 >
                                                     {/* Cosmos Events Primer */}
                                                     <div className={`mb-6 pb-4 ${styles.eventExplanationPrimer}`}>
-                                                        <h4 className="text-lg font-bold text-white mb-3">📚 About Cosmos Blockchain Events</h4>
+                                                        <h4 className="text-lg font-bold text-white mb-3">📚 About Block52 Blockchain Events</h4>
                                                         <div className="text-gray-300 text-sm space-y-2">
                                                             <p>
                                                                 <strong className={styles.eventExplanationStrong}>Events</strong> are records emitted during
@@ -521,7 +521,7 @@ export default function TransactionPage() {
                                                             </p>
                                                             <p>
                                                                 <strong className={styles.eventExplanationStrong}>Standard SDK events</strong> (coin_spent,
-                                                                coin_received, transfer, message, tx) are automatically emitted by the Cosmos SDK for all
+                                                                coin_received, transfer, message, tx) are automatically emitted by the Block52 SDK for all
                                                                 transactions.
                                                             </p>
                                                             <p>
