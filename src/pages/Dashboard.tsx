@@ -542,10 +542,10 @@ const Dashboard: React.FC = () => {
                     {showCosmosImportModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
-                                className="p-6 rounded-xl w-96 shadow-2xl border"
+                                className="p-6 rounded-xl w-[440px] shadow-2xl border"
                                 style={{ backgroundColor: colors.ui.bgDark, borderColor: hexToRgba(colors.brand.primary, 0.2) }}
                             >
-                                <h3 className="text-xl font-bold text-white mb-2">Import B52 Wallet Seed Phrase</h3>
+                                <h3 className="text-xl font-bold text-white mb-2 whitespace-nowrap">Import B52 Wallet Seed Phrase</h3>
                                 <div
                                     className="w-full h-0.5 mb-4 opacity-50"
                                     style={{ background: `linear-gradient(to right, transparent, ${colors.brand.primary}, transparent)` }}
@@ -675,7 +675,7 @@ const Dashboard: React.FC = () => {
                                         onClick={handleConfirmNewWallet}
                                         disabled={!seedPhraseCopied}
                                         className="w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        style={{ backgroundColor: colors.accent.success }}
+                                        style={{ backgroundColor: colors.brand.primary }}
                                         title={!seedPhraseCopied ? "Please copy your seed phrase first" : ""}
                                     >
                                         I've Saved My Seed Phrase
