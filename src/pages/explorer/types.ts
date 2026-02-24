@@ -92,3 +92,14 @@ export interface ChiSquaredResult {
     result: string;         // "PASS", "MARGINAL", "FAIL"
     interpretation: string;
 }
+
+// GET /api/v1/status
+export interface IndexerStatus {
+    total_blocks: number;
+    blocks_indexed: number;
+    percent_complete: number;
+    last_block_indexed: number;
+    first_block_indexed: number;
+    total_hands: number;
+    total_games: number;
+}
