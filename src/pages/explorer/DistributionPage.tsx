@@ -29,7 +29,7 @@ export default function DistributionPage() {
             });
 
             if (!cosmosClient) {
-                throw new Error("Cosmos client not initialized.");
+                throw new Error("Block52 client not initialized.");
             }
 
             // Fetch all games

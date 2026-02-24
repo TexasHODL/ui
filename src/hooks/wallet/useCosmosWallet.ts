@@ -66,7 +66,7 @@ export const useCosmosWallet = (): UseCosmosWalletReturn => {
         try {
             const client = getCosmosClient(currentNetwork);
             if (!client) {
-                throw new Error("Cosmos client not initialized");
+                throw new Error("Block52 client not initialized");
             }
 
             const balances = await client.getAllBalances(address);

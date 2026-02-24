@@ -131,7 +131,7 @@ export async function getSigningClient(network: NetworkEndpoints) {
     const mnemonic = getCosmosMnemonic();
 
     if (!userAddress || !mnemonic) {
-        throw new Error("Cosmos wallet not initialized. Please create or import a Cosmos wallet first.");
+        throw new Error("Block52 wallet not initialized. Please create or import a Block52 wallet first.");
     }
 
     const { rpcEndpoint, restEndpoint } = getCosmosUrls(network);
