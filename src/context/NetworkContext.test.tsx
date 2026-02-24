@@ -86,14 +86,14 @@ describe("NetworkContext", () => {
             expect(screen.getByTestId("network-ws")).toBeInTheDocument();
         });
 
-        it("should default to Texas Hodl when no saved preference", () => {
+        it("should default to Block52 when no saved preference", () => {
             render(
                 <NetworkProvider>
                     <TestConsumer />
                 </NetworkProvider>
             );
 
-            expect(screen.getByTestId("network-name").textContent).toBe("Texas Hodl");
+            expect(screen.getByTestId("network-name").textContent).toBe("Block52");
         });
 
         it("should provide all available networks", () => {
@@ -142,8 +142,8 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            // Should fall back to Texas Hodl
-            expect(screen.getByTestId("network-name").textContent).toBe("Texas Hodl");
+            // Should fall back to Block52
+            expect(screen.getByTestId("network-name").textContent).toBe("Block52");
         });
 
         it("should reset to default if localStorage is corrupted", () => {
@@ -155,8 +155,8 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            // Should fall back to Texas Hodl
-            expect(screen.getByTestId("network-name").textContent).toBe("Texas Hodl");
+            // Should fall back to Block52
+            expect(screen.getByTestId("network-name").textContent).toBe("Block52");
         });
     });
 
@@ -168,8 +168,8 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            // Initially Texas Hodl
-            expect(screen.getByTestId("current-network").textContent).toBe("Texas Hodl");
+            // Initially Block52
+            expect(screen.getByTestId("current-network").textContent).toBe("Block52");
 
             // Switch to Localhost
             fireEvent.click(screen.getByTestId("switch-Localhost"));
