@@ -492,13 +492,14 @@ const Dashboard: React.FC = () => {
             {/* Main Dashboard Content - Only show when authenticated */}
             {isAuthenticated && (
                 <>
-                    {/* Cosmos Import Seed Phrase Modal */}
+                    {/* Import B52 Wallet Seed Phrase Modal */}
                     {showCosmosImportModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
-                                className={`p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}
+                                className={`p-6 rounded-xl w-[440px] shadow-2xl border ${styles.modalPanel}`}
                             >
-                                <h3 className="text-xl font-bold text-white mb-4">Import Cosmos Seed Phrase</h3>
+                                <h3 className="text-xl font-bold text-white mb-2 whitespace-nowrap">Import B52 Wallet Seed Phrase</h3>
+                                <div className={styles.modalTitleDivider} />
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-white text-sm mb-1">Seed Phrase</label>
@@ -511,23 +512,23 @@ const Dashboard: React.FC = () => {
                                         <p className="text-xs text-gray-400 mt-1">Words should be separated by spaces</p>
                                     </div>
                                     {cosmosImportError && <p className="text-red-500 text-sm">{cosmosImportError}</p>}
-                                    <div className="flex justify-end space-x-3">
+                                    <div className="flex flex-col space-y-3">
+                                        <button
+                                            onClick={handleImportCosmosSeed}
+                                            disabled={cosmosWallet.isLoading}
+                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
+                                        >
+                                            {cosmosWallet.isLoading ? "Importing..." : "Import"}
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 setShowCosmosImportModal(false);
                                                 setCosmosSeedPhrase("");
                                                 setCosmosImportError("");
                                             }}
-                                            className="px-4 py-2 text-sm bg-gray-600 hover:bg-gray-700 hover:opacity-90 text-white rounded-lg transition duration-300 shadow-inner"
+                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 ${styles.cancelBg}`}
                                         >
                                             Cancel
-                                        </button>
-                                        <button
-                                            onClick={handleImportCosmosSeed}
-                                            disabled={cosmosWallet.isLoading}
-                                            className={`px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 ${styles.brandPrimaryBg}`}
-                                        >
-                                            {cosmosWallet.isLoading ? "Importing..." : "Import"}
                                         </button>
                                     </div>
                                 </div>
@@ -537,13 +538,14 @@ const Dashboard: React.FC = () => {
 
                     {/* Removed: Cosmos Update Seed Phrase Modal - now handled on /wallet page */}
 
-                    {/* New Wallet Created Modal - shows seed phrase */}
+                    {/* New B52 Wallet Created Modal - shows seed phrase */}
                     {showNewWalletModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
                             <div
                                 className={`p-6 rounded-xl w-[480px] shadow-2xl border ${styles.modalPanel}`}
                             >
-                                <h3 className="text-xl font-bold text-white mb-2">New Wallet Created</h3>
+                                <h3 className="text-xl font-bold text-white mb-2">New B52 Wallet Created</h3>
+                                <div className={styles.modalTitleDivider} />
                                 <p className="text-gray-400 text-sm mb-4">
                                     Write down your seed phrase and store it in a safe place. You will need it to recover your wallet.
                                 </p>
@@ -568,9 +570,32 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Seed Phrase */}
-                                <div className="mb-4">
-                                    <label className="block text-gray-400 text-sm mb-1">Seed Phrase (24 words)</label>
+                                {/* Seed Phrase with inline copy icon */}
+                                <div className="mb-6">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <label className="block text-gray-400 text-sm">Seed Phrase (24 words)</label>
+                                        <button
+                                            onClick={handleCopySeedPhrase}
+                                            className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:opacity-80 ${styles.copyIconBtn} ${seedPhraseCopied ? styles.copyIconBtnCopied : ""}`}
+                                            title="Copy seed phrase"
+                                        >
+                                            {seedPhraseCopied ? (
+                                                <>
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    Copied!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                    </svg>
+                                                    Copy
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                     <div className="p-3 rounded-lg bg-gray-800 border border-gray-700 font-mono text-sm text-white">
                                         <div className="grid grid-cols-4 gap-2">
                                             {newWalletSeedPhrase.split(" ").map((word, index) => (
@@ -583,32 +608,16 @@ const Dashboard: React.FC = () => {
                                     </div>
                                 </div>
 
-                                {/* Copy Button */}
-                                <button
-                                    onClick={handleCopySeedPhrase}
-                                    className={`w-full py-2 mb-4 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-2 ${
-                                        seedPhraseCopied ? styles.seedPhraseCopySuccess : styles.seedPhraseCopyDefault
-                                    }`}
-                                >
-                                    {seedPhraseCopied ? (
-                                        <>
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                            Copied!
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                            </svg>
-                                            Copy Seed Phrase
-                                        </>
-                                    )}
-                                </button>
-
                                 {/* Actions */}
-                                <div className="flex justify-end space-x-3">
+                                <div className="flex flex-col space-y-3">
+                                    <button
+                                        onClick={handleConfirmNewWallet}
+                                        disabled={!seedPhraseCopied}
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
+                                        title={!seedPhraseCopied ? "Please copy your seed phrase first" : ""}
+                                    >
+                                        I've Saved My Seed Phrase
+                                    </button>
                                     <button
                                         onClick={() => {
                                             setShowNewWalletModal(false);
@@ -616,17 +625,9 @@ const Dashboard: React.FC = () => {
                                             setNewWalletAddress("");
                                             setSeedPhraseCopied(false);
                                         }}
-                                        className="px-4 py-2 text-sm bg-gray-600 hover:bg-gray-700 hover:opacity-90 text-white rounded-lg transition duration-300"
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 ${styles.cancelBg}`}
                                     >
                                         Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleConfirmNewWallet}
-                                        disabled={!seedPhraseCopied}
-                                        className={`px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.successBg}`}
-                                        title={!seedPhraseCopied ? "Please copy your seed phrase first" : ""}
-                                    >
-                                        I've Saved My Seed Phrase
                                     </button>
                                 </div>
                             </div>

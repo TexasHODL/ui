@@ -112,3 +112,24 @@
   background-color: var(--accent-success);
   border: 1px solid var(--ui-border-color);
 }
+
+.modalTitleDivider {
+  height: 2px;
+  width: 100%;
+  margin-bottom: 16px;
+  opacity: 0.5;
+  background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
+}
+
+.cancelBg {
+  background-color: var(--ui-text-secondary);
+}
+
+.copyIconBtn {
+  background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+  color: var(--ui-text-secondary);
+}
+
+.copyIconBtnCopied {
+  color: var(--accent-success);
+}
