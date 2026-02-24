@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { colors } from "../utils/colorConfig";
 import { TopUpModal } from "./modals";
+import styles from "./BuyChipsButton.module.css";
 
 interface BuyChipsButtonProps {
     tableId: string;
@@ -44,14 +44,9 @@ const BuyChipsButton: React.FC<BuyChipsButtonProps> = ({
             <button
                 onClick={() => setShowModal(true)}
                 disabled={!canTopUp}
-                className="px-4 py-2 rounded-lg font-medium text-white shadow-md transition-all duration-200"
-                style={{
-                    background: canTopUp
-                        ? `linear-gradient(to right, ${colors.brand.primary}, ${colors.brand.secondary})`
-                        : colors.ui.bgMedium,
-                    cursor: canTopUp ? "pointer" : "not-allowed",
-                    opacity: canTopUp ? 1 : 0.5
-                }}
+                className={`px-4 py-2 rounded-lg font-medium text-white shadow-md transition-all duration-200 ${
+                    canTopUp ? styles.topUpEnabled : styles.topUpDisabled
+                }`}
                 title={canTopUp ? "Add chips to your stack" : "Cannot top up during an active hand"}
             >
                 💰 BUY CHIPS

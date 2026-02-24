@@ -1,0 +1,27 @@
+.container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+.sectionSpacing {
+    margin-top: 20px;
+}
+
+.statusSuccess {
+    color: green;
+}
+
+.statusError {
+    color: red;
+}
+
+.preBlock {
+    background: #f0f0f0;
+    padding: 10px;
+}
+
+.instructionsBox {
+    margin-top: 20px;
+    padding: 10px;
+    background: #f0f0f0;
+}

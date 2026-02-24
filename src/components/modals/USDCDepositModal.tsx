@@ -1,9 +1,9 @@
 import React from "react";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { useCosmosWallet } from "../../hooks";
 import { microToUsdc } from "../../constants/currency";
 import DepositCore from "./DepositCore";
 import type { USDCDepositModalProps } from "./types";
+import styles from "./USDCDepositModal.module.css";
 
 const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, onSuccess }) => {
     const cosmosWallet = useCosmosWallet();
@@ -28,11 +28,7 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
             onClick={onClose}
         >
             <div
-                className="bg-gray-800 rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh]"
-                style={{
-                    backgroundColor: hexToRgba(colors.ui.bgDark, 0.95),
-                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-                }}
+                className={`bg-gray-800 rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -66,10 +62,7 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
                     {/* Cancel Button */}
                     <button
                         onClick={onClose}
-                        className="w-full mt-4 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90"
-                        style={{
-                            background: `linear-gradient(135deg, ${colors.accent.danger} 0%, ${hexToRgba(colors.accent.danger, 0.8)} 100%)`
-                        }}
+                        className={`w-full mt-4 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.cancelButton}`}
                     >
                         Cancel
                     </button>

@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from "react";
-import { colors } from "../../utils/colorConfig";
 import { Modal, LoadingSpinner } from "../common";
-import { useModalStyles } from "../../hooks/useModalStyles";
 import CryptoJS from "crypto-js";
 import type { DealEntropyModalProps } from "./types";
+import styles from "./DealEntropyModal.module.css";
 
 /**
  * Generates a random hex string using crypto.getRandomValues
@@ -42,7 +41,6 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
     const [isDealing, setIsDealing] = useState(false);
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const modalStyles = useModalStyles();
 
     // Generate system entropy once on mount
     const [systemEntropy] = useState(() => generateSystemEntropy());
@@ -58,15 +56,6 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
         if (!passwordHash) return systemEntropy;
         return combineEntropy(systemEntropy, passwordHash);
     }, [systemEntropy, passwordHash]);
-
-    // Handle input focus styling
-    const handleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-        e.currentTarget.style.borderColor = colors.brand.primary;
-    }, []);
-
-    const handleInputBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-        e.currentTarget.style.borderColor = colors.ui.textSecondary;
-    }, []);
 
     // Handle deal button click
     const handleDealClick = useCallback(async () => {
@@ -105,7 +94,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
             isOpen={true}
             onClose={onClose}
             title="Deal Cards"
-            titleIcon={<><span style={{ color: colors.brand.primary }}>♣</span></>}
+            titleIcon={<><span className={styles.titleIcon}>♣</span></>}
             error={error}
             isProcessing={isDealing}
             widthClass="w-[440px]"
@@ -115,8 +104,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
             <div className="mb-4">
                 <label className="block text-gray-300 mb-1.5 font-medium text-sm">System Entropy</label>
                 <div
-                    className="p-3 rounded-lg text-xs text-gray-300 break-all select-all cursor-text"
-                    style={modalStyles.hashDisplay}
+                        className={`p-3 rounded-lg text-xs text-gray-300 break-all select-all cursor-text ${styles.hashDisplay}`}
                     title={systemEntropy}
                 >
                     {truncateHash(systemEntropy, 16)}
@@ -135,10 +123,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                         value={password}
                         onChange={e => setPassword(e.target.value)}
                         placeholder="Enter a password to add your own entropy"
-                        className="w-full p-3 pr-10 text-white rounded-lg text-sm focus:outline-none"
-                        style={modalStyles.input}
-                        onFocus={handleInputFocus}
-                        onBlur={handleInputBlur}
+                        className={`w-full p-3 pr-10 text-white rounded-lg text-sm focus:outline-none ${styles.passwordInput}`}
                         disabled={isDealing}
                     />
                     <button
@@ -167,8 +152,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                 <div className="mb-4">
                     <label className="block text-gray-300 mb-1.5 font-medium text-sm">Password Hash</label>
                     <div
-                        className="p-3 rounded-lg text-xs text-gray-300 break-all select-all cursor-text"
-                        style={modalStyles.hashDisplay}
+                        className={`p-3 rounded-lg text-xs text-gray-300 break-all select-all cursor-text ${styles.hashDisplay}`}
                         title={passwordHash}
                     >
                         {truncateHash(passwordHash, 16)}
@@ -182,12 +166,7 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                     Final Entropy {passwordHash ? "(combined)" : "(system only)"}
                 </label>
                 <div
-                    className="p-3 rounded-lg text-xs break-all select-all cursor-text"
-                    style={{
-                        ...modalStyles.hashDisplay,
-                        borderColor: colors.brand.primary,
-                        color: colors.brand.primary
-                    }}
+                    className={`p-3 rounded-lg text-xs break-all select-all cursor-text ${styles.finalEntropyDisplay}`}
                     title={finalEntropy}
                 >
                     {truncateHash(finalEntropy, 16)}
@@ -200,16 +179,14 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                 <button
                     onClick={onClose}
                     disabled={isDealing}
-                    className="px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={modalStyles.buttonSecondary}
+                    className={`px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${styles.buttonSecondary}`}
                 >
                     Cancel
                 </button>
                 <button
                     onClick={handleDealClick}
                     disabled={isDealing}
-                    className="px-5 py-3 rounded-lg text-white font-bold flex-1 transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    style={modalStyles.buttonPrimary}
+                    className={`px-5 py-3 rounded-lg text-white font-bold flex-1 transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${styles.buttonPrimary}`}
                 >
                     {isDealing ? (
                         <>

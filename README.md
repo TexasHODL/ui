@@ -202,6 +202,7 @@ The UI styling system is standardized as:
 - Typography: `--font-size-*`, `--line-height-*`, `--font-weight-*`
 
 See [src/docs/STYLING_INLINE_AUDIT.md](src/docs/STYLING_INLINE_AUDIT.md) for migration waves, hotspots, and PR checklist.
+See [src/docs/STYLING_INLINE_AUDIT_PHASE2.md](src/docs/STYLING_INLINE_AUDIT_PHASE2.md) for Phase 2 plan, batch logs, and parity workflow.
 
 ## Contributing
 

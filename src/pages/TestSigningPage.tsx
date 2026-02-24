@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { SigningCosmosClient, GameFormat } from "@block52/poker-vm-sdk";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import { colors, hexToRgba } from "../utils/colorConfig";
 import { getCosmosMnemonic } from "../utils/cosmos/storage";
 import { useNetwork } from "../context/NetworkContext";
 import { USDC_TO_MICRO, microToUsdc } from "../constants/currency";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { isTournamentFormat } from "../utils/gameFormatUtils";
+import styles from "./TestSigningPage.module.css";
 
 interface TestResult {
     functionName: string;
@@ -90,23 +90,6 @@ export default function TestSigningPage() {
             initializeClient();
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Styles
-    const containerStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
-    const inputStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgMedium, 0.8),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-        }),
-        []
-    );
 
     const addResult = (result: TestResult) => {
         setTestResults(prev => [result, ...prev]);
@@ -590,7 +573,7 @@ export default function TestSigningPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-3 p-3 rounded" style={{ backgroundColor: hexToRgba(colors.ui.bgDark, 0.6) }}>
+                        <div className={`mt-3 p-3 rounded ${styles.infoCommandBox}`}>
                             <div className="font-semibold mb-2">📋 How to Get Test Tokens:</div>
                             <div className="text-xs font-mono space-y-1 text-gray-400">
                                 <div># Option 1: Use genesis account (has tokens by default)</div>
@@ -607,13 +590,9 @@ export default function TestSigningPage() {
                 {/* Validator Funding Section - Primary Method for Fresh Testnet */}
                 {walletAddress && (
                     <div
-                        className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.warning, 0.1),
-                            border: `2px solid ${hexToRgba(colors.accent.warning, 0.4)}`
-                        }}
+                        className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.warningPanel}`}
                     >
-                        <h2 className="text-2xl font-bold mb-4" style={{ color: colors.accent.warning }}>
+                        <h2 className={`text-2xl font-bold mb-4 ${styles.warningTitle}`}>
                             ⚡ Fund from Validator (Recommended for Fresh Testnet)
                         </h2>
                         <div className="space-y-4">
@@ -640,11 +619,7 @@ export default function TestSigningPage() {
                             </div>
 
                             <div
-                                className="p-4 rounded-lg"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-                                    border: `1px solid ${hexToRgba(colors.accent.warning, 0.3)}`
-                                }}
+                                className={`p-4 rounded-lg ${styles.warningCommandBox}`}
                             >
                                 <div className="font-semibold text-white mb-2">📋 Copy this command:</div>
                                 <div className="text-xs font-mono text-gray-400 mb-3 break-all">
@@ -657,11 +632,7 @@ export default function TestSigningPage() {
                                         navigator.clipboard.writeText(command);
                                         alert(`Validator funding command copied!\n\nThis will send 100 stake to your wallet for gas fees.\n\n${command}`);
                                     }}
-                                    className="w-full py-3 px-4 text-sm font-semibold rounded-lg transition duration-200 hover:opacity-90 active:scale-95"
-                                    style={{
-                                        backgroundColor: colors.accent.warning,
-                                        color: colors.ui.bgDark
-                                    }}
+                                    className={`w-full py-3 px-4 text-sm font-semibold rounded-lg transition duration-200 hover:opacity-90 active:scale-95 ${styles.warningActionButton}`}
                                 >
                                     📋 Copy Validator Funding Command (100 stake for gas)
                                 </button>
@@ -669,11 +640,7 @@ export default function TestSigningPage() {
 
                             {/* Stake only command (for bridge testing) */}
                             <div
-                                className="p-4 rounded-lg mt-4"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.accent.success, 0.15),
-                                    border: `2px solid ${hexToRgba(colors.accent.success, 0.4)}`
-                                }}
+                                className={`p-4 rounded-lg mt-4 ${styles.successCommandBox}`}
                             >
                                 <div className="font-semibold text-white mb-2">⛽ Fund with Stake (Gas Fees Only - For Bridge Testing!):</div>
                                 <div className="text-xs font-mono text-gray-400 mb-3 break-all">
@@ -686,11 +653,7 @@ export default function TestSigningPage() {
                                         navigator.clipboard.writeText(command);
                                         alert(`Stake funding command copied!\n\nThis will send:\n• 100 stake (for gas fees)\n\nUse bridge to deposit USDC from Ethereum!\n\n${command}`);
                                     }}
-                                    className="w-full py-3 px-4 text-sm font-semibold rounded-lg transition duration-200 hover:opacity-90 active:scale-95"
-                                    style={{
-                                        backgroundColor: colors.accent.success,
-                                        color: colors.ui.bgDark
-                                    }}
+                                    className={`w-full py-3 px-4 text-sm font-semibold rounded-lg transition duration-200 hover:opacity-90 active:scale-95 ${styles.successActionButton}`}
                                 >
                                     📋 Copy Stake Funding Command (100 stake for gas)
                                 </button>
@@ -700,11 +663,7 @@ export default function TestSigningPage() {
                             </div>
 
                             <div
-                                className="p-3 rounded text-xs mt-4"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.ui.bgDark, 0.4),
-                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                }}
+                                className={`p-3 rounded text-xs mt-4 ${styles.keyDiffBox}`}
                             >
                                 <div className="font-semibold text-white mb-2">🔑 Key Differences from Test Accounts Below:</div>
                                 <div className="space-y-1 text-gray-400">
@@ -727,13 +686,9 @@ export default function TestSigningPage() {
                 {/* Test Accounts Section */}
                 {walletAddress && (
                     <div
-                        className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6"
-                        style={{
-                            backgroundColor: hexToRgba(colors.accent.success, 0.1),
-                            border: `1px solid ${hexToRgba(colors.accent.success, 0.3)}`
-                        }}
+                        className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.successPanel}`}
                     >
-                        <h2 className="text-xl font-bold mb-4" style={{ color: colors.accent.success }}>
+                        <h2 className={`text-xl font-bold mb-4 ${styles.successTitle}`}>
                             🏦 Test Accounts - Send Tokens (Only for Ignite Serve)
                         </h2>
                         <div className="text-sm text-gray-300 mb-4">
@@ -742,11 +697,7 @@ export default function TestSigningPage() {
 
                         {/* Command Explanation */}
                         <div
-                            className="mb-4 p-3 rounded text-xs"
-                            style={{
-                                backgroundColor: hexToRgba(colors.ui.bgDark, 0.4),
-                                border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                            }}
+                            className={`mb-4 p-3 rounded text-xs ${styles.commandBreakdownBox}`}
                         >
                             <div className="font-semibold text-white mb-2">📚 Command Breakdown:</div>
                             <div className="space-y-1 text-gray-400 font-mono">
@@ -777,11 +728,7 @@ export default function TestSigningPage() {
                             {TEST_ACCOUNTS.map(account => (
                                 <div
                                     key={account.address}
-                                    className="p-4 rounded-lg"
-                                    style={{
-                                        backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-                                        border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-                                    }}
+                                    className={`p-4 rounded-lg ${styles.accountCard}`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="font-bold text-white capitalize">{account.name}</span>
@@ -797,12 +744,7 @@ export default function TestSigningPage() {
                                             </div>
                                             <button
                                                 onClick={() => copyCommand(account.name, "stake", "10000000")}
-                                                className="w-full py-2 px-3 text-xs font-medium rounded transition duration-200 hover:opacity-80"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.brand.primary, 0.2),
-                                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.4)}`,
-                                                    color: colors.brand.primary
-                                                }}
+                                                className={`w-full py-2 px-3 text-xs font-medium rounded transition duration-200 hover:opacity-80 ${styles.blueCommandButton}`}
                                             >
                                                 📋 Copy: Send 10 stake (gas)
                                             </button>
@@ -814,12 +756,7 @@ export default function TestSigningPage() {
                                             </div>
                                             <button
                                                 onClick={() => copyCommand(account.name, "usdc", "50000000")}
-                                                className="w-full py-2 px-3 text-xs font-medium rounded transition duration-200 hover:opacity-80"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.accent.success, 0.2),
-                                                    border: `1px solid ${hexToRgba(colors.accent.success, 0.4)}`,
-                                                    color: colors.accent.success
-                                                }}
+                                                className={`w-full py-2 px-3 text-xs font-medium rounded transition duration-200 hover:opacity-80 ${styles.greenCommandButton}`}
                                             >
                                                 📋 Copy: Send 50 usdc (poker)
                                             </button>
@@ -828,7 +765,7 @@ export default function TestSigningPage() {
                                 </div>
                             ))}
                         </div>
-                        <div className="mt-4 p-3 rounded text-xs" style={{ backgroundColor: hexToRgba(colors.ui.bgDark, 0.4) }}>
+                        <div className={`mt-4 p-3 rounded text-xs ${styles.walletAddressBox}`}>
                             <div className="text-gray-400">
                                 <strong className="text-white">Your address:</strong> <span className="font-mono text-gray-300">{walletAddress}</span>
                             </div>
@@ -838,18 +775,15 @@ export default function TestSigningPage() {
                 )}
 
                 {/* Initialization Section */}
-                <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                     <h2 className="text-2xl font-bold text-white mb-4">1. Initialize Client</h2>
                     {!signingClient ? (
                         <button
                             onClick={initializeClient}
                             disabled={isInitializing}
-                            className="w-full py-3 px-6 text-white font-bold rounded-lg transition duration-300 shadow-md"
-                            style={{
-                                background: isInitializing
-                                    ? `linear-gradient(135deg, ${hexToRgba(colors.ui.bgDark, 0.5)} 0%, ${hexToRgba(colors.ui.bgDark, 0.3)} 100%)`
-                                    : `linear-gradient(135deg, ${colors.brand.primary} 0%, ${hexToRgba(colors.brand.primary, 0.8)} 100%)`
-                            }}
+                            className={`w-full py-3 px-6 text-white font-bold rounded-lg transition duration-300 shadow-md ${
+                                isInitializing ? styles.initializeButtonLoading : styles.initializeButtonReady
+                            }`}
                         >
                             {isInitializing ? "Initializing..." : "Initialize SigningCosmosClient"}
                         </button>
@@ -859,23 +793,19 @@ export default function TestSigningPage() {
 
                             {/* Configuration Display */}
                             <div
-                                className="mb-4 p-4 rounded-lg"
-                                style={{
-                                    backgroundColor: hexToRgba(colors.brand.primary, 0.1),
-                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.3)}`
-                                }}
+                                className={`mb-4 p-4 rounded-lg ${styles.networkConfigBox}`}
                             >
-                                <div className="text-sm font-semibold mb-2" style={{ color: colors.brand.primary }}>
+                                <div className={`text-sm font-semibold mb-2 ${styles.brandPrimaryText}`}>
                                     📡 Connected to: {currentNetwork.name}
                                 </div>
                                 <div className="space-y-1 text-xs font-mono">
                                     <div className="flex justify-between text-gray-300">
                                         <span className="text-gray-400">RPC:</span>
-                                        <span style={{ color: colors.accent.success }}>{currentNetwork.rpc}</span>
+                                        <span className={styles.successText}>{currentNetwork.rpc}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-300">
                                         <span className="text-gray-400">REST:</span>
-                                        <span style={{ color: colors.accent.success }}>{currentNetwork.rest}</span>
+                                        <span className={styles.successText}>{currentNetwork.rest}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-300">
                                         <span className="text-gray-400">Chain:</span>
@@ -895,7 +825,7 @@ export default function TestSigningPage() {
                             <div className="space-y-2">
                                 <div className="text-gray-300">
                                     <span className="font-semibold">Address:</span>{" "}
-                                    <span className="font-mono text-sm" style={{ color: colors.brand.primary }}>
+                                    <span className={`font-mono text-sm ${styles.brandPrimaryText}`}>
                                         {walletAddress}
                                     </span>
                                 </div>
@@ -931,7 +861,7 @@ export default function TestSigningPage() {
                                             return (
                                                 <div key={idx} className="text-sm">
                                                     <div className="flex items-baseline gap-2">
-                                                        <span className="font-bold text-lg" style={{ color: colors.accent.success }}>
+                                                        <span className={`font-bold text-lg ${styles.successText}`}>
                                                             {displayAmount}
                                                         </span>
                                                         <span className="text-white font-medium">{balance.denom}</span>
@@ -957,19 +887,18 @@ export default function TestSigningPage() {
                         {/* Test Sections */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                             {/* getWalletAddress() */}
-                            <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                            <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerPanel}`}>
                                 <h3 className="text-xl font-bold text-white mb-4">2. getWalletAddress()</h3>
                                 <button
                                     onClick={testGetWalletAddress}
-                                    className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                    style={{ background: colors.brand.primary }}
+                                    className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
                                 >
                                     Test Get Wallet Address
                                 </button>
                             </div>
 
                             {/* sendTokens() */}
-                            <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                            <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerPanel}`}>
                                 <h3 className="text-xl font-bold text-white mb-4">3. sendTokens()</h3>
                                 <div className="space-y-3 mb-3">
                                     <div>
@@ -979,8 +908,7 @@ export default function TestSigningPage() {
                                             placeholder="b521..."
                                             value={recipientAddress}
                                             onChange={e => setRecipientAddress(e.target.value)}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                     </div>
                                     <div>
@@ -999,39 +927,23 @@ export default function TestSigningPage() {
                                                 placeholder="1.00"
                                                 value={sendAmount}
                                                 onChange={e => setSendAmount(e.target.value)}
-                                                className="flex-1 p-2 rounded-lg text-white"
-                                                style={inputStyle}
+                                                className={`flex-1 p-2 rounded-lg text-white ${styles.inputField}`}
                                             />
                                             <button
                                                 onClick={() => setSendAmount("1")}
-                                                className="px-4 py-2 rounded-lg text-sm font-semibold"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.brand.primary, 0.2),
-                                                    border: `1px solid ${hexToRgba(colors.brand.primary, 0.4)}`,
-                                                    color: colors.brand.primary
-                                                }}
+                                                className={`px-4 py-2 rounded-lg text-sm font-semibold ${styles.amountButtonBlue}`}
                                             >
                                                 $1
                                             </button>
                                             <button
                                                 onClick={() => setSendAmount("5")}
-                                                className="px-4 py-2 rounded-lg text-sm font-semibold"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.accent.success, 0.2),
-                                                    border: `1px solid ${hexToRgba(colors.accent.success, 0.4)}`,
-                                                    color: colors.accent.success
-                                                }}
+                                                className={`px-4 py-2 rounded-lg text-sm font-semibold ${styles.amountButtonGreen}`}
                                             >
                                                 $5
                                             </button>
                                             <button
                                                 onClick={() => setSendAmount("10")}
-                                                className="px-4 py-2 rounded-lg text-sm font-semibold"
-                                                style={{
-                                                    backgroundColor: hexToRgba(colors.accent.success, 0.2),
-                                                    border: `1px solid ${hexToRgba(colors.accent.success, 0.4)}`,
-                                                    color: colors.accent.success
-                                                }}
+                                                className={`px-4 py-2 rounded-lg text-sm font-semibold ${styles.amountButtonGreen}`}
                                             >
                                                 $10
                                             </button>
@@ -1045,8 +957,7 @@ export default function TestSigningPage() {
                                         <select
                                             value={sendDenom}
                                             onChange={e => setSendDenom(e.target.value)}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         >
                                             <option value="usdc">usdc (poker tokens)</option>
                                             <option value="stake">stake (gas tokens)</option>
@@ -1055,8 +966,7 @@ export default function TestSigningPage() {
                                 </div>
                                 <button
                                     onClick={testSendTokens}
-                                    className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                    style={{ background: colors.accent.success }}
+                                    className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionSuccess}`}
                                 >
                                     Test Send Tokens
                                 </button>
@@ -1064,7 +974,7 @@ export default function TestSigningPage() {
                         </div>
 
                         {/* createGame() */}
-                        <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                             <h3 className="text-xl font-bold text-white mb-4">4. createGame()</h3>
                             <div className="grid grid-cols-2 gap-3 mb-3">
                                 <div className="col-span-2">
@@ -1072,8 +982,7 @@ export default function TestSigningPage() {
                                     <select
                                         value={gameFormat}
                                         onChange={e => setGameFormat(e.target.value as GameFormat)}
-                                        className="w-full p-2 rounded-lg text-white"
-                                        style={inputStyle}
+                                        className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     >
                                         <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
                                         <option value={GameFormat.CASH}>Cash Game</option>
@@ -1085,24 +994,21 @@ export default function TestSigningPage() {
                                     placeholder="Timeout (seconds)"
                                     value={timeout}
                                     onChange={e => setTimeout(Number(e.target.value))}
-                                    className="p-2 rounded-lg text-white"
-                                    style={inputStyle}
+                                    className={`p-2 rounded-lg text-white ${styles.inputField}`}
                                 />
                                 <input
                                     type="number"
                                     placeholder="Min Players"
                                     value={minPlayers}
                                     onChange={e => setMinPlayers(Number(e.target.value))}
-                                    className="p-2 rounded-lg text-white"
-                                    style={inputStyle}
+                                    className={`p-2 rounded-lg text-white ${styles.inputField}`}
                                 />
                                 <input
                                     type="number"
                                     placeholder="Max Players"
                                     value={maxPlayers}
                                     onChange={e => setMaxPlayers(Number(e.target.value))}
-                                    className="p-2 rounded-lg text-white"
-                                    style={inputStyle}
+                                    className={`p-2 rounded-lg text-white ${styles.inputField}`}
                                 />
 
                                 {/* Conditional rendering based on game format */}
@@ -1115,8 +1021,7 @@ export default function TestSigningPage() {
                                             placeholder="10000000"
                                             value={sitAndGoBuyIn}
                                             onChange={e => setSitAndGoBuyIn(e.target.value)}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">10,000,000 = 10 usdc (your balance: 50 usdc)</p>
                                     </div>
@@ -1128,16 +1033,14 @@ export default function TestSigningPage() {
                                             placeholder="Min Buy-In"
                                             value={minBuyIn}
                                             onChange={e => setMinBuyIn(e.target.value)}
-                                            className="p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                         <input
                                             type="text"
                                             placeholder="Max Buy-In"
                                             value={maxBuyIn}
                                             onChange={e => setMaxBuyIn(e.target.value)}
-                                            className="p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                     </>
                                 )}
@@ -1149,8 +1052,7 @@ export default function TestSigningPage() {
                                         placeholder="100000"
                                         value={smallBlind}
                                         onChange={e => setSmallBlind(e.target.value)}
-                                        className="w-full p-2 rounded-lg text-white"
-                                        style={inputStyle}
+                                        className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     />
                                     <p className="text-xs text-gray-500 mt-1">100,000 = 0.1 usdc</p>
                                 </div>
@@ -1161,23 +1063,21 @@ export default function TestSigningPage() {
                                         placeholder="200000"
                                         value={bigBlind}
                                         onChange={e => setBigBlind(e.target.value)}
-                                        className="w-full p-2 rounded-lg text-white"
-                                        style={inputStyle}
+                                        className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     />
                                     <p className="text-xs text-gray-500 mt-1">200,000 = 0.2 usdc</p>
                                 </div>
                             </div>
                             <button
                                 onClick={testCreateGame}
-                                className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                style={{ background: colors.brand.primary }}
+                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
                             >
                                 Test Create Game
                             </button>
                         </div>
 
                         {/* joinGame() */}
-                        <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                             <h3 className="text-xl font-bold text-white mb-4">5. joinGame()</h3>
                             <div className="space-y-3 mb-3">
                                 <div>
@@ -1187,8 +1087,7 @@ export default function TestSigningPage() {
                                         placeholder="0x645d17cae33d8832e38cb16639983d2239631356d60e3656d54036f7792b13ed"
                                         value={gameId}
                                         onChange={e => setGameId(e.target.value)}
-                                        className="w-full p-2 rounded-lg text-white"
-                                        style={inputStyle}
+                                        className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
@@ -1199,8 +1098,7 @@ export default function TestSigningPage() {
                                             placeholder="0"
                                             value={seat}
                                             onChange={e => setSeat(Number(e.target.value))}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                     </div>
                                     <div>
@@ -1210,8 +1108,7 @@ export default function TestSigningPage() {
                                             placeholder="10000000"
                                             value={buyInAmount}
                                             onChange={e => setBuyInAmount(e.target.value)}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                         <p className="text-xs text-gray-500 mt-1">10,000,000 = 10 usdc (must match game's buy-in)</p>
                                     </div>
@@ -1219,15 +1116,14 @@ export default function TestSigningPage() {
                             </div>
                             <button
                                 onClick={testJoinGame}
-                                className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                style={{ background: colors.accent.success }}
+                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionSuccess}`}
                             >
                                 Test Join Game
                             </button>
                         </div>
 
                         {/* performAction() */}
-                        <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                             <h3 className="text-xl font-bold text-white mb-4">6. performAction()</h3>
                             <div className="space-y-3 mb-3">
                                 <div>
@@ -1237,8 +1133,7 @@ export default function TestSigningPage() {
                                         placeholder="0x645d17cae33d8832e38cb16639983d2239631356d60e3656d54036f7792b13ed"
                                         value={gameId}
                                         onChange={e => setGameId(e.target.value)}
-                                        className="w-full p-2 rounded-lg text-white"
-                                        style={inputStyle}
+                                        className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     />
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
@@ -1247,8 +1142,7 @@ export default function TestSigningPage() {
                                         <select
                                             value={action}
                                             onChange={e => setAction(e.target.value)}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         >
                                             <option value="fold">Fold</option>
                                             <option value="call">Call</option>
@@ -1264,36 +1158,33 @@ export default function TestSigningPage() {
                                             placeholder="0"
                                             value={actionAmount}
                                             onChange={e => setActionAmount(e.target.value)}
-                                            className="w-full p-2 rounded-lg text-white"
-                                            style={inputStyle}
+                                            className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                         />
                                     </div>
                                 </div>
                             </div>
                             <button
                                 onClick={testPerformAction}
-                                className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                style={{ background: colors.accent.withdraw }}
+                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionWithdraw}`}
                             >
                                 Test Perform Action
                             </button>
                         </div>
 
                         {/* queryGames() */}
-                        <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                             <h3 className="text-xl font-bold text-white mb-4">7. queryGames()</h3>
                             <p className="text-gray-400 text-sm mb-4">Query all games from the blockchain</p>
                             <button
                                 onClick={testQueryGames}
-                                className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                style={{ background: colors.brand.primary }}
+                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
                             >
                                 Test Query Games
                             </button>
                         </div>
 
                         {/* queryGameState() */}
-                        <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6" style={containerStyle}>
+                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                             <h3 className="text-xl font-bold text-white mb-4">8. queryGameState()</h3>
                             <div className="space-y-3 mb-3">
                                 <div>
@@ -1303,16 +1194,14 @@ export default function TestSigningPage() {
                                         placeholder="0x..."
                                         value={gameId}
                                         onChange={e => setGameId(e.target.value)}
-                                        className="w-full p-2 rounded-lg text-white"
-                                        style={inputStyle}
+                                        className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     />
                                     <p className="text-xs text-gray-500 mt-1">Same Game ID used above</p>
                                 </div>
                             </div>
                             <button
                                 onClick={testQueryGameState}
-                                className="w-full py-2 px-4 text-white font-bold rounded-lg"
-                                style={{ background: colors.brand.primary }}
+                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
                             >
                                 Test Query Game State
                             </button>
@@ -1321,7 +1210,7 @@ export default function TestSigningPage() {
                 )}
 
                 {/* Test Results */}
-                <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl" style={containerStyle}>
+                <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerPanel}`}>
                     <h2 className="text-2xl font-bold text-white mb-4">Test Results</h2>
                     {testResults.length === 0 ? (
                         <p className="text-gray-400">No tests run yet</p>
@@ -1330,20 +1219,16 @@ export default function TestSigningPage() {
                             {testResults.map((result, index) => (
                                 <div
                                     key={index}
-                                    className="p-4 rounded-lg"
-                                    style={{
-                                        backgroundColor: hexToRgba(colors.ui.bgMedium, 0.6),
-                                        border: `1px solid ${
-                                            result.status === "success"
-                                                ? colors.accent.success
-                                                : result.status === "error"
-                                                ? colors.accent.danger
-                                                : hexToRgba(colors.brand.primary, 0.3)
-                                        }`
-                                    }}
+                                    className={`p-4 rounded-lg ${styles.testResultCard} ${
+                                        result.status === "success"
+                                            ? styles.testResultSuccess
+                                            : result.status === "error"
+                                            ? styles.testResultError
+                                            : styles.testResultPending
+                                    }`}
                                 >
                                     <div className="flex items-start justify-between mb-2">
-                                        <span className="font-mono text-sm" style={{ color: colors.brand.primary }}>
+                                        <span className={`font-mono text-sm ${styles.brandPrimaryText}`}>
                                             {result.functionName}
                                         </span>
                                         <span

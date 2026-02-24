@@ -134,11 +134,10 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
             {/* Main player display */}
             <div
                 key={index}
-                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[20] ${styles.secondaryText}`}
+                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[20] ${styles.secondaryText} ${styles.positionTransition}`}
                 style={{
                     left: left,
-                    top: top,
-                    transition: "top 1s ease, left 1s ease"
+                    top: top
                 }}
                 onClick={() => {
                     setCardVisible(index);
@@ -233,13 +232,12 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                 It's only rendered when isCardVisible matches this player's index.
             */}
             <div
-                className={`absolute z-[1000] transition-all duration-1000 ease-in-out transform ${
+                className={`absolute z-[1000] transition-all duration-1000 ease-in-out transform -translate-x-1/2 -translate-y-1/2 ${
                     isCardVisible === index ? "opacity-100 animate-slide-left-to-right" : "opacity-0 animate-slide-top-to-bottom"
                 }`}
                 style={{
                     left: left,
-                    top: top,
-                    transform: "translate(-50%, -50%)"
+                    top: top
                 }}
             >
                 {isCardVisible === index && (

@@ -28,23 +28,14 @@ const ProgressBar: React.FC<ProgressBarProps> = React.memo(({ index }) => {
     // Calculate progress percentage (100% when full time, 0% when time's up)
     const progressPercentage = (timeRemaining / timeoutValue) * 100;
 
-    // Determine color based on extension status from timer hook
-    const getProgressColor = () => {
-        if (hasUsedExtension) {
-            return "#ef4444"; // Red after extension used
-        }
-        return "#ffffff"; // White for normal
-    };
-
     return (
         <div className="animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 relative">
             <span className="ml-2 text-white text-sm w-[15px]">{timeRemaining}</span>
             <div className="relative flex-1 mr-[10px] h-full w-[calc(100%-25px)] bg-[#f0f0f030] rounded-md overflow-hidden">
                 <div
-                    className="absolute top-0 left-0 h-full transition-all duration-1000 ease-linear"
+                    className={`absolute top-0 left-0 h-full transition-all duration-1000 ease-linear ${hasUsedExtension ? "bg-red-500" : "bg-white"}`}
                     style={{
-                        width: `${progressPercentage}%`,
-                        backgroundColor: getProgressColor()
+                        width: `${progressPercentage}%`
                     }}
                 ></div>
             </div>

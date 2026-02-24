@@ -1,0 +1,12 @@
+.modalSurface {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 95%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.cancelButton {
+    background: linear-gradient(
+        135deg,
+        var(--accent-danger) 0%,
+        color-mix(in srgb, var(--accent-danger) 80%, transparent) 100%
+    );
+}

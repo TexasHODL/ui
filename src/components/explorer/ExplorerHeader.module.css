@@ -1,0 +1,22 @@
+.navCard {
+    min-width: 180px;
+    max-width: 220px;
+}
+
+.navCardActive {
+    background-color: color-mix(in srgb, var(--brand-primary) 15%, transparent);
+    border-color: var(--brand-primary);
+}
+
+.navCardInactive {
+    background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+    border-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.iconWrapper {
+    background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.iconColor {
+    color: var(--brand-primary);
+}

@@ -455,19 +455,10 @@ Decision checklist (team sign-off):
 - [ ] `Badge.css` `.tournament-payout-win`: approve replacing `#4ade80` with `--accent-success` (`#10b981`) or define a tournament-success token.
 - [ ] `Footer.css`: confirm tokenized mappings are approved as final (parity-safe under current defaults).
 
-## Acceptance criteria (refined)
+## Phase 2 records (moved)
 
-1. Single architecture documented and followed: CSS Modules + Tailwind + CSS variables.
-2. Static visual styles in touched files are migrated out of inline styles.
-3. Runtime-only inline styles are the only exceptions.
-4. New/updated colors in touched files use CSS variables.
-5. Theme switching remains correct after each migration wave.
-6. Styling standards are documented in repository docs.
+All Phase 2 planning, batch logs, parity workflow, acceptance criteria, and checklists were moved to:
 
-## PR enforcement checklist
+- `src/docs/STYLING_INLINE_AUDIT_PHASE2.md`
 
-- [x] No new static `style={{...}}` blocks added (Wave 1 touched files)
-- [x] Static inline styles in touched files are migrated (Wave 1)
-- [x] Runtime inline styles are justified by live-state requirements (Wave 1)
-- [x] New/updated colors use CSS variables (Wave 1)
-- [x] Responsive behavior and functionality are preserved (Wave 1)
+Keep this file focused on pre-Phase 2 context and earlier wave notes.

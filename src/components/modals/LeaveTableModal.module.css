@@ -1,0 +1,17 @@
+.dangerAlertStrong {
+    background-color: color-mix(in srgb, var(--accent-danger) 20%, transparent);
+    border: 1px solid var(--accent-danger);
+}
+
+.panel {
+    background-color: var(--ui-bg-medium);
+    border: 1px solid var(--ui-border-color);
+}
+
+.buttonDanger {
+    background-color: var(--accent-danger);
+}
+
+.buttonSecondary {
+    background-color: var(--ui-text-secondary);
+}

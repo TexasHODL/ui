@@ -234,8 +234,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const popupStyle = useMemo(
             () => ({
                 left,
-                top,
-                transform: "translate(-50%, -50%)"
+                top
             }),
             [left, top]
         );
@@ -243,7 +242,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         // Memoize popup class names
         const popupClassName = useMemo(
             () =>
-                `absolute z-[1000] transition-all duration-1000 ease-in-out transform ${
+                `absolute z-[1000] transition-all duration-1000 ease-in-out transform -translate-x-1/2 -translate-y-1/2 ${
                     isCardVisible ? "opacity-100 animate-slide-left-to-right" : "opacity-0 animate-slide-top-to-bottom"
                 }`,
             [isCardVisible]
@@ -419,11 +418,9 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                 <button
                                     onClick={handleBuyInConfirm}
                                     disabled={isJoining || exceedsBalance}
-                                    className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton}`}
-                                    style={{
-                                        opacity: exceedsBalance ? 0.5 : 1,
-                                        cursor: exceedsBalance ? "not-allowed" : "pointer"
-                                    }}
+                                    className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton} ${
+                                        exceedsBalance ? styles.confirmButtonDisabled : ""
+                                    }`}
                                 >
                                     {isJoining ? (
                                         <>

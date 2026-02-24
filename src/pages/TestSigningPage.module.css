@@ -1,0 +1,143 @@
+.infoCommandBox {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+}
+
+.warningPanel {
+  background-color: color-mix(in srgb, var(--accent-warning) 10%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent-warning) 40%, transparent);
+}
+
+.warningTitle {
+  color: var(--accent-warning);
+}
+
+.warningCommandBox {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-warning) 30%, transparent);
+}
+
+.warningActionButton {
+  background-color: var(--accent-warning);
+  color: var(--ui-bg-dark);
+}
+
+.successCommandBox {
+  background-color: color-mix(in srgb, var(--accent-success) 15%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent-success) 40%, transparent);
+}
+
+.successActionButton {
+  background-color: var(--accent-success);
+  color: var(--ui-bg-dark);
+}
+
+.keyDiffBox {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.successPanel {
+  background-color: color-mix(in srgb, var(--accent-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-success) 30%, transparent);
+}
+
+.successTitle {
+  color: var(--accent-success);
+}
+
+.commandBreakdownBox {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.accountCard {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.blueCommandButton {
+  background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  color: var(--brand-primary);
+}
+
+.greenCommandButton {
+  background-color: color-mix(in srgb, var(--accent-success) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-success) 40%, transparent);
+  color: var(--accent-success);
+}
+
+.walletAddressBox {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 40%, transparent);
+}
+
+.containerPanel {
+  background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.inputField {
+  background-color: color-mix(in srgb, var(--ui-bg-medium) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.amountButtonBlue {
+  background-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  color: var(--brand-primary);
+}
+
+.amountButtonGreen {
+  background-color: color-mix(in srgb, var(--accent-success) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-success) 40%, transparent);
+  color: var(--accent-success);
+}
+
+.actionPrimary {
+  background: var(--brand-primary);
+}
+
+.actionSuccess {
+  background: var(--accent-success);
+}
+
+.actionWithdraw {
+  background: var(--brand-secondary);
+}
+
+.brandPrimaryText {
+  color: var(--brand-primary);
+}
+
+.initializeButtonReady {
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary) 0%,
+    color-mix(in srgb, var(--brand-primary) 80%, transparent) 100%
+  );
+}
+
+.initializeButtonLoading {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--ui-bg-dark) 50%, transparent) 0%,
+    color-mix(in srgb, var(--ui-bg-dark) 30%, transparent) 100%
+  );
+}
+
+.testResultCard {
+  background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+  border: 1px solid transparent;
+}
+
+.testResultSuccess {
+  border-color: var(--accent-success);
+}
+
+.testResultError {
+  border-color: var(--accent-danger);
+}
+
+.testResultPending {
+  border-color: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}

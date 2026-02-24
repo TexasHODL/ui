@@ -1,0 +1,32 @@
+.container {
+  color: #ffffff;
+  background-color: color-mix(in srgb, var(--table-bg-base) 30%, transparent);
+}
+
+.header {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.copyButtonDefault {
+  color: var(--brand-primary);
+}
+
+.copyButtonCopied {
+  color: var(--accent-success);
+}
+
+.actionRow {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.playerId {
+  color: color-mix(in srgb, var(--brand-primary) 90%, transparent);
+}
+
+.secondaryText {
+  color: var(--ui-text-secondary);
+}
+
+.actionText {
+  color: #e5e7eb;
+}

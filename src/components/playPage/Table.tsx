@@ -56,7 +56,6 @@ import { TableHeader, TableBoard, TableSidebar, TableModals, PlayerSeating, Tabl
 
 import Chip from "./common/Chip";
 import defaultLogo from "../../assets/YOUR_CLUB.png";
-import { colors, hexToRgba } from "../../utils/colorConfig";
 import { HexagonPattern } from "../common/Modal";
 
 // Use environment variable for club logo with fallback to default
@@ -133,19 +132,9 @@ interface NetworkDisplayProps {
 
 // Memoize the NetworkDisplay component
 const NetworkDisplay = memo(({ isMainnet = false }: NetworkDisplayProps) => {
-    const networkStyle = useMemo(
-        () => ({
-            backgroundColor: hexToRgba(colors.ui.bgDark, 0.6),
-            border: `1px solid ${hexToRgba(colors.brand.primary, 0.2)}`
-        }),
-        []
-    );
-
-    const dotStyle = useMemo(() => (!isMainnet ? { backgroundColor: colors.brand.primary } : {}), [isMainnet]);
-
     return (
-        <div className="flex items-center gap-1 sm:gap-1.5 px-1 sm:px-2 py-1 rounded-lg text-[10px] sm:text-xs" style={networkStyle}>
-            <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isMainnet ? "bg-green-500" : ""}`} style={dotStyle}></div>
+        <div className="network-display flex items-center gap-1 sm:gap-1.5 px-1 sm:px-2 py-1 rounded-lg text-[10px] sm:text-xs">
+            <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isMainnet ? "bg-green-500" : "network-display-dot-devnet"}`}></div>
             <span className="text-gray-300 whitespace-nowrap">Block52 Chain</span>
         </div>
     );
@@ -333,13 +322,6 @@ const Table = React.memo(() => {
             };
         }
     }, [gameOptions, gameFormat]);
-
-    const tableBoxShadowStyle = useMemo(
-        () => ({
-            boxShadow: `0 7px 15px ${hexToRgba("#000000", 0.6)}`
-        }),
-        []
-    );
 
     // ============================================================
     // TABLE ROTATION SYSTEM - COMPREHENSIVE DOCUMENTATION
@@ -744,8 +726,7 @@ const Table = React.memo(() => {
                                 <div className="w-[900px] h-[450px] relative text-center block transform translate-y-[30px]">
                                     <div className="h-full flex align-center justify-center">
                                         <div
-                                            className="z-20 relative flex flex-col w-[900px] h-[350px] left-1/2 top-0 transform -translate-x-1/2 text-center border-[3px] border-rgba(255, 255, 255, 0.2) border-solid rounded-full items-center justify-center"
-                                            style={tableBoxShadowStyle}
+                                            className="table-surface-shadow z-20 relative flex flex-col w-[900px] h-[350px] left-1/2 top-0 transform -translate-x-1/2 text-center border-[3px] border-rgba(255, 255, 255, 0.2) border-solid rounded-full items-center justify-center"
                                         >
                                             {/* //! Table */}
                                             <TableBoard

@@ -1,0 +1,31 @@
+.brandPrimary {
+  color: var(--brand-primary);
+}
+
+.brandSecondary {
+  color: var(--brand-secondary);
+}
+
+.tableBorder {
+  color: var(--table-border-color);
+}
+
+.accentGlow {
+  color: var(--accent-glow);
+}
+
+.swatchPrimary {
+  background-color: var(--brand-primary);
+}
+
+.swatchSecondary {
+  background-color: var(--brand-secondary);
+}
+
+.swatchBase {
+  background-color: var(--table-bg-base);
+}
+
+.swatchGlow {
+  background-color: var(--accent-glow);
+}

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { PROXY_URL } from "../../../config/constants";
-import { colors, hexToRgba } from "../../../utils/colorConfig";
 import spinner from "../../../assets/spinning-circles.svg";
+import styles from "./CurrencySelector.module.css";
 
 interface Currency {
     symbol: string;
@@ -73,17 +73,9 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, o
                         onClick={() => onCurrencySelect(currency.symbol)}
                         className={`p-3 rounded-lg border transition-all ${
                             selectedCurrency === currency.symbol
-                                ? "border-blue-500 bg-blue-900/30"
+                                ? `border-blue-500 bg-blue-900/30 ${styles.selectedCurrency}`
                                 : "border-gray-600 bg-gray-900 hover:border-gray-500"
                         }`}
-                        style={
-                            selectedCurrency === currency.symbol
-                                ? {
-                                      borderColor: colors.brand.primary,
-                                      backgroundColor: hexToRgba(colors.brand.primary, 0.2)
-                                  }
-                                : {}
-                        }
                     >
                         <div className="flex items-center gap-2">
                             <span className="text-2xl">{currency.logo}</span>
