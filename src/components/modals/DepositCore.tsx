@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import * as React from "react";
 import axios from "axios";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
@@ -224,7 +224,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
         }
     };
 
-    const handlePaymentComplete = () => {
+    const handlePaymentComplete = useCallback(() => {
         toast.success("Payment complete! USDC deposited to your game wallet.", { autoClose: 5000 });
         cosmosWallet.refreshBalance();
         setTimeout(() => {
@@ -232,7 +232,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
             setAmount("0");
             if (onSuccess) onSuccess();
         }, 3000);
-    };
+    }, [cosmosWallet, onSuccess]);
 
     const handleNewPayment = () => {
         setPaymentData(null);
