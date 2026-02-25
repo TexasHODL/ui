@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { PROXY_URL } from "../../../config/constants";
 import spinner from "../../../assets/spinning-circles.svg";
@@ -53,10 +53,24 @@ const STATUS_ICON_CLASSES: Record<StatusVariant, string> = {
     danger: styles.statusIconDanger
 };
 
+const TERMINAL_STATUSES = ["finished", "failed", "refunded", "expired"];
+
 const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, onPaymentComplete, onStatusChange }) => {
     const [status, setStatus] = useState<PaymentStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Use refs for callbacks to prevent effect cascades (infinite re-render loop)
+    const onPaymentCompleteRef = useRef(onPaymentComplete);
+    const onStatusChangeRef = useRef(onStatusChange);
+    useEffect(() => { onPaymentCompleteRef.current = onPaymentComplete; }, [onPaymentComplete]);
+    useEffect(() => { onStatusChangeRef.current = onStatusChange; }, [onStatusChange]);
+
+    // Guard: only fire completion callback once
+    const completionFiredRef = useRef(false);
+
+    // Track status in ref for interval closure (avoids stale state)
+    const statusRef = useRef<string | null>(null);
 
     const fetchStatus = useCallback(async () => {
         try {
@@ -65,15 +79,15 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
             if (response.data.success) {
                 const paymentData = response.data.payment;
                 setStatus(paymentData);
+                statusRef.current = paymentData.payment_status;
 
                 // Notify parent of status changes
-                if (onStatusChange) {
-                    onStatusChange(paymentData.payment_status);
-                }
+                onStatusChangeRef.current?.(paymentData.payment_status);
 
-                // If payment is finished, trigger callback
-                if (paymentData.payment_status === "finished" && onPaymentComplete) {
-                    onPaymentComplete();
+                // If payment is finished, trigger callback exactly once
+                if (paymentData.payment_status === "finished" && !completionFiredRef.current) {
+                    completionFiredRef.current = true;
+                    onPaymentCompleteRef.current?.();
                 }
             } else {
                 setError("Failed to fetch payment status");
@@ -84,21 +98,20 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
         } finally {
             setLoading(false);
         }
-    }, [paymentId, onPaymentComplete, onStatusChange]);
+    }, [paymentId]);
 
     useEffect(() => {
-        // Initial fetch
         fetchStatus();
 
-        // Poll every 10 seconds if payment is not complete
+        // Poll every 10 seconds until payment reaches a terminal status
         const interval = setInterval(() => {
-            if (!status || !["finished", "failed", "refunded", "expired"].includes(status.payment_status)) {
+            if (!statusRef.current || !TERMINAL_STATUSES.includes(statusRef.current)) {
                 fetchStatus();
             }
         }, 10000);
 
         return () => clearInterval(interval);
-    }, [fetchStatus, status]);
+    }, [fetchStatus]);
 
     if (loading && !status) {
         return (
