@@ -1,6 +1,5 @@
 .methodSelected {
     border-color: var(--brand-primary);
-    background-color: var(--brand-primary-10);
 }
 
 .tokenSelected {

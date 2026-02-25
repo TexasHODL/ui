@@ -73,7 +73,7 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, o
                         onClick={() => onCurrencySelect(currency.symbol)}
                         className={`p-3 rounded-lg border transition-all ${
                             selectedCurrency === currency.symbol
-                                ? `border-blue-500 bg-blue-900/30 ${styles.selectedCurrency}`
+                                ? `border-blue-500 bg-gray-900 ${styles.selectedCurrency}`
                                 : "border-gray-600 bg-gray-900 hover:border-gray-500"
                         }`}
                     >
