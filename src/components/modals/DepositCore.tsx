@@ -340,7 +340,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                             {/* Deposit Button */}
                             <button
                                 onClick={handleCreateCryptoPayment}
-                                className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${styles.successGradientButton} ${
+                                className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${styles.primaryGradientButton} ${
                                     +amount < 10 || creatingPayment ? "opacity-50 cursor-not-allowed" : ""
                                 }`}
                                 disabled={+amount < 10 || creatingPayment}

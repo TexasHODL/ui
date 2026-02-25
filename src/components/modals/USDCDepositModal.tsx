@@ -28,24 +28,15 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
             onClick={onClose}
         >
             <div
-                className={`bg-gray-800 rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
+                className={`rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="px-6 py-4 bg-gray-900 border-b border-gray-700 flex-shrink-0 flex items-start justify-between">
+                <div className="px-6 pt-6 pb-4 flex-shrink-0">
                     <div>
                         <h2 className="text-xl font-bold text-white">Deposit Funds</h2>
                         <p className="text-sm text-gray-400 mt-1">Add USDC to your game wallet</p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white transition-colors p-1"
-                        aria-label="Close"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
                 </div>
 
                 {/* Content - Scrollable */}
