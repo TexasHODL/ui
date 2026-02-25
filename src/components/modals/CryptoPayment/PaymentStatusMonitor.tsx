@@ -53,7 +53,7 @@ const STATUS_ICON_CLASSES: Record<StatusVariant, string> = {
     danger: styles.statusIconDanger
 };
 
-const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, onPaymentComplete }) => {
+const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, onPaymentComplete, onStatusChange }) => {
     const [status, setStatus] = useState<PaymentStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -65,6 +65,11 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
             if (response.data.success) {
                 const paymentData = response.data.payment;
                 setStatus(paymentData);
+
+                // Notify parent of status changes
+                if (onStatusChange) {
+                    onStatusChange(paymentData.payment_status);
+                }
 
                 // If payment is finished, trigger callback
                 if (paymentData.payment_status === "finished" && onPaymentComplete) {
@@ -79,7 +84,7 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
         } finally {
             setLoading(false);
         }
-    }, [paymentId, onPaymentComplete]);
+    }, [paymentId, onPaymentComplete, onStatusChange]);
 
     useEffect(() => {
         // Initial fetch
@@ -172,12 +177,12 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
                     {status.bridge_tx_hash && (
                         <div className="pt-2 border-t border-gray-700">
                             <a
-                                href={`https://basescan.org/tx/${status.bridge_tx_hash}`}
+                                href={`https://etherscan.io/tx/${status.bridge_tx_hash}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={`text-xs font-mono hover:underline ${styles.baseScanLink}`}
                             >
-                                View on BaseScan ↗
+                                View on Etherscan ↗
                             </a>
                         </div>
                     )}
