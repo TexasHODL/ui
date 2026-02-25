@@ -30,8 +30,13 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
 
     const currencyKey = payCurrency.toLowerCase();
     const info = CURRENCY_INFO[currencyKey];
-    const displayName = info ? info.display : payCurrency.toUpperCase();
-    const networkName = info ? info.network : "";
+
+    if (!info) {
+        throw new Error(`Unknown currency "${payCurrency}" — add it to CURRENCY_INFO in PaymentDisplay.tsx`);
+    }
+
+    const displayName = info.display;
+    const networkName = info.network;
 
     const qrValue = useMemo(() => {
         if (currencyKey === "btc") {
@@ -79,8 +84,7 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
             </div>
 
             {/* Network Warning Banner */}
-            {networkName && (
-                <div className="p-3 rounded-lg bg-blue-900/20 border border-blue-500/50 flex items-start gap-2">
+            <div className="p-3 rounded-lg bg-blue-900/20 border border-blue-500/50 flex items-start gap-2">
                     <svg className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path
                             fillRule="evenodd"
@@ -97,7 +101,6 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
                         </p>
                     </div>
                 </div>
-            )}
 
             {/* QR Code */}
             <div className="flex justify-center p-6 bg-white rounded-lg">
@@ -156,8 +159,7 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
                     <li>Open your crypto wallet</li>
                     <li>Scan the QR code or copy the address above</li>
                     <li>
-                        Send exactly {payAmount} {displayName}
-                        {networkName && <> on the <strong className="text-white">{networkName}</strong> network</>}
+                        Send exactly {payAmount} {displayName} on the <strong className="text-white">{networkName}</strong> network
                     </li>
                     <li>Wait for blockchain confirmation (5-15 minutes)</li>
                     <li>Your USDC will appear in your game wallet automatically</li>

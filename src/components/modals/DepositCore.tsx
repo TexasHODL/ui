@@ -210,11 +210,15 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                 });
                 toast.success("Payment created! Send crypto to the address below.", { autoClose: 5000 });
             } else {
-                toast.error(response.data.error || "Failed to create payment", { autoClose: 5000 });
+                if (!response.data.error) {
+                    throw new Error("API returned success:false with no error message");
+                }
+                toast.error(response.data.error, { autoClose: 5000 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error creating payment:", err);
-            toast.error(err.response?.data?.error || "Failed to create payment", { autoClose: 5000 });
+            const axiosError = err as { response?: { data?: { error?: string } } };
+            toast.error(axiosError.response?.data?.error ?? "Failed to create payment", { autoClose: 5000 });
         } finally {
             setCreatingPayment(false);
         }
