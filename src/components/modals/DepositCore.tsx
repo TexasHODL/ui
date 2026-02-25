@@ -63,6 +63,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
     const [selectedCurrency, setSelectedCurrency] = useState<string>("btc");
     const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
     const [creatingPayment, setCreatingPayment] = useState(false);
+    const [paymentStatus, setPaymentStatus] = useState<string>("waiting");
 
     useEffect(() => {
         if (allowance) {
@@ -492,16 +493,19 @@ const DepositCore: React.FC<DepositCoreProps> = ({
                         <PaymentStatusMonitor
                             paymentId={paymentData.payment_id}
                             onPaymentComplete={handlePaymentComplete}
+                            onStatusChange={setPaymentStatus}
                         />
                     </div>
 
-                    {/* New Payment Button */}
-                    <button
-                        onClick={handleNewPayment}
-                        className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryGradientButton}`}
-                    >
-                        Create New Payment
-                    </button>
+                    {/* New Payment Button - only show when payment is terminal */}
+                    {["finished", "failed", "expired", "refunded"].includes(paymentStatus) && (
+                        <button
+                            onClick={handleNewPayment}
+                            className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryGradientButton}`}
+                        >
+                            Create New Payment
+                        </button>
+                    )}
                 </>
             )}
         </div>

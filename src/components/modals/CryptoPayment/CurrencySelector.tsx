@@ -8,20 +8,35 @@ interface Currency {
     symbol: string;
     displaySymbol: string;
     name: string;
-    logo?: string;
+    network: string;
+    logo: string;
 }
 
 import type { CurrencySelectorProps } from "../types";
 
-// Only BTC and USDT supported
-const SUPPORTED_CURRENCIES: Currency[] = [
-    { symbol: "btc", displaySymbol: "BTC", name: "Bitcoin", logo: "₿" },
-    { symbol: "usdterc20", displaySymbol: "USDT", name: "Tether", logo: "₮" }
+const POPULAR_CURRENCIES: Currency[] = [
+    { symbol: "btc", displaySymbol: "BTC", name: "Bitcoin", network: "Bitcoin Network", logo: "₿" },
+    { symbol: "usdterc20", displaySymbol: "USDT", name: "Tether", network: "Ethereum (ERC-20)", logo: "₮" },
+];
+
+const MORE_CURRENCIES: Currency[] = [
+    { symbol: "eth", displaySymbol: "ETH", name: "Ethereum", network: "Ethereum Network", logo: "Ξ" },
+    { symbol: "usdterc20", displaySymbol: "USDT", name: "Tether", network: "Ethereum (ERC-20)", logo: "₮" },
+    { symbol: "usdttrc20", displaySymbol: "USDT", name: "Tether", network: "Tron (TRC-20)", logo: "₮" },
+    { symbol: "sol", displaySymbol: "SOL", name: "Solana", network: "Solana Network", logo: "SOL" },
+    { symbol: "trx", displaySymbol: "TRX", name: "Tron", network: "Tron Network", logo: "TRX" },
+    { symbol: "maticpolygon", displaySymbol: "MATIC", name: "Polygon", network: "Polygon Network", logo: "MATIC" },
+    { symbol: "ltc", displaySymbol: "LTC", name: "Litecoin", network: "Litecoin Network", logo: "Ł" },
+    { symbol: "doge", displaySymbol: "DOGE", name: "Dogecoin", network: "Dogecoin Network", logo: "Ð" },
+    { symbol: "bnbbsc", displaySymbol: "BNB", name: "BNB", network: "BNB Smart Chain (BSC)", logo: "BNB" },
+    { symbol: "ada", displaySymbol: "ADA", name: "Cardano", network: "Cardano Network", logo: "₳" },
+    { symbol: "xrp", displaySymbol: "XRP", name: "XRP", network: "XRP Ledger", logo: "XRP" },
 ];
 
 const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, onCurrencySelect }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showMore, setShowMore] = useState(false);
 
     useEffect(() => {
         fetchCurrencies();
@@ -42,6 +57,10 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, o
             setLoading(false);
         }
     };
+
+    const displayCurrencies = showMore
+        ? [...POPULAR_CURRENCIES, ...MORE_CURRENCIES]
+        : POPULAR_CURRENCIES;
 
     if (loading) {
         return (
@@ -67,28 +86,36 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, o
 
             {/* Currency Grid */}
             <div className="grid grid-cols-2 gap-3">
-                {SUPPORTED_CURRENCIES.map((currency) => (
+                {displayCurrencies.map((currency) => (
                     <button
                         key={currency.symbol}
                         onClick={() => onCurrencySelect(currency.symbol)}
-                        className={`p-3 rounded-lg border transition-all ${
-                            selectedCurrency === currency.symbol
+                        className={`p-3 rounded-lg border transition-all ${selectedCurrency === currency.symbol
                                 ? `border-blue-500 bg-gray-900 ${styles.selectedCurrency}`
                                 : "border-gray-600 bg-gray-900 hover:border-gray-500"
-                        }`}
+                            }`}
                     >
                         <div className="flex items-center gap-2">
                             <span className="text-2xl">{currency.logo}</span>
-                            <div className="text-left flex-1">
+                            <div className="text-left flex-1 min-w-0">
                                 <div className="text-white font-semibold uppercase text-sm">
                                     {currency.displaySymbol}
                                 </div>
-                                <div className="text-gray-400 text-xs">{currency.name}</div>
+                                <div className="text-gray-400 text-xs truncate">{currency.name}</div>
+                                <div className="text-gray-500 text-[10px] truncate">{currency.network}</div>
                             </div>
                         </div>
                     </button>
                 ))}
             </div>
+
+            {/* More Options Toggle */}
+            <button
+                onClick={() => setShowMore(!showMore)}
+                className="w-full text-center text-sm text-blue-400 hover:text-blue-300 transition-colors py-1"
+            >
+                {showMore ? "Show less" : `More options (${MORE_CURRENCIES.length})`}
+            </button>
         </div>
     );
 };
