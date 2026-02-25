@@ -131,6 +131,7 @@ export interface DepositCoreProps {
 export interface PaymentStatusMonitorProps {
     paymentId: string;
     onPaymentComplete?: () => void;
+    onStatusChange?: (status: string) => void;
 }
 
 /**
