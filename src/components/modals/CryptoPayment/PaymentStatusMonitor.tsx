@@ -118,8 +118,14 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
 
     if (!status) return null;
 
-    const statusVariant: StatusVariant = STATUS_VARIANTS[status.payment_status as keyof typeof STATUS_VARIANTS] ?? "primary";
-    const statusMessage = STATUS_MESSAGES[status.payment_status as keyof typeof STATUS_MESSAGES] || "Processing...";
+    const statusKey = status.payment_status as keyof typeof STATUS_VARIANTS;
+
+    if (!(statusKey in STATUS_VARIANTS)) {
+        throw new Error(`Unknown payment status "${status.payment_status}" — add it to STATUS_VARIANTS in PaymentStatusMonitor.tsx`);
+    }
+
+    const statusVariant: StatusVariant = STATUS_VARIANTS[statusKey];
+    const statusMessage = STATUS_MESSAGES[statusKey];
     const isComplete = status.payment_status === "finished";
     const isFailed = ["failed", "refunded", "expired"].includes(status.payment_status);
     const isProcessing = ["waiting", "confirming", "confirmed", "sending"].includes(status.payment_status);
