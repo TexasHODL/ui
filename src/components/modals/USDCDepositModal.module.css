@@ -1,6 +1,18 @@
 .modalSurface {
-    background-color: color-mix(in srgb, var(--ui-bg-dark) 95%, transparent);
-    border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+    background-color: var(--ui-bg-dark);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.surfaceMuted {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 30%, transparent);
+}
+
+.textSecondary {
+    color: var(--ui-text-secondary);
+}
+
+.textPrimary {
+    color: var(--brand-primary);
 }
 
 .cancelButton {

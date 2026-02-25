@@ -42,9 +42,9 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
                 {/* Content - Scrollable */}
                 <div className="p-6 overflow-y-auto flex-1">
                     {/* Current Balance */}
-                    <div className="mb-6 p-3 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-between">
-                        <span className="text-gray-400 text-sm">Game Wallet Balance</span>
-                        <span className="text-white font-semibold">${b52Balance} USDC</span>
+                    <div className={`mb-6 p-3 rounded-lg flex items-center justify-between ${styles.surfaceMuted}`}>
+                        <span className={`text-sm ${styles.textSecondary}`}>Game Wallet Balance</span>
+                        <span className={`font-semibold ${styles.textPrimary}`}>${b52Balance} USDC</span>
                     </div>
 
                     {/* Deposit Core Component */}

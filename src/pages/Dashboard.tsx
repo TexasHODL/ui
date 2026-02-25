@@ -656,7 +656,7 @@ const Dashboard: React.FC = () => {
                                     >
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-400 text-sm">Available Balance:</span>
-                                            <span className="text-white font-bold">
+                                            <span className={`font-bold ${styles.brandPrimaryText}`}>
                                                 {getTransferTokenBalance()} USDC
                                             </span>
                                         </div>
