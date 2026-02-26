@@ -1,73 +1,42 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { ethers } from "ethers";
-import { getClient, getPublicKey } from "../../utils/b52AccountUtils";
+import { useNavigate } from "react-router-dom";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
-import { microToUsdc } from "../../constants/currency";
+import { microToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
-import { WithdrawResponseDTO } from "@block52/poker-vm-sdk";
-import useWithdraw from "../../hooks/wallet/useWithdraw";
+import { useNetwork } from "../../context/NetworkContext";
+import { getSigningClient } from "../../utils/cosmos/client";
 import styles from "./WithdrawalModal.module.css";
 
 /**
  * WithdrawalModal Component
  *
  * PURPOSE:
- * Allows users to withdraw funds from their Layer 2 game wallet to their connected MetaMask wallet.
- * This component handles the entire withdrawal flow including validation, SDK interaction, MetaMask transaction signing, and user feedback.
+ * Allows users to initiate a withdrawal from their Block52 (Cosmos) wallet.
+ * This handles Step 1 of the 2-step withdrawal flow:
+ *   Step 1 (this modal): Initiate withdrawal on Cosmos chain (burns USDC, creates withdrawal request)
+ *   Step 2 (WithdrawalDashboard): After validators sign, complete withdrawal on Ethereum
  *
  * TECHNICAL FLOW:
- * 1. User must have MetaMask connected (withdrawal address comes from connected wallet)
+ * 1. User must have MetaMask connected (Ethereum address is the withdrawal destination)
  * 2. User enters amount to withdraw
  * 3. Component validates the amount and checks sufficient balance
- * 4. Uses Block52 SDK to prepare withdrawal proof (nonce, signature)
- * 5. Executes Web3 transaction via MetaMask using the proof
- * 6. User pays gas fees via MetaMask for the withdrawal
- * 7. User receives funds on Ethereum mainnet
+ * 4. Calls signingClient.initiateWithdrawal() on the Cosmos chain
+ * 5. Directs user to WithdrawalDashboard to monitor signing and complete on Ethereum
  *
  * DEPENDENCIES:
- * - @block52/poker-vm-sdk SDK for withdrawal proof generation
- * - ethers.js for address validation and amount conversion
- * - wagmi/viem for Web3 transaction execution
- * - MetaMask (REQUIRED) for transaction signing and gas payment
- * - Private key stored in localStorage for L2 account signing
- *
- * IMPORTANT: Understanding the addresses/accounts involved:
- *
- * 1. GAME ACCOUNT (Layer 2 / Block52 Chain):
- *    - This is the player's Layer 2 gaming wallet
- *    - Private key is stored in browser localStorage
- *    - Used for all in-game transactions (bets, calls, folds, etc.)
- *    - This is WHERE the funds are being withdrawn FROM
- *    - Accessed via: getPublicKey() from localStorage
- *
- * 2. CONNECTED METAMASK WALLET (REQUIRED):
- *    - External MetaMask wallet connected via WalletConnect/Web3Modal
- *    - REQUIRED for withdrawals (not optional)
- *    - Used as the receiver address for withdrawals
- *    - User pays gas fees from this wallet
- *    - This is WHERE the funds are being sent TO on mainnet
- *
- * WITHDRAWAL FLOW:
- * 1. SDK prepares withdrawal proof using L2 private key
- * 2. MetaMask executes bridge contract withdrawal using proof
- * 3. Game Account (L2) → Bridge Contract → MetaMask Wallet (Mainnet)
- *
- * LOGGING:
- * Comprehensive logging is implemented for debugging:
- * - [WithdrawalModal] prefix for all logs
- * - Logs each step of the withdrawal process
- * - Logs all parameters and responses
- * - Error details including message, code, and data
+ * - ethers.js for address validation
+ * - Cosmos signing client for withdrawal initiation
+ * - MetaMask (REQUIRED) for providing the Ethereum destination address
  */
 
 import type { WithdrawalModalProps } from "./types";
 
 const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSuccess }) => {
-    // Get the Layer 2 game account public key from localStorage
-    // This is the account that holds the funds to be withdrawn
-    const publicKey = getPublicKey();
     const { balance: cosmosBalance, refreshBalance: refetchAccount } = useCosmosWallet();
     const { address: web3Address, isConnected: isWeb3Connected } = useUserWalletConnect();
+    const { currentNetwork } = useNetwork();
+    const navigate = useNavigate();
 
     // Memoized USDC balance in human-readable format (avoids duplication)
     const balanceInUSDC = useMemo(() => {
@@ -82,17 +51,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState(false);
-    const [txData, setTxData] = useState<any>(null);
-
-    // Add the withdraw hook at the top level (IMPORTANT: NOT inside handleWithdraw)
-    const {
-        withdraw: contractWithdraw,
-        hash: _contractHash,
-        isLoading: _isContractLoading,
-        isWithdrawPending: _isContractPending,
-        isWithdrawConfirmed: _isContractConfirmed,
-        withdrawError: _contractError
-    } = useWithdraw();
+    const [txHash, setTxHash] = useState<string>("");
 
     // Reset form when modal opens/closes
     useEffect(() => {
@@ -100,74 +59,22 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
             setAmount("");
             setError("");
             setSuccess(false);
-            setTxData(null);
+            setTxHash("");
             refetchAccount();
-
         }
-    }, [isOpen, refetchAccount, web3Address, isWeb3Connected, publicKey]);
+    }, [isOpen, refetchAccount, web3Address, isWeb3Connected]);
 
-    /**
-     * Validates if the provided string is a valid Ethereum address
-     * @param address - The address string to validate
-     * @returns true if valid Ethereum address, false otherwise
-     *
-     * Note: ethers.isAddress checks for:
-     * - Correct length (42 characters including 0x)
-     * - Valid hex characters
-     * - Valid checksum (if checksummed address)
-     */
-    const validateEthereumAddress = (address: string): boolean => {
-        try {
-            // ethers.isAddress returns true for valid addresses
-            // Handles both checksummed and non-checksummed addresses
-            return ethers.isAddress(address);
-        } catch {
-            // Return false if any error occurs during validation
-            return false;
-        }
-    };
-
-    /**
-     * Validates if the withdrawal amount is valid
-     * @param value - The amount string to validate
-     * @returns true if amount is valid and sufficient balance exists
-     *
-     * Validation checks:
-     * 1. Amount is a valid number
-     * 2. Amount is greater than 0
-     * 3. Amount is less than or equal to available balance
-     * 4. Amount meets minimum withdrawal threshold (0.01 USDC)
-     */
     const validateAmount = (value: string): boolean => {
-        // Check if value exists and is a valid positive number
         if (!value || isNaN(Number(value)) || Number(value) <= 0) {
             return false;
         }
-
-        // Check minimum withdrawal amount (0.01 USDC)
         if (Number(value) < 0.01) {
             return false;
         }
-
-        // Check if user has sufficient balance (using memoized balance)
         return Number(value) <= balanceInUSDC;
     };
 
-    /**
-     * Handles the withdrawal process
-     *
-     * Flow:
-     * 1. Validate receiver address format
-     * 2. Validate withdrawal amount and balance
-     * 3. Get SDK client with L2 private key
-     * 4. Convert amount to wei
-     * 5. Call SDK withdraw method
-     * 6. Handle success/error states
-     * 7. Refresh balance and close modal
-     */
-    // Update the handleWithdraw function
     const handleWithdraw = async () => {
-
         // STEP 1: Check if MetaMask is connected
         if (!isWeb3Connected || !web3Address) {
             console.error("[WithdrawalModal] MetaMask not connected");
@@ -176,7 +83,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
         }
 
         // STEP 2: Validate the connected wallet address
-        if (!validateEthereumAddress(web3Address)) {
+        if (!ethers.isAddress(web3Address)) {
             console.error("[WithdrawalModal] Invalid MetaMask address:", web3Address);
             setError("Invalid MetaMask wallet address");
             return;
@@ -198,33 +105,18 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
         setError("");
 
         try {
-            // Get the SDK client instance
-            const client = getClient();
-            const amountInWei = ethers.parseEther(amount).toString();
+            const { signingClient } = await getSigningClient(currentNetwork);
 
+            // Convert USDC to micro (6 decimals)
+            const microAmount = usdcToMicroBigInt(parseFloat(amount));
 
-            // STEP 1: Call the SDK to prepare the withdrawal
-            // Old Ethereum client for bridge only, will be updated when bridge is migrated
-            const result: WithdrawResponseDTO = await client.withdraw(
-                amountInWei,
-                publicKey || undefined,
-                web3Address // Use the connected MetaMask address
-            );
-
-
-
-            // STEP 2: Now call the smart contract with the SDK response
-            await contractWithdraw(
-                result.nonce,
-                web3Address, // Use the connected MetaMask address
-                BigInt(amountInWei),
-                result.signature
-            );
+            // Initiate the withdrawal on Cosmos chain
+            const hash = await signingClient.initiateWithdrawal(web3Address, microAmount);
 
             setSuccess(true);
-            setTxData(result);
+            setTxHash(hash);
 
-            // Refresh balance after successful withdrawal
+            // Refresh balance after successful initiation
             setTimeout(() => {
                 refetchAccount();
                 if (onSuccess) {
@@ -243,36 +135,15 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                 setError("Insufficient balance for withdrawal");
             } else if (err.message?.includes("network")) {
                 setError("Network error. Please try again");
-            } else if (err.message?.includes("signature")) {
-                setError("Failed to sign transaction. Please try again");
             } else if (err.message?.includes("rejected")) {
                 setError("Transaction rejected by user");
             } else {
-                setError(err.message || "Failed to process withdrawal");
+                setError(err.message || "Failed to initiate withdrawal");
             }
         } finally {
             setIsWithdrawing(false);
         }
     };
-
-    // // Add useEffect to handle contract confirmation
-    // useEffect(() => {
-    //     if (isContractConfirmed) {
-
-    //         // Refresh account balance
-    //         setTimeout(() => {
-    //             refetchAccount();
-    //             if (onSuccess) {
-    //                 onSuccess();
-    //             }
-    //         }, 2000);
-
-    //         // Auto-close modal
-    //         setTimeout(() => {
-    //             onClose();
-    //         }, 3000);
-    //     }
-    // }, [isContractConfirmed, contractHash, refetchAccount, onSuccess, onClose]);
 
     if (!isOpen) return null;
 
@@ -298,13 +169,25 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                 {success && (
                     <div className={`mb-4 p-3 rounded-lg ${styles.successAlert}`}>
                         <p className={`font-semibold ${styles.textSuccess}`}>
-                            Withdrawal Successful!
+                            Withdrawal Initiated!
                         </p>
-                        {txData && (
-                            <p className={`text-sm mt-2 ${styles.textSecondary}`}>
-                                Transaction processing on blockchain...
+                        {txHash && (
+                            <p className={`text-sm mt-2 font-mono ${styles.textSecondary}`}>
+                                Tx: {txHash.slice(0, 16)}...
                             </p>
                         )}
+                        <p className={`text-sm mt-2 ${styles.textSecondary}`}>
+                            Validators will sign your withdrawal within a few blocks. Complete it on the Withdrawal Dashboard.
+                        </p>
+                        <button
+                            onClick={() => {
+                                onClose();
+                                navigate("/bridge/withdrawals");
+                            }}
+                            className={`mt-3 w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 ${styles.primaryActionButton}`}
+                        >
+                            Go to Withdrawal Dashboard
+                        </button>
                     </div>
                 )}
 
