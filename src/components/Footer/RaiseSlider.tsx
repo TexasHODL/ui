@@ -7,6 +7,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
     max,
     step,
     formattedMax,
+    displayOffset,
     isInvalid,
     disabled,
     isMobileLandscape,
@@ -14,6 +15,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
     onIncrement,
     onDecrement
 }) => {
+    const displayValue = value + displayOffset;
     const percentage = ((value - min) / (max - min)) * 100;
 
     const inputFieldClassName = isInvalid
@@ -86,7 +88,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                     <input
                         type="text"
                         inputMode="decimal"
-                        value={value.toFixed(2)}
+                        value={displayValue.toFixed(2)}
                         onChange={(e) => {
                             const raw = e.target.value;
                             if (raw === "") {
@@ -95,17 +97,13 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                             }
                             if (/^\d*\.?\d{0,2}$/.test(raw)) {
                                 if (!isNaN(Number(raw)) && /^\d*\.?\d{1,2}$/.test(raw)) {
-                                    onChange(parseFloat(raw));
+                                    onChange(Math.max(0, parseFloat(raw) - displayOffset));
                                 }
                             }
                         }}
                         className={`${inputFieldClassName} px-1 lg:px-2 py-1 rounded text-xs lg:text-sm w-[80px] lg:w-[100px] transition-all duration-200 border`}
                         disabled={disabled}
                     />
-                    <div className="text-[8px] lg:text-[10px] text-right leading-snug text-gray-400">
-                        <div>Min: ${min.toFixed(2)}</div>
-                        <div>Max: ${formattedMax}</div>
-                    </div>
                 </div>
             )}
 
@@ -113,7 +111,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                 <input
                     type="text"
                     inputMode="decimal"
-                    value={value.toFixed(2)}
+                    value={displayValue.toFixed(2)}
                     onChange={(e) => {
                         const raw = e.target.value;
                         if (raw === "") {
@@ -122,7 +120,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                         }
                         if (/^\d*\.?\d{0,2}$/.test(raw)) {
                             if (!isNaN(Number(raw)) && /^\d*\.?\d{1,2}$/.test(raw)) {
-                                onChange(parseFloat(raw));
+                                onChange(Math.max(0, parseFloat(raw) - displayOffset));
                             }
                         }
                     }}
