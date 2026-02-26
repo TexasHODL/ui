@@ -21,6 +21,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
     currentRound,
     previousActions,
     userAddress,
+    isAllIn,
     onFold,
     onCheck,
     onCall,
@@ -100,7 +101,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     {loading === "raise" || loading === "bet" ? (
                         <>
                             <LoadingSpinner size="sm" />
-                            {canRaise ? "RAISING..." : "BETTING..."}
+                            {isAllIn ? "JAMMING..." : canRaise ? "RAISING..." : "BETTING..."}
                         </>
                     ) : (
                         <>

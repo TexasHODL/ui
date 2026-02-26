@@ -315,6 +315,20 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
         setRaiseAmount((prev) => Math.max(prev - step, minAmount));
     };
 
+    const handleAllInAction = async () => {
+        if (!tableId) return;
+        const maxAmount = hasBetAction ? maxBet : maxRaise;
+        const amountMicro = usdcToMicroBigInt(maxAmount);
+
+        setRaiseAmount(maxAmount);
+        await handleActionWithTransaction(
+            hasRaiseAction ? "raise" : "bet",
+            async () => hasRaiseAction
+                ? await handleRaise(tableId, amountMicro, network)
+                : await handleBet(amountMicro, tableId, network)
+        );
+    };
+
     return (
         <div
             className={`fixed left-0 right-0 text-white flex justify-center items-center relative ${
@@ -398,6 +412,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
                                     isRaiseAmountInvalid={isRaiseAmountInvalid}
                                     playerStatus={userPlayer?.status || PlayerStatus.SEATED}
                                     loading={loadingAction}
+                                    isAllIn={raiseAmount >= (hasBetAction ? maxBet : maxRaise)}
                                     isMobileLandscape={isMobileLandscape}
                                     currentRound={gameState?.round || TexasHoldemRound.ANTE}
                                     previousActions={gameState?.previousActions || []}
@@ -428,6 +443,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
                                         onAmountChange={setRaiseAmount}
                                         onIncrement={handleRaiseIncrement}
                                         onDecrement={handleRaiseDecrement}
+                                        onAllIn={handleAllInAction}
                                     />
                                 )}
                             </>
