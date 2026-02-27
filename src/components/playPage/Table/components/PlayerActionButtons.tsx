@@ -6,7 +6,7 @@
  * Responsive design for mobile, tablet, and desktop viewports.
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { LegalActionDTO } from "@block52/poker-vm-sdk";
 import { handleSitOut, handleSitIn } from "../../../common/actionHandlers";
 import { SIT_IN_METHOD_NEXT_BB, SIT_IN_METHOD_POST_NOW } from "../../../../hooks/playerActions";
@@ -43,11 +43,19 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     const isCompact = isMobile || isMobileLandscape;
     const positionClass = isMobileLandscape ? "bottom-2 left-2" : isMobile ? "bottom-[260px] right-4" : "bottom-20 left-4";
 
-    // Checkbox is driven by pendingSitOut from game state (not local state)
-    const isChecked = pendingSitOut === "next-hand";
+    // Optimistic local state for immediate visual feedback
+    const [optimisticChecked, setOptimisticChecked] = useState<boolean | null>(null);
+
+    // Sync optimistic state with server state when it arrives
+    const serverChecked = pendingSitOut === "next-hand";
+    useEffect(() => {
+        setOptimisticChecked(null);
+    }, [pendingSitOut]);
+
+    const isChecked = optimisticChecked ?? serverChecked;
 
     const handleToggleSitOutNextHand = () => {
-        // Toggle: sends SIT_OUT to either queue or cancel
+        setOptimisticChecked(!isChecked);
         handleSitOut(tableId, currentNetwork);
     };
 
