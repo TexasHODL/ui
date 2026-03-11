@@ -27,6 +27,7 @@ export const ProfileAvatarModal: React.FC = () => {
         selectAvatar,
         clearAvatar,
         refreshWalletNfts,
+        disconnectWallet,
         hasSourceConfigured,
         sourceMode
     } = useProfileAvatar();
@@ -208,6 +209,12 @@ export const ProfileAvatarModal: React.FC = () => {
                                 disabled={!selectedAvatar}
                             >
                                 Clear
+                            </button>
+                            <button
+                                className={styles.footerSecondaryButton}
+                                onClick={disconnectWallet}
+                            >
+                                Disconnect Wallet
                             </button>
                             <button className={styles.footerDangerButton} onClick={closeDrawer}>Cancel</button>
                         </div>

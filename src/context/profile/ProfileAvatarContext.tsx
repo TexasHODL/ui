@@ -26,6 +26,7 @@ interface ProfileAvatarContextType extends ProfileAvatarState {
     hasSourceConfigured: boolean;
     sourceMode: ProfileNftSourceMode;
     openConnectModal: () => void;
+    disconnectWallet: () => void;
     openDrawer: () => void;
     closeDrawer: () => void;
     refreshWalletNfts: () => Promise<void>;
@@ -37,7 +38,7 @@ interface ProfileAvatarContextType extends ProfileAvatarState {
 const ProfileAvatarContext = createContext<ProfileAvatarContextType | null>(null);
 
 export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { isConnected, address, open } = useUserWalletConnect();
+    const { isConnected, address, open, disconnect } = useUserWalletConnect();
     const { address: cosmosAddress } = useCosmosWallet();
     const { chain } = useWagmiAccount();
     const chainId = chain?.id || ETH_CHAIN_ID;
@@ -208,6 +209,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
             hasSourceConfigured,
             sourceMode,
             openConnectModal: open,
+            disconnectWallet: disconnect,
             openDrawer,
             closeDrawer,
             refreshWalletNfts,
@@ -228,6 +230,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
             hasSourceConfigured,
             sourceMode,
             open,
+            disconnect,
             openDrawer,
             closeDrawer,
             refreshWalletNfts,
