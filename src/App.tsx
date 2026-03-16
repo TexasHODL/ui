@@ -29,6 +29,7 @@ import { generateCSSVariables } from "./utils/colorConfig";
 import { useEffect } from "react";
 import FaviconSetter from "./components/FaviconSetter";
 import { GlobalHeader } from "./components/GlobalHeader";
+import { ApiProvider } from "./providers/Api";
 
 const queryClient = new QueryClient();
 
@@ -72,7 +73,6 @@ function AppContent() {
                 <Route path="/wallet" element={<CosmosWalletPage />} />
                 {/* User-facing routes */}
                 <Route path="/bridge/withdrawals" element={<WithdrawalDashboard />} />
-
                 {/* Admin routes - consolidated under /admin */}
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/genesis" element={<GenesisState />} />
@@ -80,7 +80,6 @@ function AppContent() {
                 <Route path="/admin/bridge-manual" element={<ManualBridgeTrigger />} />
                 <Route path="/admin/tables" element={<TableAdminPage />} />
                 <Route path="/admin/test-signing" element={<TestSigningPage />} />
-
                 {/* Legacy routes - redirect to new admin paths */}
                 <Route path="/test-signing" element={<TestSigningPage />} />
                 <Route path="/bridge/manual" element={<ManualBridgeTrigger />} />
@@ -121,7 +120,9 @@ function App() {
             <QueryClientProvider client={queryClient}>
                 <WagmiProvider config={wagmiAdapter.wagmiConfig}>
                     <GameStateProvider>
-                        <AppContent />
+                        <ApiProvider>
+                            <AppContent />
+                        </ApiProvider>
                     </GameStateProvider>
                 </WagmiProvider>
             </QueryClientProvider>
