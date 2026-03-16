@@ -58,6 +58,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({
     const { allowance } = useAllowance(tokenAddress);
     const { balance } = useWalletBalance(tokenAddress);
     const cosmosWallet = useCosmosWallet();
+    const { refreshWalletNfts } = useProfileAvatar();
 
     // USDT approval quirk: must reset allowance to 0 before setting new value
     const [isResettingAllowance, setIsResettingAllowance] = useState(false);
