@@ -61,8 +61,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
         }
 
         const storedSelection =
-            (address ? getStoredAvatarSelection(address, chainId) : null) ||
-            (cosmosAddress ? getStoredAvatarSelection(cosmosAddress, chainId) : null);
+            (address ? getStoredAvatarSelection(address, chainId) : null) || (cosmosAddress ? getStoredAvatarSelection(cosmosAddress, chainId) : null);
         setSelectedAvatar(storedSelection);
     }, [address, cosmosAddress, chainId]);
 
@@ -174,8 +173,10 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                 return null;
             }
 
-            if ((address && targetAddress.toLowerCase() === address.toLowerCase()) ||
-                (cosmosAddress && targetAddress.toLowerCase() === cosmosAddress.toLowerCase())) {
+            if (
+                (address && targetAddress.toLowerCase() === address.toLowerCase()) ||
+                (cosmosAddress && targetAddress.toLowerCase() === cosmosAddress.toLowerCase())
+            ) {
                 return selectedAvatar?.imageUrl ?? null;
             }
 
