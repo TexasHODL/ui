@@ -574,6 +574,25 @@ const Table = React.memo(() => {
         }
     }, [id]);
 
+    // Handler for sharing current hand replay URL
+    const handleShareHand = useCallback(async () => {
+        if (!id || !handNumber) {
+            toast.info("No hand data available to share");
+            return;
+        }
+        try {
+            const shareUrl = `${window.location.origin}/explorer/hand/${id}/${handNumber}`;
+            await navigator.clipboard.writeText(shareUrl);
+            toast.success("Hand replay URL copied to clipboard!", {
+                position: "top-right",
+                autoClose: 2000,
+            });
+        } catch (error) {
+            console.error("Failed to copy share URL:", error);
+            toast.error("Failed to copy share URL.");
+        }
+    }, [id, handNumber]);
+
     // Memoize event handlers to prevent re-renders
     const handleLobbyClick = useCallback(() => {
         window.location.href = "/";
@@ -667,6 +686,7 @@ const Table = React.memo(() => {
                 copyToClipboard={copyToClipboard}
                 onCloseSideBar={onCloseSideBar}
                 handleLeaveTableClick={handleLeaveTableClick}
+                handleShareHand={handleShareHand}
             />
 
             {/* Mobile Landscape Floating Controls */}
