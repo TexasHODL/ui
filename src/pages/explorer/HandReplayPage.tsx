@@ -84,7 +84,7 @@ export default function HandReplayPage() {
     // Parse the full deck string: "[AC]-JC-6D-7D-..."
     const deckCards = useMemo(() => {
         if (!hand?.deck) return [];
-        return hand.deck.replace(/[\[\]]/g, "").split("-");
+        return hand.deck.replace(/[[\]]/g, "").split("-");
     }, [hand?.deck]);
 
     // Sorted hand list for navigation
