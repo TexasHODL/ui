@@ -219,6 +219,12 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
                                 Hand #{handNumber}
                             </span>
+                            <span className={`hidden sm:inline-block text-[15px] font-semibold ${styles.secondaryText}`}>
+                                <span className="ml-2">Actions # {actionCount}</span>
+                            </span>
+                            <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
+                                <span className="sm:ml-2">Next to act: Seat {nextToAct}</span>
+                            </span>
                             <button
                                 onClick={handleShareHand}
                                 className={`flex items-center gap-1 text-[10px] sm:text-[15px] font-semibold transition-colors duration-200 hover:opacity-80 ${styles.secondaryText}`}
@@ -227,12 +233,6 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                                 <FaShare size={10} />
                                 <span className="hidden sm:inline">Share</span>
                             </button>
-                            <span className={`hidden sm:inline-block text-[15px] font-semibold ${styles.secondaryText}`}>
-                                <span className="ml-2">Actions # {actionCount}</span>
-                            </span>
-                            <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
-                                <span className="sm:ml-2">Next to act: Seat {nextToAct}</span>
-                            </span>
                         </div>
                     </div>
                 </div>
