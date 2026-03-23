@@ -77,16 +77,25 @@ export default function DistributionPage() {
         fetchData();
     }, [fetchData]);
 
+    // Sort cards into canonical order: rank (2-A) then suit (h,d,c,s)
+    const RANK_ORDER = ["2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"];
+    const SUIT_ORDER = ["h", "d", "c", "s"];
+    const sortedCardStats = [...cardStats].sort((a, b) => {
+        const rankDiff = RANK_ORDER.indexOf(a.rank.toUpperCase()) - RANK_ORDER.indexOf(b.rank.toUpperCase());
+        if (rankDiff !== 0) return rankDiff;
+        return SUIT_ORDER.indexOf(a.suit.toLowerCase()) - SUIT_ORDER.indexOf(b.suit.toLowerCase());
+    });
+
     // Derive totals from card stats
-    const totalCardsDealt = cardStats.reduce((sum, c) => sum + c.total_appearances, 0);
+    const totalCardsDealt = sortedCardStats.reduce((sum, c) => sum + c.total_appearances, 0);
 
     // Prepare data for Chart.js
     const chartData = {
-        labels: cardStats.map(c => c.card),
+        labels: sortedCardStats.map(c => c.card),
         datasets: [
             {
                 label: "Card Frequency",
-                data: cardStats.map(c => c.total_appearances),
+                data: sortedCardStats.map(c => c.total_appearances),
                 backgroundColor: "rgba(75, 192, 192, 0.6)",
                 borderColor: "rgba(75, 192, 192, 1)",
                 borderWidth: 1
@@ -103,7 +112,7 @@ export default function DistributionPage() {
             },
             title: {
                 display: true,
-                text: "Card Distribution Across All Games (Proves Randomness)",
+                text: "Card Distribution Across All Hands (Proves Randomness)",
                 color: "#ffffff"
             },
             tooltip: {
@@ -201,7 +210,7 @@ export default function DistributionPage() {
                                 </div>
                                 <div className="flex gap-6 mt-3 text-xs text-gray-500">
                                     <span>Hands: {indexerStatus.total_hands.toLocaleString()}</span>
-                                    <span>Games: {indexerStatus.total_games.toLocaleString()}</span>
+                                    <span>Hands: {indexerStatus.total_games.toLocaleString()}</span>
                                     <span>Last block: #{indexerStatus.last_block_indexed.toLocaleString()}</span>
                                 </div>
                             </div>
@@ -211,10 +220,10 @@ export default function DistributionPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                             <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
                                 <h3 className="text-sm font-medium text-gray-400">
-                                    {summary ? "Unique Games" : "Total Cards in Deck"}
+                                    {summary ? "Unique Hands" : "Total Cards in Deck"}
                                 </h3>
                                 <p className="text-3xl font-bold mt-2 text-white">
-                                    {summary ? summary.unique_games.toLocaleString() : "52"}
+                                    {summary ? summary.total_hands.toLocaleString() : "52"}
                                 </p>
                             </div>
                             <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
