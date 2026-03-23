@@ -221,7 +221,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             </span>
                             <button
                                 onClick={handleShareHand}
-                                className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] sm:text-xs transition-colors duration-200 hover:opacity-80 ${styles.secondaryText}`}
+                                className={`flex items-center gap-1 text-[10px] sm:text-[15px] font-semibold transition-colors duration-200 hover:opacity-80 ${styles.secondaryText}`}
                                 title="Share this hand"
                             >
                                 <FaShare size={10} />
