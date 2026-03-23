@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useGameProgress } from "../hooks/game/useGameProgress";
 import { formatPlayerId, formatAmount } from "../utils/accountUtils";
 import { ActionDTO } from "@block52/poker-vm-sdk";
-import { FaCopy, FaCheck, FaFileDownload } from "react-icons/fa";
+import { FaCopy, FaCheck, FaFileDownload, FaShare } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useGameStateContext } from "../context/GameStateContext";
 import styles from "./ActionsLog.module.css";
@@ -79,6 +79,7 @@ const ActionsLog: React.FC = () => {
     const { gameState } = useGameStateContext();
     const [copied, setCopied] = useState(false);
     const [copiedJSON, setCopiedJSON] = useState(false);
+    const [copiedShare, setCopiedShare] = useState(false);
 
     // Reusable utility function for copying text to clipboard
     const copyTextToClipboard = (text: string, onSuccess: () => void, errorMessage: string) => {
@@ -174,8 +175,25 @@ const ActionsLog: React.FC = () => {
         }
     };
 
+    const handleShareHand = () => {
+        if (!id || !gameState?.handNumber) {
+            toast.info("No hand data available to share");
+            return;
+        }
+        const shareUrl = `${window.location.origin}/explorer/hand/${id}/${gameState.handNumber}`;
+        copyTextToClipboard(
+            shareUrl,
+            () => {
+                setCopiedShare(true);
+                toast.success("Hand replay URL copied to clipboard!");
+                setTimeout(() => setCopiedShare(false), 2000);
+            },
+            "Failed to copy share URL"
+        );
+    };
+
     return (
-        <div 
+        <div
             className={`rounded w-full h-full overflow-y-auto scrollbar-hide backdrop-blur-sm ${styles.container}`}
         >
             <div 
@@ -196,6 +214,13 @@ const ActionsLog: React.FC = () => {
                         className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copiedJSON ? styles.copyButtonCopied : styles.copyButtonDefault}`}
                     >
                         {copiedJSON ? <FaCheck size={12} /> : <FaFileDownload size={12} />}
+                    </button>
+                    <button
+                        onClick={handleShareHand}
+                        title="Share hand replay URL"
+                        className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copiedShare ? styles.copyButtonCopied : styles.copyButtonDefault}`}
+                    >
+                        {copiedShare ? <FaCheck size={12} /> : <FaShare size={12} />}
                     </button>
                 </div>
             </div>
