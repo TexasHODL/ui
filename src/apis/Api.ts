@@ -29,4 +29,6 @@ export class IndexerApi extends HTTPClient {
     public getSyncStatus = () => this.get("/api/v1/status");
     public getSummaryStats = () => this.get("/api/v1/stats/summary");
     public getRandomnessAnalysis = () => this.get("/api/v1/analysis/randomness");
+    public getHand = (gameId: string, handNumber: string) => this.get(`/api/v1/hands/${gameId}/${handNumber}`);
+    public getHands = (gameId: string) => this.get(`/api/v1/hands?game_id=${gameId}&limit=100`);
 }
