@@ -9,7 +9,7 @@
  */
 
 import React from "react";
-import { FaCopy } from "react-icons/fa";
+import { FaCopy, FaShare } from "react-icons/fa";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
 import { NetworkSelector } from "../../../NetworkSelector";
@@ -58,6 +58,7 @@ export interface TableHeaderProps {
     copyToClipboard: (text: string) => void;
     onCloseSideBar: () => void;
     handleLeaveTableClick: () => void;
+    handleShareHand: () => void;
 }
 
 export const TableHeader: React.FC<TableHeaderProps> = ({
@@ -83,6 +84,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     copyToClipboard,
     onCloseSideBar,
     handleLeaveTableClick,
+    handleShareHand,
 }) => {
     // Hidden in mobile landscape
     if (isMobileLandscape) {
@@ -223,6 +225,14 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
                                 <span className="sm:ml-2">Next to act: Seat {nextToAct}</span>
                             </span>
+                            <button
+                                onClick={handleShareHand}
+                                className={`flex items-center gap-1 text-[10px] sm:text-[15px] font-semibold transition-colors duration-200 hover:opacity-80 ${styles.secondaryText}`}
+                                title="Share this hand"
+                            >
+                                <FaShare size={10} />
+                                <span className="hidden sm:inline">Share</span>
+                            </button>
                         </div>
                     </div>
                 </div>
