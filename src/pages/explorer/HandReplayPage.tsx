@@ -3,11 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import { getCardImageUrl } from "../../utils/cardImages";
-import { FaCopy, FaCheck } from "react-icons/fa";
-import { toast } from "react-toastify";
 import type { HandDetail, HandListItem, HandListResponse } from "./types";
-
-const INDEXER_URL = import.meta.env.VITE_INDEXER_URL || "https://indexer.block52.xyz";
+import { useIndexerApi } from "../../context/IndexerApiContext";
 
 export default function HandReplayPage() {
     const { gameId, handNumber } = useParams<{ gameId: string; handNumber: string }>();
@@ -16,29 +13,38 @@ export default function HandReplayPage() {
     const [hands, setHands] = useState<HandListItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [copiedUrl, setCopiedUrl] = useState(false);
+    const indexerApi = useIndexerApi();
 
     const fetchHand = useCallback(async () => {
-        if (!gameId || !handNumber) return;
+        if (!gameId) {
+            setError("No game ID provided. URL format: /explorer/hand/{gameId}/{handNumber}");
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
 
-            const res = await fetch(`${INDEXER_URL}/api/v1/hands/${gameId}/${handNumber}`);
-            if (!res.ok) throw new Error(`Hand not found (${res.status})`);
-            const data: HandDetail = await res.json();
-            setHand(data);
-
-            // Also fetch all hands for this game for navigation
+            // Always fetch the hands list for this game
             try {
-                const listRes = await fetch(`${INDEXER_URL}/api/v1/hands?game_id=${gameId}&limit=100`);
-                if (listRes.ok) {
-                    const listData: HandListResponse = await listRes.json();
-                    setHands(listData.data);
+                const listRes = (await indexerApi.getHands(gameId)) as HandListResponse;
+                if (listRes.data) {
+                    setHands(listRes.data);
                 }
             } catch {
                 // Non-critical
             }
+
+            // If no hand number, show the list only
+            if (!handNumber) {
+                setLoading(false);
+                return;
+            }
+
+            const res = (await indexerApi.getHand(gameId, handNumber)) as HandDetail;
+            if (!res) throw new Error(`Hand not found (${handNumber})`);
+            setHand(res);
 
             setLoading(false);
         } catch (err) {
@@ -51,18 +57,6 @@ export default function HandReplayPage() {
     useEffect(() => {
         fetchHand();
     }, [fetchHand]);
-
-    const shareUrl = `${window.location.origin}/explorer/hand/${gameId}/${handNumber}`;
-
-    const handleCopyUrl = () => {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-            setCopiedUrl(true);
-            toast.success("Hand URL copied to clipboard!");
-            setTimeout(() => setCopiedUrl(false), 2000);
-        }).catch(() => {
-            toast.error("Failed to copy URL");
-        });
-    };
 
     // Parse community and hole cards from revealed_cards
     const communityCards = useMemo(() => {
@@ -113,28 +107,41 @@ export default function HandReplayPage() {
                     <div className="text-center py-12">
                         <div className="bg-red-900/30 rounded-lg p-6 border border-red-700 inline-block">
                             <p className="text-lg text-red-300">{error}</p>
-                            <button
-                                onClick={fetchHand}
-                                className="mt-4 px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded transition-colors"
-                            >
+                            <button onClick={fetchHand} className="mt-4 px-4 py-2 bg-red-700 hover:bg-red-600 text-white rounded transition-colors">
                                 Retry
                             </button>
                         </div>
                     </div>
+                ) : !handNumber && hands.length > 0 ? (
+                    /* Hands list mode — no hand number in URL */
+                    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                        <h2 className="text-2xl font-bold text-white mb-2">
+                            Hands for Game
+                        </h2>
+                        <p className="text-gray-400 font-mono text-sm mb-6">{gameId}</p>
+                        <p className="text-gray-300 mb-4">{hands.length} hand{hands.length !== 1 ? "s" : ""} found</p>
+                        <div className="flex flex-wrap gap-2">
+                            {[...hands].sort((a, b) => a.hand_number - b.hand_number).map(h => (
+                                <Link
+                                    key={h.hand_number}
+                                    to={`/explorer/hand/${h.game_id}/${h.hand_number}`}
+                                    className="px-3 py-1.5 rounded text-sm transition-colors bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                >
+                                    Hand #{h.hand_number}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                ) : !handNumber ? (
+                    <div className="text-center py-12">
+                        <p className="text-lg text-gray-400">No hands found for this game.</p>
+                    </div>
                 ) : hand ? (
                     <>
-                        {/* Header with share button */}
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="mb-6">
                             <h2 className="text-2xl font-bold text-white">
                                 Hand #{hand.hand_number}
                             </h2>
-                            <button
-                                onClick={handleCopyUrl}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors text-sm"
-                            >
-                                {copiedUrl ? <FaCheck /> : <FaCopy />}
-                                {copiedUrl ? "Copied!" : "Share Hand"}
-                            </button>
                         </div>
 
                         {/* Hand Info Card */}
@@ -146,10 +153,7 @@ export default function HandReplayPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-400">Block Height</p>
-                                    <Link
-                                        to={`/explorer/block/${hand.block_height}`}
-                                        className="text-blue-400 hover:text-blue-300"
-                                    >
+                                    <Link to={`/explorer/block/${hand.block_height}`} className="text-blue-400 hover:text-blue-300">
                                         #{hand.block_height.toLocaleString()}
                                     </Link>
                                 </div>
@@ -172,12 +176,7 @@ export default function HandReplayPage() {
                             {communityCards.length > 0 ? (
                                 <div className="flex gap-3">
                                     {communityCards.map((card, idx) => (
-                                        <img
-                                            key={idx}
-                                            src={getCardImageUrl(card)}
-                                            alt={card}
-                                            className="w-[70px] h-[105px] rounded shadow-lg"
-                                        />
+                                        <img key={idx} src={getCardImageUrl(card)} alt={card} className="w-[70px] h-[105px] rounded shadow-lg" />
                                     ))}
                                 </div>
                             ) : (
@@ -191,12 +190,7 @@ export default function HandReplayPage() {
                                 <h3 className="text-lg font-semibold text-white mb-4">Revealed Hole Cards</h3>
                                 <div className="flex gap-3">
                                     {holeCards.map((card, idx) => (
-                                        <img
-                                            key={idx}
-                                            src={getCardImageUrl(card)}
-                                            alt={card}
-                                            className="w-[70px] h-[105px] rounded shadow-lg"
-                                        />
+                                        <img key={idx} src={getCardImageUrl(card)} alt={card} className="w-[70px] h-[105px] rounded shadow-lg" />
                                     ))}
                                 </div>
                             </div>
@@ -224,20 +218,13 @@ export default function HandReplayPage() {
                         {/* Full Deck (Provably Fair) */}
                         {deckCards.length > 0 && (
                             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
-                                <h3 className="text-lg font-semibold text-white mb-4">
-                                    Full Deck (Provably Fair)
-                                </h3>
+                                <h3 className="text-lg font-semibold text-white mb-4">Full Deck (Provably Fair)</h3>
                                 <p className="text-sm text-gray-400 mb-4">
                                     The complete shuffled deck derived from the on-chain seed. Verify this against the block hash.
                                 </p>
                                 <div className="flex flex-wrap gap-1.5">
                                     {deckCards.map((card, idx) => (
-                                        <img
-                                            key={idx}
-                                            src={getCardImageUrl(card)}
-                                            alt={card}
-                                            className="w-[45px] h-[67px] rounded shadow"
-                                        />
+                                        <img key={idx} src={getCardImageUrl(card)} alt={card} className="w-[45px] h-[67px] rounded shadow" />
                                     ))}
                                 </div>
                             </div>
@@ -246,18 +233,14 @@ export default function HandReplayPage() {
                         {/* Hand Navigation */}
                         {sortedHands.length > 1 && (
                             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                                <h3 className="text-lg font-semibold text-white mb-4">
-                                    All Hands in This Game ({sortedHands.length})
-                                </h3>
+                                <h3 className="text-lg font-semibold text-white mb-4">All Hands in This Game ({sortedHands.length})</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {sortedHands.map(h => (
                                         <Link
                                             key={h.hand_number}
                                             to={`/explorer/hand/${h.game_id}/${h.hand_number}`}
                                             className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                                                h.hand_number === currentHandNum
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                                h.hand_number === currentHandNum ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
                                             }`}
                                         >
                                             Hand #{h.hand_number}

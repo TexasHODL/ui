@@ -29,5 +29,3 @@ export interface ProfileAvatarState {
     nftsError: string | null;
     nftsWarning: string | null;
 }
-
-export type ProfileNftSourceMode = "all" | "collections";

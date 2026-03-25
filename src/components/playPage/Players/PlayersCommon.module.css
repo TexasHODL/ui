@@ -12,10 +12,10 @@
 
 .avatarChip {
     position: absolute;
-    top: -18px;
-    right: -8px;
-    width: 32px;
-    height: 32px;
+    top: -28px;
+    right: -40px;
+    width: 62px;
+    height: 62px;
     border-radius: 9999px;
     overflow: hidden;
     border: 2px solid #ffffff;

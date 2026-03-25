@@ -92,8 +92,7 @@
 
 .footerSecondaryButton,
 .footerPrimaryButton,
-.footerDangerButton,
-.inlineDebugButton {
+.footerDangerButton {
   min-height: 40px;
   width: 100%;
   padding: 10px 14px;
@@ -163,13 +162,6 @@
   }
 }
 
-.inlineDebugButton {
-  min-width: 150px;
-  border: 1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent);
-  color: var(--brand-primary);
-  background-color: color-mix(in srgb, var(--ui-bg-medium) 40%, transparent);
-}
-
 @media (max-width: 640px) {
   .surfaceMuted {
     flex-direction: column;
@@ -187,8 +179,7 @@
 
   .footerSecondaryButton,
   .footerPrimaryButton,
-  .footerDangerButton,
-  .inlineDebugButton {
+  .footerDangerButton {
     width: 100%;
   }
 }

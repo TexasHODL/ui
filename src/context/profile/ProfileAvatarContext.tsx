@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
-import { useConnection as useWagmiAccount } from "wagmi";
+import axios from "axios";
+import { useAccount as useWagmiAccount } from "wagmi";
 import { ETH_CHAIN_ID } from "../../config/constants";
 import { createAuthPayload } from "../../utils/cosmos/signing";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
 import { useWalletNfts } from "../../hooks/profile/useWalletNfts";
-import type { AvatarSelection, ProfileAvatarState, ProfileNftSourceMode, WalletNftAsset } from "../../types/profile/avatar";
+import type { AvatarSelection, ProfileAvatarState, WalletNftAsset } from "../../types/profile/avatar";
 import {
     clearStoredAvatarSelection,
     getStoredAvatarSelection,
@@ -16,15 +17,13 @@ import { buildPlayerAvatar, parsePlayerAvatar } from "../../utils/profile/avatar
 
 const PROFILE_NFT_CHAIN_ID = Number(import.meta.env.VITE_PROFILE_NFT_CHAIN_ID || ETH_CHAIN_ID);
 const PROFILE_AVATAR_UPDATE_URL = (import.meta.env.VITE_PROFILE_AVATAR_UPDATE_URL || "").trim();
-const PROFILE_AVATAR_DEBUG = import.meta.env.DEV && ["1", "true"].includes((import.meta.env.VITE_DEBUG_AVATAR_SYNC || "").toLowerCase());
+const PROFILE_AVATAR_SIGNING_DEBUG = import.meta.env.DEV && ["1", "true"].includes((import.meta.env.VITE_DEBUG_AVATAR_SIGNING || "").toLowerCase());
 
 interface ProfileAvatarContextType extends ProfileAvatarState {
     isDrawerOpen: boolean;
     isWalletConnected: boolean;
     walletAddress?: string;
-    hasContractsConfigured: boolean;
     hasSourceConfigured: boolean;
-    sourceMode: ProfileNftSourceMode;
     openConnectModal: () => void;
     disconnectWallet: () => void;
     openDrawer: () => void;
@@ -46,10 +45,14 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [selectedAvatar, setSelectedAvatar] = useState<AvatarSelection | null>(null);
 
-    const { walletNfts, isLoadingNfts, nftsError, nftsWarning, refreshWalletNfts, hasContractsConfigured, hasSourceConfigured, sourceMode } = useWalletNfts(
-        address,
-        isConnected
-    );
+    const {
+        walletNfts,
+        isLoadingNfts,
+        nftsError,
+        nftsWarning,
+        refreshWalletNfts,
+        hasSourceConfigured
+    } = useWalletNfts(address, isConnected);
 
     useEffect(() => {
         if (!address && !cosmosAddress) {
@@ -104,6 +107,16 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
 
             const syncAvatarSelection = async (): Promise<void> => {
                 const authPayload = await createAuthPayload();
+
+                if (PROFILE_AVATAR_SIGNING_DEBUG) {
+                    console.info("[ProfileAvatarDebug] Signing payload status", {
+                        hasPlayerAddress: Boolean(authPayload?.playerAddress),
+                        playerAddressSuffix: authPayload?.playerAddress ? authPayload.playerAddress.slice(-6) : null,
+                        hasTimestamp: Boolean(authPayload?.timestamp),
+                        hasSignature: Boolean(authPayload?.signature)
+                    });
+                }
+
                 if (!authPayload) {
                     return;
                 }
@@ -115,35 +128,18 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                     imageUrl: asset.imageUrl
                 });
 
-                const response = await fetch(PROFILE_AVATAR_UPDATE_URL, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
+                const response = await axios.post(PROFILE_AVATAR_UPDATE_URL, {
                         playerAddress: authPayload.playerAddress,
                         timestamp: authPayload.timestamp,
                         signature: authPayload.signature,
                         avatar
-                    })
                 });
 
-                if (PROFILE_AVATAR_DEBUG) {
-                    console.info("[ProfileAvatarDebug] Avatar sync request", {
-                        endpoint: PROFILE_AVATAR_UPDATE_URL,
-                        playerAddress: authPayload.playerAddress,
-                        timestamp: authPayload.timestamp,
-                        signaturePresent: Boolean(authPayload.signature),
-                        avatar
-                    });
+                if (PROFILE_AVATAR_SIGNING_DEBUG) {
                     console.info("[ProfileAvatarDebug] Avatar sync response", {
-                        status: response.status,
-                        ok: response.ok
+                        ok: response.status >= 200 && response.status < 300,
+                        status: response.status
                     });
-                }
-
-                if (!response.ok) {
-                    throw new Error(`Avatar sync failed with status ${response.status}`);
                 }
             };
 
@@ -200,9 +196,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
             isDrawerOpen,
             isWalletConnected: !!isConnected,
             walletAddress: address,
-            hasContractsConfigured,
             hasSourceConfigured,
-            sourceMode,
             openConnectModal: open,
             disconnectWallet: disconnect,
             openDrawer,
@@ -221,9 +215,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
             isDrawerOpen,
             isConnected,
             address,
-            hasContractsConfigured,
             hasSourceConfigured,
-            sourceMode,
             open,
             disconnect,
             openDrawer,

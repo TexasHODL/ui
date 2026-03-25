@@ -4,11 +4,13 @@ import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import { formatMicroAsUsdc } from "../constants/currency";
-import { getSigningClient, getCosmosUrls } from "../utils/cosmos/client";
+import { getSigningClient } from "../utils/cosmos/client";
 import { BRIDGE_DEPOSITS_ABI } from "../utils/bridge/abis";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { PROXY_URL, COSMOS_BRIDGE_ADDRESS } from "../config/constants";
+import { useCosmosApi } from "../context/CosmosApiContext";
+import { usePaymentApi } from "../context/PaymentApiContext";
 
 // Minimum STAKE needed for gas fees (transaction costs ~2000 stake)
 const MIN_STAKE_FOR_GAS = 2000;
@@ -31,6 +33,33 @@ interface Deposit {
     status: "loading" | "processed" | "pending" | "error";
     errorMessage?: string;
     txHash?: string;
+}
+
+interface ProcessedResponse {
+    processed: boolean | string; // API might return boolean or string "true"/"false"
+}
+
+interface HotWalletInfo {
+    address: string;
+    ethBalance: string;
+    usdcBalance: string;
+    bridgeApproved: boolean;
+}
+
+interface ManualBridgeResponse {
+    success: boolean;
+    message: string;
+    txHash: string;
+    cosmosAddress: string;
+    amount: string;
+    etherscanUrl: string;
+}
+
+interface ApproveBridgeResponse {
+    success: boolean;
+    message: string;
+    txHash: string;
+    etherscanUrl: string;
 }
 
 export default function BridgeAdminDashboard() {
@@ -61,12 +90,7 @@ export default function BridgeAdminDashboard() {
     const [isManualBridging, setIsManualBridging] = useState(false);
     const [isApproving, setIsApproving] = useState(false);
     const [showManualBridge, setShowManualBridge] = useState(false);
-    const [hotWalletInfo, setHotWalletInfo] = useState<{
-        address: string;
-        ethBalance: string;
-        usdcBalance: string;
-        bridgeApproved: boolean;
-    } | null>(null);
+    const [hotWalletInfo, setHotWalletInfo] = useState<HotWalletInfo | null>(null);
     const [isLoadingHotWallet, setIsLoadingHotWallet] = useState(false);
 
     // Ethereum Mainnet configuration
@@ -83,6 +107,9 @@ export default function BridgeAdminDashboard() {
     const hasEnoughStake = stakeBalance >= MIN_STAKE_FOR_GAS;
     const stakeBalanceFormatted = formatMicroAsUsdc(stakeBalance, 2);
 
+    const api = useCosmosApi(currentNetwork.rest);
+    const paymentApi = usePaymentApi();
+
     // Validate Alchemy URL is configured
     useEffect(() => {
         if (!import.meta.env.VITE_ALCHEMY_URL) {
@@ -98,8 +125,6 @@ export default function BridgeAdminDashboard() {
     const checkProcessingStatus = useCallback(
         async (depositsToCheck: Deposit[]) => {
             try {
-                const { restEndpoint } = getCosmosUrls(currentNetwork);
-
                 // We need to check the deterministic txHash for each deposit
                 // txHash = sha256(contractAddress + depositIndex)
                 const updatedDeposits = await Promise.all(
@@ -112,13 +137,10 @@ export default function BridgeAdminDashboard() {
                             const hashBuffer = await crypto.subtle.digest("SHA-256", data);
                             const hashArray = Array.from(new Uint8Array(hashBuffer));
                             const txHash = "0x" + hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-
                             // Query Cosmos to see if this txHash has been processed
-                            const response = await fetch(`${restEndpoint}/block52/pokerchain/poker/v1/is_tx_processed/${txHash}`);
-
-                            if (response.ok) {
-                                const data = await response.json();
-                                const isProcessed = data.processed === true || data.processed === "true";
+                            const response = (await api.getIsTxProcessed(txHash)) as ProcessedResponse;
+                            if (response) {
+                                const isProcessed = response.processed === true || response.processed === "true";
 
                                 return {
                                     ...deposit,
@@ -230,7 +252,6 @@ export default function BridgeAdminDashboard() {
         try {
             const { signingClient } = await getSigningClient(currentNetwork);
 
-
             // Process the deposit
             const hash = await signingClient.processDeposit(depositIndex);
 
@@ -279,10 +300,9 @@ export default function BridgeAdminDashboard() {
     const loadHotWalletInfo = useCallback(async () => {
         setIsLoadingHotWallet(true);
         try {
-            const response = await fetch(`${PROXY_URL}/api/nowpayments/hot-wallet-info`);
-            if (response.ok) {
-                const data = await response.json();
-                setHotWalletInfo(data);
+            const walletInfo = (await paymentApi.getHotWalletInfo()) as HotWalletInfo;
+            if (walletInfo) {
+                setHotWalletInfo(walletInfo);
             } else {
                 console.error("Failed to load hot wallet info");
             }
@@ -321,21 +341,13 @@ export default function BridgeAdminDashboard() {
         setIsManualBridging(true);
 
         try {
-            const response = await fetch(`${PROXY_URL}/api/nowpayments/manual-bridge`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    cosmosAddress: manualCosmosAddress,
-                    amount: manualAmount
-                })
-            });
+            const response = (await paymentApi.manualBridge({
+                cosmosAddress: manualCosmosAddress,
+                amount: manualAmount
+            })) as ManualBridgeResponse;
 
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                toast.success(`Bridge successful! TX: ${data.txHash.slice(0, 10)}...`);
+            if (response.success) {
+                toast.success(`Bridge successful! TX: ${response.txHash.slice(0, 10)}...`);
                 setManualCosmosAddress("");
                 setManualAmount("");
                 // Reload hot wallet info
@@ -343,11 +355,11 @@ export default function BridgeAdminDashboard() {
                 // Reload deposits to show the new one
                 loadDeposits();
             } else {
-                toast.error(data.error || "Bridge failed");
+                toast.error(response.message || "Bridge failed");
             }
         } catch (err: any) {
             console.error("Manual bridge error:", err);
-            toast.error(`Bridge failed: ${err.message}`);
+            toast.error(`Bridge failed: ${err.error}`);
         } finally {
             setIsManualBridging(false);
         }
@@ -357,24 +369,17 @@ export default function BridgeAdminDashboard() {
     const handleApproveBridge = async () => {
         setIsApproving(true);
         try {
-            const response = await fetch(`${PROXY_URL}/api/nowpayments/approve-bridge`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                }
-            });
+            const response = (await paymentApi.approveBridge()) as ApproveBridgeResponse;
 
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                toast.success(data.message);
+            if (response.success) {
+                toast.success(response.message);
                 loadHotWalletInfo();
             } else {
-                toast.error(data.error || "Approval failed");
+                toast.error(response.message || "Approval failed");
             }
         } catch (err: any) {
             console.error("Approve error:", err);
-            toast.error(`Approval failed: ${err.message}`);
+            toast.error(`Approval failed: ${err.error}`);
         } finally {
             setIsApproving(false);
         }
@@ -451,7 +456,7 @@ export default function BridgeAdminDashboard() {
             if (filter === "all") return true;
             return deposit.status === filter;
         })
-        .sort((a, b) => sortOrder === "desc" ? b.index - a.index : a.index - b.index);
+        .sort((a, b) => (sortOrder === "desc" ? b.index - a.index : a.index - b.index));
 
     // Stats
     const totalDeposits = deposits.length;
@@ -516,8 +521,8 @@ export default function BridgeAdminDashboard() {
                             <div className="flex-1">
                                 <h3 className="text-yellow-200 font-semibold mb-1">Insufficient STAKE for Gas Fees</h3>
                                 <p className="text-yellow-300/80 text-sm">
-                                    You need STAKE tokens to pay for gas fees when processing deposits.
-                                    Your current balance is <strong>{stakeBalanceFormatted} STAKE</strong>.
+                                    You need STAKE tokens to pay for gas fees when processing deposits. Your current balance is{" "}
+                                    <strong>{stakeBalanceFormatted} STAKE</strong>.
                                 </p>
                             </div>
                         </div>

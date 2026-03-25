@@ -21,7 +21,7 @@ A modern, customizable React-based poker interface for online poker rooms. Built
 
 ### Prerequisites
 
-- Node.js 22+
+- Node.js 22.13+ (see `.nvmrc`)
 - Yarn package manager
 
 ### Installation
@@ -110,34 +110,21 @@ See [.env.example](.env.example) for all available configuration options.
 Configure how wallet NFTs are discovered for profile avatars:
 
 ```env
-# all = any NFT in wallet (recommended for open community events)
-# collections = only NFTs from allowlisted contracts (recommended for exclusive gated events)
-VITE_PROFILE_NFT_SOURCE_MODE=all
-
 # Chain used for NFT discovery
 VITE_PROFILE_NFT_CHAIN_ID=1
 
-# Optional indexer URL template for all mode
+# Optional indexer URL template
 # Must include {owner}; {chainId} is optional
 VITE_PROFILE_NFT_INDEXER_URL=https://eth-mainnet.g.alchemy.com/nft/v3/YOUR_API_KEY/getNFTsForOwner?owner={owner}&withMetadata=true&pageSize=100
 
-# Used when VITE_PROFILE_NFT_SOURCE_MODE=collections
-VITE_PROFILE_NFT_CONTRACTS=0xabc...,0xdef...
-
 # Optional backend endpoint to persist avatar and propagate to other players
 VITE_PROFILE_AVATAR_UPDATE_URL=https://your-backend.example.com/api/profile/avatar
-
-# Optional debug tracer for avatar sync flow (dev only)
-VITE_DEBUG_AVATAR_SYNC=true
 ```
 
 Notes:
 
-- `all` mode requires an indexer source via `VITE_PROFILE_NFT_INDEXER_URL` or `VITE_ALCHEMY_URL`.
-- `collections` mode requires `VITE_PROFILE_NFT_CONTRACTS` and uses on-chain reads.
+- NFT discovery uses wallet-owned NFTs from an indexer source via `VITE_PROFILE_NFT_INDEXER_URL` or `VITE_ALCHEMY_URL`.
 - `VITE_PROFILE_AVATAR_UPDATE_URL` enables signed avatar persistence/broadcast integration.
-- `VITE_DEBUG_AVATAR_SYNC` logs outbound avatar sync + inbound websocket avatar payloads in dev.
-- This lets you switch between broad community support and strict collection-gated events without code changes.
 
 ## Available Scripts
 

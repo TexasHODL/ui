@@ -6,6 +6,7 @@ import { formatTimestampRelative } from "../utils/formatUtils";
 import { microToUsdc } from "../constants/currency";
 import styles from "./TransactionPanel.module.css";
 import { formatTransactionLabel, formatTransferDirection, getTransferDirectionClass, formatShortHash, formatGameId } from "../utils/transactionUtils";
+import { useCosmosApi } from "../context/CosmosApiContext";
 
 interface Transaction {
     txhash: string;
@@ -27,6 +28,14 @@ interface TransactionPanelProps {
     cosmosWalletAddress: string | null;
     usdcBalance: string;
 }
+
+export interface TransactionResponse {
+    pagination: any;
+    total: string;
+    tx_responses: any[];
+    txs?: any[]; // Include txs for message parsing
+}
+
 /**
  * TransactionPanel - Shows recent transactions for the connected wallet
  * Displays the last 6 transactions
@@ -37,6 +46,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const cosmosApi = useCosmosApi();
 
     const fetchTransactions = useCallback(async () => {
         if (!cosmosWalletAddress) return;
@@ -45,30 +55,25 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
             setLoading(true);
             setError(null);
 
-            const restEndpoint = currentNetwork.rest;
             const address = cosmosWalletAddress;
 
             // Query for transactions where this address is the sender OR recipient
             const senderQuery = `message.sender='${address}'`;
             const recipientQuery = `transfer.recipient='${address}'`;
-
             // Fetch both sent and received transactions
             const [sentResponse, receivedResponse] = await Promise.all([
-                fetch(`${restEndpoint}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(senderQuery)}&order_by=2&limit=10`),
-                fetch(`${restEndpoint}/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(recipientQuery)}&order_by=2&limit=10`)
+                cosmosApi.getSentTransactions(senderQuery) as Promise<TransactionResponse>,
+                cosmosApi.getReceivedTransactions(recipientQuery) as Promise<TransactionResponse>
             ]);
 
-            const sentData = sentResponse.ok ? await sentResponse.json() : { tx_responses: [], txs: [] };
-            const receivedData = receivedResponse.ok ? await receivedResponse.json() : { tx_responses: [], txs: [] };
-
             // Combine tx_responses with their txs for message type extraction
-            const sentTxs = (sentData.tx_responses || []).map((tx: any, i: number) => ({
+            const sentTxs = (sentResponse.tx_responses || []).map((tx: any, i: number) => ({
                 ...tx,
-                tx: sentData.txs?.[i]
+                tx: sentResponse.txs?.[i]
             }));
-            const receivedTxs = (receivedData.tx_responses || []).map((tx: any, i: number) => ({
+            const receivedTxs = (receivedResponse.tx_responses || []).map((tx: any, i: number) => ({
                 ...tx,
-                tx: receivedData.txs?.[i]
+                tx: receivedResponse.txs?.[i]
             }));
 
             // Combine and deduplicate transactions by hash
