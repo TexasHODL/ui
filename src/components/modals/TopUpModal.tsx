@@ -161,18 +161,11 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-3">
-                <button
-                    onClick={onClose}
-                    disabled={isProcessing}
-                    className={`flex-1 px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 ${styles.cancelButton}`}
-                >
-                    Cancel
-                </button>
+            <div className="flex flex-col space-y-3">
                 <button
                     onClick={handleTopUpClick}
                     disabled={isProcessing || isAmountInvalid}
-                    className={`flex-1 px-5 py-3 rounded-lg font-medium text-white shadow-md flex items-center justify-center gap-2 ${styles.buyButton}`}
+                    className={`w-full px-5 py-3 rounded-lg font-medium text-white shadow-md flex items-center justify-center gap-2 ${styles.buyButton}`}
                 >
                     {isProcessing ? (
                         <>
@@ -182,6 +175,13 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                     ) : (
                         "BUY"
                     )}
+                </button>
+                <button
+                    onClick={onClose}
+                    disabled={isProcessing}
+                    className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 ${styles.cancelButton}`}
+                >
+                    Cancel
                 </button>
             </div>
 
