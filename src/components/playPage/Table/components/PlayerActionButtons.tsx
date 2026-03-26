@@ -6,12 +6,14 @@
  * Responsive design for mobile, tablet, and desktop viewports.
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useOptimistic, startTransition } from "react";
+
 import { LegalActionDTO, NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { handleSitOut, handleSitIn } from "../../../common/actionHandlers";
 import { SIT_IN_METHOD_POST_NOW } from "../../../../hooks/playerActions";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { getPlayerActionDisplay } from "../../../../utils/playerActionDisplayUtils";
+import { toast } from "react-toastify";
 import BuyChipsButton from "../../../BuyChipsButton";
 import { useTableTopUp } from "../../../../hooks/game/useTableTopUp";
 
@@ -55,6 +57,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
 
     // Optimistic local state for immediate visual feedback
     const [optimisticChecked, setOptimisticChecked] = useState<boolean | null>(null);
+    const [optimisticSitIn, setOptimisticSitIn] = useOptimistic<boolean>(false);
 
     // Sync optimistic state with server state when it arrives
     const serverChecked = pendingSitOut === "next-hand";
@@ -70,7 +73,12 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     };
 
     const display = getPlayerActionDisplay({
-        playerStatus, sitInMethod, legalActions, totalSeatedPlayers, handNumber, hasActivePlayers
+        playerStatus,
+        sitInMethod,
+        legalActions,
+        totalSeatedPlayers,
+        handNumber,
+        hasActivePlayers
     });
 
     // Top-up: check if TOP_UP is in legal actions
@@ -101,20 +109,30 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
         }
     }, [display.kind, tableId, currentNetwork]);
 
+    const handleSitInClick = async () => {
+        if (!tableId) return toast.error("Table ID is missing. Cannot sit in.");
+
+        startTransition(async () => {
+            console.log("🎯 Label clicked! TableId:", tableId, "Network:", currentNetwork);
+            setOptimisticSitIn(true);
+            await handleSitIn(tableId, currentNetwork, SIT_IN_METHOD_POST_NOW);
+        });
+    };
     // Buy Chips button rendered independently (bottom-right, opposite to action buttons)
-    const buyChipsElement = canTopUp && tableId ? (
-        <div className={`fixed z-30 ${buyChipsPositionClass}`}>
-            <BuyChipsButton
-                tableId={tableId}
-                currentStack={currentStack}
-                minBuyIn={minBuyIn}
-                maxBuyIn={maxBuyIn}
-                walletBalance={walletBalance}
-                canTopUp={canTopUp}
-                onTopUp={handleTopUp}
-            />
-        </div>
-    ) : null;
+    const buyChipsElement =
+        canTopUp && tableId ? (
+            <div className={`fixed z-30 ${buyChipsPositionClass}`}>
+                <BuyChipsButton
+                    tableId={tableId}
+                    currentStack={currentStack}
+                    minBuyIn={minBuyIn}
+                    maxBuyIn={maxBuyIn}
+                    walletBalance={walletBalance}
+                    canTopUp={canTopUp}
+                    onTopUp={handleTopUp}
+                />
+            </div>
+        ) : null;
 
     switch (display.kind) {
         case "pending":
@@ -125,9 +143,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                         <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
                             <div className="flex items-center gap-2">
                                 <div className="animate-pulse w-2 h-2 rounded-full bg-yellow-400" />
-                                <span className={`text-yellow-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>
-                                    {display.waitingMessage}
-                                </span>
+                                <span className={`text-yellow-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>{display.waitingMessage}</span>
                             </div>
                         </div>
                     </div>
@@ -140,28 +156,19 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     {buyChipsElement}
                     <div className={`fixed z-30 ${positionClass}`}>
                         <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
-                            <label
-                                className="flex items-center cursor-pointer"
-                                onClick={(e) => {
-                                    console.log("🎯 Label clicked! TableId:", tableId, "Network:", currentNetwork);
-                                    e.preventDefault();
-                                    handleSitIn(tableId, currentNetwork, SIT_IN_METHOD_POST_NOW);
-                                }}
-                            >
+                            <label className="flex items-center cursor-pointer" onClick={handleSitInClick}>
                                 <input
                                     type="radio"
                                     name="sit-in-method"
-                                    onChange={() => {
-                                        console.log("🎯 Radio onChange fired! TableId:", tableId, "Network:", currentNetwork);
-                                        handleSitIn(tableId, currentNetwork, SIT_IN_METHOD_POST_NOW);
-                                    }}
+                                    onChange={handleSitInClick}
+                                    checked={optimisticSitIn}
                                     onClick={() => {
                                         console.log("🎯 Radio onClick fired! TableId:", tableId, "Network:", currentNetwork);
                                     }}
                                     className="form-radio h-4 w-4 text-green-500 border-gray-500 focus:ring-0"
                                 />
                                 <span className={`ml-2 text-white ${isCompact ? "text-xs" : "text-sm"}`}>
-                                    Sit in on Next Available Hand and Post Required Blinds
+                                    {optimisticSitIn ? "Sitting in..." : "Sit in on Next Available Hand and Post Required Blinds"}
                                 </span>
                             </label>
                         </div>
@@ -177,9 +184,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                         <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
                             <div className="flex items-center gap-2">
                                 <div className="animate-spin w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full" />
-                                <span className={`text-green-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>
-                                    Starting game...
-                                </span>
+                                <span className={`text-green-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>Starting game...</span>
                             </div>
                         </div>
                     </div>
@@ -216,9 +221,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                         <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
                             <div className="flex items-center gap-2">
                                 <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
-                                <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>
-                                    Waiting for players to join...
-                                </span>
+                                <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>Waiting for players to join...</span>
                             </div>
                         </div>
                     </div>
