@@ -15,6 +15,7 @@ import AddressPage from "./pages/explorer/AddressPage";
 import AllAccountsPage from "./pages/explorer/AllAccountsPage";
 import DistributionPage from "./pages/explorer/DistributionPage";
 import HandReplayPage from "./pages/explorer/HandReplayPage";
+import HandPage from "./pages/explorer/HandPage";
 import TestSigningPage from "./pages/TestSigningPage";
 import ManualBridgeTrigger from "./pages/ManualBridgeTrigger";
 import BridgeAdminDashboard from "./pages/BridgeAdminDashboard";
@@ -99,7 +100,7 @@ function AppContent() {
                 <Route path="/explorer/accounts" element={<AllAccountsPage />} />
                 <Route path="/explorer/distribution" element={<DistributionPage />} />
                 <Route path="/explorer/hand/:gameId/:handNumber" element={<HandReplayPage />} />
-                <Route path="/explorer/hand/:gameId" element={<HandReplayPage />} />
+                <Route path="/explorer/hand/:gameId" element={<HandPage />} />
                 <Route path="/nodes" element={<NodesPage />} />
                 <Route path="/node/:name" element={<NodeStatusPage />} />
                 <Route path="/" element={<Dashboard />} />
