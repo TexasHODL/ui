@@ -21,7 +21,9 @@ export const ProfileAvatarModal: React.FC = () => {
         clearAvatar,
         refreshWalletNfts,
         disconnectWallet,
-        hasSourceConfigured
+        hasSourceConfigured,
+        isRegistering,
+        registrationError
     } = useProfileAvatar();
 
     const handleRefresh = React.useCallback(async () => {
@@ -83,6 +85,12 @@ export const ProfileAvatarModal: React.FC = () => {
                         )}
 
                         {isLoadingNfts && walletNfts.length === 0 && !isRefreshing && <p className={styles.emptyText}>Scanning wallet NFTs...</p>}
+                        {isRegistering && (
+                            <div className={styles.surfaceMuted}>
+                                <p className={styles.meta}>Registering NFT avatar... Sign with MetaMask when prompted.</p>
+                            </div>
+                        )}
+                        {registrationError && <p className={styles.emptyText}>Registration failed: {registrationError}</p>}
                         {nftsError && <p className={styles.emptyText}>{nftsError}</p>}
                         {nftsWarning && <p className={styles.emptyText}>{nftsWarning}</p>}
 
@@ -115,6 +123,7 @@ export const ProfileAvatarModal: React.FC = () => {
                                         key={asset.id}
                                         className={`${styles.card} ${isSelected ? styles.cardSelected : ""}`.trim()}
                                         onClick={() => selectAvatar(asset)}
+                                        disabled={isRegistering}
                                     >
                                         <img src={asset.imageUrl} alt={asset.name || `NFT #${asset.tokenId}`} className={styles.nftImage} />
                                         <p className={styles.meta}>{asset.collectionName || "Collection"} • #{asset.tokenId}</p>
