@@ -37,6 +37,7 @@ interface IndexerNftItem {
     };
     image?: {
         cachedUrl?: string;
+        thumbnailUrl?: string;
         pngUrl?: string;
         originalUrl?: string;
     };
@@ -118,7 +119,7 @@ export const useWalletNfts = (walletAddress: string | undefined, isConnected: bo
                     return null;
                 }
 
-                const rawImage = item.image?.cachedUrl || item.image?.pngUrl || item.image?.originalUrl || item.metadata?.image || item.rawMetadata?.image || item.raw?.metadata?.image || "";
+                const rawImage = item.image?.cachedUrl || item.image?.thumbnailUrl || item.image?.pngUrl || item.image?.originalUrl || item.metadata?.image || item.rawMetadata?.image || item.raw?.metadata?.image || "";
                 const imageUrl = normalizeIpfsUri(rawImage);
 
                 if (!isAllowedAvatarUrl(imageUrl)) {
