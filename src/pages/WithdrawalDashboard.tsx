@@ -5,11 +5,11 @@ import { toast } from "react-toastify";
 import { ethers } from "ethers";
 import { formatMicroAsUsdc, usdcToMicroBigInt } from "../constants/currency";
 import { getSigningClient } from "../utils/cosmos/client";
-import { useConnection } from "wagmi";
-import { BRIDGE_WITHDRAWAL_ABI } from "../utils/bridge/abis";
 import { base64ToHex } from "../utils/encodingUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { COSMOS_BRIDGE_ADDRESS } from "../config/constants";
+import useUserWalletConnect from "../hooks/wallet/useUserWalletConnect";
+import { useWithdraw } from "../hooks/wallet/useWithdraw";
 
 /**
  * WithdrawalDashboard - Interface for managing USDC withdrawals to Ethereum
@@ -36,8 +36,9 @@ interface Withdrawal {
 
 export default function WithdrawalDashboard() {
     const cosmosWallet = useCosmosWallet();
-    const { address: baseAddress, isConnected } = useConnection();
+    const { address: baseAddress, isConnected } = useUserWalletConnect();
     const { currentNetwork } = useNetwork();
+    const { withdraw, hash, isWithdrawConfirmed, withdrawError } = useWithdraw();
     const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [processingNonce, setProcessingNonce] = useState<string | null>(null);
@@ -167,23 +168,15 @@ export default function WithdrawalDashboard() {
         setProcessingNonce(withdrawal.nonce);
 
         try {
-            // Get ethereum provider
-            const provider = new ethers.BrowserProvider((window as any).ethereum);
-            const signer = await provider.getSigner();
-
-            // Create contract instance
-            const contract = new ethers.Contract(bridgeContractAddress, BRIDGE_WITHDRAWAL_ABI, signer);
-
-            // Convert base64 signature to hex format for ethers
+            // Convert base64 signature to hex format
             const hexSignature = withdrawal.signature ? base64ToHex(withdrawal.signature) : "0x";
 
-            // Call withdraw on bridge contract with correct parameter order
-            // Contract: withdraw(uint256 amount, address receiver, bytes32 nonce, bytes signature)
-            const tx = await contract.withdraw(
-                withdrawal.amount,        // uint256 amount
-                withdrawal.baseAddress,   // address receiver (BASE address, not Cosmos!)
-                withdrawal.nonce,         // bytes32 nonce
-                hexSignature             // bytes signature
+            // Use the useWithdraw hook which properly uses wagmi/reown wallet
+            await withdraw(
+                withdrawal.nonce,
+                withdrawal.baseAddress,
+                BigInt(withdrawal.amount),
+                hexSignature
             );
 
             toast.info(
@@ -192,40 +185,48 @@ export default function WithdrawalDashboard() {
                     <div className="text-sm mt-1">Waiting for confirmation...</div>
                 </div>
             );
-
-            // Wait for transaction confirmation
-            const receipt = await tx.wait();
-
-            if (receipt.status === 1) {
-                toast.success(
-                    <div>
-                        <div className="font-semibold">Withdrawal completed!</div>
-                        <div className="text-sm mt-1">USDC transferred to {withdrawal.baseAddress.slice(0, 10)}...</div>
-                    </div>
-                );
-
-                // Update withdrawal status to completed
-                setWithdrawals(prev =>
-                    prev.map(w =>
-                        w.nonce === withdrawal.nonce ? { ...w, status: "completed" as const, txHash: receipt.hash } : w
-                    )
-                );
-
-                // Refresh withdrawals from chain
-                setTimeout(() => {
-                    loadWithdrawals();
-                }, 2000);
-            } else {
-                toast.error("Withdrawal transaction failed");
-            }
         } catch (err: any) {
             console.error("Failed to complete withdrawal:", err);
             const errorMessage = err.message || "Unknown error occurred";
             toast.error(`Failed: ${errorMessage}`);
-        } finally {
             setProcessingNonce(null);
         }
     };
+
+    // Handle withdrawal confirmation via useWithdraw hook
+    useEffect(() => {
+        if (isWithdrawConfirmed && processingNonce) {
+            toast.success(
+                <div>
+                    <div className="font-semibold">Withdrawal completed!</div>
+                    <div className="text-sm mt-1">USDC transferred successfully</div>
+                </div>
+            );
+
+            // Update withdrawal status to completed
+            setWithdrawals(prev =>
+                prev.map(w =>
+                    w.nonce === processingNonce ? { ...w, status: "completed" as const, txHash: hash } : w
+                )
+            );
+
+            setProcessingNonce(null);
+
+            // Refresh withdrawals from chain
+            setTimeout(() => {
+                loadWithdrawals();
+            }, 2000);
+        }
+    }, [isWithdrawConfirmed, processingNonce, hash, loadWithdrawals]);
+
+    // Handle withdrawal errors
+    useEffect(() => {
+        if (withdrawError && processingNonce) {
+            console.error("Withdrawal error:", withdrawError);
+            toast.error(`Withdrawal failed: ${withdrawError.message}`);
+            setProcessingNonce(null);
+        }
+    }, [withdrawError, processingNonce]);
 
     // Load withdrawals on mount and when wallet changes
     useEffect(() => {
