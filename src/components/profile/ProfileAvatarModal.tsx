@@ -75,7 +75,7 @@ export const ProfileAvatarModal: React.FC = () => {
                 ) : (
                     <>
                         <div className={styles.surfaceMuted}>
-                            <p className={styles.meta}>Wallet: {walletAddress?.slice(0, 6)}...{walletAddress?.slice(-4)}</p>
+                            <p className={styles.meta}>Wallet: {walletAddress}</p>
                         </div>
 
                         {!hasSourceConfigured && (
