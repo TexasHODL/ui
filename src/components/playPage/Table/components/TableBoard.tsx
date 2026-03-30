@@ -59,7 +59,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
             </div>
 
             {/* Central Display Area */}
-            <div className="flex flex-col items-center justify-center -mt-20">
+            <div className="flex flex-col items-center justify-center -mt-8">
                 {/* Hide pot display when sit-and-go is waiting for players */}
                 {!isSitAndGoWaitingForPlayers && (
                     <>

@@ -138,7 +138,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         return (
             <div
                 key={index}
-                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] mt-[40px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${styles.secondaryText} ${styles.positionTransition}`}
+                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${styles.secondaryText} ${styles.positionTransition}`}
                 style={containerStyle}
             >
                 {/* Development Mode Debug Info */}
@@ -192,12 +192,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                         />
                     </div>
 
-                    {/* Dealer Button */}
-                    {isDealer && (
-                        <div className="absolute top-[-85px] right-[-40px] w-12 h-12 z-20">
-                            <img src={CustomDealer} alt="Dealer Button" className="w-full h-full" />
-                        </div>
-                    )}
+                    {/* Dealer Button — rendered at table level using geometry positions */}
                 </div>
             </div>
         );
