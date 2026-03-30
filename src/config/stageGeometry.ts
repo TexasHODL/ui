@@ -342,11 +342,11 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
         },
         chips: {
             0: { dx: 0, dy: 40 },    // seat 1
-            1: { dx: -76, dy: 52 },  // seat 2
+            1: { dx: -106, dy: 10 },  // seat 2
             2: { dx: -106, dy: 0 },  // seat 3
             3: { dx: 0, dy: -30 },   // seat 4
             4: { dx: 106, dy: 0 },   // seat 5
-            5: { dx: 76, dy: 52 }    // seat 6
+            5: { dx: 106, dy: 10 }    // seat 6
         }
     },
 
