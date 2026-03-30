@@ -155,7 +155,7 @@ function stageToPosition(stageX: number, stageY: number, color?: string): Positi
     };
 }
 
-// ─── Derivation Constants (tweak these to move ALL positions ly) ──
+// ─── Derivation Constants (tweak these to move ALL positions globally) ──
 
 /** Scale factor for player components (cards, badges, chips, dealer button).
  *  Applied on top of the auto-fit zoom. 1.0 = default, 1.3 = 30% bigger.
@@ -301,7 +301,7 @@ export function getWinAnimationPositions(tableSize: TableSize): Position[] {
 // HOW TO USE:
 //
 // 1. Nudge seat 3's chips 5px left, 10px down on ALL screens:
-//    _OFFSETS = { 9: { chips: { 3: { dx: -5, dy: 10 } } } }
+//    GLOBAL_OFFSETS = { 9: { chips: { 3: { dx: -5, dy: 10 } } } }
 //
 // 2. Nudge seat 5's chips 8px up on MOBILE PORTRAIT only:
 //    VIEWPORT_OFFSETS["mobile-portrait"] = { 9: { chips: { 5: { dy: -8 } } } }
@@ -317,6 +317,7 @@ interface Offset { dx?: number; dy?: number; }
 type ElementType = "players" | "vacantPlayers" | "chips" | "dealers"
                  | "turnAnimations" | "winAnimations";
 
+/** Global offsets — apply to all screen sizes */
 const GLOBAL_OFFSETS: Partial<Record<TableSize,
     Partial<Record<ElementType, Record<number, Offset>>>>> = {
     2: {
