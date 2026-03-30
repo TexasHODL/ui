@@ -215,18 +215,10 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
      *   3. Chain avatar cache (from prior REST queries)
      *   4. Trigger async chain query for unknown addresses (result appears on next render)
      */
-    // Helper: resolve image URL from wallet NFTs by contract+tokenId
-    const resolveNftImageUrl = useCallback(
-        (contractAddress: string, tokenId: string): string | null => {
-            const match = walletNfts.find(
-                nft => nft.contractAddress.toLowerCase() === contractAddress.toLowerCase() && nft.tokenId === tokenId
-            );
-            return match?.imageUrl || null;
-        },
-        [walletNfts]
-    );
+    // Chain-registered NFT data (contract+tokenId) before image resolution
+    const [chainNftData, setChainNftData] = useState<{ contractAddress: string; tokenId: string } | null>(null);
 
-    // On mount / network change, query chain for current user's avatar
+    // On mount, query chain for current user's registered avatar
     const hasQueriedSelf = useRef(false);
     useEffect(() => {
         if (!cosmosAddress || hasQueriedSelf.current) return;
@@ -235,19 +227,31 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
         const { restEndpoint } = getCosmosUrls(currentNetwork);
         queryNftAvatar(restEndpoint, cosmosAddress).then(result => {
             if (result) {
-                const imageUrl = resolveNftImageUrl(result.contractAddress, result.tokenId);
-                if (imageUrl && !selectedAvatar) {
-                    setSelectedAvatar({
-                        contractAddress: result.contractAddress,
-                        tokenId: result.tokenId,
-                        imageUrl,
-                        selectedAt: Date.now()
-                    });
-                }
-                chainAvatarCache.set(cosmosAddress.toLowerCase(), imageUrl);
+                setChainNftData({ contractAddress: result.contractAddress, tokenId: result.tokenId });
             }
         });
-    }, [cosmosAddress, currentNetwork, resolveNftImageUrl, selectedAvatar]);
+    }, [cosmosAddress, currentNetwork]);
+
+    // Resolve image URL whenever chainNftData or walletNfts change
+    useEffect(() => {
+        if (!chainNftData || !cosmosAddress) return;
+        // Already have an avatar with an image — skip
+        if (selectedAvatar?.imageUrl && selectedAvatar.contractAddress === chainNftData.contractAddress && selectedAvatar.tokenId === chainNftData.tokenId) return;
+
+        const match = walletNfts.find(
+            nft => nft.contractAddress.toLowerCase() === chainNftData.contractAddress.toLowerCase() && nft.tokenId === chainNftData.tokenId
+        );
+
+        if (match?.imageUrl) {
+            setSelectedAvatar({
+                contractAddress: chainNftData.contractAddress,
+                tokenId: chainNftData.tokenId,
+                imageUrl: match.imageUrl,
+                selectedAt: Date.now()
+            });
+            chainAvatarCache.set(cosmosAddress.toLowerCase(), match.imageUrl);
+        }
+    }, [chainNftData, walletNfts, cosmosAddress, selectedAvatar]);
 
     const getAvatarForAddress = useCallback(
         (targetAddress?: string, playerAvatar?: string): string | null => {
@@ -280,8 +284,10 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                 const { restEndpoint } = getCosmosUrls(currentNetwork);
                 queryNftAvatar(restEndpoint, targetAddress).then(result => {
                     if (result) {
-                        const imageUrl = resolveNftImageUrl(result.contractAddress, result.tokenId);
-                        chainAvatarCache.set(normalized, imageUrl);
+                        const match = walletNfts.find(
+                            nft => nft.contractAddress.toLowerCase() === result.contractAddress.toLowerCase() && nft.tokenId === result.tokenId
+                        );
+                        chainAvatarCache.set(normalized, match?.imageUrl || null);
                     } else {
                         chainAvatarCache.set(normalized, null);
                     }
@@ -290,7 +296,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
 
             return null;
         },
-        [cosmosAddress, selectedAvatar, currentNetwork, resolveNftImageUrl]
+        [cosmosAddress, selectedAvatar, currentNetwork, walletNfts]
     );
 
     const contextValue = useMemo(
