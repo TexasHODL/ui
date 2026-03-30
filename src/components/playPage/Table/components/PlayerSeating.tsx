@@ -182,11 +182,16 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
 
                 return (
                     <div key={positionIndex} className="z-[10]">
-                        {/* Turn indicator only when no winner yet AND not waiting for players in sit-and-go */}
-                        {!hasWinner && !isSitAndGoWaitingForPlayers && <MemoizedTurnAnimation index={seatNum - 1} />}
+                        {/* Turn indicator — offset down to center on badge */}
+                        {!hasWinner && !isSitAndGoWaitingForPlayers && (
+                            <MemoizedTurnAnimation
+                                index={seatNum - 1}
+                                position={tableLayout.positions.turnAnimations[positionIndex]}
+                            />
+                        )}
 
-                        {/* Winner ripple when hand is over and this seat won */}
-                        {isWinnerSeat && <WinAnimation index={seatNum - 1} />}
+                        {/* Winner ripple — same position as player */}
+                        {isWinnerSeat && <WinAnimation index={seatNum - 1} position={position} />}
 
                         {componentToRender}
                     </div>
