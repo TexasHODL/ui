@@ -9,6 +9,7 @@ import { useWalletNfts } from "../../hooks/profile/useWalletNfts";
 import type { AvatarSelection, ProfileAvatarState, WalletNftAsset } from "../../types/profile/avatar";
 import { parsePlayerAvatar } from "../../utils/profile/avatarPayload";
 import { buildNftAuthorizationMessage, broadcastNftRegistration, queryNftAvatar } from "../../utils/profile/nftRegistration";
+import { resolveNftImageUrl } from "../../utils/profile/nftImageResolver";
 import { getCosmosUrls } from "../../utils/cosmos/urls";
 
 /**
@@ -215,43 +216,29 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
      *   3. Chain avatar cache (from prior REST queries)
      *   4. Trigger async chain query for unknown addresses (result appears on next render)
      */
-    // Chain-registered NFT data (contract+tokenId) before image resolution
-    const [chainNftData, setChainNftData] = useState<{ contractAddress: string; tokenId: string } | null>(null);
-
-    // On mount, query chain for current user's registered avatar
+    // On mount, query chain for current user's registered avatar and resolve image
     const hasQueriedSelf = useRef(false);
     useEffect(() => {
-        if (!cosmosAddress || hasQueriedSelf.current) return;
+        if (!cosmosAddress || hasQueriedSelf.current || selectedAvatar) return;
         hasQueriedSelf.current = true;
 
         const { restEndpoint } = getCosmosUrls(currentNetwork);
-        queryNftAvatar(restEndpoint, cosmosAddress).then(result => {
-            if (result) {
-                setChainNftData({ contractAddress: result.contractAddress, tokenId: result.tokenId });
+        queryNftAvatar(restEndpoint, cosmosAddress).then(async result => {
+            if (!result) return;
+
+            // Resolve image directly from the NFT contract — no wallet needed
+            const imageUrl = await resolveNftImageUrl(result.contractAddress, result.tokenId);
+            if (imageUrl) {
+                setSelectedAvatar({
+                    contractAddress: result.contractAddress,
+                    tokenId: result.tokenId,
+                    imageUrl,
+                    selectedAt: Date.now()
+                });
+                chainAvatarCache.set(cosmosAddress.toLowerCase(), imageUrl);
             }
         });
-    }, [cosmosAddress, currentNetwork]);
-
-    // Resolve image URL whenever chainNftData or walletNfts change
-    useEffect(() => {
-        if (!chainNftData || !cosmosAddress) return;
-        // Already have an avatar with an image — skip
-        if (selectedAvatar?.imageUrl && selectedAvatar.contractAddress === chainNftData.contractAddress && selectedAvatar.tokenId === chainNftData.tokenId) return;
-
-        const match = walletNfts.find(
-            nft => nft.contractAddress.toLowerCase() === chainNftData.contractAddress.toLowerCase() && nft.tokenId === chainNftData.tokenId
-        );
-
-        if (match?.imageUrl) {
-            setSelectedAvatar({
-                contractAddress: chainNftData.contractAddress,
-                tokenId: chainNftData.tokenId,
-                imageUrl: match.imageUrl,
-                selectedAt: Date.now()
-            });
-            chainAvatarCache.set(cosmosAddress.toLowerCase(), match.imageUrl);
-        }
-    }, [chainNftData, walletNfts, cosmosAddress, selectedAvatar]);
+    }, [cosmosAddress, currentNetwork, selectedAvatar]);
 
     const getAvatarForAddress = useCallback(
         (targetAddress?: string, playerAvatar?: string): string | null => {
@@ -282,12 +269,10 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                 pendingQueriesRef.current.add(normalized);
 
                 const { restEndpoint } = getCosmosUrls(currentNetwork);
-                queryNftAvatar(restEndpoint, targetAddress).then(result => {
+                queryNftAvatar(restEndpoint, targetAddress).then(async result => {
                     if (result) {
-                        const match = walletNfts.find(
-                            nft => nft.contractAddress.toLowerCase() === result.contractAddress.toLowerCase() && nft.tokenId === result.tokenId
-                        );
-                        chainAvatarCache.set(normalized, match?.imageUrl || null);
+                        const imageUrl = await resolveNftImageUrl(result.contractAddress, result.tokenId);
+                        chainAvatarCache.set(normalized, imageUrl);
                     } else {
                         chainAvatarCache.set(normalized, null);
                     }
@@ -296,7 +281,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
 
             return null;
         },
-        [cosmosAddress, selectedAvatar, currentNetwork, walletNfts]
+        [cosmosAddress, selectedAvatar, currentNetwork]
     );
 
     const contextValue = useMemo(

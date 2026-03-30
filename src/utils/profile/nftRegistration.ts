@@ -27,7 +27,7 @@ export const buildNftAuthorizationMessage = (
     contractAddress: string,
     tokenId: string
 ): string => {
-    return `I, ${ethAddress}, authorize ${cosmosAddress} to use NFT ${contractAddress}:${tokenId}`;
+    return `I, ${ethAddress.toLowerCase()}, authorize ${cosmosAddress} to use NFT ${contractAddress.toLowerCase()}:${tokenId}`;
 };
 
 /**
