@@ -9,6 +9,7 @@ export const ProfileAvatarModal: React.FC = () => {
     const [searchTerm, setSearchTerm] = React.useState("");
     const [addressCopied, setAddressCopied] = React.useState(false);
     const [justRegistered, setJustRegistered] = React.useState(false);
+    const [registeringAssetId, setRegisteringAssetId] = React.useState<string | null>(null);
     const prevIsRegistering = React.useRef(false);
     const {
         isDrawerOpen,
@@ -30,10 +31,13 @@ export const ProfileAvatarModal: React.FC = () => {
         registrationError
     } = useProfileAvatar();
 
-    // Detect successful registration: isRegistering went from true to false with no error
+    // Detect registration completion
     React.useEffect(() => {
-        if (prevIsRegistering.current && !isRegistering && !registrationError) {
-            setJustRegistered(true);
+        if (prevIsRegistering.current && !isRegistering) {
+            setRegisteringAssetId(null);
+            if (!registrationError) {
+                setJustRegistered(true);
+            }
         }
         prevIsRegistering.current = isRegistering;
     }, [isRegistering, registrationError]);
@@ -168,12 +172,12 @@ export const ProfileAvatarModal: React.FC = () => {
                                     <button
                                         key={asset.id}
                                         className={`${styles.card} ${isSelected ? styles.cardSelected : ""}`.trim()}
-                                        onClick={() => selectAvatar(asset)}
+                                        onClick={() => { setRegisteringAssetId(asset.id); selectAvatar(asset); }}
                                         disabled={isRegistering}
                                     >
                                         <div className={styles.nftImageWrapper}>
                                             <img src={asset.imageUrl} alt={asset.name || `NFT #${asset.tokenId}`} className={styles.nftImage} />
-                                            {isSelected && isRegistering && (
+                                            {registeringAssetId === asset.id && isRegistering && (
                                                 <div className={styles.nftImageOverlay}>
                                                     <span className={styles.nftSpinner} />
                                                 </div>
