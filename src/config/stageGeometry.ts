@@ -115,9 +115,9 @@ export const SEAT_COORDS: Record<number, [number, number][]> = {
     ],
     4: [
         [800, 832],     // Seat 1 - bottom-center
-        [1282.2, 535],  // Seat 2 - right-center
+        [317.8, 535],  // Seat 2 - left-center
         [800, 238],     // Seat 3 - top-center
-        [317.8, 535]    // Seat 4 - left-center
+        [1282.2, 535]    // Seat 4 - right-center
     ],
     6: [
         [800, 832],      // seat 1 bottom
@@ -128,15 +128,15 @@ export const SEAT_COORDS: Record<number, [number, number][]> = {
         [1282.2, 683.5]  // seat 6 lower-right
     ],
     9: [
-        [800, 842],      // seat 1 bottom-center
-        [575, 832],      // seat 2 bottom-left
-        [295.9, 636.6],  // seat 3 left-lower
-        [384.1, 307.5],  // seat 4 left-upper
-        [680, 238],      // seat 5 top-left
-        [920, 238],      // seat 6 top-right
-        [1215.9, 307.5], // seat 7 right-upper
-        [1304.1, 636.6], // seat 8 right-lower
-        [1025, 832]      // seat 9 bottom-right
+        [800, 842],     // Seat 1 - bottom-center
+        [575, 832],     // Seat 2 - bottom-left
+        [295.9, 636.6], // Seat 3 - left arc +70deg
+        [384.1, 307.5], // Seat 4 - left arc +140deg
+        [680, 238],     // Seat 5 - top-left
+        [920, 238],     // Seat 6 - top-right
+        [1215.9, 307.5],// Seat 7 - right arc +140deg
+        [1304.1, 636.6],// Seat 8 - right arc +70deg
+        [1025, 832]     // Seat 9 - bottom-right
     ]
 };
 
@@ -328,56 +328,71 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     Partial<Record<ElementType, Record<number, Offset>>>>> = {
     2: {
         dealers: {
-            0: { dx: 97, dy: 100 },
-            1: { dx: 97, dy: -100 }
+            0: { dx: 95, dy: 113 },
+            1: { dx: 95, dy: -69 }
         },
         chips: {
-            0: { dx: 0, dy: 40 },
-            1: { dx: 0, dy: -30 }
+            0: { dx: -38, dy: 40 },
+            1: { dx: -38, dy: -5 }
+        }
+    },
+
+    4: {
+        dealers: {
+            0: { dx: 95, dy: 113 },    // seat 1
+            1: { dx: -57, dy: 24 },  // seat 2
+            2: { dx: 95, dy: -69 }, // seat 3
+            3: { dx: 60, dy: 24 },   // seat 4
+            },
+        chips: {
+            0: { dx: -38, dy: 40 },    // seat 1
+            1: { dx: -90, dy: 75 },  // seat 2
+            2: { dx: -38, dy: -5 },  // seat 3
+            3: { dx: 15, dy: 75 },   // seat 4
         }
     },
 
     6: {
         dealers: {
-            0: { dx: 97, dy: 100 },    // seat 1
-            1: { dx: -66.8, dy: 52 },  // seat 2
-            2: { dx: -66.8, dy: -52 }, // seat 3
-            3: { dx: 97, dy: -100 },   // seat 4
-            4: { dx: 66.8, dy: -52 },  // seat 5
-            5: { dx: 66.8, dy: 52 }    // seat 6
+            0: { dx: 95, dy: 113 },    // seat 1
+            1: { dx: -60, dy: 73 },  // seat 2
+            2: { dx: -60, dy: -23 }, // seat 3
+            3: { dx: 95, dy: -70 },   // seat 4
+            4: { dx: 60, dy: -23 },  // seat 5
+            5: { dx: 60, dy: 73 }    // seat 6
         },
         chips: {
-            0: { dx: 0, dy: 40 },    // seat 1
-            1: { dx: -106, dy: 10 },  // seat 2
-            2: { dx: -106, dy: 0 },  // seat 3
-            3: { dx: 0, dy: -30 },   // seat 4
-            4: { dx: 106, dy: 0 },   // seat 5
-            5: { dx: 106, dy: 10 }    // seat 6
+            0: { dx: -38, dy: 40 },    // seat 1
+            1: { dx: -92, dy: 20 },  // seat 2
+            2: { dx: -92, dy: 15 },  // seat 3
+            3: { dx: -40, dy: -7 },   // seat 4
+            4: { dx: 18, dy: 15 },   // seat 5
+            5: { dx: 18, dy: 20 }    // seat 6
         }
     },
 
     9: {
         dealers: {
-            0: { dx: 97, dy: 100 },   // seat 1
-            1: { dx: 20, dy: 100 },   // seat 2
-            2: { dx: -75, dy: 34 },   // seat 3
-            3: { dx: -45, dy: -77 },  // seat 4
-            4: { dx: 55, dy: -100 },  // seat 5
-            5: { dx: 137, dy: -100 }, // seat 6
-            6: { dx: 45, dy: -77 },   // seat 7
-            7: { dx: 75, dy: 34 },    // seat 8
-            8: { dx: 173, dy: 100 }   // seat 9
+            0: { dx: 95, dy: 115 },   // seat 1
+            1: { dx: 25, dy: 165 },   // seat 2
+            2: { dx: -68, dy: 55},   // seat 3
+            3: { dx: -39, dy: -50 },  // seat 4
+            4: { dx: 58, dy: -69 },  // seat 5
+            5: { dx: 132, dy: -69 }, // seat 6
+            6: { dx: 39, dy: -50 },   // seat 7
+            7: { dx: 68, dy: 55 },    // seat 8
+            8: { dx: 165, dy: 165 }   // seat 9
         },
         chips: {
-            0: { dx: 0, dy: 40 },         // seat 1
-            1: { dx: -95, dy: 37 },       // seat 2
-            2: { dx: -115.7, dy: -10 },   // seat 3
-            3: { dx: -79, dy: -30 },      // seat 4
-            4: { dx: -50, dy: -30 },      // seat 5
-            5: { dx: 50, dy: -30 },       // seat 6
-            6: { dx: 79, dy: -30 },     // seat 7
-            7: { dx: 115.7, dy: -10 },    // seat 8
-            8: { dx: 95, dy: 37 }         // seat 9
+            0: { dx: -35, dy: 40 },         // seat 1
+            1: { dx: -125, dy: 40 },       // seat 2
+            2: { dx: -103, dy: 2 },   // seat 3
+            3: { dx: -69, dy: -16 },      // seat 4
+            4: { dx: -85, dy: -8 },      // seat 5
+            5: { dx: 7, dy: -8 },       // seat 6
+            6: { dx: -10, dy: -16 },     // seat 7
+            7: { dx: 27, dy: 2 },    // seat 8
+            8: { dx: 50, dy: 40 }         // seat 9
         }
     }
 };
