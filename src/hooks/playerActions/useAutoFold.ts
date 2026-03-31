@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { PlayerActionType } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import { foldHand } from "./foldHand";
 import { checkHand } from "./checkHand";
@@ -36,8 +37,8 @@ export function useAutoFold(
     hasCheckAction: boolean,
     isUsersTurn: boolean,
     timeRemaining: number,
-    onAutoActionStarted?: (action: "fold" | "check") => void,
-    onAutoActionComplete?: (action: "fold" | "check", txHash: string) => void,
+    onAutoActionStarted?: (action: PlayerActionType.FOLD | PlayerActionType.CHECK) => void,
+    onAutoActionComplete?: (action: PlayerActionType.FOLD | PlayerActionType.CHECK, txHash: string) => void,
     onAutoActionError?: (error: Error) => void
 ): void {
     // Track if we've already triggered for this opportunity
@@ -53,13 +54,13 @@ export function useAutoFold(
         }
 
         // Prefer check over fold
-        const action: "fold" | "check" = hasCheckAction ? "check" : "fold";
+        const action = hasCheckAction ? PlayerActionType.CHECK : PlayerActionType.FOLD;
 
         isProcessingRef.current = true;
         onAutoActionStarted?.(action);
 
         try {
-            const result = action === "check"
+            const result = action === PlayerActionType.CHECK
                 ? await checkHand(tableId, network)
                 : await foldHand(tableId, network);
             onAutoActionComplete?.(action, result.hash);
