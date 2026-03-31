@@ -154,12 +154,13 @@ const TableList: React.FC = () => {
                             <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400">Players</th>
                             <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400">Buy-In</th>
                             <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400">Action</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                         {games.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+                                <td colSpan={9} className="px-6 py-12 text-center text-gray-400">
                                     <div className="mb-4">
                                         <svg className="w-12 h-12 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path
@@ -232,56 +233,56 @@ const TableList: React.FC = () => {
                                             <span className="text-gray-300 font-mono text-sm">{formatBuyIn(game)}</span>
                                         </td>
                                         <td className="px-4 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <a
-                                                    href={`/table/${game.gameId}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    aria-label={`Join ${formatGameFormatDisplay(game.gameFormat)} table with ${game.currentPlayers} of ${game.maxPlayers} players, blinds $${formatMicroAsUsdc(game.smallBlind, 2)}/$${formatMicroAsUsdc(game.bigBlind, 2)}`}
-                                                    className={`inline-block px-4 py-2 text-white text-sm font-semibold rounded-lg transition-all hover:opacity-90 ${styles.actionButton}`}
-                                                >
-                                                    {game.currentPlayers === game.maxPlayers ? "Full" : "Join"}
-                                                </a>
-                                                {canDelete(game) && (
-                                                    <>
-                                                        {showDeleteConfirm === game.gameId ? (
-                                                            <div className="flex items-center gap-1">
-                                                                <button
-                                                                    onClick={() => handleDeleteGame(game.gameId)}
-                                                                    disabled={isDeleting || deletingGameId === game.gameId}
-                                                                    className="px-2 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white text-xs font-semibold rounded transition-colors"
-                                                                    title="Confirm delete"
-                                                                >
-                                                                    {deletingGameId === game.gameId ? "..." : "Yes"}
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => setShowDeleteConfirm(null)}
-                                                                    className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs font-semibold rounded transition-colors"
-                                                                    title="Cancel"
-                                                                >
-                                                                    No
-                                                                </button>
-                                                            </div>
-                                                        ) : (
+                                            <a
+                                                href={`/table/${game.gameId}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                aria-label={`Join ${formatGameFormatDisplay(game.gameFormat)} table with ${game.currentPlayers} of ${game.maxPlayers} players, blinds $${formatMicroAsUsdc(game.smallBlind, 2)}/$${formatMicroAsUsdc(game.bigBlind, 2)}`}
+                                                className={`inline-block px-4 py-2 text-white text-sm font-semibold rounded-lg transition-all hover:opacity-90 ${styles.actionButton}`}
+                                            >
+                                                {game.currentPlayers === game.maxPlayers ? "Full" : "Join"}
+                                            </a>
+                                        </td>
+                                        <td className="px-4 py-4 text-center">
+                                            {canDelete(game) && (
+                                                <>
+                                                    {showDeleteConfirm === game.gameId ? (
+                                                        <div className="flex items-center justify-center gap-1">
                                                             <button
-                                                                onClick={() => setShowDeleteConfirm(game.gameId)}
-                                                                disabled={isDeleting}
-                                                                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
-                                                                title="Delete table"
+                                                                onClick={() => handleDeleteGame(game.gameId)}
+                                                                disabled={isDeleting || deletingGameId === game.gameId}
+                                                                className="px-2 py-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white text-xs font-semibold rounded transition-colors"
+                                                                title="Confirm delete"
                                                             >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                        strokeWidth="2"
-                                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                    />
-                                                                </svg>
+                                                                {deletingGameId === game.gameId ? "..." : "Yes"}
                                                             </button>
-                                                        )}
-                                                    </>
-                                                )}
-                                            </div>
+                                                            <button
+                                                                onClick={() => setShowDeleteConfirm(null)}
+                                                                className="px-2 py-1 bg-gray-600 hover:bg-gray-500 text-white text-xs font-semibold rounded transition-colors"
+                                                                title="Cancel"
+                                                            >
+                                                                No
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setShowDeleteConfirm(game.gameId)}
+                                                            disabled={isDeleting}
+                                                            className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-900/30 rounded-lg transition-colors"
+                                                            title="Delete table"
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                                />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 );
