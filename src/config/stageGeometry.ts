@@ -110,8 +110,8 @@ const SEAT_COLORS: Record<number, string[]> = {
 // Each entry is [stageX, stageY] from the issue #142 spec files
 export const SEAT_COORDS: Record<number, [number, number][]> = {
     2: [
-        [800, 832],     // Seat 1 - bottom-center
-        [800, 238]      // Seat 2 - top-center
+        [800, 832],      // seat 1 bottom
+        [800, 238]       // seat 2 top
     ],
     4: [
         [800, 832],     // Seat 1 - bottom-center
@@ -120,25 +120,26 @@ export const SEAT_COORDS: Record<number, [number, number][]> = {
         [317.8, 535]    // Seat 4 - left-center
     ],
     6: [
-        [800, 832],     // Seat 1 - bottom-center
-        [1282.2, 683.5],// Seat 2 - right arc 120deg
-        [1282.2, 386.5],// Seat 3 - right arc 60deg
-        [800, 238],     // Seat 4 - top-center
-        [317.8, 386.5], // Seat 5 - left arc 60deg
-        [317.8, 683.5]  // Seat 6 - left arc 120deg
+        [800, 832],      // seat 1 bottom
+        [317.8, 683.5],  // seat 2 lower-left
+        [317.8, 386.5],  // seat 3 upper-left
+        [800, 238],      // seat 4 top
+        [1282.2, 386.5], // seat 5 upper-right
+        [1282.2, 683.5]  // seat 6 lower-right
     ],
     9: [
-        [800, 832],     // Seat 1 - bottom-center
-        [575, 832],     // Seat 2 - bottom-left
-        [295.9, 636.6], // Seat 3 - left arc +70deg
-        [384.1, 307.5], // Seat 4 - left arc +140deg
-        [680, 238],     // Seat 5 - top-left
-        [920, 238],     // Seat 6 - top-right
-        [1215.9, 307.5],// Seat 7 - right arc +140deg
-        [1304.1, 636.6],// Seat 8 - right arc +70deg
-        [1025, 832]     // Seat 9 - bottom-right
+        [800, 842],      // seat 1 bottom-center
+        [575, 832],      // seat 2 bottom-left
+        [295.9, 636.6],  // seat 3 left-lower
+        [384.1, 307.5],  // seat 4 left-upper
+        [680, 238],      // seat 5 top-left
+        [920, 238],      // seat 6 top-right
+        [1215.9, 307.5], // seat 7 right-upper
+        [1304.1, 636.6], // seat 8 right-lower
+        [1025, 832]      // seat 9 bottom-right
     ]
 };
+
 
 // ─── Coordinate Conversion ───────────────────────────────────────────
 
@@ -325,9 +326,62 @@ type ElementType = "players" | "vacantPlayers" | "chips" | "dealers"
 /** Global offsets — apply to all screen sizes */
 const GLOBAL_OFFSETS: Partial<Record<TableSize,
     Partial<Record<ElementType, Record<number, Offset>>>>> = {
-    // Add entries here. Example:
-    // 9: { chips: { 3: { dx: -5, dy: 10 } } }
+    2: {
+        dealers: {
+            0: { dx: 97, dy: 100 },
+            1: { dx: 97, dy: -100 }
+        },
+        chips: {
+            0: { dx: 0, dy: 40 },
+            1: { dx: 0, dy: -30 }
+        }
+    },
+
+    6: {
+        dealers: {
+            0: { dx: 97, dy: 100 },    // seat 1
+            1: { dx: -66.8, dy: 52 },  // seat 2
+            2: { dx: -66.8, dy: -52 }, // seat 3
+            3: { dx: 97, dy: -100 },   // seat 4
+            4: { dx: 66.8, dy: -52 },  // seat 5
+            5: { dx: 66.8, dy: 52 }    // seat 6
+        },
+        chips: {
+            0: { dx: 0, dy: 40 },    // seat 1
+            1: { dx: -106, dy: 10 },  // seat 2
+            2: { dx: -106, dy: 0 },  // seat 3
+            3: { dx: 0, dy: -30 },   // seat 4
+            4: { dx: 106, dy: 0 },   // seat 5
+            5: { dx: 106, dy: 10 }    // seat 6
+        }
+    },
+
+    9: {
+        dealers: {
+            0: { dx: 97, dy: 100 },   // seat 1
+            1: { dx: 20, dy: 100 },   // seat 2
+            2: { dx: -75, dy: 34 },   // seat 3
+            3: { dx: -45, dy: -77 },  // seat 4
+            4: { dx: 55, dy: -100 },  // seat 5
+            5: { dx: 137, dy: -100 }, // seat 6
+            6: { dx: 45, dy: -77 },   // seat 7
+            7: { dx: 75, dy: 34 },    // seat 8
+            8: { dx: 173, dy: 100 }   // seat 9
+        },
+        chips: {
+            0: { dx: 0, dy: 40 },         // seat 1
+            1: { dx: -95, dy: 37 },       // seat 2
+            2: { dx: -115.7, dy: -10 },   // seat 3
+            3: { dx: -79, dy: -30 },      // seat 4
+            4: { dx: -50, dy: -30 },      // seat 5
+            5: { dx: 50, dy: -30 },       // seat 6
+            6: { dx: 79, dy: -30 },     // seat 7
+            7: { dx: 115.7, dy: -10 },    // seat 8
+            8: { dx: 95, dy: 37 }         // seat 9
+        }
+    }
 };
+
 
 /** Per-viewport offsets — override for specific screen sizes only */
 const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {
