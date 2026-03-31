@@ -10,6 +10,8 @@ import { dealCardsWithEntropy } from "../../hooks/playerActions/dealCards";
 import { useAutoDeal } from "../../hooks/playerActions/useAutoDeal";
 import { useAutoPostBlinds } from "../../hooks/playerActions/useAutoPostBlinds";
 import { useAutoNewHand } from "../../hooks/playerActions/useAutoNewHand";
+import { useAutoFold } from "../../hooks/playerActions/useAutoFold";
+import { usePlayerTimer } from "../../hooks/player/usePlayerTimer";
 
 // Import action handlers
 import {
@@ -27,7 +29,7 @@ import {
 
 // Import utils
 import { getActionByType, hasAction } from "../../utils/actionUtils";
-import { getAutoDealEnabled, getAutoPostBlindsEnabled, getAutoNewHandEnabled } from "../../utils/urlParams";
+import { getAutoDealEnabled, getAutoPostBlindsEnabled, getAutoNewHandEnabled, getAutoFoldEnabled } from "../../utils/urlParams";
 import { getRaiseToAmount } from "../../utils/raiseUtils";
 
 // Import sub-components
@@ -150,6 +152,28 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
             }
         }, // onBlindComplete
         () => setLoadingAction(null) // onBlindError
+    );
+
+    // Get timer data for the current user's seat (used by auto-fold)
+    const { timeRemaining } = usePlayerTimer(tableId, userPlayer?.seat);
+
+    // Auto-fold hook - automatically folds (or checks) when the action timer expires
+    // Can be disabled via URL query param: ?autofold=false
+    useAutoFold(
+        tableId,
+        network,
+        hasFoldAction,
+        hasCheckAction,
+        isUsersTurn,
+        timeRemaining,
+        (action) => setLoadingAction(action), // onAutoActionStarted
+        (action, txHash) => {
+            setLoadingAction(null);
+            if (onTransactionSubmitted) {
+                onTransactionSubmitted(txHash);
+            }
+        }, // onAutoActionComplete
+        () => setLoadingAction(null) // onAutoActionError
     );
 
     // Auto-new-hand hook - automatically triggers new hand when conditions are met
