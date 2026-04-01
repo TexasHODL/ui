@@ -5,6 +5,7 @@ import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import { getCardImageUrl } from "../../utils/cardImages";
 import type { HandDetail, HandListItem, HandListResponse } from "./types";
 import { useIndexerApi } from "../../context/IndexerApiContext";
+import Metadata from "../../components/common/Metadata";
 
 export default function HandReplayPage() {
     const { gameId, handNumber } = useParams<{ gameId: string; handNumber: string }>();
@@ -96,6 +97,7 @@ export default function HandReplayPage() {
     return (
         <div className="min-h-screen p-8 relative">
             <AnimatedBackground />
+            <Metadata />
             <div className="max-w-7xl mx-auto relative z-10">
                 <ExplorerHeader title="Hand Replay" />
 
@@ -115,21 +117,23 @@ export default function HandReplayPage() {
                 ) : !handNumber && hands.length > 0 ? (
                     /* Hands list mode — no hand number in URL */
                     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                        <h2 className="text-2xl font-bold text-white mb-2">
-                            Hands for Game
-                        </h2>
+                        <h2 className="text-2xl font-bold text-white mb-2">Hands for Game</h2>
                         <p className="text-gray-400 font-mono text-sm mb-6">{gameId}</p>
-                        <p className="text-gray-300 mb-4">{hands.length} hand{hands.length !== 1 ? "s" : ""} found</p>
+                        <p className="text-gray-300 mb-4">
+                            {hands.length} hand{hands.length !== 1 ? "s" : ""} found
+                        </p>
                         <div className="flex flex-wrap gap-2">
-                            {[...hands].sort((a, b) => a.hand_number - b.hand_number).map(h => (
-                                <Link
-                                    key={h.hand_number}
-                                    to={`/explorer/hand/${h.game_id}/${h.hand_number}`}
-                                    className="px-3 py-1.5 rounded text-sm transition-colors bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                >
-                                    Hand #{h.hand_number}
-                                </Link>
-                            ))}
+                            {[...hands]
+                                .sort((a, b) => a.hand_number - b.hand_number)
+                                .map(h => (
+                                    <Link
+                                        key={h.hand_number}
+                                        to={`/explorer/hand/${h.game_id}/${h.hand_number}`}
+                                        className="px-3 py-1.5 rounded text-sm transition-colors bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                    >
+                                        Hand #{h.hand_number}
+                                    </Link>
+                                ))}
                         </div>
                     </div>
                 ) : !handNumber ? (
@@ -139,9 +143,7 @@ export default function HandReplayPage() {
                 ) : hand ? (
                     <>
                         <div className="mb-6">
-                            <h2 className="text-2xl font-bold text-white">
-                                Hand #{hand.hand_number}
-                            </h2>
+                            <h2 className="text-2xl font-bold text-white">Hand #{hand.hand_number}</h2>
                         </div>
 
                         {/* Hand Info Card */}
