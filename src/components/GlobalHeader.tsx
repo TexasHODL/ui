@@ -101,10 +101,7 @@ export const GlobalHeader: React.FC = () => {
     const hideOnPaths = ["/table/"];
     const shouldHide = hideOnPaths.some(path => location.pathname.startsWith(path)) && location.pathname !== "/table/admin";
 
-    // Hide header on Nouns landing page (it has its own full-screen layout)
-    const isNounsLanding = import.meta.env.VITE_TABLE_STYLE === "nouns" && location.pathname === "/";
-
-    if (shouldHide || isNounsLanding) {
+    if (shouldHide) {
         return null;
     }
 
