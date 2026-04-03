@@ -1,9 +1,14 @@
 .cancelButton {
-    background-color: var(--ui-text-secondary);
+    background-color: #dc2626;
+}
+
+.cancelButton:hover:not(:disabled) {
+    background-color: #b91c1c;
 }
 
 .infoCard {
     background-color: var(--ui-bg-medium);
+    padding: 0.625rem 0.875rem;
 }
 
 .maxButton {
@@ -30,4 +35,36 @@
 
 .noteText {
     color: var(--ui-text-secondary);
+}
+
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--ui-bg-medium);
+    outline: none;
+    cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+}
+
+.slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--brand-primary);
+    cursor: pointer;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+    border: none;
 }

@@ -32,6 +32,10 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
 
     const [topUpAmount, setTopUpAmount] = useState(() => maxTopUpFormatted);
 
+    const sliderStep = 0.01;
+    const sliderMin = useMemo(() => parseFloat(minTopUpFormatted), [minTopUpFormatted]);
+    const sliderMax = useMemo(() => parseFloat(maxTopUpFormatted), [maxTopUpFormatted]);
+
     const canTopUp = useMemo(() => {
         return parseFloat(maxTopUpFormatted) > 0;
     }, [maxTopUpFormatted]);
@@ -40,6 +44,13 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
         setTopUpAmount(amount);
         setTopUpError("");
     }, []);
+
+    const handleSliderChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            handleTopUpChange(parseFloat(e.target.value).toFixed(2));
+        },
+        [handleTopUpChange]
+    );
 
     const handleMinClick = useCallback(() => {
         handleTopUpChange(minTopUpFormatted);
@@ -116,16 +127,16 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
             patternId="hexagons-topup"
         >
             {/* Current Stack */}
-            <div className={`mb-4 p-4 rounded-lg ${styles.infoCard}`}>
-                <div className="text-sm text-gray-400 mb-1">Current Stack</div>
-                <div className="text-2xl font-bold text-white">${currentStackFormatted}</div>
-                <div className="text-xs text-gray-500 mt-1">Table Max: ${maxBuyInFormatted}</div>
+            <div className={`mb-3 rounded-lg ${styles.infoCard}`}>
+                <div className="text-xs text-gray-400 mb-0.5">Current Stack</div>
+                <div className="text-lg font-bold text-white">${currentStackFormatted}</div>
+                <div className="text-xs text-gray-500 mt-0.5">Table Max: ${maxBuyInFormatted}</div>
             </div>
 
             {/* Wallet Balance */}
-            <div className={`mb-6 p-4 rounded-lg ${styles.infoCard}`}>
-                <div className="text-sm text-gray-400 mb-1">Wallet Balance</div>
-                <div className="text-xl font-bold text-white">${walletBalanceFormatted}</div>
+            <div className={`mb-5 rounded-lg ${styles.infoCard}`}>
+                <div className="text-xs text-gray-400 mb-0.5">Wallet Balance</div>
+                <div className="text-lg font-bold text-white">${walletBalanceFormatted}</div>
             </div>
 
             {/* Top-Up Amount Selection */}
@@ -147,16 +158,25 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                         <div className="font-bold">${maxTopUpFormatted}</div>
                     </button>
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 space-y-3">
+                    {/* Slider */}
                     <input
-                        type="number"
-                        value={topUpAmount}
-                        onChange={e => handleTopUpChange(e.target.value)}
-                        className={`w-full p-2 text-white rounded-lg text-center focus:outline-none ${styles.amountInput}`}
-                        style={isAmountInvalid && topUpAmount ? { borderColor: "red" } : undefined}
-                        placeholder="0.00"
-                        step="0.01"
+                        type="range"
+                        min={sliderMin}
+                        max={sliderMax}
+                        step={sliderStep}
+                        value={isNaN(parseFloat(topUpAmount)) ? sliderMin : parseFloat(topUpAmount)}
+                        onChange={handleSliderChange}
+                        className={styles.slider}
+                        disabled={sliderMax <= sliderMin}
                     />
+                    {/* Read-only display of current value */}
+                    <div
+                        className={`w-full p-2 text-white rounded-lg text-center ${styles.amountInput}`}
+                        style={isAmountInvalid && topUpAmount ? { borderColor: "red" } : undefined}
+                    >
+                        ${isNaN(parseFloat(topUpAmount)) ? "0.00" : parseFloat(topUpAmount).toFixed(2)}
+                    </div>
                 </div>
             </div>
 
