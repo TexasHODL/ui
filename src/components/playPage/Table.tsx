@@ -141,6 +141,10 @@ import { useDealerPosition } from "../../hooks/game/useDealerPosition";
 // Turn Notification
 import { useTurnNotification } from "../../hooks/notifications/useTurnNotification";
 
+// Mobile Portrait Blocking (#200)
+import { useMobileFullscreen } from "../../hooks/game/useMobileFullscreen";
+import { MobileOrientationOverlay } from "./Table/components/MobileOrientationOverlay";
+
 //* Here's the typical sequence of a poker hand:
 //* ANTE - Initial forced bets
 //* PREFLOP - Players get their hole cards, betting round
@@ -759,6 +763,9 @@ const Table = React.memo(() => {
     // StageGeometry layout system — supports 2/4/6/9 tables, auto-fit to any viewport
     const tableLayout = useTableLayout((tableSize as 2 | 4 | 6 | 9) || 9, tableContainerRef);
     const { dealerSeat } = useDealerPosition();
+
+    // Mobile portrait blocking (#200)
+    const { isPortraitBlocked } = useMobileFullscreen();
 
     // Add the useGameProgress hook
     const { isGameInProgress, handNumber, actionCount, nextToAct } = useGameProgress(id);
@@ -1436,6 +1443,9 @@ const Table = React.memo(() => {
                 currentPlayerStack={currentPlayerData?.stack || "0"}
                 isInActiveHand={isGameInProgress && currentUserSeat > 0}
             />
+
+            {/* Mobile Portrait Blocking (#200) */}
+            <MobileOrientationOverlay isPortraitBlocked={isPortraitBlocked} onGoToLobby={handleLobbyClick} />
         </div>
     );
 });
