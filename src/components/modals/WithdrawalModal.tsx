@@ -17,7 +17,7 @@ import styles from "./WithdrawalModal.module.css";
  * Handles the complete 2-step withdrawal flow:
  *   Step 1 (Cosmos): Initiate withdrawal signed by cosmos key with eth address in message.
  *          The validator then signs the withdrawal payload for the deposit contract.
- *   Step 2 (Ethereum): User calls the deposit contract withdraw() via MetaMask.
+ *   Step 2 (Ethereum): User calls the deposit contract withdraw() via Web3 wallet.
  *
  * The modal auto-polls for the validator signature after initiation so the user
  * never has to leave or manually refresh.
@@ -25,13 +25,7 @@ import styles from "./WithdrawalModal.module.css";
 
 import type { WithdrawalModalProps } from "./types";
 
-type ModalStep =
-    | "input"
-    | "initiating"
-    | "waiting_signature"
-    | "ready_to_complete"
-    | "completing_eth"
-    | "done";
+type ModalStep = "input" | "initiating" | "waiting_signature" | "ready_to_complete" | "completing_eth" | "done";
 
 interface WithdrawalInfo {
     nonce: string;
@@ -45,7 +39,7 @@ const SLOW_POLL_THRESHOLD = 20; // ~60 seconds
 
 const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSuccess }) => {
     const { balance: cosmosBalance, address: cosmosAddress, refreshBalance: refetchAccount } = useCosmosWallet();
-    const { address: web3Address, isConnected: isWeb3Connected } = useUserWalletConnect();
+    const { address: web3Address, isConnected: isWeb3Connected, open: openWalletConnect } = useUserWalletConnect();
     const { currentNetwork } = useNetwork();
     const { withdraw, hash: withdrawHash, isWithdrawConfirmed, withdrawError } = useWithdraw();
 
@@ -121,16 +115,13 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     const withdrawals = await signingClient.listWithdrawalRequests(cosmosAddress!);
 
                     // Find matching withdrawal: same base address & amount, prefer signed
+                    // Order by created_at desc to get the most recent if multiple match (should be rare)
                     const matching = withdrawals
-                        .filter(
-                            (w: any) =>
-                                w.base_address?.toLowerCase() === targetBaseAddress.toLowerCase() &&
-                                w.amount === targetAmount
-                        )
+                        .filter((w: any) => w.base_address?.toLowerCase() === targetBaseAddress.toLowerCase() && w.amount === targetAmount)
                         .sort((a: any, b: any) => {
                             if (a.status === "signed" && b.status !== "signed") return -1;
                             if (b.status === "signed" && a.status !== "signed") return 1;
-                            return 0;
+                            return (b.created_at ?? 0) - (a.created_at ?? 0);
                         });
 
                     const found = matching[0];
@@ -166,21 +157,17 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
     // ─── Step 1: Initiate withdrawal on Cosmos ───────────────────────────
     const handleWithdraw = async () => {
         if (!isWeb3Connected || !web3Address) {
-            setError("Please connect your MetaMask wallet first");
+            setError("Please connect your Web3 wallet first");
             return;
         }
 
         if (!ethers.isAddress(web3Address)) {
-            setError("Invalid MetaMask wallet address");
+            setError("Invalid Web3 wallet address");
             return;
         }
 
         if (!validateAmount(amount)) {
-            setError(
-                Number(amount) < 0.01
-                    ? "Minimum withdrawal amount is 0.01 USDC"
-                    : "Invalid amount or insufficient balance"
-            );
+            setError(Number(amount) < 0.01 ? "Minimum withdrawal amount is 0.01 USDC" : "Invalid amount or insufficient balance");
             return;
         }
 
@@ -227,7 +214,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
         }
 
         if (!isWeb3Connected || !web3Address) {
-            setError("Please connect your MetaMask wallet");
+            setError("Please connect your Web3 wallet");
             return;
         }
 
@@ -238,12 +225,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
             const hexSignature = base64ToHex(withdrawalInfo.signature);
 
             // Use the useWithdraw hook which properly uses wagmi/reown wallet
-            await withdraw(
-                withdrawalInfo.nonce,
-                withdrawalInfo.baseAddress,
-                BigInt(withdrawalInfo.amount),
-                hexSignature
-            );
+            await withdraw(withdrawalInfo.nonce, withdrawalInfo.baseAddress, BigInt(withdrawalInfo.amount), hexSignature);
 
             // The hook will trigger isWithdrawConfirmed when done
         } catch (err: any) {
@@ -284,18 +266,14 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                 <div className="mb-4 flex items-center justify-center gap-2">
                     <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                            step === "input" || step === "initiating" || step === "waiting_signature"
-                                ? "bg-blue-600 text-white"
-                                : "bg-green-600 text-white"
+                            step === "input" || step === "initiating" || step === "waiting_signature" ? "bg-blue-600 text-white" : "bg-green-600 text-white"
                         }`}
                     >
                         1
                     </div>
                     <div
                         className={`w-12 h-0.5 ${
-                            step === "ready_to_complete" || step === "completing_eth" || step === "done"
-                                ? "bg-green-600"
-                                : "bg-gray-600"
+                            step === "ready_to_complete" || step === "completing_eth" || step === "done" ? "bg-green-600" : "bg-gray-600"
                         }`}
                     />
                     <div
@@ -331,24 +309,24 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         </div>
 
                         {!isWeb3Connected || !web3Address ? (
-                            <div className={`mb-4 p-3 rounded-lg ${styles.warningAlert}`}>
-                                <p className={`font-semibold mb-2 ${styles.textWarning}`}>MetaMask Not Connected</p>
-                                <p className={`text-sm ${styles.textSecondary}`}>
-                                    Please connect your MetaMask wallet to withdraw funds. The withdrawal will be sent
-                                    to your connected MetaMask address.
+                            <div className="mb-4">
+                                <p className={`text-sm mb-3 ${styles.textSecondary}`}>
+                                    Connect your Web3 wallet to withdraw funds. The withdrawal will be sent to your connected wallet address.
                                 </p>
+                                <button
+                                    onClick={() => openWalletConnect()}
+                                    className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 ${styles.primaryActionButton}`}
+                                >
+                                    Connect Your Web3 Wallet
+                                </button>
                             </div>
                         ) : (
                             <div className="mb-4">
-                                <label className={`block text-sm mb-2 ${styles.textSecondary}`}>
-                                    Withdrawal Address (MetaMask)
-                                </label>
+                                <label className={`block text-sm mb-2 ${styles.textSecondary}`}>Withdrawal Address</label>
                                 <div className={`p-3 rounded-lg ${styles.surfacePrimarySoft}`}>
                                     <p className={`font-mono text-sm ${styles.textPrimary}`}>{web3Address}</p>
                                 </div>
-                                <p className="text-xs mt-1 text-gray-500">
-                                    Funds will be sent to your connected MetaMask wallet
-                                </p>
+                                <p className="text-xs mt-1 text-gray-500">Funds will be sent to your connected Web3 wallet</p>
                             </div>
                         )}
 
@@ -392,9 +370,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     <div className="text-center py-8">
                         <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
                         <p className="text-white font-semibold mb-2">Initiating Withdrawal</p>
-                        <p className="text-gray-400 text-sm">
-                            Signing withdrawal request on Block52 chain...
-                        </p>
+                        <p className="text-gray-400 text-sm">Signing withdrawal request on Block52 chain...</p>
                     </div>
                 )}
 
@@ -404,14 +380,9 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         <div className="animate-spin w-12 h-12 border-4 border-yellow-500 border-t-transparent rounded-full mx-auto mb-4" />
                         <p className="text-white font-semibold mb-2">Waiting for Validator Signature</p>
                         <p className="text-gray-400 text-sm mb-4">
-                            Your withdrawal request has been submitted. The validator is signing the withdrawal
-                            payload for the deposit contract...
+                            Your withdrawal request has been submitted. The validator is signing the withdrawal payload for the deposit contract...
                         </p>
-                        {txHash && (
-                            <p className="text-gray-500 text-xs font-mono mb-2">
-                                Cosmos Tx: {txHash.slice(0, 16)}...
-                            </p>
-                        )}
+                        {txHash && <p className="text-gray-500 text-xs font-mono mb-2">Cosmos Tx: {txHash.slice(0, 16)}...</p>}
                         <p className="text-gray-600 text-xs">
                             Checking... ({pollCount} {pollCount === 1 ? "attempt" : "attempts"})
                         </p>
@@ -419,16 +390,13 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         {pollCount > SLOW_POLL_THRESHOLD && (
                             <div className={`mt-4 p-3 rounded-lg text-left ${styles.warningAlert}`}>
                                 <p className={`text-sm ${styles.textWarning}`}>
-                                    Signing is taking longer than expected. The validator may need additional time.
-                                    You can wait here or check the Withdrawal Dashboard later.
+                                    Signing is taking longer than expected. The validator may need additional time. You can wait here or check the Withdrawal
+                                    Dashboard later.
                                 </p>
                             </div>
                         )}
 
-                        <button
-                            onClick={onClose}
-                            className="mt-4 text-sm text-gray-500 hover:text-gray-300 transition"
-                        >
+                        <button onClick={onClose} className="mt-4 text-sm text-gray-500 hover:text-gray-300 transition">
                             Close (withdrawal will continue in background)
                         </button>
                     </div>
@@ -439,18 +407,14 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     <div className="py-4">
                         <div className={`mb-4 p-3 rounded-lg ${styles.successAlert}`}>
                             <p className={`font-semibold ${styles.textSuccess}`}>Validator Signature Received</p>
-                            <p className={`text-sm mt-1 ${styles.textSecondary}`}>
-                                Your withdrawal is signed and ready to complete on Ethereum.
-                            </p>
+                            <p className={`text-sm mt-1 ${styles.textSecondary}`}>Your withdrawal is signed and ready to complete on Ethereum.</p>
                         </div>
 
                         <div className={`mb-4 p-3 rounded-lg ${styles.surfaceMuted}`}>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Amount:</span>
-                                    <span className="text-white font-semibold">
-                                        {formatMicroAsUsdc(withdrawalInfo.amount, 6)} USDC
-                                    </span>
+                                    <span className="text-white font-semibold">{formatMicroAsUsdc(withdrawalInfo.amount, 6)} USDC</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">To:</span>
@@ -469,9 +433,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                             >
                                 Complete on Ethereum
                             </button>
-                            <p className="text-center text-sm text-gray-400">
-                                You can complete this withdrawal later from the Withdrawal Dashboard
-                            </p>
+                            <p className="text-center text-sm text-gray-400">You can complete this withdrawal later from the Withdrawal Dashboard</p>
                             <button
                                 onClick={onClose}
                                 className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-80 ${styles.cancelActionButton}`}
@@ -487,7 +449,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     <div className="text-center py-8">
                         <div className="animate-spin w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full mx-auto mb-4" />
                         <p className="text-white font-semibold mb-2">Completing on Ethereum</p>
-                        <p className="text-gray-400 text-sm">Confirm the transaction in MetaMask...</p>
+                        <p className="text-gray-400 text-sm">Confirm the transaction in your wallet...</p>
                     </div>
                 )}
 
@@ -496,14 +458,8 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     <div className="py-4">
                         <div className={`mb-4 p-4 rounded-lg ${styles.successAlert}`}>
                             <p className={`text-lg font-bold ${styles.textSuccess}`}>Withdrawal Complete!</p>
-                            <p className={`text-sm mt-2 ${styles.textSecondary}`}>
-                                USDC has been transferred to your Ethereum wallet.
-                            </p>
-                            {ethTxHash && (
-                                <p className="text-xs mt-2 font-mono text-gray-500">
-                                    Eth Tx: {ethTxHash.slice(0, 16)}...
-                                </p>
-                            )}
+                            <p className={`text-sm mt-2 ${styles.textSecondary}`}>USDC has been transferred to your Ethereum wallet.</p>
+                            {ethTxHash && <p className="text-xs mt-2 font-mono text-gray-500">Eth Tx: {ethTxHash.slice(0, 16)}...</p>}
                         </div>
                         <button
                             onClick={onClose}

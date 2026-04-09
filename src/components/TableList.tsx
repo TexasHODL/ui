@@ -1,8 +1,11 @@
-import React from "react";
+import React, { useState, useCallback } from "react";
 import { useFindGames, GameWithFormat } from "../hooks/game/useFindGames";
+import { useDeleteGame } from "../hooks/game/useDeleteGame";
+import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { formatMicroAsUsdc } from "../constants/currency";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
+import DeleteTableModal from "./modals/DeleteTableModal";
 import styles from "./TableList.module.css";
 
 /**
@@ -33,6 +36,9 @@ const formatBuyIn = (game: GameWithFormat) => {
  */
 const TableList: React.FC = () => {
     const { games: rawGames, isLoading, error, refetch } = useFindGames();
+    const { deleteGame, isDeleting } = useDeleteGame();
+    const { address: cosmosAddress } = useCosmosWallet();
+    const [deleteModalGameId, setDeleteModalGameId] = useState<string | null>(null);
 
     // Sort games by available seats (least empty seats first, full tables last)
     const games = React.useMemo(() => {
@@ -57,6 +63,26 @@ const TableList: React.FC = () => {
         } catch (err) {
             console.error("Failed to copy to clipboard:", err);
         }
+    };
+
+    // Handle delete game
+    const handleDeleteGame = useCallback(async () => {
+        if (!deleteModalGameId) return;
+        const result = await deleteGame(deleteModalGameId);
+        if (result) {
+            // Refresh the games list after successful deletion
+            refetch();
+        }
+    }, [deleteModalGameId, deleteGame, refetch]);
+
+    // Check if user is the creator of a game
+    const isCreator = (game: GameWithFormat) => {
+        return cosmosAddress && game.creator && game.creator.toLowerCase() === cosmosAddress.toLowerCase();
+    };
+
+    // Check if a game can be deleted (no active players)
+    const canDelete = (game: GameWithFormat) => {
+        return isCreator(game) && game.currentPlayers === 0;
     };
 
     if (isLoading) {
@@ -126,12 +152,13 @@ const TableList: React.FC = () => {
                             <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400">Players</th>
                             <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400">Buy-In</th>
                             <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400">Action</th>
+                            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-400"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
                         {games.length === 0 ? (
                             <tr>
-                                <td colSpan={8} className="px-6 py-12 text-center text-gray-400">
+                                <td colSpan={9} className="px-6 py-12 text-center text-gray-400">
                                     <div className="mb-4">
                                         <svg className="w-12 h-12 mx-auto text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path
@@ -214,6 +241,26 @@ const TableList: React.FC = () => {
                                                 {game.currentPlayers === game.maxPlayers ? "Full" : "Join"}
                                             </a>
                                         </td>
+                                        <td className="px-4 py-4 text-center">
+                                            {canDelete(game) && (
+                                                <button
+                                                    onClick={() => setDeleteModalGameId(game.gameId)}
+                                                    disabled={isDeleting}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                                                    title="Delete table"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                        />
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })
@@ -221,6 +268,14 @@ const TableList: React.FC = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Delete Table Modal */}
+            <DeleteTableModal
+                isOpen={!!deleteModalGameId}
+                onClose={() => setDeleteModalGameId(null)}
+                onConfirm={handleDeleteGame}
+                gameId={deleteModalGameId || ""}
+            />
         </div>
     );
 };

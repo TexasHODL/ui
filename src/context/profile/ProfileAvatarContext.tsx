@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from "react";
-import { useAccount as useWagmiAccount } from "wagmi";
+import { useConnection } from "wagmi";
 import { ETH_CHAIN_ID } from "../../config/constants";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
@@ -49,9 +49,6 @@ interface ProfileAvatarContextType extends ProfileAvatarState {
 
 const ProfileAvatarContext = createContext<ProfileAvatarContextType | null>(null);
 
-// Session cache for chain-queried avatars: cosmosAddress → imageUrl
-const chainAvatarCache = new Map<string, string | null>();
-
 const AVATAR_CACHE_KEY = "b52_nft_avatar";
 
 function loadCachedAvatar(cosmosAddr: string): AvatarSelection | null {
@@ -84,16 +81,17 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
     const { isConnected, address, open, disconnect } = useUserWalletConnect();
     const { address: cosmosAddress } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
-    const { chain } = useWagmiAccount();
+    const { chain } = useConnection();
     const { signMessage } = useSignMessage();
     const _chainId = chain?.id || ETH_CHAIN_ID;
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [selectedAvatar, setSelectedAvatar] = useState<AvatarSelection | null>(() =>
-        cosmosAddress ? loadCachedAvatar(cosmosAddress) : null
-    );
+    const [selectedAvatar, setSelectedAvatar] = useState<AvatarSelection | null>(() => (cosmosAddress ? loadCachedAvatar(cosmosAddress) : null));
     const [isRegistering, setIsRegistering] = useState(false);
     const [registrationError, setRegistrationError] = useState<string | null>(null);
+
+    // Session cache for chain-queried avatars: cosmosAddress → imageUrl
+    const [chainAvatarCache, setChainAvatarCache] = useState<Map<string, string | null>>(new Map());
 
     // Persist avatar selection to localStorage
     useEffect(() => {
@@ -105,14 +103,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
     // Track in-flight chain queries to avoid duplicate requests
     const pendingQueriesRef = useRef(new Set<string>());
 
-    const {
-        walletNfts,
-        isLoadingNfts,
-        nftsError,
-        nftsWarning,
-        refreshWalletNfts,
-        hasSourceConfigured
-    } = useWalletNfts(address, isConnected);
+    const { walletNfts, isLoadingNfts, nftsError, nftsWarning, refreshWalletNfts, hasSourceConfigured } = useWalletNfts(address, isConnected);
 
     // On mount / wallet change, fetch the current user's on-chain avatar
     useEffect(() => {
@@ -132,9 +123,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                     // The image URL needs to be resolved — check if we already have it
                     // from the wallet NFT list, otherwise store without image for now.
                     const matchingNft = walletNfts.find(
-                        n =>
-                            n.contractAddress.toLowerCase() === result.contractAddress.toLowerCase() &&
-                            n.tokenId === result.tokenId
+                        n => n.contractAddress.toLowerCase() === result.contractAddress.toLowerCase() && n.tokenId === result.tokenId
                     );
 
                     setSelectedAvatar({
@@ -146,7 +135,11 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                     });
 
                     if (matchingNft?.imageUrl) {
-                        chainAvatarCache.set(cosmosAddress.toLowerCase(), matchingNft.imageUrl);
+                        setChainAvatarCache(prev => {
+                            const next = new Map(prev);
+                            next.set(cosmosAddress.toLowerCase(), matchingNft.imageUrl);
+                            return next;
+                        });
                     }
                 }
             } catch (err) {
@@ -192,23 +185,11 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
 
             const doRegistration = async () => {
                 // Step 1: Sign with wagmi (ETH personal_sign)
-                const authMessage = buildNftAuthorizationMessage(
-                    address,
-                    cosmosAddress,
-                    asset.contractAddress,
-                    asset.tokenId
-                );
+                const authMessage = buildNftAuthorizationMessage(address, cosmosAddress, asset.contractAddress, asset.tokenId);
                 const signature = await signMessage(authMessage);
 
                 // Step 2: Broadcast to cosmos validator
-                await broadcastNftRegistration(
-                    currentNetwork,
-                    address,
-                    cosmosAddress,
-                    asset.contractAddress,
-                    asset.tokenId,
-                    signature
-                );
+                await broadcastNftRegistration(currentNetwork, address, cosmosAddress, asset.contractAddress, asset.tokenId, signature);
 
                 // Success — update local state
                 const nextSelection: AvatarSelection = {
@@ -220,7 +201,11 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                 };
 
                 setSelectedAvatar(nextSelection);
-                chainAvatarCache.set(cosmosAddress.toLowerCase(), asset.imageUrl);
+                setChainAvatarCache(prev => {
+                    const next = new Map(prev);
+                    next.set(cosmosAddress.toLowerCase(), asset.imageUrl);
+                    return next;
+                });
             };
 
             doRegistration()
@@ -239,7 +224,11 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
     const clearAvatar = useCallback(() => {
         setSelectedAvatar(null);
         if (cosmosAddress) {
-            chainAvatarCache.delete(cosmosAddress.toLowerCase());
+            setChainAvatarCache(prev => {
+                const next = new Map(prev);
+                next.delete(cosmosAddress.toLowerCase());
+                return next;
+            });
         }
         // TODO: Send a cosmos tx to clear the on-chain avatar when SDK supports it
     }, [cosmosAddress]);
@@ -272,7 +261,11 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
                     imageUrl,
                     selectedAt: Date.now()
                 });
-                chainAvatarCache.set(cosmosAddress.toLowerCase(), imageUrl);
+                setChainAvatarCache(prev => {
+                    const next = new Map(prev);
+                    next.set(cosmosAddress.toLowerCase(), imageUrl);
+                    return next;
+                });
             }
         });
     }, [cosmosAddress, currentNetwork, selectedAvatar]);
@@ -307,18 +300,18 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
 
                 const { restEndpoint } = getCosmosUrls(currentNetwork);
                 queryNftAvatar(restEndpoint, targetAddress).then(async result => {
-                    if (result) {
-                        const imageUrl = await resolveNftImageUrl(result.contractAddress, result.tokenId);
-                        chainAvatarCache.set(normalized, imageUrl);
-                    } else {
-                        chainAvatarCache.set(normalized, null);
-                    }
+                    const imageUrl = result ? await resolveNftImageUrl(result.contractAddress, result.tokenId) : null;
+                    setChainAvatarCache(prev => {
+                        const next = new Map(prev);
+                        next.set(normalized, imageUrl);
+                        return next;
+                    });
                 });
             }
 
             return null;
         },
-        [cosmosAddress, selectedAvatar, currentNetwork]
+        [cosmosAddress, selectedAvatar, currentNetwork, chainAvatarCache]
     );
 
     const contextValue = useMemo(
