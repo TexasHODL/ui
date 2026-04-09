@@ -33,6 +33,8 @@ export interface PlayerActionButtonsProps {
     minBuyIn: string;
     maxBuyIn: string;
     walletBalance: string;
+    isCurrentUserSeated: boolean;
+    isTableFull: boolean;
 }
 
 export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
@@ -50,7 +52,9 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     currentStack,
     minBuyIn,
     maxBuyIn,
-    walletBalance
+    walletBalance,
+    isCurrentUserSeated,
+    isTableFull
 }) => {
     const isCompact = isMobile || isMobileLandscape;
     const positionClass = isMobileLandscape ? "bottom-2 left-2" : isMobile ? "bottom-[260px] right-4" : "bottom-20 left-4";
@@ -134,6 +138,29 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
             </div>
         ) : null;
 
+    if (!isCurrentUserSeated) {
+        return (
+            <>
+                {buyChipsElement}
+                <div className={`fixed z-30 ${positionClass}`}>
+                    <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
+                        <div className="flex items-center gap-2">
+                            <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
+                            <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>"You are spectating this table"</span>
+                        </div>
+                        {!isTableFull && (
+                            <div className="flex items-center  gap-2">
+                                <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
+                                <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>
+                                    "To join the table, click on an available seat."
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </>
+        );
+    }
     switch (display.kind) {
         case "pending":
             return (

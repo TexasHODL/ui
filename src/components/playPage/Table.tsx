@@ -890,6 +890,18 @@ const Table = React.memo(() => {
         return tableActivePlayers.some((p: PlayerDTO) => p.status === PlayerStatus.ACTIVE || p.status === PlayerStatus.ALL_IN);
     }, [tableActivePlayers]);
 
+    // Check if current user is seated at the table
+    const isCurrentUserSeated = useMemo(() => {
+        return tableActivePlayers.some((p: PlayerDTO) => p.address.toLowerCase() === userWalletAddress);
+    }, [tableActivePlayers, userWalletAddress]);
+
+    // Check if current table is full (no empty seats)
+    const isTableFull = useMemo(() => {
+        const maxPlayers = gameOptions?.maxPlayers;
+        if (!maxPlayers) return false;
+        return tableActivePlayers.length >= maxPlayers;
+    }, [tableActivePlayers, gameOptions]);
+
     // Optimize window width detection - only check on resize
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 414);
     const [isMobileLandscape, setIsMobileLandscape] = useState(
@@ -1320,9 +1332,7 @@ const Table = React.memo(() => {
 
                         {/* Dealer Button — convert seat number to rotated screen position */}
                         {(() => {
-                            const dIdx = dealerSeat != null && dealerSeat > 0
-                                ? ((dealerSeat - 1 + startIndex) % tableSize)
-                                : -1;
+                            const dIdx = dealerSeat != null && dealerSeat > 0 ? (dealerSeat - 1 + startIndex) % tableSize : -1;
                             const dPos = dIdx >= 0 ? tableLayout.positions.dealers[dIdx] : null;
                             if (!dPos) return null;
                             return (
@@ -1419,6 +1429,8 @@ const Table = React.memo(() => {
                     minBuyIn={gameOptions?.minBuyIn || "0"}
                     maxBuyIn={gameOptions?.maxBuyIn || "0"}
                     walletBalance={accountBalance}
+                    isCurrentUserSeated={isCurrentUserSeated}
+                    isTableFull={isTableFull}
                 />
             )}
 
