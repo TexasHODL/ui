@@ -222,6 +222,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
 
     // Convert to display values — USDC conversion for cash, raw chips for tournaments
     const toDisplay = useCallback((micro: bigint) => isTournament ? Number(micro) : microBigIntToUsdc(micro), [isTournament]);
+    // Convert display values back to chain units — raw bigint for tournaments, ×10^6 for cash
+    const fromDisplay = useCallback((display: number) => isTournament ? BigInt(Math.floor(display)) : usdcToMicroBigInt(display), [isTournament]);
     const minBet = useMemo(() => toDisplay(minBetMicro), [toDisplay, minBetMicro]);
     const maxBet = useMemo(() => toDisplay(maxBetMicro), [toDisplay, maxBetMicro]);
     const minRaise = useMemo(() => toDisplay(minRaiseMicro), [toDisplay, minRaiseMicro]);
@@ -318,7 +320,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
 
     const handleBetAction = async () => {
         if (!tableId) return;
-        const amountMicro = usdcToMicroBigInt(raiseAmount);
+        const amountMicro = fromDisplay(raiseAmount);
 
         await handleActionWithTransaction("bet", async () => {
             return await handleBet(amountMicro, tableId, network);
@@ -327,7 +329,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
 
     const handleRaiseAction = async () => {
         if (!tableId) return;
-        const amountMicro = usdcToMicroBigInt(raiseAmount);
+        const amountMicro = fromDisplay(raiseAmount);
 
         await handleActionWithTransaction("raise", async () => {
             return await handleRaise(tableId, amountMicro, network);
@@ -368,7 +370,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({
     const handleAllInAction = async () => {
         if (!tableId) return;
         const maxAmount = hasBetAction ? maxBet : maxRaise;
-        const amountMicro = usdcToMicroBigInt(maxAmount);
+        const amountMicro = fromDisplay(maxAmount);
 
         setRaiseAmount(maxAmount);
         await handleActionWithTransaction(
