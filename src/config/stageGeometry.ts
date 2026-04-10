@@ -373,7 +373,7 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
 
     9: {
         dealers: {
-            0: { dx: 120, dy: 65 },   // seat 1
+            0: { dx: 95, dy: 65 },   // seat 1
             1: { dx: 25, dy: 115 },   // seat 2
             2: { dx: -68, dy: 7},   // seat 3
             3: { dx: -38, dy: 0 },  // seat 4
