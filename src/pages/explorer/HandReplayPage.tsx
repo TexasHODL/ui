@@ -82,6 +82,20 @@ export default function HandReplayPage() {
         return hand.deck.replace(/[[\]]/g, "").split("-");
     }, [hand?.deck]);
 
+    // Compute SHA-256 hash of the deck string
+    const [deckHash, setDeckHash] = useState<string | null>(null);
+    useEffect(() => {
+        if (!hand?.deck) {
+            setDeckHash(null);
+            return;
+        }
+        crypto.subtle.digest("SHA-256", new TextEncoder().encode(hand.deck))
+            .then(buf => {
+                const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+                setDeckHash(hex);
+            });
+    }, [hand?.deck]);
+
     // Sorted hand list for navigation
     const sortedHands = useMemo(() => {
         return [...hands].sort((a, b) => a.hand_number - b.hand_number);
@@ -262,6 +276,23 @@ export default function HandReplayPage() {
                                             </button>
                                         </div>
                                         <p className="text-white font-mono text-xs break-all bg-gray-900 rounded p-3 border border-gray-700">{hand.deck_seed}</p>
+                                    </div>
+                                )}
+
+                                {/* Deck Hash */}
+                                {deckHash && (
+                                    <div className="mt-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <p className="text-sm text-gray-400">Deck Hash (SHA-256)</p>
+                                            <button
+                                                onClick={() => copyToClipboard(deckHash, "hash")}
+                                                className="text-gray-400 hover:text-white transition-colors"
+                                                title="Copy deck hash"
+                                            >
+                                                {copiedField === "hash" ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
+                                            </button>
+                                        </div>
+                                        <p className="text-white font-mono text-xs break-all bg-gray-900 rounded p-3 border border-gray-700">{deckHash}</p>
                                     </div>
                                 )}
                             </div>
