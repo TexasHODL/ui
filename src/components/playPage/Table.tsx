@@ -121,6 +121,7 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
+import { useBlindLevel } from "../../hooks/game/useBlindLevel";
 import {
     getViewportMode,
     COMPONENT_SCALE,
@@ -773,6 +774,9 @@ const Table = React.memo(() => {
     // Add the useGameOptions hook
     const { gameOptions } = useGameOptions();
 
+    // Blind level info for SNG/Tournament games
+    const blindLevel = useBlindLevel();
+
     // Add the useGameResults hook
     const { results } = useGameResults();
 
@@ -1210,6 +1214,7 @@ const Table = React.memo(() => {
                 isBalanceLoading={isBalanceLoading}
                 balanceFormatted={balanceFormatted}
                 formattedValues={formattedValues}
+                blindLevel={blindLevel}
                 handNumber={handNumber}
                 actionCount={actionCount}
                 nextToAct={nextToAct}
