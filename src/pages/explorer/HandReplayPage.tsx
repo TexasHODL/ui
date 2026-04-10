@@ -98,8 +98,8 @@ export default function HandReplayPage() {
     }, []);
 
     const truncateId = (id: string) => {
-        if (id.length <= 14) return id;
-        return `${id.slice(0, 8)}...${id.slice(-4)}`;
+        if (id.length <= 24) return id;
+        return `${id.slice(0, 16)}...${id.slice(-8)}`;
     };
 
     return (
