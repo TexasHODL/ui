@@ -6,6 +6,7 @@ import { formatDisplayAmount } from "../../utils/numberUtils";
 
 // Import hooks
 import { useTableState, useNextToActInfo } from "../../hooks";
+import { useActionSounds } from "../../hooks/notifications/useActionSounds";
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { dealCardsWithEntropy } from "../../hooks/playerActions/dealCards";
@@ -49,6 +50,9 @@ import type { PokerActionPanelProps } from "./types";
 export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, network, onTransactionSubmitted }) => {
     // Loading state for actions
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
+
+    // Action sounds
+    const { playActionSound } = useActionSounds();
 
     // Detect mobile landscape orientation
     const [isMobileLandscape, setIsMobileLandscape] = useState(window.innerWidth <= 926 && window.innerWidth > window.innerHeight);
@@ -269,9 +273,12 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Helper function to wrap action handlers with loading state
     const handleActionWithTransaction = useCallback(
-        async (actionName: string, actionFn: () => Promise<string | null>) => {
+        async (actionName: string, actionFn: () => Promise<string | null>, skipActionSound = false) => {
             try {
                 setLoadingAction(actionName);
+                if (!skipActionSound) {
+                    playActionSound(actionName);
+                }
                 const txHash = await actionFn();
                 if (txHash && onTransactionSubmitted) {
                     onTransactionSubmitted(txHash);
@@ -283,7 +290,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 setLoadingAction(null);
             }
         },
-        [onTransactionSubmitted]
+        [onTransactionSubmitted, playActionSound]
     );
 
     // Handler for dealing cards with entropy
@@ -376,8 +383,11 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         const amountMicro = fromDisplay(maxAmount);
 
         setRaiseAmount(maxAmount);
-        await handleActionWithTransaction(hasRaiseAction ? "raise" : "bet", async () =>
-            hasRaiseAction ? await handleRaise(tableId, amountMicro, network) : await handleBet(amountMicro, tableId, network)
+        playActionSound("all-in");
+        await handleActionWithTransaction(
+            hasRaiseAction ? "raise" : "bet",
+            async () => (hasRaiseAction ? await handleRaise(tableId, amountMicro, network) : await handleBet(amountMicro, tableId, network)),
+            true // skipActionSound — all-in sound already played above
         );
     };
 
