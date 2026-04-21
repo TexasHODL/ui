@@ -35,7 +35,7 @@ type BadgeProps = {
 const Badge: React.FC<BadgeProps> = React.memo(({
     count, value, color, canExtend, onExtend,
     tournamentPlace, tournamentPayout,
-    isWinner, winnerAmount, winnerHandDescription, isTurnTimerActive,
+    isWinner, winnerHandDescription, isTurnTimerActive,
     round, isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn
 }) => {
     // Track previous banner mode so we can detect timer→action transitions
@@ -153,7 +153,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 return (
                     <div className="seat-banner-text flex flex-col items-center justify-center w-full mt-[14px] gap-0.5">
                         <span className="font-bold text-base leading-tight">
-                            WINS: {winnerAmount}
+                            WINS
                         </span>
                         {winnerHandDescription && (
                             <span className="font-semibold text-[0.65rem] uppercase tracking-wider leading-tight opacity-95">
@@ -216,13 +216,8 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                             </span>
                         )}
                         {isAllIn && (
-                            <span className="seat-banner-text animate-progress delay-2000 flex flex-col items-center w-full mb-2 mt-auto gap-0 justify-center">
-                                <span>ALL IN</span>
-                                {playerEquity !== null && playerEquity !== undefined && (
-                                    <span className="text-yellow-400 font-bold text-sm">
-                                        {playerEquity.toFixed(1)}%
-                                    </span>
-                                )}
+                            <span className="seat-banner-text animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center">
+                                ALL IN
                             </span>
                         )}
                     </>
@@ -234,6 +229,11 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         }
     };
 
+    const showEquityChip =
+        !isWinner &&
+        playerEquity !== null &&
+        playerEquity !== undefined;
+
     return (
         <div className="badge-container">
             <div style={{ backgroundColor: color }} className="badge-number">
@@ -242,6 +242,12 @@ const Badge: React.FC<BadgeProps> = React.memo(({
             <div className="badge-value">
                 {formattedValue}
             </div>
+
+            {showEquityChip && (
+                <div className="equity-chip">
+                    {playerEquity!.toFixed(1)}%
+                </div>
+            )}
 
             {/* Tournament Results Display */}
             {tournamentPlace && (
