@@ -317,6 +317,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 titleIcon={<FaQrcode size={16} />}
                 widthClass="w-80"
                 patternId="hexagons-qr"
+                scrollable={false}
             >
                 <div className="flex flex-col items-center gap-4">
                     <div className="bg-white p-4 rounded-xl">
