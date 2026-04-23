@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { NonPlayerActionType, PlayerActionType, PlayerDTO, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
+import {
+    getActionFlags,
+    getFormattedMaxBetAmount,
+    getInitialRaiseAmount,
+    getTotalPotMicro,
+    getUserPlayer,
+    validRaiseAmount
+} from "../../utils/pockerActionUtils";
 import { formatDisplayAmount } from "../../utils/numberUtils";
 
 // Import hooks
@@ -76,36 +84,41 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const isTournament = isTournamentFormat(gameFormat);
     const players = gameState?.players || null;
     const { legalActions, isPlayerTurn, playerStatus } = usePlayerLegalActions();
-    const { isCurrentUserTurn } = useNextToActInfo(tableId);
-    const { formattedTotalPot } = useTableState();
+    const { totalPot } = useTableState();
+    const totalPotMicro = useMemo(() => getTotalPotMicro(totalPot), [totalPot]);
 
     // Read reactive game settings from context
-    const { autoDeal: autoDealEnabled, autoPostBlinds: autoPostBlindsEnabled, autoNewHand: autoNewHandEnabled, autoFold: autoFoldEnabled, playerActionSounds } = useGameSettings();
+    const {
+        autoDeal: autoDealEnabled,
+        autoPostBlinds: autoPostBlindsEnabled,
+        autoNewHand: autoNewHandEnabled,
+        autoFold: autoFoldEnabled,
+        playerActionSounds
+    } = useGameSettings();
 
     // Get user address
     const userAddress = useMemo(() => localStorage.getItem("user_cosmos_address")?.toLowerCase(), []);
 
-    // Determine if user is in the table
-    const isUserInTable = useMemo(() => !!players?.some((player: PlayerDTO) => player.address?.toLowerCase() === userAddress), [players, userAddress]);
-
     // Get user player
-    const userPlayer = players?.find((player: PlayerDTO) => player.address?.toLowerCase() === userAddress);
+    const userPlayer = useMemo(() => getUserPlayer(players, userAddress), [players, userAddress]);
 
     // Determine if it's user's turn
-    const isUsersTurn = isCurrentUserTurn || isPlayerTurn;
+    const isUsersTurn = isPlayerTurn;
 
     // Check available actions
-    const hasSmallBlindAction = hasAction(legalActions, PlayerActionType.SMALL_BLIND);
-    const hasBigBlindAction = hasAction(legalActions, PlayerActionType.BIG_BLIND);
-    const hasFoldAction = hasAction(legalActions, PlayerActionType.FOLD);
-    const hasCheckAction = hasAction(legalActions, PlayerActionType.CHECK);
-    const hasCallAction = hasAction(legalActions, PlayerActionType.CALL);
-    const hasBetAction = hasAction(legalActions, PlayerActionType.BET);
-    const hasRaiseAction = hasAction(legalActions, PlayerActionType.RAISE);
-    const hasMuckAction = hasAction(legalActions, PlayerActionType.MUCK);
-    const hasShowAction = hasAction(legalActions, PlayerActionType.SHOW);
-    const hasDealAction = hasAction(legalActions, NonPlayerActionType.DEAL);
-    const hasNewHandAction = hasAction(legalActions, NonPlayerActionType.NEW_HAND);
+    const {
+        hasSmallBlindAction,
+        hasBigBlindAction,
+        hasFoldAction,
+        hasCheckAction,
+        hasCallAction,
+        hasBetAction,
+        hasRaiseAction,
+        hasMuckAction,
+        hasShowAction,
+        hasDealAction,
+        hasNewHandAction
+    } = getActionFlags(legalActions);
 
     // Blind amounts - single source of truth from gameState.gameOptions (per Commandment 7)
     // Defined early so they can be used in useAutoPostBlinds hook
@@ -236,30 +249,22 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const maxRaise = useMemo(() => toDisplay(maxRaiseMicro), [toDisplay, maxRaiseMicro]);
     const callAmount = useMemo(() => toDisplay(callAmountMicro), [toDisplay, callAmountMicro]);
 
-    // Get total pot for percentage calculations
-    const totalPot = Number(formattedTotalPot) || 0;
-    const totalPotMicro = useMemo(() => (isTournament ? BigInt(Math.floor(totalPot)) : usdcToMicroBigInt(totalPot)), [isTournament, totalPot]);
-
     // Formatted amounts for display (blind amounts defined earlier for use in hooks)
     const formattedSmallBlindAmount = useMemo(() => formatDisplayAmount(toDisplay(smallBlindMicro), isTournament), [toDisplay, smallBlindMicro, isTournament]);
     const formattedBigBlindAmount = useMemo(() => formatDisplayAmount(toDisplay(bigBlindMicro), isTournament), [toDisplay, bigBlindMicro, isTournament]);
     const bigBlindUsdc = useMemo(() => toDisplay(bigBlindMicro), [toDisplay, bigBlindMicro]);
     const formattedCallAmount = useMemo(() => formatDisplayAmount(callAmount, isTournament), [callAmount, isTournament]);
     const formattedMaxBetAmount = useMemo(
-        () => formatDisplayAmount(hasBetAction ? maxBet : maxRaise, isTournament),
+        () => getFormattedMaxBetAmount(hasBetAction, maxBet, maxRaise, isTournament),
         [hasBetAction, maxBet, maxRaise, isTournament]
     );
 
     // Raise amount state
-    const initialAmount = hasBetAction ? (minBet > 0 ? minBet : 0) : minRaise > 0 ? minRaise : 0;
+    const initialAmount = getInitialRaiseAmount(hasBetAction, minBet, minRaise);
     const [raiseAmount, setRaiseAmount] = useState<number>(initialAmount);
 
     // Validation
-    const isRaiseAmountInvalid = hasRaiseAction
-        ? raiseAmount < minRaise || raiseAmount > maxRaise
-        : hasBetAction
-          ? raiseAmount < minBet || raiseAmount > maxBet
-          : false;
+    const isRaiseAmountInvalid = validRaiseAmount(raiseAmount, hasRaiseAction, hasBetAction, minRaise, maxRaise, minBet, maxBet);
 
     // Update raise amount when actions become available
     useEffect(() => {
@@ -347,7 +352,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Calculate button visibility flags
     const { canFoldAnytime, showActionButtons, showSmallBlindButton, showBigBlindButton } = useMemo(() => {
-        const showButtons = isUserInTable;
+        const showButtons = !!userPlayer;
         const shouldShowSmallBlindButton = hasSmallBlindAction && isUsersTurn;
         const shouldShowBigBlindButton = hasBigBlindAction && isUsersTurn;
 
@@ -357,7 +362,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             showSmallBlindButton: shouldShowSmallBlindButton && showButtons,
             showBigBlindButton: shouldShowBigBlindButton && showButtons
         };
-    }, [hasSmallBlindAction, hasBigBlindAction, isUsersTurn, isUserInTable, hasFoldAction, playerStatus, legalActions]);
+    }, [hasSmallBlindAction, hasBigBlindAction, isUsersTurn, userPlayer, hasFoldAction, playerStatus, legalActions]);
 
     // Increment/decrement handlers - always step by big blind amount
     const getStep = (): number => {
