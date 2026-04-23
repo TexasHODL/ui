@@ -25,6 +25,14 @@ export function getChipImageUrl(file: string): string {
 }
 
 /**
+ * Get the URL for the generic chip image (chip.svg)
+ * @returns The CDN URL to the generic chip SVG image
+ */
+export function getGenericChipImageUrl(): string {
+    return `${GITHUB_CDN_BASE}/chips/chip.svg`;
+}
+
+/**
  * Get the URL for a sound file by filename (e.g. "chip-notification.mp3")
  * @param file - The sound filename
  * @returns The CDN URL to the sound file
