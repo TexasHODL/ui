@@ -644,9 +644,9 @@ const Table = React.memo(() => {
         }
     }, [id, hasReplayParams, replayBlockParam, subscribeToTable, loadHistoricalState]);
 
-    // Card back style configuration - can be customized per club/table
-    // Options: "default", "block52", "custom", or a custom URL
-    const cardBackStyle: CardBackStyle = "default";
+    // Card back style configuration - driven by VITE_CARD_BACK_URL env var
+    // Options: "default", "block52", "custom", "legacy", or a full URL to a custom SVG
+    const cardBackStyle: CardBackStyle = import.meta.env.VITE_CARD_BACK_URL || "default";
 
     // Game Start Countdown
     const { gameStartTime, showCountdown, handleCountdownComplete, handleSkipCountdown } = useGameStartCountdown();
@@ -1442,6 +1442,13 @@ const Table = React.memo(() => {
 
             {/* Mobile Portrait Blocking (#200) */}
             <MobileOrientationOverlay isPortraitBlocked={isPortraitBlocked} onGoToLobby={handleLobbyClick} />
+
+            {/* Bottom-right club logo watermark */}
+            {clubLogo && (
+                <div className="club-watermark">
+                    <img src={clubLogo} alt="Club Logo" />
+                </div>
+            )}
         </div>
     );
 });
