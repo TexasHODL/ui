@@ -1,18 +1,19 @@
 import { useCallback } from "react";
+import { getSoundUrl } from "../../utils/cardImages";
 
 /**
  * Sound file paths for each poker action
  */
-const ACTION_SOUND_PATHS = {
-    "all-in": "/sounds/all-in.mp3",
-    bet: "/sounds/bet-raise.mp3",
-    raise: "/sounds/bet-raise.mp3",
-    call: "/sounds/call.mp3",
-    check: "/sounds/check.mp3",
-    fold: "/sounds/fold.wav",
-    muck: "/sounds/fold.wav",
-    show: "/sounds/show.mp3"
-} as const;
+const ACTION_SOUND_PATHS: Record<string, string | null> = {
+    "all-in": getSoundUrl("all-in.mp3"),
+    bet: getSoundUrl("bet-raise.mp3"),
+    raise: getSoundUrl("bet-raise.mp3"),
+    call: getSoundUrl("call.mp3"),
+    check: getSoundUrl("check.mp3"),
+    fold: getSoundUrl("fold.mp3"),
+    muck: null,
+    show: getSoundUrl("show.mp3")
+};
 
 type ActionSoundKey = keyof typeof ACTION_SOUND_PATHS;
 
