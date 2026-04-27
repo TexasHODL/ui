@@ -1,6 +1,5 @@
 .container {
   color: #ffffff;
-  background-color: color-mix(in srgb, var(--table-bg-base) 30%, transparent);
 }
 
 .header {
