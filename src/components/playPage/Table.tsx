@@ -1000,13 +1000,19 @@ const Table = React.memo(() => {
     // useEffect(() => { ... }, [tableSize, id]);
 
     const onCloseSideBar = useCallback(() => {
-        setOpenSidebar(!openSidebar);
-    }, [openSidebar]);
+        setOpenSidebar(prev => {
+            if (!prev) setOpenSettings(false);
+            return !prev;
+        });
+    }, []);
 
     const [openSettings, setOpenSettings] = useState(false);
 
     const onToggleSettings = useCallback(() => {
-        setOpenSettings(prev => !prev);
+        setOpenSettings(prev => {
+            if (!prev) setOpenSidebar(false);
+            return !prev;
+        });
     }, []);
 
     // Memoize formatted balance - Cosmos returns microunits (6 decimals)

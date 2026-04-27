@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useGameProgress } from "../hooks/game/useGameProgress";
 import { useWinnerInfo } from "../hooks/game/useWinnerInfo";
-import { formatPlayerId, formatAmount } from "../utils/accountUtils";
+import { formatAmount } from "../utils/accountUtils";
 import { isTournamentFormat } from "../utils/gameFormatUtils";
 import { ActionDTO } from "@block52/poker-vm-sdk";
 import { formatActionName, formatRoundName, getActionLine, getWinnerLine, shouldShowWinnerSummary } from "./ActionsLog.utils";
@@ -181,18 +181,6 @@ const ActionsLog: React.FC = () => {
                             className={`text-xs py-1 border-b ${styles.actionRow}`}
                         >
                             <div className="flex justify-between">
-                                <span
-                                    className={`font-mono ${styles.playerId}`}
-                                >
-                                    {formatPlayerId(action.playerId)}
-                                </span>
-                                <span
-                                    className={`text-[10px] ${styles.secondaryText}`}
-                                >
-                                    Seat {action.seat}
-                                </span>
-                            </div>
-                            <div className="flex justify-between mt-0.5">
                                 <span className={styles.actionText}>
                                     {formatActionName(action.action)}
                                     {action.amount && ` ${formatAmount(action.amount, undefined, isTournamentFormat(gameFormat))}`}
@@ -200,7 +188,7 @@ const ActionsLog: React.FC = () => {
                                 <span
                                     className={`text-[10px] ${styles.secondaryText}`}
                                 >
-                                    {formatRoundName(action.round)}
+                                    Seat {action.seat} · {formatRoundName(action.round)}
                                 </span>
                             </div>
                         </div>
@@ -211,20 +199,12 @@ const ActionsLog: React.FC = () => {
                             className={`text-xs py-1 border-b ${styles.actionRow} ${styles.winnerRow}`}
                         >
                             <div className="flex justify-between">
-                                <span className={`font-mono ${styles.playerId}`}>
-                                    {formatPlayerId(w.address)}
-                                </span>
-                                <span className={`text-[10px] ${styles.secondaryText}`}>
-                                    Seat {w.seat}
-                                </span>
-                            </div>
-                            <div className="flex justify-between mt-0.5">
                                 <span className={styles.winnerText}>
                                     WINS {w.formattedAmount}
                                     {w.description && ` — ${w.description}`}
                                 </span>
                                 <span className={`text-[10px] ${styles.secondaryText}`}>
-                                    Showdown
+                                    Seat {w.seat} · Showdown
                                 </span>
                             </div>
                         </div>
