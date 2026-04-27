@@ -25,6 +25,7 @@ import { useAutoNewHand } from "../../hooks/playerActions/useAutoNewHand";
 import { useAutoFold } from "../../hooks/playerActions/useAutoFold";
 import { usePlayerTimer } from "../../hooks/player/usePlayerTimer";
 import { useAutoShowCards } from "../../hooks/playerActions/useAutoShowCards";
+import { useAutoMuck } from "../../hooks/playerActions/useAutoMuck";
 
 // Import action handlers
 import {
@@ -41,7 +42,7 @@ import {
 } from "../common/actionHandlers";
 
 // Import utils
-import { getActionByType, hasAction } from "../../utils/actionUtils";
+import { getActionByType } from "../../utils/actionUtils";
 import { getRaiseToAmount } from "../../utils/raiseUtils";
 
 // Import sub-components
@@ -93,6 +94,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         autoPostBlinds: autoPostBlindsEnabled,
         autoNewHand: autoNewHandEnabled,
         autoFold: autoFoldEnabled,
+        autoMuck: autoMuckEnabled,
         playerActionSounds
     } = useGameSettings();
 
@@ -203,6 +205,23 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             }
         }, // onAutoShowComplete
         () => setLoadingAction(null) // onAutoShowError
+    );
+
+    // Auto-muck hook - automatically mucks cards at showdown when enabled in settings
+    useAutoMuck(
+        tableId,
+        network,
+        hasMuckAction,
+        isUsersTurn,
+        () => setLoadingAction("muck"), // onAutoMuckStarted
+        txHash => {
+            setLoadingAction(null);
+            if (onTransactionSubmitted) {
+                onTransactionSubmitted(txHash);
+            }
+        }, // onAutoMuckComplete
+        () => setLoadingAction(null), // onAutoMuckError
+        autoMuckEnabled
     );
 
     // Auto-new-hand hook - automatically triggers new hand when conditions are met
