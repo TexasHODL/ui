@@ -15,6 +15,7 @@ const LS_KEY_AUTO_DEAL = "setting_autodeal";
 const LS_KEY_AUTO_POST_BLINDS = "setting_autoblinds";
 const LS_KEY_AUTO_NEW_HAND = "setting_autonewhand";
 const LS_KEY_AUTO_FOLD = "setting_autofold";
+const LS_KEY_AUTO_MUCK = "setting_automuck";
 const LS_KEY_TURN_SOUND = "setting_turnsound";
 const LS_KEY_PLAYER_ACTION_SOUNDS = "setting_playeractionsounds";
 
@@ -29,6 +30,7 @@ export interface GameSettings {
     autoPostBlinds: boolean;
     autoNewHand: boolean;
     autoFold: boolean;
+    autoMuck: boolean;
     turnNotificationSound: boolean;
     playerActionSounds: boolean;
 }
@@ -38,6 +40,7 @@ export interface GameSettingsContextValue extends GameSettings {
     toggleAutoPostBlinds: () => void;
     toggleAutoNewHand: () => void;
     toggleAutoFold: () => void;
+    toggleAutoMuck: () => void;
     toggleTurnNotificationSound: () => void;
     togglePlayerActionSounds: () => void;
 }
@@ -56,6 +59,9 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
     const [autoFold, setAutoFold] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_AUTO_FOLD, getAutoFoldEnabled())
+    );
+    const [autoMuck, setAutoMuck] = useState<boolean>(() =>
+        readBoolSetting(LS_KEY_AUTO_MUCK, false)
     );
     const [turnNotificationSound, setTurnNotificationSound] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_TURN_SOUND, true)
@@ -96,6 +102,14 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
     }, []);
 
+    const toggleAutoMuck = useCallback(() => {
+        setAutoMuck(prev => {
+            const next = !prev;
+            localStorage.setItem(LS_KEY_AUTO_MUCK, String(next));
+            return next;
+        });
+    }, []);
+
     const toggleTurnNotificationSound = useCallback(() => {
         setTurnNotificationSound(prev => {
             const next = !prev;
@@ -119,12 +133,14 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 autoPostBlinds,
                 autoNewHand,
                 autoFold,
+                autoMuck,
                 turnNotificationSound,
                 playerActionSounds,
                 toggleAutoDeal,
                 toggleAutoPostBlinds,
                 toggleAutoNewHand,
                 toggleAutoFold,
+                toggleAutoMuck,
                 toggleTurnNotificationSound,
                 togglePlayerActionSounds
             }}
