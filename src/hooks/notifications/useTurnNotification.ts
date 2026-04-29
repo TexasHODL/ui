@@ -6,11 +6,11 @@ import { colors } from "../../utils/colorConfig";
  */
 const DEFAULT_FAVICON_PATH = "/b52favicon.svg";
 
+import { getSoundUrl } from "../../utils/cardImages";
 /**
- * Musical note frequencies for notification tone
+ * Chip notification sound file path (from CDN)
  */
-const NOTIFICATION_TONE_A5 = 880; // Hz
-const NOTIFICATION_TONE_C6 = 1046.5; // Hz
+const CHIP_NOTIFICATION_SOUND_PATH = getSoundUrl("chip-notification.mp3");
 
 /**
  * Validation constraints for notification options
@@ -47,7 +47,6 @@ export const useTurnNotification = (
     const originalFaviconRef = useRef<string>("");
     const isFlashingRef = useRef<boolean>(false);
     const hasSoundedRef = useRef<boolean>(false);
-    const audioContextRef = useRef<AudioContext | null>(null);
 
     // Store original favicon
     useEffect(() => {
@@ -57,42 +56,16 @@ export const useTurnNotification = (
         }
     }, []);
 
-    // Play notification sound using Web Audio API
+    // Play notification sound using an MP3 file
     const playNotificationSound = useCallback(() => {
         try {
-            // Create audio context if it doesn't exist
-            if (!audioContextRef.current) {
-                const AudioContextClass = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-                if (!AudioContextClass) {
-                    return;
-                }
-                audioContextRef.current = new AudioContextClass();
-            }
-
-            const audioContext = audioContextRef.current;
-            
-            // Create oscillator for a pleasant notification tone
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-
-            // Configure tone - a pleasant two-note chime
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(NOTIFICATION_TONE_A5, audioContext.currentTime);
-            oscillator.frequency.setValueAtTime(NOTIFICATION_TONE_C6, audioContext.currentTime + 0.1);
-
-            // Configure volume envelope
-            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
-            gainNode.gain.linearRampToValueAtTime(soundVolume, audioContext.currentTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-            // Play the sound
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
+            const audio = new Audio(CHIP_NOTIFICATION_SOUND_PATH);
+            audio.volume = soundVolume;
+            audio.play().catch(() => {
+                // Audio playback failed - ignore silently
+            });
         } catch {
-            // Audio playback failed - ignore silently
+            // Audio creation failed - ignore silently
         }
     }, [soundVolume]);
 
@@ -198,16 +171,6 @@ export const useTurnNotification = (
             stopFlashing();
         };
     }, [isUserTurn, enableSound, startFlashing, playNotificationSound, stopFlashing]);
-
-    // Cleanup audio context on unmount
-    useEffect(() => {
-        return () => {
-            if (audioContextRef.current) {
-                audioContextRef.current.close();
-                audioContextRef.current = null;
-            }
-        };
-    }, []);
 };
 
 /**

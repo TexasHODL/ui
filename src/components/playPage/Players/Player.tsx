@@ -5,7 +5,7 @@ import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
 import { useParams } from "react-router-dom";
-import type { PlayerProps } from "../../../types/index";
+import type { PlayerProps, WinnerInfo } from "../../../types/index";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { useDealerPosition } from "../../../hooks/game/useDealerPosition";
 import CustomDealer from "../../../assets/CustomDealer.svg";
@@ -13,6 +13,9 @@ import { getCardImageUrl } from "../../../utils/cardImages";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
+import { useNetwork } from "../../../context/NetworkContext";
+import { handleSitIn } from "../../common/actionHandlers";
+import { SIT_IN_METHOD_POST_NOW } from "../../../hooks/playerActions";
 import styles from "./PlayersCommon.module.css";
 
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
@@ -25,6 +28,14 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         const { dealerSeat } = useDealerPosition();
         const { equities, shouldShow: shouldShowEquity } = useAllInEquity();
         const { getAvatarForAddress } = useProfileAvatar();
+        const { currentNetwork } = useNetwork();
+
+        // Callback for "I'm Back" button on badge
+        const handleSitInFromBadge = useCallback(() => {
+            if (id) {
+                handleSitIn(id, currentNetwork, SIT_IN_METHOD_POST_NOW);
+            }
+        }, [id, currentNetwork]);
 
         // Check if this seat is the dealer
         const isDealer = dealerSeat === index;
@@ -76,7 +87,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         const hasWinner = useMemo(() => Array.isArray(winnerInfo) && winnerInfo.length > 0, [winnerInfo]);
 
         // 2) memoize winner check
-        const isWinner = useMemo(() => !!winnerInfo?.some((w: any) => w.seat === index), [winnerInfo, index]);
+        const isWinner = useMemo(() => !!winnerInfo?.some((w: WinnerInfo) => w.seat === index), [winnerInfo, index]);
 
         // 3) dim non-winners when someone has won, also dim busted players like sitting out
         const opacityClass = hasWinner ? (isWinner ? "opacity-100" : "opacity-40") : (isSeated || isSittingOut || isBusted) ? "opacity-50" : isFolded ? "opacity-60" : "opacity-100";
@@ -84,8 +95,15 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         // 4) memoize winner amount
         const winnerAmount = useMemo(() => {
             if (!isWinner || !winnerInfo) return null;
-            const winner = winnerInfo.find((w: any) => w.seat === index);
+            const winner = winnerInfo.find((w: WinnerInfo) => w.seat === index);
             return winner?.formattedAmount ?? null;
+        }, [isWinner, winnerInfo, index]);
+
+        // 4b) memoize winner hand description (e.g. "Full House")
+        const winnerHandDescription = useMemo(() => {
+            if (!isWinner || !winnerInfo) return null;
+            const winner = winnerInfo.find(w => w.seat === index);
+            return winner?.description ?? null;
         }, [isWinner, winnerInfo, index]);
 
         // 5) render hole cards
@@ -182,6 +200,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             tournamentPayout={tournamentResult?.payout}
                             isWinner={isWinner}
                             winnerAmount={winnerAmount}
+                            winnerHandDescription={winnerHandDescription}
                             isTurnTimerActive={isTurnTimerActive}
                             round={round}
                             isFolded={isFolded}
@@ -189,6 +208,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             isSeated={isSeated}
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
+                            onSitIn={isSittingOut ? handleSitInFromBadge : undefined}
                         />
                     </div>
 

@@ -9,6 +9,24 @@
   box-shadow: 1px 2px 6px 3px color-mix(in srgb, #000000 30%, transparent);
 }
 
+.equity-chip {
+  position: absolute;
+  top: -14px;
+  right: -6px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #facc15;
+  font-weight: 700;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid #facc15;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  z-index: 20;
+  white-space: nowrap;
+}
+
 .badge-number {
   display: flex;
   align-items: center;
@@ -286,6 +304,46 @@
   to {
     opacity: 0;
     transform: translateY(-2px);
+  }
+}
+
+/* Sit-In "I'm Back" Button on Badge */
+.sit-in-badge-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: auto;
+  margin-bottom: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  background-color: #22c55e;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  animation: sitInBadgePulse 2s ease-in-out infinite;
+}
+
+.sit-in-badge-button:hover {
+  background-color: #16a34a;
+  transform: scale(1.05);
+}
+
+.sit-in-badge-button:active {
+  transform: scale(0.97);
+}
+
+@keyframes sitInBadgePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 8px 3px rgba(34, 197, 94, 0.35);
   }
 }
 
