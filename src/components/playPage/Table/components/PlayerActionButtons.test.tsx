@@ -63,6 +63,8 @@ const baseProps: PlayerActionButtonsProps = {
     minBuyIn: "100000000",
     maxBuyIn: "1000000000",
     walletBalance: "500000000",
+    isCurrentUserSeated: true,
+    isTableFull: false,
 };
 
 beforeEach(() => {
@@ -148,6 +150,18 @@ describe("PlayerActionButtons", () => {
             />
         );
         expect(screen.getByText("Waiting to sit in...")).toBeInTheDocument();
+    });
+
+    it("shows spectator message and join hint when user is not seated and table is not full", () => {
+        render(
+            <PlayerActionButtons
+                {...baseProps}
+                isCurrentUserSeated={false}
+                isTableFull={false}
+            />
+        );
+        expect(screen.getByText("You are spectating this table")).toBeInTheDocument();
+        expect(screen.getByText("To join the table, click on an available seat.")).toBeInTheDocument();
     });
 
     it("renders sit-out checkbox when SIT_OUT action available", () => {
