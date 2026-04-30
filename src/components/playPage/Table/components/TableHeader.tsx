@@ -22,6 +22,13 @@ import { GameFormat, GameOptionsDTO, PlayerDTO } from "@block52/poker-vm-sdk";
 import { BlindLevelInfo } from "../../../../hooks/game/useBlindLevel";
 import styles from "./TableHeader.module.css";
 
+const formatBlindCountdown = (secondsRemaining: number): string => {
+    const safe = Math.max(0, secondsRemaining);
+    const minutes = Math.floor(safe / 60);
+    const seconds = safe % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
 export interface TableHeaderProps {
     // Table info
     tableId: string;
@@ -236,7 +243,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         <div className="flex items-center space-x-1 sm:space-x-2">
                             {blindLevel.isActive ? (
                                 <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
-                                    {blindLevel.level !== undefined && `Level ${blindLevel.level + 1} `}{blindLevel.currentBlindsFormatted} Next {blindLevel.nextBlindsFormatted}
+                                    {blindLevel.level !== undefined && `Level ${blindLevel.level + 1} `}{blindLevel.currentBlindsFormatted} Next {blindLevel.nextBlindsFormatted}{blindLevel.hasTimer && ` (${formatBlindCountdown(blindLevel.secondsRemaining)})`}
                                 </span>
                             ) : (
                                 <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
