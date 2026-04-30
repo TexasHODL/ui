@@ -142,14 +142,14 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
         return (
             <>
                 {buyChipsElement}
-                <div className={`fixed z-30 ${positionClass}`}>
+                <div className="fixed z-30 bottom-8 left-1/2 -translate-x-1/2">
                     <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
                         <div className="flex items-center gap-2">
                             <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
                             <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>You are spectating this table</span>
                         </div>
                         {!isTableFull && (
-                            <div className="flex items-center  gap-2">
+                            <div className="flex items-center gap-2">
                                 <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
                                 <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>
                                     To join the table, click on an available seat.
