@@ -113,6 +113,7 @@ import { useGameSettings } from "../../context/GameSettingsContext";
 import { useNetwork } from "../../context/NetworkContext";
 import { PlayerDTO, PlayerStatus } from "@block52/poker-vm-sdk";
 import LiveHandStrengthDisplay from "./LiveHandStrengthDisplay";
+import SngPayoutPanel from "./SngPayoutPanel";
 import { useGameStateSounds } from "../../hooks/notifications/useGameStateSounds";
 import NoWalletOverlay from "./NoWalletOverlay";
 
@@ -794,10 +795,8 @@ const Table = React.memo(() => {
     const { gameOptions } = useGameOptions();
 
     // Blind level info for SNG/Tournament games.
-    // levelStartTime is expected on gameOptions.otherOptions until promoted to a first-class field on GameOptionsDTO.
-    // While missing, hasTimer stays false and the countdown is hidden.
-    const levelStartTime = gameOptions?.otherOptions?.levelStartTime as number | undefined;
-    const blindLevel = useBlindLevel(levelStartTime);
+    // When the chain doesn't supply levelStartTime, hasTimer stays false and the countdown is hidden.
+    const blindLevel = useBlindLevel(gameOptions?.levelStartTime);
 
     // Add the useGameResults hook
     const { results } = useGameResults();
@@ -1393,6 +1392,9 @@ const Table = React.memo(() => {
 
                 {/* Live Hand Strength Display */}
                 <LiveHandStrengthDisplay />
+
+                {/* SNG payout positions — lower-right of table body */}
+                <SngPayoutPanel />
             </div>
 
             {/*//! FOOTER — hidden in replay mode (read-only) */}
