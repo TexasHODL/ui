@@ -4,7 +4,7 @@
   "private": true,
   "proxy": "=https://paymentservice.texashodl.net",
   "dependencies": {
-    "@block52/poker-vm-sdk": "1.1.18",
+    "@block52/poker-vm-sdk": "1.2.0",
     "@metamask/sdk": "^0.34.0",
     "@reown/appkit": "1.6.7",
     "@reown/appkit-adapter-ethers": "1.6.7",
@@ -46,7 +46,7 @@
     "wagmi": "^3.6.0"
   },
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 5173",
+    "dev": "vite --host 0.0.0.0",
     "dev:lint": "eslint . --fix && vite --host 0.0.0.0 --port 5173",
     "dev:nocheck": "vite --host 0.0.0.0 --port 5173",
     "build": "tsc -b && vite build",
