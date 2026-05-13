@@ -63,9 +63,6 @@ const SngPayoutPanel: React.FC = () => {
                     ))}
                 </ul>
 
-                <p className="text-xs text-gray-400 mt-3">
-                    Payout structure is fixed for the table size and buy-in. Computed client-side until the chain exposes a payout structure on the game.
-                </p>
             </Modal>
         </>
     );
