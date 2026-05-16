@@ -82,7 +82,7 @@ export default function TableAdminPage() {
         // SNG/Tournament only supports chain-defined entrant counts.
         // Snap an out-of-range maxPlayers to the nearest valid value.
         if (isTournamentFormat(newType)) {
-            const validSngCounts = [2, 3, 6, 9];
+            const validSngCounts = [2, 4, 6, 9];
             if (!validSngCounts.includes(maxPlayers)) {
                 const next = validSngCounts.reduce((a, b) =>
                     Math.abs(b - maxPlayers) < Math.abs(a - maxPlayers) ? b : a
@@ -388,23 +388,10 @@ export default function TableAdminPage() {
                                 onChange={e => setMaxPlayers(parseInt(e.target.value))}
                                 className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
                             >
-                                {isTournamentFormat(gameFormat) ? (
-                                    // SNG/Tournament: chain only has payout structures for these counts
-                                    // (see pokerchain/x/poker/types/params.go DefaultSngPayoutStructures).
-                                    <>
-                                        <option value={2}>2 (Heads-Up)</option>
-                                        <option value={3}>3 (Sit & Go)</option>
-                                        <option value={6}>6 (Sit & Go)</option>
-                                        <option value={9}>9 (Full Ring)</option>
-                                    </>
-                                ) : (
-                                    <>
-                                        <option value={2}>2 (Heads-Up)</option>
-                                        <option value={4}>4 (Sit & Go)</option>
-                                        <option value={6}>6 (Sit & Go)</option>
-                                        <option value={9}>9 (Full Ring)</option>
-                                    </>
-                                )}
+                                <option value={2}>2 (Heads-Up)</option>
+                                <option value={4}>4 (Sit & Go)</option>
+                                <option value={6}>6 (Sit & Go)</option>
+                                <option value={9}>9 (Full Ring)</option>
                             </select>
                         </div>
                     </div>

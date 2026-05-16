@@ -21,7 +21,7 @@ export interface SitAndGoPayoutsReturn {
 // chain will create and finalize for SNG.
 const PAYOUT_CURVES: Record<number, number[]> = {
     2: [10000],
-    3: [7000, 3000],
+    4: [7000, 3000],
     6: [6500, 3500],
     9: [5000, 3000, 2000]
 };
