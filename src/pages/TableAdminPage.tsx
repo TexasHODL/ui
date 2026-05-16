@@ -176,11 +176,14 @@ export default function TableAdminPage() {
         setTableCountBeforeCreation(tables.length);
         
         try {
+            // SNG requires fixed entrant count (min_players == max_players).
+            const finalMinPlayers = isTournament ? maxPlayers : minPlayers;
+
             const result = await createTable({
                 format: gameFormat,
                 minBuyIn: finalMinBuyIn,
                 maxBuyIn: finalMaxBuyIn,
-                minPlayers,
+                minPlayers: finalMinPlayers,
                 maxPlayers,
                 smallBlind: parseFloat(smallBlind),
                 bigBlind: parseFloat(bigBlind),
