@@ -1,11 +1,13 @@
 import React, { useCallback, useState } from "react";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
+import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { formatMicroAsUsdc } from "../constants/currency";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
-import { isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
+import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
 import DeleteTableModal from "./modals/DeleteTableModal";
+import ForceCloseTableModal from "./modals/ForceCloseTableModal";
 import { Pagination, SortButton, SortDirection } from "./common";
 import styles from "./TableList.module.css";
 import { isNullish } from "../utils/guards";
@@ -41,8 +43,10 @@ const formatBuyIn = (game: GameWithFormat) => {
 const TableList: React.FC = () => {
     const { games: rawGames, isLoading, error, refetch } = useFindGames();
     const { deleteGame, isDeleting } = useDeleteGame();
+    const { forceCloseGame, isClosing } = useForceCloseGame();
     const { address: cosmosAddress } = useCosmosWallet();
     const [deleteModalGameId, setDeleteModalGameId] = useState<string | null>(null);
+    const [forceCloseGameTarget, setForceCloseGameTarget] = useState<GameWithFormat | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [playersSortDir, setPlayersSortDir] = useState<SortDirection>(null);
     const [formatSortDir, setFormatSortDir] = useState<SortDirection>(null);
@@ -150,6 +154,15 @@ const TableList: React.FC = () => {
         }
     }, [deleteModalGameId, deleteGame, refetch]);
 
+    // Handle force-close (non-empty cash table — refunds everyone)
+    const handleForceCloseGame = useCallback(async () => {
+        if (!forceCloseGameTarget) return;
+        const result = await forceCloseGame(forceCloseGameTarget.gameId);
+        if (result) {
+            refetch();
+        }
+    }, [forceCloseGameTarget, forceCloseGame, refetch]);
+
     // Check if user is the creator of a game
     const isCreator = (game: GameWithFormat) => {
         return cosmosAddress && game.creator && game.creator.toLowerCase() === cosmosAddress.toLowerCase();
@@ -158,6 +171,20 @@ const TableList: React.FC = () => {
     // Check if a game can be deleted (no active players)
     const canDelete = (game: GameWithFormat) => {
         return isCreator(game) && game.currentPlayers === 0;
+    };
+
+    // Cash-only force-close: creator + non-empty. SNG/Tournament is
+    // deliberately excluded — refund semantics for a partial tournament are
+    // a separate product decision (see block52/poker-vm#2173).
+    const canForceClose = (game: GameWithFormat) => {
+        return isCreator(game) && game.currentPlayers > 0 && isCashFormat(game.gameFormat);
+    };
+
+    // True for non-empty SNG/Tournament tables the creator owns — we render
+    // the button disabled with a tooltip so the creator knows the action
+    // exists but is blocked for tournaments.
+    const canShowForceCloseDisabled = (game: GameWithFormat) => {
+        return isCreator(game) && game.currentPlayers > 0 && !isCashFormat(game.gameFormat);
     };
 
     if (isLoading) {
@@ -385,6 +412,39 @@ const TableList: React.FC = () => {
                                                     </svg>
                                                 </button>
                                             )}
+                                            {canForceClose(game) && (
+                                                <button
+                                                    onClick={() => setForceCloseGameTarget(game)}
+                                                    disabled={isClosing}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                                                    title="Close table and refund all players"
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M6 18L18 6M6 6l12 12"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                            {canShowForceCloseDisabled(game) && (
+                                                <button
+                                                    disabled
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-gray-300 text-sm font-semibold rounded-lg cursor-not-allowed"
+                                                    title="Tournaments can't be force-closed."
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M6 18L18 6M6 6l12 12"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 );
@@ -396,12 +456,21 @@ const TableList: React.FC = () => {
 
             <Pagination currentPage={currentPage} totalItems={games.length} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} />
 
-            {/* Delete Table Modal */}
+            {/* Delete Table Modal — empty-table path */}
             <DeleteTableModal
                 isOpen={!!deleteModalGameId}
                 onClose={() => setDeleteModalGameId(null)}
                 onConfirm={handleDeleteGame}
                 gameId={deleteModalGameId || ""}
+            />
+
+            {/* Force-close Table Modal — non-empty cash-table path (#2173) */}
+            <ForceCloseTableModal
+                isOpen={!!forceCloseGameTarget}
+                onClose={() => setForceCloseGameTarget(null)}
+                onConfirm={handleForceCloseGame}
+                gameId={forceCloseGameTarget?.gameId || ""}
+                seatedPlayerCount={forceCloseGameTarget?.currentPlayers || 0}
             />
         </div>
     );
