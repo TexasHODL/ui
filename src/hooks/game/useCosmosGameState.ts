@@ -98,21 +98,13 @@ export const useCosmosGameState = (gameId: string, playerAddress?: string): UseC
         }
     }, [gameId, cosmosClient, fetchGameState]);
 
-    // Fetch data on mount and when dependencies change
-    useEffect(() => {
-        fetchGameState();
-    }, [fetchGameState]);
-
-    // Set up polling for real-time updates
+    // Fetch once on mount. Real-time updates come from GameStateContext via WebSocket;
+    // consumers needing live data should use useGameStateContext() instead of this hook.
     useEffect(() => {
         if (!gameId) return;
-
-        const interval = setInterval(() => {
-            fetchGameState();
-        }, 5000); // Poll every 5 seconds
-
-        return () => clearInterval(interval);
-    }, [gameId, fetchGameState]);
+        fetchGameState();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameId, playerAddress]);
 
     return {
         gameState,
