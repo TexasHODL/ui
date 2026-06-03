@@ -52,9 +52,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
-            expect(result.current.getChipAmount(1)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should show 0 chips for SITTING_OUT player", () => {
@@ -80,9 +80,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(2));
 
-            expect(result.current.getChipAmount(2)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should show 0 chips for BUSTED player", () => {
@@ -108,9 +108,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(3));
 
-            expect(result.current.getChipAmount(3)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should show 0 chips for ACTIVE player with sumOfBets but NO betting actions (buy-in only)", () => {
@@ -136,10 +136,10 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
             // Should show 0 because no actual betting actions exist
-            expect(result.current.getChipAmount(1)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should show chips for ACTIVE player with sumOfBets during ante when betting action exists", () => {
@@ -173,9 +173,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
-            expect(result.current.getChipAmount(1)).toBe("500000");
+            expect(result.current.chipAmount).toBe("500000");
         });
 
         it("should show chips for ACTIVE player with sumOfBets during preflop when betting action exists", () => {
@@ -209,9 +209,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(2));
 
-            expect(result.current.getChipAmount(2)).toBe("2000000");
+            expect(result.current.chipAmount).toBe("2000000");
         });
 
         it("should show chips for ALL_IN player", () => {
@@ -245,9 +245,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(3));
 
-            expect(result.current.getChipAmount(3)).toBe("5000000");
+            expect(result.current.chipAmount).toBe("5000000");
         });
 
         it("should show chips for FOLDED player (current round bets before folding)", () => {
@@ -281,9 +281,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(4));
 
-            expect(result.current.getChipAmount(4)).toBe("1000000");
+            expect(result.current.chipAmount).toBe("1000000");
         });
     });
 
@@ -319,9 +319,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
-            expect(result.current.getChipAmount(1)).toBe("100000");
+            expect(result.current.chipAmount).toBe("100000");
         });
 
         it("should use sumOfBets during PREFLOP round when player has betting actions", () => {
@@ -355,9 +355,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
-            expect(result.current.getChipAmount(1)).toBe("2000000");
+            expect(result.current.chipAmount).toBe("2000000");
         });
 
         it("should calculate current round betting for FLOP round", () => {
@@ -398,10 +398,10 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
             // Should only show current round (FLOP) betting: 3000000
-            expect(result.current.getChipAmount(1)).toBe("3000000");
+            expect(result.current.chipAmount).toBe("3000000");
         });
 
         it("should sum multiple bets in current round", () => {
@@ -442,10 +442,10 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
             // Should sum both river bets: 2000000 + 3000000 = 5000000
-            expect(result.current.getChipAmount(1)).toBe("5000000");
+            expect(result.current.chipAmount).toBe("5000000");
         });
     });
 
@@ -473,9 +473,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(5));
 
-            expect(result.current.getChipAmount(5)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should handle null gameState", () => {
@@ -489,9 +489,9 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
-            expect(result.current.getChipAmount(1)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should handle loading state", () => {
@@ -505,10 +505,10 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
             expect(result.current.isLoading).toBe(true);
-            expect(result.current.getChipAmount(1)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
 
         it("should handle error state", () => {
@@ -522,71 +522,77 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result } = renderHook(() => usePlayerChipData(1));
 
             expect(result.current.error).toEqual(new Error("Connection failed"));
-            expect(result.current.getChipAmount(1)).toBe("0");
+            expect(result.current.chipAmount).toBe("0");
         });
     });
 
     describe("Multiple Players", () => {
+        // Each seat now subscribes via its own hook call, so we render the hook
+        // once per seat we want to assert on (mirrors how PlayerChipDisplay consumes it).
+        const multiSeatState = {
+            gameState: {
+                round: TexasHoldemRound.PREFLOP,
+                players: [
+                    {
+                        seat: 1,
+                        address: "cosmos1seated",
+                        status: PlayerStatus.SEATED,
+                        sumOfBets: "5000000", // Buy-in (should NOT show - SEATED status)
+                        stack: "5000000"
+                    },
+                    {
+                        seat: 2,
+                        address: "cosmos1active",
+                        status: PlayerStatus.ACTIVE,
+                        sumOfBets: "1000000", // Small blind (should show)
+                        stack: "9000000"
+                    },
+                    {
+                        seat: 3,
+                        address: "cosmos1active2",
+                        status: PlayerStatus.ACTIVE,
+                        sumOfBets: "2000000", // Big blind (should show)
+                        stack: "8000000"
+                    }
+                ],
+                previousActions: [
+                    {
+                        playerId: "cosmos1active",
+                        round: TexasHoldemRound.ANTE,
+                        action: "post-small-blind",
+                        amount: "1000000",
+                        index: 0
+                    },
+                    {
+                        playerId: "cosmos1active2",
+                        round: TexasHoldemRound.ANTE,
+                        action: "post-big-blind",
+                        amount: "2000000",
+                        index: 1
+                    }
+                ]
+            },
+            isLoading: false,
+            error: null,
+            gameFormat: "cash",
+            validationError: null,
+            subscribeToTable: jest.fn(),
+            unsubscribeFromTable: jest.fn()
+        };
+
         it("should correctly filter SEATED vs ACTIVE players with betting actions", () => {
-            mockUseGameStateContext.mockReturnValue({
-                gameState: {
-                    round: TexasHoldemRound.PREFLOP,
-                    players: [
-                        {
-                            seat: 1,
-                            address: "cosmos1seated",
-                            status: PlayerStatus.SEATED,
-                            sumOfBets: "5000000", // Buy-in (should NOT show - SEATED status)
-                            stack: "5000000"
-                        },
-                        {
-                            seat: 2,
-                            address: "cosmos1active",
-                            status: PlayerStatus.ACTIVE,
-                            sumOfBets: "1000000", // Small blind (should show)
-                            stack: "9000000"
-                        },
-                        {
-                            seat: 3,
-                            address: "cosmos1active2",
-                            status: PlayerStatus.ACTIVE,
-                            sumOfBets: "2000000", // Big blind (should show)
-                            stack: "8000000"
-                        }
-                    ],
-                    previousActions: [
-                        {
-                            playerId: "cosmos1active",
-                            round: TexasHoldemRound.ANTE,
-                            action: "post-small-blind",
-                            amount: "1000000",
-                            index: 0
-                        },
-                        {
-                            playerId: "cosmos1active2",
-                            round: TexasHoldemRound.ANTE,
-                            action: "post-big-blind",
-                            amount: "2000000",
-                            index: 1
-                        }
-                    ]
-                },
-                isLoading: false,
-                error: null,
-                gameFormat: "cash",
-                validationError: null,
-                subscribeToTable: jest.fn(),
-                unsubscribeFromTable: jest.fn()
-            } as any);
+            mockUseGameStateContext.mockReturnValue(multiSeatState as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result: seat1 } = renderHook(() => usePlayerChipData(1));
+            const { result: seat2 } = renderHook(() => usePlayerChipData(2));
+            const { result: seat3 } = renderHook(() => usePlayerChipData(3));
 
-            expect(result.current.getChipAmount(1)).toBe("0"); // SEATED - no chips shown
-            expect(result.current.getChipAmount(2)).toBe("1000000"); // ACTIVE - small blind
-            expect(result.current.getChipAmount(3)).toBe("2000000"); // ACTIVE - big blind
+            expect(seat1.current.chipAmount).toBe("0"); // SEATED - no chips shown
+            expect(seat2.current.chipAmount).toBe("1000000"); // ACTIVE - small blind
+            expect(seat3.current.chipAmount).toBe("2000000"); // ACTIVE - big blind
         });
 
         it("should show 0 chips for ACTIVE player with buy-in but no betting actions", () => {
@@ -628,10 +634,11 @@ describe("usePlayerChipData", () => {
                 unsubscribeFromTable: jest.fn()
             } as any);
 
-            const { result } = renderHook(() => usePlayerChipData());
+            const { result: seat1 } = renderHook(() => usePlayerChipData(1));
+            const { result: seat2 } = renderHook(() => usePlayerChipData(2));
 
-            expect(result.current.getChipAmount(1)).toBe("0"); // ACTIVE but no betting actions - buy-in should NOT show
-            expect(result.current.getChipAmount(2)).toBe("1000000"); // ACTIVE with small blind action - should show
+            expect(seat1.current.chipAmount).toBe("0"); // ACTIVE but no betting actions - buy-in should NOT show
+            expect(seat2.current.chipAmount).toBe("1000000"); // ACTIVE with small blind action - should show
         });
     });
 });
