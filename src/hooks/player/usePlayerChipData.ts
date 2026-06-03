@@ -1,115 +1,74 @@
 import { useMemo } from "react";
-import { ActionDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { ActionDTO, PlayerDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { PlayerChipDataReturn } from "../../types/index";
 import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
 import { shouldShowChips, getRelevantChipAmounts, calculateCurrentRoundBetting, hasPlayerBetInRound } from "../../utils/chipUtils";
 
 /**
- * Custom hook to fetch and provide player chip data for each seat.
+ * Per-seat chip data for a single player.
  *
- * Returns two accessors:
- *  - getChipAmount(seat)  → single total string (backwards-compatible)
- *  - getChipActions(seat) → string[] of per-action USDC micro-unit amounts,
- *    one entry per betting action the player made in the current round.
- *    Oldest actions are merged when count exceeds MAX_ACTION_GROUPS.
+ * Returns:
+ *  - chipAmount   → total chip pile string for the current round
+ *  - chipActions  → per-action amounts in the current round display window
+ *
+ * Memos are keyed on the seat's primitive content + a monotonic action
+ * fingerprint (previousActions length and last index). Recomputes only when
+ * the affected seat or the action log actually changes — a WS message that
+ * touches another seat short-circuits.
  */
-export const usePlayerChipData = (): PlayerChipDataReturn => {
+export const usePlayerChipData = (seatIndex: number): PlayerChipDataReturn => {
     const { gameState } = useGameData();
     const { isLoading, error } = useGameUI();
 
-    const playerChipAmounts = useMemo(() => {
-        const amounts: Record<number, string> = {};
+    const player = useMemo<PlayerDTO | null>(() => {
+        if (!gameState?.players || !Array.isArray(gameState.players)) return null;
+        return gameState.players.find((p: PlayerDTO) => p.seat === seatIndex) ?? null;
+    }, [gameState?.players, seatIndex]);
 
-        if (!gameState || !gameState.players || !Array.isArray(gameState.players)) {
-            return amounts;
+    const round = gameState?.round;
+    const previousActions: ActionDTO[] = gameState?.previousActions ?? [];
+    // Monotonic fingerprint of the action log — changes only when a new
+    // action lands, not on every gameState identity flip.
+    const lastActionIndex = previousActions.length > 0 ? previousActions[previousActions.length - 1].index : -1;
+    const actionsFingerprint = `${previousActions.length}:${lastActionIndex}`;
+
+    const chipAmount = useMemo<string>(() => {
+        if (!player?.address) return "0";
+        if (!shouldShowChips(player.status)) return "0";
+
+        if (round === TexasHoldemRound.ANTE || round === TexasHoldemRound.PREFLOP) {
+            // Only show chips once the player has made a real betting action (not just buy-in)
+            if (hasPlayerBetInRound(player.address, previousActions)) {
+                return player.sumOfBets || "0";
+            }
+            return "0";
         }
 
-        const currentRound = gameState.round;
+        if (!round) return "0";
+        return calculateCurrentRoundBetting(player.address, round, previousActions);
+        // previousActions deliberately omitted — actionsFingerprint covers it
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [player?.address, player?.status, player?.sumOfBets, round, actionsFingerprint]);
 
-        gameState.players.forEach(player => {
-            if (!player.seat || !player.address) return;
+    const chipActions = useMemo<string[]>(() => {
+        if (!player?.address) return [];
+        if (!shouldShowChips(player.status)) return [];
+        if (!round) return [];
 
-            if (!shouldShowChips(player.status)) {
-                amounts[player.seat] = "0";
-                return;
-            }
+        const amounts = getRelevantChipAmounts(player.address, round, previousActions);
+        if (amounts.length > 0) return amounts;
 
-            let chipAmount = "0";
-            const previousActions = gameState.previousActions || [];
-
-            if (currentRound === TexasHoldemRound.ANTE || currentRound === TexasHoldemRound.PREFLOP) {
-                // Only show chips if player has made actual betting actions (not just buy-in)
-                if (hasPlayerBetInRound(player.address, previousActions)) {
-                    chipAmount = player.sumOfBets || "0";
-                }
-            } else {
-                chipAmount = calculateCurrentRoundBetting(player.address, currentRound, previousActions);
-            }
-
-            amounts[player.seat] = chipAmount;
-        });
-
-        return amounts;
-    }, [gameState]);
-
-    // Per-action chip amounts (one entry per betting action in the current display window)
-    const playerChipActions = useMemo(() => {
-        const actions: Record<number, string[]> = {};
-
-        if (!gameState || !gameState.players || !Array.isArray(gameState.players)) {
-            return actions;
-        }
-
-        const currentRound = gameState.round;
-        const previousActions: ActionDTO[] = gameState.previousActions || [];
-
-        gameState.players.forEach(player => {
-            if (!player.seat || !player.address) return;
-
-            if (!shouldShowChips(player.status)) {
-                actions[player.seat] = [];
-                return;
-            }
-
-            const amounts = getRelevantChipAmounts(player.address, currentRound, previousActions);
-
-            if (amounts.length > 0) {
-                actions[player.seat] = amounts;
-            } else {
-                // Fallback: if no previousActions matched but sumOfBets exists,
-                // show as a single group (covers edge cases)
-                const total = playerChipAmounts[player.seat];
-                actions[player.seat] = total && total !== "0" ? [total] : [];
-            }
-        });
-
-        return actions;
-    }, [gameState, playerChipAmounts]);
-
-    const getChipAmount = (_seatIndex: number): string => {
-        return playerChipAmounts[_seatIndex] || "0";
-    };
-
-    const getChipActions = (_seatIndex: number): string[] => {
-        return playerChipActions[_seatIndex] || [];
-    };
-
-    const defaultState: PlayerChipDataReturn = {
-        getChipAmount: (_seatIndex: number): string => "0",
-        getChipActions: (_seatIndex: number): string[] => [],
-        isLoading,
-        error
-    };
+        // Fallback: render the running total as a single group when no per-action
+        // amounts matched (covers edge cases like first-action sumOfBets display)
+        return chipAmount && chipAmount !== "0" ? [chipAmount] : [];
+        // previousActions deliberately omitted — actionsFingerprint covers it
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [player?.address, player?.status, round, actionsFingerprint, chipAmount]);
 
     if (isLoading || error) {
-        return defaultState;
+        return { chipAmount: "0", chipActions: [], isLoading, error };
     }
 
-    return {
-        getChipAmount,
-        getChipActions,
-        isLoading: false,
-        error: null
-    };
+    return { chipAmount, chipActions, isLoading: false, error: null };
 };
