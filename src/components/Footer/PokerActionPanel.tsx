@@ -68,7 +68,17 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // this, the button stops spinning ~50ms after click but the panel sits
     // with stale legalActions for the rest of the block budget, letting the
     // player re-click the same action. See block52/ui#364.
+    //
+    // pendingHandNumber is the safety net for actions that complete the hand
+    // (last action on the river, fold that ends a heads-up hand, etc). On
+    // those, actionCount may reset for the new hand so `current > pending`
+    // never becomes true and the spinner was stuck until the 8s timeout
+    // escape hatch — visible as "previous round's spinner still spinning
+    // in the next round". A handNumber bump is the canonical "new hand
+    // started" signal and implies our action was committed (otherwise the
+    // new hand wouldn't exist).
     const [pendingActionCount, setPendingActionCount] = useState<number | null>(null);
+    const [pendingHandNumber, setPendingHandNumber] = useState<number | null>(null);
 
     // How long to wait for the chain to confirm before re-enabling the
     // button anyway. Generous enough to survive a slow WS / 5s commit
@@ -325,9 +335,11 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const handleActionWithTransaction = useCallback(
         async (actionName: string, actionFn: () => Promise<string | null>, skipActionSound = false) => {
             const submittedAt = gameState?.actionCount ?? 0;
+            const submittedAtHand = gameState?.handNumber ?? null;
             try {
                 setLoadingAction(actionName);
                 setPendingActionCount(submittedAt);
+                setPendingHandNumber(submittedAtHand);
                 if (!skipActionSound && playerActionSounds) {
                     playActionSound(actionName);
                 }
@@ -341,22 +353,33 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 console.error(`Error executing ${actionName}:`, error);
                 setLoadingAction(null);
                 setPendingActionCount(null);
+                setPendingHandNumber(null);
                 throw error;
             }
         },
-        [gameState?.actionCount, onTransactionSubmitted, playActionSound, playerActionSounds]
+        [gameState?.actionCount, gameState?.handNumber, onTransactionSubmitted, playActionSound, playerActionSounds]
     );
 
-    // Canonical clear: chain has advanced past the actionCount at which
-    // we submitted, i.e. our action was committed.
+    // Canonical clear: chain has advanced past the actionCount at which we
+    // submitted (our action was committed), OR the chain has started a new
+    // hand (which can only happen if our action committed — otherwise the
+    // hand would still be in progress). The handNumber path catches the
+    // last-action-of-the-hand case where actionCount may reset.
     useEffect(() => {
         if (isNullish(pendingActionCount)) return;
-        const current = gameState?.actionCount;
-        if (!isNullish(current) && current > pendingActionCount) {
+        const currentCount = gameState?.actionCount;
+        const currentHand = gameState?.handNumber;
+        const actionCountAdvanced = !isNullish(currentCount) && currentCount > pendingActionCount;
+        const handAdvanced =
+            !isNullish(pendingHandNumber) &&
+            !isNullish(currentHand) &&
+            currentHand > pendingHandNumber;
+        if (actionCountAdvanced || handAdvanced) {
             setLoadingAction(null);
             setPendingActionCount(null);
+            setPendingHandNumber(null);
         }
-    }, [gameState?.actionCount, pendingActionCount]);
+    }, [gameState?.actionCount, gameState?.handNumber, pendingActionCount, pendingHandNumber]);
 
     // Escape hatch: WS push never arrived (chain stalled, WS disconnect,
     // or — rare — CheckTx passed but DeliverTx rejected so actionCount
@@ -371,6 +394,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             );
             setLoadingAction(null);
             setPendingActionCount(null);
+            setPendingHandNumber(null);
         }, DIRTY_STATE_TIMEOUT_MS);
         return () => clearTimeout(t);
     }, [pendingActionCount]);

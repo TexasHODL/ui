@@ -90,6 +90,10 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     const { seatAtBottom, toggleSeatAtBottom } = useGameSettings();
     const [sittingIn, setSittingIn] = useState(false);
     const [pendingActionCount, setPendingActionCount] = useState<number | null>(null);
+    // See PokerActionPanel: actionCount can reset across hand boundaries,
+    // so we also clear when handNumber advances (canonical "new hand"
+    // signal that implies our sit-in was committed).
+    const [pendingHandNumber, setPendingHandNumber] = useState<number | null>(null);
 
     // Sync optimistic state with server state when it arrives
     const serverChecked = pendingSitOut === "next-hand";
@@ -156,8 +160,10 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
         if (!tableId) return toast.error("Table ID is missing. Cannot sit in.");
 
         const submittedAt = gameState?.actionCount ?? 0;
+        const submittedAtHand = gameState?.handNumber ?? null;
         setSittingIn(true);
         setPendingActionCount(submittedAt);
+        setPendingHandNumber(submittedAtHand);
         try {
             await handleSitIn(tableId, currentNetwork, SIT_IN_METHOD_POST_NOW);
             // Success path: let the watcher useEffect clear when the chain
@@ -166,19 +172,28 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
             console.error("Sit-in failed:", err);
             setSittingIn(false);
             setPendingActionCount(null);
+            setPendingHandNumber(null);
         }
     };
 
-    // Canonical clear: chain has advanced past the actionCount at which we
-    // submitted, i.e. the sit-in was committed.
+    // Canonical clear: chain advanced past our submitted actionCount, OR a
+    // new hand started (handNumber bumped — implies our action committed,
+    // even if actionCount reset across the hand boundary).
     useEffect(() => {
         if (isNullish(pendingActionCount)) return;
-        const current = gameState?.actionCount;
-        if (!isNullish(current) && current > pendingActionCount) {
+        const currentCount = gameState?.actionCount;
+        const currentHand = gameState?.handNumber;
+        const actionCountAdvanced = !isNullish(currentCount) && currentCount > pendingActionCount;
+        const handAdvanced =
+            !isNullish(pendingHandNumber) &&
+            !isNullish(currentHand) &&
+            currentHand > pendingHandNumber;
+        if (actionCountAdvanced || handAdvanced) {
             setSittingIn(false);
             setPendingActionCount(null);
+            setPendingHandNumber(null);
         }
-    }, [gameState?.actionCount, pendingActionCount]);
+    }, [gameState?.actionCount, gameState?.handNumber, pendingActionCount, pendingHandNumber]);
 
     // Escape hatch: WS / chain stall, or CheckTx accepted but DeliverTx
     // rejected so actionCount never advanced. Re-enable the button so the
@@ -192,6 +207,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
             );
             setSittingIn(false);
             setPendingActionCount(null);
+            setPendingHandNumber(null);
         }, DIRTY_STATE_TIMEOUT_MS);
         return () => clearTimeout(t);
     }, [pendingActionCount]);
