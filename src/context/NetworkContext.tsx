@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 
 /**
  * NetworkEndpoints describes all endpoints for a given network.
@@ -169,11 +169,11 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
         localStorage.setItem(DISCOVERED_NETWORKS_KEY, JSON.stringify(discoveredNetworks));
     }, [discoveredNetworks]);
 
-    const setNetwork = (network: NetworkEndpoints) => {
+    const setNetwork = useCallback((network: NetworkEndpoints) => {
         setCurrentNetwork(network);
-    };
+    }, []);
 
-    const addDiscoveredNetwork = (network: NetworkEndpoints) => {
+    const addDiscoveredNetwork = useCallback((network: NetworkEndpoints) => {
         setDiscoveredNetworks(prev => {
             // Avoid duplicates by name
             if (prev.some(n => n.name === network.name)) {
@@ -185,26 +185,25 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
             }
             return [...prev, network];
         });
-    };
+    }, []);
 
-    const removeDiscoveredNetwork = (name: string) => {
+    const removeDiscoveredNetwork = useCallback((name: string) => {
         setDiscoveredNetworks(prev => prev.filter(n => n.name !== name));
-    };
+    }, []);
 
-    return (
-        <NetworkContext.Provider
-            value={{
-                currentNetwork,
-                setNetwork,
-                availableNetworks: NETWORK_PRESETS,
-                discoveredNetworks,
-                addDiscoveredNetwork,
-                removeDiscoveredNetwork
-            }}
-        >
-            {children}
-        </NetworkContext.Provider>
+    const value = useMemo<NetworkContextType>(
+        () => ({
+            currentNetwork,
+            setNetwork,
+            availableNetworks: NETWORK_PRESETS,
+            discoveredNetworks,
+            addDiscoveredNetwork,
+            removeDiscoveredNetwork
+        }),
+        [currentNetwork, setNetwork, discoveredNetworks, addDiscoveredNetwork, removeDiscoveredNetwork]
     );
+
+    return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;
 };
 
 export const useNetwork = (): NetworkContextType => {

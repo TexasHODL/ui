@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 
 /**
@@ -5,13 +6,16 @@ import { useGameStateContext } from "../../context/GameStateContext";
  * @returns Object containing dealer seat number and loading state
  */
 export const useDealerPosition = () => {
-    // Get game state directly from Context
     const { gameState, isLoading, error } = useGameStateContext();
 
-    // Return dealer seat number from game state
-    return {
-        dealerSeat: gameState?.dealer || null,
-        isLoading,
-        error
-    };
+    const dealerSeat = gameState?.dealer || null;
+
+    return useMemo(
+        () => ({
+            dealerSeat,
+            isLoading,
+            error
+        }),
+        [dealerSeat, isLoading, error]
+    );
 };

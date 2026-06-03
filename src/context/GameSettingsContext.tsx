@@ -8,7 +8,7 @@
  * value is present, preserving backwards compatibility.
  */
 
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { getAutoDealEnabled, getAutoPostBlindsEnabled, getAutoNewHandEnabled, getAutoFoldEnabled } from "../utils/urlParams";
 
 const LS_KEY_AUTO_DEAL = "setting_autodeal";
@@ -140,30 +140,46 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
     }, []);
 
-    return (
-        <GameSettingsContext.Provider
-            value={{
-                autoDeal,
-                autoPostBlinds,
-                autoNewHand,
-                autoFold,
-                autoMuck,
-                turnNotificationSound,
-                playerActionSounds,
-                seatAtBottom,
-                toggleAutoDeal,
-                toggleAutoPostBlinds,
-                toggleAutoNewHand,
-                toggleAutoFold,
-                toggleAutoMuck,
-                toggleTurnNotificationSound,
-                togglePlayerActionSounds,
-                toggleSeatAtBottom
-            }}
-        >
-            {children}
-        </GameSettingsContext.Provider>
+    const value = useMemo<GameSettingsContextValue>(
+        () => ({
+            autoDeal,
+            autoPostBlinds,
+            autoNewHand,
+            autoFold,
+            autoMuck,
+            turnNotificationSound,
+            playerActionSounds,
+            seatAtBottom,
+            toggleAutoDeal,
+            toggleAutoPostBlinds,
+            toggleAutoNewHand,
+            toggleAutoFold,
+            toggleAutoMuck,
+            toggleTurnNotificationSound,
+            togglePlayerActionSounds,
+            toggleSeatAtBottom
+        }),
+        [
+            autoDeal,
+            autoPostBlinds,
+            autoNewHand,
+            autoFold,
+            autoMuck,
+            turnNotificationSound,
+            playerActionSounds,
+            seatAtBottom,
+            toggleAutoDeal,
+            toggleAutoPostBlinds,
+            toggleAutoNewHand,
+            toggleAutoFold,
+            toggleAutoMuck,
+            toggleTurnNotificationSound,
+            togglePlayerActionSounds,
+            toggleSeatAtBottom
+        ]
     );
+
+    return <GameSettingsContext.Provider value={value}>{children}</GameSettingsContext.Provider>;
 };
 
 export const useGameSettings = (): GameSettingsContextValue => useContext(GameSettingsContext);
