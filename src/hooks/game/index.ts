@@ -8,7 +8,6 @@
 // Core Table Hooks
 export { useTableData } from "./useTableData";
 export { useTableState } from "./useTableState";
-export { useCosmosGameState } from "./useCosmosGameState";
 
 // Game Flow Hooks
 export { useGameProgress } from "./useGameProgress";
