@@ -1,4 +1,5 @@
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { PlayerLegalActionsResult } from "./types";
 import { LegalActionDTO, PlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useRef, useMemo, useState, useEffect } from "react";
@@ -36,8 +37,8 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
         setUserAddress(address || null);
     }, []);
 
-    // Get game state directly from Context - table ID managed by subscription
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
     // Add ref to track last logged state to prevent spam
     const lastLoggedStateRef = useRef<string>("");

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { useNetwork } from "../../context/NetworkContext";
 import { PlayerStatus, PlayerDTO, PlayerActionType } from "@block52/poker-vm-sdk";
 import { PlayerTimerReturn } from "../../types/index";
@@ -25,8 +26,8 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
     // Functions imported directly - no hook destructuring needed
     const { legalActions } = usePlayerLegalActions();
 
-    // Get game state directly from Context - no additional WebSocket connections
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
     // Get game options for timeout value
     const { gameOptions } = useGameOptions();

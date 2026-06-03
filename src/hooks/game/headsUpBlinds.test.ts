@@ -5,10 +5,33 @@ import { useDealerPosition } from "./useDealerPosition";
 import { useNextToActInfo } from "./useNextToActInfo";
 import { TEST_ADDRESSES } from "../../test-utils";
 
-// Mock GameStateContext — hooks read from this context
+// Mock GameStateContext + the slice contexts that migrated hooks now read from.
+// Some hooks under test still use the aggregator useGameStateContext (legacy path);
+// others (e.g. useDealerPosition) read directly from the data/UI slices. Backing all
+// of them with the same fixture keeps test data in one place.
 const mockUseGameStateContext = jest.fn();
 jest.mock("../../context/GameStateContext", () => ({
     useGameStateContext: () => mockUseGameStateContext()
+}));
+jest.mock("../../context/gameState/GameDataContext", () => ({
+    useGameData: () => ({ gameState: mockUseGameStateContext().gameState })
+}));
+jest.mock("../../context/gameState/GameMetaContext", () => ({
+    useGameMeta: () => ({
+        gameFormat: mockUseGameStateContext().gameFormat,
+        gameVariant: mockUseGameStateContext().gameVariant
+    })
+}));
+jest.mock("../../context/gameState/GameUIContext", () => ({
+    useGameUI: () => {
+        const m = mockUseGameStateContext();
+        return {
+            isLoading: m.isLoading,
+            error: m.error,
+            validationError: m.validationError,
+            pendingAction: m.pendingAction
+        };
+    }
 }));
 
 // Mock colorConfig to avoid import.meta issues

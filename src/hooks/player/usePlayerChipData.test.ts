@@ -3,10 +3,25 @@ import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker
 import { usePlayerChipData } from "./usePlayerChipData";
 import { useGameStateContext } from "../../context/GameStateContext";
 
-// Mock the GameStateContext
+// Mock the GameStateContext and the slice hooks the migrated usePlayerChipData reads from.
 jest.mock("../../context/GameStateContext");
 
 const mockUseGameStateContext = useGameStateContext as jest.MockedFunction<typeof useGameStateContext>;
+
+jest.mock("../../context/gameState/GameDataContext", () => ({
+    useGameData: () => ({ gameState: mockUseGameStateContext().gameState })
+}));
+jest.mock("../../context/gameState/GameUIContext", () => ({
+    useGameUI: () => {
+        const m = mockUseGameStateContext();
+        return {
+            isLoading: m.isLoading,
+            error: m.error,
+            validationError: m.validationError,
+            pendingAction: m.pendingAction
+        };
+    }
+}));
 
 describe("usePlayerChipData", () => {
     beforeEach(() => {
