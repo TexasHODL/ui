@@ -51,17 +51,6 @@ const { currentTableId, tableState, isLoading } = useTableState();
 
 **Dependencies:** useTableData()
 
-#### `useCosmosGameState()`
-Direct interface to Cosmos blockchain game state.
-
-```typescript
-const { gameState, isLoading, error, refetch } = useCosmosGameState(tableId);
-```
-
-**Data Source:** Cosmos blockchain via SDK
-**Updates:** Poll-based or manual refetch
-**Use Case:** Fetching authoritative game state from chain
-
 ### Game Flow Hooks
 
 #### `useGameProgress()`
@@ -610,7 +599,6 @@ Blockchain/API → Context → Hook → Component
 Hooks using WebSocket subscriptions:
 - `useTableData()` - via GameStateContext
 - `usePlayerData()` - via GameStateContext
-- `useCosmosGameState()` - via GameStateContext
 
 Pattern:
 ```typescript
