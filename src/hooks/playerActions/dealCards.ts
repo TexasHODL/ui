@@ -14,13 +14,11 @@ import type { PlayerActionResult } from "../../types";
 export async function dealCards(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         NonPlayerActionType.DEAL,
         0n
     );
-
 
     return {
         hash: transactionHash,
@@ -45,14 +43,12 @@ export async function dealCardsWithEntropy(
 ): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         NonPlayerActionType.DEAL,
         0n,
         entropy  // Pass entropy as optional data parameter
     );
-
 
     return {
         hash: transactionHash,

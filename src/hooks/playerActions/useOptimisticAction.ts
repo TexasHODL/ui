@@ -67,13 +67,11 @@ async function executeAction(
 ): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         action,
         amount
     );
-
 
     return {
         hash: transactionHash,
@@ -113,11 +111,13 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
                 throw new Error(`Amount required for ${action}`);
             }
 
-            // Step 1: Send via WebSocket for immediate optimistic broadcast
+            // Step 1: Send via WebSocket for immediate optimistic broadcast.
+            // If this fails, fall through to the SDK transaction anyway — the WS
+            // broadcast is purely a latency optimization for other subscribers.
             try {
                 await sendAction(action, amount?.toString());
-            } catch (wsError) {
-                // WebSocket notification failed - continue with transaction anyway
+            } catch {
+                // intentional: WS broadcast is best-effort
             }
 
             // Step 2: Execute the blockchain transaction via SDK

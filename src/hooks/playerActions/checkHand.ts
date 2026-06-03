@@ -14,13 +14,11 @@ import type { PlayerActionResult } from "../../types";
 export async function checkHand(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         PlayerActionType.CHECK,
         0n
     );
-
 
     return {
         hash: transactionHash,
