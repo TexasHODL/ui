@@ -1,7 +1,9 @@
 import React from "react";
 import { PlayerStatus, PlayerDTO } from "@block52/poker-vm-sdk";
 import { PlayerDataReturn } from "../../types/index";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameMeta } from "../../context/gameState/GameMetaContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { convertUSDCToNumber } from "../../utils/numberUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 
@@ -16,8 +18,10 @@ import { isTournamentFormat } from "../../utils/gameFormatUtils";
  * @returns Object with player data and utility functions
  */
 export const usePlayerData = (seatIndex?: number): PlayerDataReturn => {
-  // Get game state directly from Context - real-time data via WebSocket
-  const { gameState, gameFormat, error, isLoading } = useGameStateContext();
+  // Subscribe only to the slices we need so unrelated UI/replay updates don't re-render us.
+  const { gameState } = useGameData();
+  const { gameFormat } = useGameMeta();
+  const { isLoading, error } = useGameUI();
 
   // Get player data from the table state
   const playerData = React.useMemo((): PlayerDTO | null => {

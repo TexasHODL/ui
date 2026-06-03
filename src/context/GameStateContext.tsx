@@ -1,10 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNetwork } from "./NetworkContext";
 import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { createAuthPayload } from "../utils/cosmos/signing";
 import { validateGameState, extractGameDataFromMessage } from "../utils/gameFormatUtils";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
+import { GameDataProvider, useGameData } from "./gameState/GameDataContext";
+import { GameMetaProvider, useGameMeta } from "./gameState/GameMetaContext";
+import { GameUIProvider, useGameUI, PendingAction } from "./gameState/GameUIContext";
+import { ReplayProvider, useReplay } from "./gameState/ReplayContext";
+import { GameActionsProvider, useGameActions } from "./gameState/GameActionsContext";
 
 // Feature toggle for REST fallback (debug only - disabled by default per Commandment 7)
 const ENABLE_REST_FALLBACK = false;
@@ -12,30 +17,21 @@ const AVATAR_SYNC_DEBUG =
     typeof process !== "undefined" &&
     process.env.NODE_ENV !== "production" &&
     ["1", "true"].includes((process.env.VITE_DEBUG_AVATAR_SYNC || "").toLowerCase());
+
 /**
- * GameStateContext - Centralized WebSocket state management
+ * GameStateProvider — owns the WebSocket and the underlying state.
  *
- * SIMPLIFIED ARCHITECTURE:
- * Components → useGameState → GameStateContext → WebSocket (direct)
+ * Internally splits its state across five slice contexts (data, meta, UI,
+ * replay, actions). Components that need only one slice should consume the
+ * dedicated hook (useGameData, useGameMeta, useGameUI, useReplay,
+ * useGameActions) to avoid re-rendering on unrelated updates.
  *
- * BENEFITS:
- * - No more WebSocketSingleton complexity
- * - No more callback system needed
- * - Context manages ONE WebSocket connection per table
- * - All components read from Context state automatically
- * - Stable React lifecycle management
+ * The legacy useGameStateContext() hook below aggregates all five slices
+ * and preserves the original shape, so existing consumers keep working
+ * without changes during the gradual migration.
  */
 
-// Pending action for optimistic updates
-interface PendingAction {
-    gameId: string;
-    actor: string;
-    action: string;
-    amount?: string;
-    timestamp: number;
-}
-
-interface GameStateContextType {
+export interface GameStateContextType {
     gameState: TexasHoldemStateDTO | undefined;
     gameFormat: GameFormat | undefined;
     gameVariant: GameVariant | undefined;
@@ -51,8 +47,6 @@ interface GameStateContextType {
     sendAction: (action: string, amount?: string) => Promise<void>;
     loadHistoricalState: (tableId: string, handNumber: number, actionIndex: number) => Promise<void>;
 }
-
-const GameStateContext = createContext<GameStateContextType | null>(null);
 
 interface GameStateProviderProps {
     children: React.ReactNode;
@@ -409,9 +403,49 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         };
     }, []);
 
-    // Memoize context value to prevent unnecessary re-renders
-    const contextValue = useMemo(
-        (): GameStateContextType => ({
+    return (
+        <GameActionsProvider
+            subscribeToTable={subscribeToTable}
+            unsubscribeFromTable={unsubscribeFromTable}
+            sendAction={sendAction}
+            loadHistoricalState={loadHistoricalState}
+        >
+            <GameMetaProvider gameFormat={gameFormat} gameVariant={gameVariant}>
+                <ReplayProvider
+                    isReplayMode={isReplayMode}
+                    replayHandNumber={replayHandNumber}
+                    replayActionIndex={replayActionIndex}
+                >
+                    <GameUIProvider
+                        isLoading={isLoading}
+                        error={error}
+                        validationError={validationError}
+                        pendingAction={pendingAction}
+                    >
+                        <GameDataProvider gameState={gameState}>{children}</GameDataProvider>
+                    </GameUIProvider>
+                </ReplayProvider>
+            </GameMetaProvider>
+        </GameActionsProvider>
+    );
+};
+
+/**
+ * Legacy aggregator hook. Returns the same shape as the old monolithic context.
+ *
+ * Prefer the granular hooks (useGameData, useGameMeta, useGameUI, useReplay,
+ * useGameActions) in new code so consumers only re-render on the slice they
+ * actually depend on.
+ */
+export const useGameStateContext = (): GameStateContextType => {
+    const { gameState } = useGameData();
+    const { gameFormat, gameVariant } = useGameMeta();
+    const { isLoading, error, validationError, pendingAction } = useGameUI();
+    const { isReplayMode, replayHandNumber, replayActionIndex } = useReplay();
+    const { subscribeToTable, unsubscribeFromTable, sendAction, loadHistoricalState } = useGameActions();
+
+    return useMemo(
+        () => ({
             gameState,
             gameFormat,
             gameVariant,
@@ -427,16 +461,21 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             sendAction,
             loadHistoricalState
         }),
-        [gameState, gameFormat, gameVariant, isLoading, error, validationError, pendingAction, isReplayMode, replayHandNumber, replayActionIndex, subscribeToTable, unsubscribeFromTable, sendAction, loadHistoricalState]
+        [
+            gameState,
+            gameFormat,
+            gameVariant,
+            isLoading,
+            error,
+            validationError,
+            pendingAction,
+            isReplayMode,
+            replayHandNumber,
+            replayActionIndex,
+            subscribeToTable,
+            unsubscribeFromTable,
+            sendAction,
+            loadHistoricalState
+        ]
     );
-
-    return <GameStateContext.Provider value={contextValue}>{children}</GameStateContext.Provider>;
-};
-
-export const useGameStateContext = (): GameStateContextType => {
-    const context = useContext(GameStateContext);
-    if (!context) {
-        throw new Error("useGameStateContext must be used within a GameStateProvider");
-    }
-    return context;
 };

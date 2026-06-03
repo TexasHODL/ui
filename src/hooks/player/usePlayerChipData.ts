@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { ActionDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { PlayerChipDataReturn } from "../../types/index";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { shouldShowChips, getRelevantChipAmounts, calculateCurrentRoundBetting, hasPlayerBetInRound } from "../../utils/chipUtils";
 
 /**
@@ -14,7 +15,8 @@ import { shouldShowChips, getRelevantChipAmounts, calculateCurrentRoundBetting, 
  *    Oldest actions are merged when count exceeds MAX_ACTION_GROUPS.
  */
 export const usePlayerChipData = (): PlayerChipDataReturn => {
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
     const playerChipAmounts = useMemo(() => {
         const amounts: Record<number, string> = {};

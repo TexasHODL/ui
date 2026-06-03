@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { MinAndMaxBuyInsReturn } from "../../types/index";
 
 /**
@@ -15,7 +16,8 @@ import { MinAndMaxBuyInsReturn } from "../../types/index";
  * @returns Object containing min/max buy-in values in USDC micro-units (6 decimals)
  */
 export const useMinAndMaxBuyIns = (): MinAndMaxBuyInsReturn => {
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
     const minBuyIn = gameState?.gameOptions?.minBuyIn;
     const maxBuyIn = gameState?.gameOptions?.maxBuyIn;

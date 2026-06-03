@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameActions } from "../../context/gameState/GameActionsContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { useNetwork, NetworkEndpoints } from "../../context/NetworkContext";
 import { getSigningClient } from "../../utils/cosmos/client";
 import type { PlayerActionResult } from "../../types";
@@ -96,7 +97,8 @@ async function executeAction(
  *   await performOptimisticAction(tableId, OptimisticAction.RAISE, 100n);
  */
 export function useOptimisticAction(): UseOptimisticActionReturn {
-    const { sendAction, pendingAction } = useGameStateContext();
+    const { sendAction } = useGameActions();
+    const { pendingAction } = useGameUI();
     const { currentNetwork } = useNetwork();
 
     const performOptimisticAction = useCallback(
