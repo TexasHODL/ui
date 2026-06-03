@@ -55,7 +55,6 @@ export function useAutoShowCards(
     useEffect(() => {
         const shouldAutoShow = hasShowAction && isUsersTurn && timeRemaining === 0 && !hasTriggeredRef.current && !isProcessingRef.current;
 
-        console.log("useAutoShowCards conditions:", shouldAutoShow);
         if (shouldAutoShow) {
             hasTriggeredRef.current = true;
             const timeoutId = setTimeout(() => {

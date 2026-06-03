@@ -15,13 +15,11 @@ import type { PlayerActionResult } from "../../types";
 export async function postBigBlind(tableId: string, amount: bigint, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         PlayerActionType.BIG_BLIND,
         amount
     );
-
 
     return {
         hash: transactionHash,

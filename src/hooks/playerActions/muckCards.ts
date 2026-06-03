@@ -14,13 +14,11 @@ import type { PlayerActionResult } from "../../types";
 export async function muckCards(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         PlayerActionType.MUCK,
         0n
     );
-
 
     return {
         hash: transactionHash,

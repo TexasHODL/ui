@@ -14,13 +14,11 @@ import type { PlayerActionResult } from "../../types";
 export async function foldHand(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         PlayerActionType.FOLD,
         0n
     );
-
 
     return {
         hash: transactionHash,
