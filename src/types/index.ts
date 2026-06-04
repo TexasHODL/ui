@@ -329,10 +329,10 @@ export interface NextToActInfoReturn extends BaseHookReturn {
     timeRemaining: number;
 }
 
-// Type for the return value of usePlayerChipData hook
+// Type for the return value of usePlayerChipData hook (per-seat, see #424)
 export interface PlayerChipDataReturn extends BaseHookReturn {
-    getChipAmount: (seatIndex: number) => string;
-    getChipActions: (seatIndex: number) => string[];
+    chipAmount: string;
+    chipActions: string[];
 }
 
 // Type for the return value of usePlayerData hook

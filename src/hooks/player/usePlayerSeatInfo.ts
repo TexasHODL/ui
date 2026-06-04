@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { PlayerDTO } from "@block52/poker-vm-sdk";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { PlayerSeatInfoReturn } from "../../types/index";
 
 /**
@@ -13,8 +14,8 @@ import { PlayerSeatInfoReturn } from "../../types/index";
  * @returns Object containing player seat information and related functions
  */
 export const usePlayerSeatInfo = (): PlayerSeatInfoReturn => {
-    // Get game state directly from Context - real-time data via WebSocket
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
     // Get user address from local storage
     const userWalletAddress = useMemo(() => {

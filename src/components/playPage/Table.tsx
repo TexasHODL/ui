@@ -63,7 +63,6 @@ import {
     LayoutDebugInfo
 } from "./Table/components";
 
-import Chip from "./common/Chip";
 import defaultLogo from "../../assets/YOUR_CLUB.png";
 import { HexagonPattern } from "../common/Modal";
 
@@ -89,7 +88,7 @@ import { usePlayerSeatInfo } from "../../hooks/player/usePlayerSeatInfo"; // Pro
 import { useNextToActInfo } from "../../hooks/game/useNextToActInfo";
 
 //2. Visual Position/State Providers
-import { usePlayerChipData } from "../../hooks/player/usePlayerChipData";
+import PlayerChipDisplay from "./Table/components/PlayerChipDisplay";
 
 //3. Game State Providers
 import { useTableState } from "../../hooks/game/useTableState"; //Provides currentRound, formattedTotalPot, tableSize, tableSize determines player layout (6 vs 9 players)
@@ -895,8 +894,7 @@ const Table = React.memo(() => {
 
     // Chip positions now come from tableLayout.positions.chips (stageGeometry)
 
-    // Add the usePlayerChipData hook
-    const { getChipAmount } = usePlayerChipData();
+    // Chip data is now read per-seat inside PlayerChipDisplay (#424)
 
     // Memoize user wallet address using Cosmos utility function
     const userWalletAddress = useMemo(() => {
@@ -1346,16 +1344,18 @@ const Table = React.memo(() => {
                                 winnerCards={winnerCards}
                             />
 
-                            {/* Chips — map screen position to rotated seat number */}
+                            {/* Chips — per-seat memoized leaf; only the affected seat re-renders on WS update (#424) */}
                             {!isSitAndGoWaitingForPlayers &&
                                 tableLayout.positions.chips.map((position, positionIndex) => {
                                     const seatNumber = ((positionIndex - startIndex + tableSize) % tableSize) + 1;
-                                    const chipAmount = getChipAmount(seatNumber);
-                                    if (chipAmount === "0" || chipAmount === "" || !chipAmount) return null;
                                     return (
-                                        <div key={`chip-${positionIndex}`} className="chip-position" style={{ left: position.left, bottom: position.bottom }}>
-                                            <Chip amount={chipAmount} isTournament={isTournamentFormat(gameFormat)} />
-                                        </div>
+                                        <PlayerChipDisplay
+                                            key={`chip-${positionIndex}`}
+                                            seatIndex={seatNumber}
+                                            left={position.left}
+                                            bottom={position.bottom}
+                                            isTournament={isTournamentFormat(gameFormat)}
+                                        />
                                     );
                                 })}
                         </div>

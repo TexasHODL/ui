@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { GameOptionsDTO } from "@block52/poker-vm-sdk";
 import { GameOptionsReturn } from "../../types/index";
 import { validateGameOptions } from "../../utils/gameOptionsValidation";
@@ -14,8 +15,8 @@ import { validateGameOptions } from "../../utils/gameOptionsValidation";
  * @returns Object containing game options and loading state - no defaults, returns actual values from server
  */
 export const useGameOptions = (): GameOptionsReturn => {
-    // Get game state directly from Context - real-time data via WebSocket
-    const { gameState, gameFormat, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
     // Memoize game options processing - no defaults, use actual server values
     const gameOptions = useMemo((): Required<GameOptionsDTO> | null => {

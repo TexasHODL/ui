@@ -5,7 +5,7 @@
  * with singleton pattern for the frontend.
  */
 
-import { CosmosClient, createSigningClientFromMnemonic, getDefaultCosmosConfig as getDefaultCosmosConfigSDK, COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
+import { CosmosClient, SigningCosmosClient, createSigningClientFromMnemonic, getDefaultCosmosConfig as getDefaultCosmosConfigSDK, COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
 import { getCosmosAddress, getCosmosMnemonic } from "./storage";
 import { getCosmosUrls, type NetworkEndpoints } from "./urls";
 
@@ -107,26 +107,49 @@ export const getCosmosClient = (
 };
 
 /**
- * Clear the cached client instance (useful when changing wallets or networks)
+ * Clear the cached client instance (useful when changing wallets or networks).
+ * Also clears the signing-client cache so the next action rebuilds against
+ * fresh endpoints / wallet material.
  */
 export const clearCosmosClient = (): void => {
     clientInstance = null;
     currentEndpoints = null;
+    clearSigningClientCache();
 };
 
 /**
- * Creates a signing client for performing player actions on the Cosmos blockchain.
+ * Promise-memoized signing client.
  *
- * This is a wrapper around createSigningClientFromMnemonic that:
- * - Retrieves the mnemonic from storage
- * - Configures the client with the correct network endpoints
- * - Uses consistent chain configuration (chainId, prefix, denom, gasPrice)
+ * createSigningClientFromMnemonic does two expensive things on every call:
+ *   1. HD wallet derivation from the mnemonic — BIP39 PBKDF2 (2048 rounds)
+ *      plus secp256k1 BIP32 derivation. Tens of ms on the main thread.
+ *   2. connectWithSigner opens a Tendermint RPC connection and does a
+ *      status handshake — a network round-trip.
  *
- * @param network - The network configuration to use
- * @returns Promise with the signing client
+ * Neither needs to be redone per bet/call/raise — the result is identical
+ * for the whole session. We cache the *promise* (not the resolved value)
+ * so concurrent callers (e.g. a rapid bet→raise misclick) share a single
+ * in-flight construction instead of building two clients in parallel.
+ *
+ * The cache key is `address|rpcEndpoint|restEndpoint` so it invalidates
+ * naturally on wallet swap or network switch.
+ */
+type SigningClientResult = { signingClient: SigningCosmosClient; userAddress: string };
+
+let signingClientCache: {
+    key: string;
+    promise: Promise<SigningClientResult>;
+} | null = null;
+
+/**
+ * Get (or build and cache) the signing client for the current wallet + network.
+ *
+ * Returns the same Promise across concurrent calls within a session, so
+ * the expensive PBKDF2 derivation runs once per (wallet, network) pair.
+ *
  * @throws Error if Cosmos wallet is not initialized (no mnemonic or address)
  */
-export async function getSigningClient(network: NetworkEndpoints) {
+export async function getSigningClient(network: NetworkEndpoints): Promise<SigningClientResult> {
     const userAddress = getCosmosAddress();
     const mnemonic = getCosmosMnemonic();
 
@@ -135,8 +158,13 @@ export async function getSigningClient(network: NetworkEndpoints) {
     }
 
     const { rpcEndpoint, restEndpoint } = getCosmosUrls(network);
+    const key = `${userAddress}|${rpcEndpoint}|${restEndpoint}`;
 
-    const signingClient = await createSigningClientFromMnemonic(
+    if (signingClientCache?.key === key) {
+        return signingClientCache.promise;
+    }
+
+    const promise = createSigningClientFromMnemonic(
         {
             rpcEndpoint,
             restEndpoint,
@@ -146,7 +174,89 @@ export async function getSigningClient(network: NetworkEndpoints) {
             gasPrice: "0stake" // Gasless
         },
         mnemonic
-    );
+    ).then(signingClient => ({ signingClient, userAddress }));
 
-    return { signingClient, userAddress };
+    // If construction rejects, drop the cache so the next call retries
+    // instead of returning a permanently-failed promise.
+    promise.catch(() => {
+        if (signingClientCache?.promise === promise) {
+            signingClientCache = null;
+        }
+    });
+
+    signingClientCache = { key, promise };
+    return promise;
+}
+
+/**
+ * Clear the cached signing client.
+ *
+ * Call on: logout, wallet import/change, network switch.
+ *
+ * Also call from the action layer's error handler when a broadcast fails
+ * with a connection-level error (stale RPC socket, node restart, etc.) —
+ * see withSigningClientRetry below for the standard retry-once wrapper.
+ */
+export function clearSigningClientCache(): void {
+    const previous = signingClientCache;
+    signingClientCache = null;
+    // Best-effort cleanup — disconnect if the SDK exposes it.
+    previous?.promise
+        .then(c => (c.signingClient as { disconnect?: () => void }).disconnect?.())
+        .catch(() => { /* already-rejected promise, nothing to disconnect */ });
+}
+
+/**
+ * Run an action against the signing client. If it fails with a transport-
+ * shaped error (the cached connection went stale), clear the cache and
+ * retry exactly once with a fresh client.
+ *
+ * Use this in the action layer wherever you'd previously call
+ * `const { signingClient } = await getSigningClient(network)` directly:
+ *
+ *   const hash = await withSigningClientRetry(network, ({ signingClient }) =>
+ *       signingClient.performActionSync(tableId, action, amount)
+ *   );
+ *
+ * CheckTx rejections (invalid signature, insufficient gas, malformed msg)
+ * are application errors, not transport errors — those are NOT retried.
+ */
+export async function withSigningClientRetry<T>(
+    network: NetworkEndpoints,
+    fn: (client: SigningClientResult) => Promise<T>
+): Promise<T> {
+    const client = await getSigningClient(network);
+    try {
+        return await fn(client);
+    } catch (err) {
+        if (!isTransportError(err)) {
+            throw err;
+        }
+        clearSigningClientCache();
+        const fresh = await getSigningClient(network);
+        return fn(fresh);
+    }
+}
+
+/**
+ * Heuristic: does this error look like a dead RPC connection rather than
+ * a chain-level rejection? We err on the side of NOT retrying — a false
+ * negative here just means we don't retry a recoverable failure; a false
+ * positive could double-submit a tx that was actually rejected.
+ */
+function isTransportError(err: unknown): boolean {
+    if (!err || typeof err !== "object") return false;
+    const message = (err as { message?: unknown }).message;
+    if (typeof message !== "string") return false;
+    const lower = message.toLowerCase();
+    return (
+        lower.includes("network") ||
+        lower.includes("fetch") ||
+        lower.includes("socket") ||
+        lower.includes("econnreset") ||
+        lower.includes("econnrefused") ||
+        lower.includes("etimedout") ||
+        lower.includes("disconnected") ||
+        lower.includes("connection")
+    );
 }

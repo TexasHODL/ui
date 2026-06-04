@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateWallet as generateWalletSDK, createWalletFromMnemonic as createWalletSDK, getAddressFromMnemonic } from "@block52/poker-vm-sdk";
 import { setCosmosMnemonic, setCosmosAddress, getCosmosMnemonic, getCosmosAddress, clearCosmosData, isValidSeedPhrase } from "../utils/cosmos";
+import { clearCosmosClient } from "../utils/cosmos/client";
 import { AnimatedBackground } from "./common/AnimatedBackground";
 import useUserWalletConnect from "../hooks/wallet/useUserWalletConnect";
 import styles from "./CosmosWalletPage.module.css";
@@ -139,6 +140,8 @@ const CosmosWalletPage = () => {
     const handleClearWallet = () => {
         if (window.confirm("Are you sure you want to clear your wallet? Make sure you have saved your seed phrase!")) {
             clearCosmosData();
+            // Drop both cached clients so derived keys don't outlive the wallet.
+            clearCosmosClient();
             setMnemonic("");
             setAddress("");
             setShowMnemonic(false);

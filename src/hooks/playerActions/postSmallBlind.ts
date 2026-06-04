@@ -15,13 +15,11 @@ import type { PlayerActionResult } from "../../types";
 export async function postSmallBlind(tableId: string, amount: bigint, network: NetworkEndpoints): Promise<PlayerActionResult> {
     const { signingClient } = await getSigningClient(network);
 
-
     const transactionHash = await signingClient.performActionSync(
         tableId,
         PlayerActionType.SMALL_BLIND,
         amount
     );
-
 
     return {
         hash: transactionHash,

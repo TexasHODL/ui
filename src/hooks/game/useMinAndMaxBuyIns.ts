@@ -1,4 +1,6 @@
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useMemo } from "react";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { MinAndMaxBuyInsReturn } from "../../types/index";
 
 /**
@@ -14,24 +16,27 @@ import { MinAndMaxBuyInsReturn } from "../../types/index";
  * @returns Object containing min/max buy-in values in USDC micro-units (6 decimals)
  */
 export const useMinAndMaxBuyIns = (): MinAndMaxBuyInsReturn => {
-    // Get game state directly from Context - real-time data via WebSocket
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
-    // Per Commandment 7: NO defaults - return undefined if data not available
-    if (isLoading || error || !gameState?.gameOptions) {
+    const minBuyIn = gameState?.gameOptions?.minBuyIn;
+    const maxBuyIn = gameState?.gameOptions?.maxBuyIn;
+    const dataReady = !isLoading && !error && !!gameState?.gameOptions;
+
+    return useMemo<MinAndMaxBuyInsReturn>(() => {
+        if (!dataReady) {
+            return {
+                minBuyIn: undefined,
+                maxBuyIn: undefined,
+                isLoading,
+                error
+            };
+        }
         return {
-            minBuyIn: undefined,
-            maxBuyIn: undefined,
-            isLoading,
-            error
+            minBuyIn,
+            maxBuyIn,
+            isLoading: false,
+            error: null
         };
-    }
-
-    // Pass through values directly from chain - no conversion heuristics
-    return {
-        minBuyIn: gameState.gameOptions.minBuyIn,
-        maxBuyIn: gameState.gameOptions.maxBuyIn,
-        isLoading: false,
-        error: null
-    };
+    }, [dataReady, minBuyIn, maxBuyIn, isLoading, error]);
 };

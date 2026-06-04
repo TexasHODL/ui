@@ -1,5 +1,4 @@
 import { COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
-import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { getSigningClient } from "../../utils/cosmos/client";
 import type { JoinTableOptions } from "./types";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
@@ -21,7 +20,6 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
 
     const { signingClient } = await getSigningClient(network);
 
-
     // Convert buy-in amount from USDC to micro-USDC (b52usdc)
     // options.amount is in USDC (e.g., "5.00"), need to convert to micro-units (e.g., 5000000)
     const amountInUsdc = parseFloat(options.amount);
@@ -32,14 +30,12 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
         ? options.seatNumber
         : 0;
 
-
     // Call SigningCosmosClient.joinGame()
     const transactionHash = await signingClient.joinGame(
         tableId,
         seat,
         buyInAmount
     );
-
 
     return {
         hash: transactionHash,

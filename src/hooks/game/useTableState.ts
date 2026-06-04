@@ -1,4 +1,6 @@
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameMeta } from "../../context/gameState/GameMetaContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 import { TexasHoldemRound, GameFormat } from "@block52/poker-vm-sdk";
 import { TableStateReturn } from "../../types/index";
 import { getGameFormat } from "../../utils/gameFormatUtils";
@@ -17,8 +19,9 @@ const DEFAULT_TABLE_SIZE = 9;
  * @returns Object containing table state properties including round, pot, size, type
  */
 export const useTableState = (): TableStateReturn => {
-    // Get game state directly from Context - real-time data via WebSocket
-    const { gameState, gameFormat, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { gameFormat } = useGameMeta();
+    const { isLoading, error } = useGameUI();
 
     // Default values in case of error or loading
     const defaultState: TableStateReturn = {

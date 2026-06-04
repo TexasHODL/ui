@@ -1,17 +1,23 @@
-import { useGameStateContext } from "../../context/GameStateContext";
+import { useMemo } from "react";
+import { useGameData } from "../../context/gameState/GameDataContext";
+import { useGameUI } from "../../context/gameState/GameUIContext";
 
 /**
  * Custom hook to get the dealer seat number from game state
  * @returns Object containing dealer seat number and loading state
  */
 export const useDealerPosition = () => {
-    // Get game state directly from Context
-    const { gameState, isLoading, error } = useGameStateContext();
+    const { gameState } = useGameData();
+    const { isLoading, error } = useGameUI();
 
-    // Return dealer seat number from game state
-    return {
-        dealerSeat: gameState?.dealer || null,
-        isLoading,
-        error
-    };
+    const dealerSeat = gameState?.dealer || null;
+
+    return useMemo(
+        () => ({
+            dealerSeat,
+            isLoading,
+            error
+        }),
+        [dealerSeat, isLoading, error]
+    );
 };
