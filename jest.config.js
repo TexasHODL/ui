@@ -31,7 +31,9 @@ module.exports = {
     // Mock WalletConnect/Reown packages that have ESM issues
     '^@reown/appkit/react$': '<rootDir>/src/__mocks__/reownAppkit.js',
     // Mock wagmi (ESM package)
-    '^wagmi$': '<rootDir>/src/__mocks__/wagmi.js'
+    '^wagmi$': '<rootDir>/src/__mocks__/wagmi.js',
+    // import.meta shim (see src/utils/viteEnv.ts)
+    'viteEnv$': '<rootDir>/src/__mocks__/viteEnv.js'
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

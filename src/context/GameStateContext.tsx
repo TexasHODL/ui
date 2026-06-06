@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useNetwork } from "./NetworkContext";
 import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { createAuthPayload } from "../utils/cosmos/signing";
+import { getGameTransport, getGatewayWsUrl, normalizeGatewayMessage } from "../utils/gameTransport";
 import { validateGameState, extractGameDataFromMessage } from "../utils/gameFormatUtils";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
@@ -118,8 +119,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 return;
             }
 
-            // Create WebSocket connection using network context
-            const fullWsUrl = `${currentNetwork.ws}?tableAddress=${tableId}&playerId=${playerAddress}`;
+            // Create WebSocket connection. Gateway transport (ui#440) talks
+            // to the optimistic action gateway's socket; chain transport
+            // keeps the existing node WS endpoint.
+            const transport = getGameTransport();
+            const fullWsUrl = transport === "gateway"
+                ? getGatewayWsUrl()
+                : `${currentNetwork.ws}?tableAddress=${tableId}&playerId=${playerAddress}`;
             const ws = new WebSocket(fullWsUrl);
             wsRef.current = ws;
 
@@ -128,13 +134,23 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 // Create authenticated subscription message with signature
                 const authPayload = await createAuthPayload();
 
-                const subscriptionMessage = {
-                    type: "subscribe",
-                    gameId: tableId,
-                    playerAddress: authPayload?.playerAddress || playerAddress,
-                    timestamp: authPayload?.timestamp,
-                    signature: authPayload?.signature
-                };
+                const subscriptionMessage = transport === "gateway"
+                    ? {
+                          // Gateway contract (poker-vm#2224): `address`, seconds
+                          // timestamp, same pokerchain-query signed payload.
+                          type: "subscribe",
+                          gameId: tableId,
+                          address: authPayload?.playerAddress || playerAddress,
+                          timestamp: authPayload?.timestamp,
+                          signature: authPayload?.signature
+                      }
+                    : {
+                          type: "subscribe",
+                          gameId: tableId,
+                          playerAddress: authPayload?.playerAddress || playerAddress,
+                          timestamp: authPayload?.timestamp,
+                          signature: authPayload?.signature
+                      };
 
                 console.log("📤 Sending subscription message:", subscriptionMessage);
                 ws.send(JSON.stringify(subscriptionMessage));
@@ -157,8 +173,19 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             ws.onmessage = event => {
                 try {
                     console.log("📬 Raw WebSocket message received:", event.data);
-                    const message = JSON.parse(event.data);
+                    let message = JSON.parse(event.data);
                     hasReceivedMessageRef.current = true;
+
+                    // Gateway transport: state messages carry the canonical
+                    // GameStateResponseDTO under `state` (poker-vm#2226) —
+                    // normalize into the Cosmos message shape so the handler
+                    // below needs zero new parsing. Non-state gateway
+                    // messages (subscribed/ack) fall through untouched and
+                    // are ignored like any other unhandled type.
+                    const normalized = normalizeGatewayMessage(message);
+                    if (normalized) {
+                        message = normalized;
+                    }
 
                     // Handle multiple message formats:
                     // - Old PVM format: type: "gameStateUpdate"

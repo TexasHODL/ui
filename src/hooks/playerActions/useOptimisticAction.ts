@@ -1,10 +1,13 @@
 import { useCallback } from "react";
 import { useGameActions } from "../../context/gameState/GameActionsContext";
+import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
 import { useNetwork, NetworkEndpoints } from "../../context/NetworkContext";
 import { getSigningClient } from "../../utils/cosmos/client";
+import { signActionMessage } from "../../utils/cosmos/signing";
+import { getGameTransport, getGatewayApi } from "../../utils/gameTransport";
 import type { PlayerActionResult } from "../../types";
-import { PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
+import { PlayerActionType, NonPlayerActionType, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 
 /**
  * Actions that can be performed optimistically.
@@ -81,6 +84,67 @@ async function executeAction(
 }
 
 /**
+ * Execute a poker action via the optimistic WS Action Gateway (ui#440).
+ *
+ * Request/response per the #433 lesson: POST /actions returns the ack plus
+ * the post-action state in ~150ms; the table's authoritative state update
+ * arrives on the gateway socket (GameStateContext). The action is EIP-191
+ * signed over the gateway's canonical payload — including the monotonic
+ * action index from the player's legalActions (replay protection).
+ */
+async function executeGatewayAction(
+    tableId: string,
+    action: OptimisticActionType,
+    amount: bigint,
+    gameState: TexasHoldemStateDTO | undefined
+): Promise<PlayerActionResult> {
+    const address = localStorage.getItem("user_cosmos_address");
+    if (!address) {
+        throw new Error("No Block52 wallet address found. Please connect your wallet.");
+    }
+
+    const currentPlayer = gameState?.players?.find(p => p.address === address);
+    const actionIndex = currentPlayer?.legalActions?.[0]?.index;
+    if (actionIndex === undefined) {
+        // Per Commandment 7: surface it — no guessed indices.
+        throw new Error(`No legal action index available for ${action} — game state may be stale`);
+    }
+
+    const amountString = amount.toString();
+    const timestamp = Date.now();
+    const data = "";
+    const signature = await signActionMessage(tableId, action, actionIndex, amountString, timestamp, data);
+    if (!signature) {
+        throw new Error("Failed to sign action — wallet mnemonic unavailable");
+    }
+
+    const response = await getGatewayApi().submitAction({
+        gameId: tableId,
+        action,
+        index: actionIndex,
+        amount: amountString,
+        timestamp,
+        address,
+        signature,
+        data,
+        clientTs: Date.now()
+    });
+
+    if (response.type !== "ack") {
+        throw new Error(response.error || "Gateway rejected the action");
+    }
+
+    return {
+        // No chain tx hash on the optimistic path; the signed payload is the
+        // action's identity until chain settlement lands (poker-vm#2221).
+        hash: `gateway:${tableId}:${actionIndex}`,
+        gameId: tableId,
+        action,
+        amount: amountString
+    };
+}
+
+/**
  * Hook that wraps player actions with optimistic updates.
  *
  * This hook:
@@ -96,6 +160,7 @@ async function executeAction(
  */
 export function useOptimisticAction(): UseOptimisticActionReturn {
     const { sendAction } = useGameActions();
+    const { gameState } = useGameData();
     const { pendingAction } = useGameUI();
     const { currentNetwork } = useNetwork();
 
@@ -111,6 +176,15 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
                 throw new Error(`Amount required for ${action}`);
             }
 
+            // Gateway transport (ui#440): one signed request/response — the
+            // gateway validates, applies via the PVM, broadcasts to the
+            // table socket, and returns the ack. No pending announce needed:
+            // the broadcast IS the validated post-action state.
+            if (getGameTransport() === "gateway") {
+                return executeGatewayAction(tableId, action, amount ?? 0n, gameState);
+            }
+
+            // Chain transport (default):
             // Step 1: Send via WebSocket for immediate optimistic broadcast.
             // If this fails, fall through to the SDK transaction anyway — the WS
             // broadcast is purely a latency optimization for other subscribers.
@@ -130,7 +204,7 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
 
             return result;
         },
-        [sendAction, currentNetwork]
+        [sendAction, gameState, currentNetwork]
     );
 
     return {
