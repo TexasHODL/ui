@@ -27,6 +27,7 @@ import CustomDealer from "../../../assets/CustomDealer.svg";
 import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../../utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
+import { getGameTransport } from "../../../utils/gameTransport";
 import { useNetwork } from "../../../context/NetworkContext";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
@@ -106,6 +107,11 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
         // Check if buy-in exceeds available balance
         const exceedsBalance = useMemo(() => {
+            // Gateway transport (ui#440): the buy-in is applied by the
+            // gateway's engine, not drawn from the on-chain balance — the
+            // chain-balance gate would block every gateway join until
+            // settlement lands (poker-vm#2221), so skip it.
+            if (getGameTransport() === "gateway") return false;
             const buyInValue = parseFloat(buyInAmount) || 0;
             const usdcBalance = cosmosWallet.balance.find(b => b.denom === "usdc");
             if (!usdcBalance) return true; // If user has no USDC balance, treat as exceeding balance

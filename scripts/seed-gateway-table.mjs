@@ -25,9 +25,14 @@ import { bech32 } from "bech32";
 
 const COSMOS_HD_PATH = "m/44'/118'/0'/0/0";
 const TABLE_ADDRESS = "b521qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6qtnh3";
-const ONE_TOKEN = "100000000000000000";
-const TWO_TOKENS = "200000000000000000";
-const ONE_HUNDRED_TOKENS = "100000000000000000000";
+// Production-scale amounts: micro-USDC, 6 decimals — matching live chain
+// tables ({"minBuyIn":"100000","smallBlind":"10000",...}) so the FE's
+// USDC->micro conversion in the join modal lands inside the buy-in range.
+const SMALL_BLIND = "10000"; // $0.01
+const BIG_BLIND = "20000"; // $0.02
+const MIN_BUY_IN = "100000"; // $0.10
+const MAX_BUY_IN = "2000000"; // $2.00
+const BUY_IN = "1000000"; // $1.00
 
 function arg(name, fallback) {
     const i = process.argv.indexOf(`--${name}`);
@@ -35,7 +40,7 @@ function arg(name, fallback) {
 }
 
 const gatewayUrl = arg("gateway", "https://pvm.block52.xyz/gateway").replace(/\/$/, "");
-const stopAfter = arg("stop-after", "deal"); // join | blinds | deal
+const stopAfter = arg("stop-after", "deal"); // none | join | blinds | deal (none = empty table, join from the UI)
 // Game ids are 0x hashes on-chain — match that shape so FE routing,
 // explorers, and any id-format assumptions behave like production.
 const gameId = arg("table-id", ethers.keccak256(ethers.randomBytes(32)));
@@ -84,41 +89,68 @@ async function act(player, action, index, amount, data) {
 const hero = makeWallet(arg("mnemonic"));
 const villain = makeWallet();
 
+// The engine embeds gameOptions in every state it emits, and FE components
+// read state.gameOptions unguarded — so the seed state must carry it too,
+// not just the record envelope.
+const gameOptions = {
+    minBuyIn: MIN_BUY_IN,
+    maxBuyIn: MAX_BUY_IN,
+    minPlayers: 2,
+    maxPlayers: 9,
+    smallBlind: SMALL_BLIND,
+    bigBlind: BIG_BLIND,
+    timeout: 60000
+};
+
 await post("/tables", {
     gameId,
     record: {
         format: "cash",
         variant: "texas-holdem",
-        gameOptions: {
-            minBuyIn: ONE_HUNDRED_TOKENS,
-            maxBuyIn: "1000000000000000000000",
-            minPlayers: 2,
-            maxPlayers: 9,
-            smallBlind: ONE_TOKEN,
-            bigBlind: TWO_TOKENS,
-            timeout: 60000
-        },
+        gameOptions,
+        // Complete TexasHoldemStateDTO shape: the engine emits every field
+        // on each transition and FE components map over them unguarded, so
+        // the seed state must be the full canonical empty table.
         state: {
             address: TABLE_ADDRESS,
+            gameOptions,
             dealer: null,
-            round: "ante",
-            communityCards: [],
+            smallBlindPosition: 0,
+            bigBlindPosition: 0,
             players: [],
+            communityCards: [],
+            deck: "",
+            pots: ["0"],
+            totalPot: "0",
+            nextToAct: -1,
+            previousActions: [],
+            actionCount: 0,
+            handNumber: 1,
+            round: "ante",
+            winners: [],
+            results: [],
+            legalActions: [],
+            availableSeats: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            signature: "0x0000000000000000000000000000000000000000000000000000000000000000",
             now: Date.now()
         }
     }
 });
 console.log(`table ${gameId} created on ${gatewayUrl}`);
 
-await act(hero, "join", 1, ONE_HUNDRED_TOKENS, "seat=1");
-await act(villain, "join", 2, ONE_HUNDRED_TOKENS, "seat=2");
+if (stopAfter === "none") {
+    console.log("empty table — join from the UI (seat click -> gateway join)");
+} else {
+    await act(hero, "join", 1, BUY_IN, "seat=1");
+await act(villain, "join", 2, BUY_IN, "seat=2");
 if (stopAfter !== "join") {
-    await act(hero, "post-small-blind", 3, ONE_TOKEN, "");
-    await act(villain, "post-big-blind", 4, TWO_TOKENS, "");
+    await act(hero, "post-small-blind", 3, SMALL_BLIND, "");
+    await act(villain, "post-big-blind", 4, BIG_BLIND, "");
 }
-if (stopAfter === "deal") {
-    await act(hero, "deal", 5, "0", "");
-    console.log("hand dealt — hero is seat 1 (small blind), next to act");
+    if (stopAfter === "deal") {
+        await act(hero, "deal", 5, "0", "");
+        console.log("hand dealt — hero is seat 1 (small blind), next to act");
+    }
 }
 
 const snippet = w =>

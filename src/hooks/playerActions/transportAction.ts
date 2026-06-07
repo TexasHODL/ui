@@ -27,6 +27,26 @@ export function setLatestGameState(gameState: TexasHoldemStateDTO | undefined): 
     latestGameState = gameState;
 }
 
+/**
+ * Next action index for a player not yet seated (join): every seated
+ * player's legalActions carry the table's next index; an empty table
+ * starts at 1.
+ */
+export function nextActionIndex(gameState: TexasHoldemStateDTO | undefined): number {
+    for (const player of gameState?.players ?? []) {
+        const index = player.legalActions?.[0]?.index;
+        if (index !== undefined) {
+            return index;
+        }
+    }
+    return 1;
+}
+
+/** Latest snapshot, for callers that resolve their own index (join). */
+export function getLatestGameState(): TexasHoldemStateDTO | undefined {
+    return latestGameState;
+}
+
 /** Hand-boundary actions anchor to the chain even in gateway mode (poker-vm#2221). */
 const CHAIN_ANCHORED_ACTIONS = new Set<string>([NonPlayerActionType.DEAL, NonPlayerActionType.NEW_HAND]);
 
@@ -38,7 +58,14 @@ export async function executeTransportAction(
     data?: string
 ): Promise<PlayerActionResult> {
     if (getGameTransport() === "gateway" && !CHAIN_ANCHORED_ACTIONS.has(action)) {
-        return executeGatewayAction(tableId, action, amount, data ?? "");
+        const address = localStorage.getItem("user_cosmos_address");
+        const currentPlayer = latestGameState?.players?.find(p => p.address === address);
+        const actionIndex = currentPlayer?.legalActions?.[0]?.index;
+        if (actionIndex === undefined) {
+            // Per Commandment 7: surface it — no guessed indices.
+            throw new Error(`No legal action index available for ${action} — game state may be stale`);
+        }
+        return executeGatewayAction(tableId, action, actionIndex, amount, data ?? "");
     }
 
     const { signingClient } = await getSigningClient(network);
@@ -51,17 +78,10 @@ export async function executeTransportAction(
     };
 }
 
-async function executeGatewayAction(tableId: string, action: string, amount: bigint, data: string): Promise<PlayerActionResult> {
+export async function executeGatewayAction(tableId: string, action: string, actionIndex: number, amount: bigint, data: string): Promise<PlayerActionResult> {
     const address = localStorage.getItem("user_cosmos_address");
     if (!address) {
         throw new Error("No Block52 wallet address found. Please connect your wallet.");
-    }
-
-    const currentPlayer = latestGameState?.players?.find(p => p.address === address);
-    const actionIndex = currentPlayer?.legalActions?.[0]?.index;
-    if (actionIndex === undefined) {
-        // Per Commandment 7: surface it — no guessed indices.
-        throw new Error(`No legal action index available for ${action} — game state may be stale`);
     }
 
     const amountString = amount.toString();
