@@ -15,8 +15,11 @@ export type GameTransport = "chain" | "gateway";
 const DEFAULT_GATEWAY_URL = "https://pvm.block52.xyz/gateway";
 
 export function getGameTransport(): GameTransport {
+    // Gateway is the DEFAULT transport (decision 2026-06-08): the optimistic
+    // path is what players should feel. Set VITE_GAME_TRANSPORT=chain to opt
+    // back into chain-direct submission.
     const raw = (viteEnv.VITE_GAME_TRANSPORT || "").toLowerCase();
-    return raw === "gateway" ? "gateway" : "chain";
+    return raw === "chain" ? "chain" : "gateway";
 }
 
 export function getGatewayHttpUrl(): string {
