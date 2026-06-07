@@ -86,7 +86,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             }
             // Silent no-ops are a debugging trap — say WHY the click did
             // nothing (ui#440 live-testing).
-            console.warn(
+            console.error(
                 `[VacantPlayer] seat ${index} click ignored:`,
                 isUserAlreadyPlaying
                     ? "this wallet is already seated at the table"
