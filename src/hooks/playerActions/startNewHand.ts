@@ -1,7 +1,7 @@
-import { getSigningClient } from "../../utils/cosmos/client";
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
+import { executeTransportAction } from "./transportAction";
 
 /**
  * Start a new hand at a poker table using Cosmos SDK SigningCosmosClient.
@@ -12,17 +12,5 @@ import type { PlayerActionResult } from "../../types";
  * @throws Error if Cosmos wallet is not initialized or if the action fails
  */
 export async function startNewHand(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        NonPlayerActionType.NEW_HAND,
-        0n
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: NonPlayerActionType.NEW_HAND
-    };
+    return executeTransportAction(tableId, NonPlayerActionType.NEW_HAND, 0n, network);
 }

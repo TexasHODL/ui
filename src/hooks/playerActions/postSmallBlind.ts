@@ -1,7 +1,7 @@
-import { getSigningClient } from "../../utils/cosmos/client";
 import { PlayerActionType } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
+import { executeTransportAction } from "./transportAction";
 
 /**
  * Post small blind in a poker game using Cosmos SDK SigningCosmosClient.
@@ -13,18 +13,5 @@ import type { PlayerActionResult } from "../../types";
  * @throws Error if Cosmos wallet is not initialized or if the action fails
  */
 export async function postSmallBlind(tableId: string, amount: bigint, network: NetworkEndpoints): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        PlayerActionType.SMALL_BLIND,
-        amount
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: PlayerActionType.SMALL_BLIND,
-        amount: amount.toString()
-    };
+    return executeTransportAction(tableId, PlayerActionType.SMALL_BLIND, amount, network);
 }

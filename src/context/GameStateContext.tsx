@@ -3,6 +3,7 @@ import { useNetwork } from "./NetworkContext";
 import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { createAuthPayload } from "../utils/cosmos/signing";
 import { getGameTransport, getGatewayWsUrl, normalizeGatewayMessage } from "../utils/gameTransport";
+import { setLatestGameState } from "../hooks/playerActions/transportAction";
 import { validateGameState, extractGameDataFromMessage } from "../utils/gameFormatUtils";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
@@ -245,6 +246,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                             });
                             // Still update gameState so the table renders what it can
                             setGameState(gameStateData as TexasHoldemStateDTO);
+                            setLatestGameState(gameStateData as TexasHoldemStateDTO);
                             setGameFormat(rawFormat as GameFormat | undefined);
                             setGameVariant(rawVariant as GameVariant | undefined);
                             setPendingAction(null);
@@ -256,6 +258,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         const currentPlayer = (gameStateData as TexasHoldemStateDTO)?.players?.find(p => p.address === playerAddress);
                         console.log("🎮 Game state updated. Current player status:", currentPlayer?.status, "| Player:", currentPlayer?.address?.slice(0, 10));
                         setGameState(gameStateData as TexasHoldemStateDTO);
+                        setLatestGameState(gameStateData as TexasHoldemStateDTO);
                         setGameFormat(rawFormat as GameFormat);
                         setGameVariant(rawVariant as GameVariant);
                         setError(null);
@@ -289,6 +292,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         // If it's a game not found error, clear the game state
                         if (message.code === "GAME_NOT_FOUND") {
                             setGameState(undefined);
+                            setLatestGameState(undefined);
                         }
                     }
                     // Unhandled message types are silently ignored
@@ -330,6 +334,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         currentTableIdRef.current = null;
         hasReceivedMessageRef.current = false;
         setGameState(undefined);
+                            setLatestGameState(undefined);
         setGameFormat(undefined);
         setGameVariant(undefined);
         setIsLoading(false);
