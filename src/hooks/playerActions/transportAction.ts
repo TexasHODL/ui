@@ -47,8 +47,16 @@ export function getLatestGameState(): TexasHoldemStateDTO | undefined {
     return latestGameState;
 }
 
-/** Hand-boundary actions anchor to the chain even in gateway mode (poker-vm#2221). */
-const CHAIN_ANCHORED_ACTIONS = new Set<string>([NonPlayerActionType.DEAL, NonPlayerActionType.NEW_HAND]);
+/**
+ * Hand-boundary actions (deal/new-hand) will anchor to the chain for VRF
+ * entropy once chain-anchored hand starts land (poker-vm#2221,
+ * pokerchain#217). Until then gateway tables are chain-off, so they MUST
+ * flow through the gateway like every other action — otherwise a
+ * gateway-only table deadlocks at the deal (found live, ui#440).
+ * KNOWN LIMITATION meanwhile: no entropy source -> the deck is
+ * deterministic (same board every hand). Test mode only.
+ */
+const CHAIN_ANCHORED_ACTIONS = new Set<string>([]);
 
 export async function executeTransportAction(
     tableId: string,
