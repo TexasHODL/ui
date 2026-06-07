@@ -36,7 +36,9 @@ function arg(name, fallback) {
 
 const gatewayUrl = arg("gateway", "https://pvm.block52.xyz/gateway").replace(/\/$/, "");
 const stopAfter = arg("stop-after", "deal"); // join | blinds | deal
-const gameId = arg("table-id", `seeded-${Date.now()}`);
+// Game ids are 0x hashes on-chain — match that shape so FE routing,
+// explorers, and any id-format assumptions behave like production.
+const gameId = arg("table-id", ethers.keccak256(ethers.randomBytes(32)));
 
 function makeWallet(mnemonic) {
     const wallet = mnemonic
