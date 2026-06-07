@@ -82,8 +82,19 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const handleSeatClick = useCallback(() => {
             if (!isUserAlreadyPlaying && canJoinThisSeat) {
                 handleJoinClick();
+                return;
             }
-        }, [isUserAlreadyPlaying, canJoinThisSeat, handleJoinClick]);
+            // Silent no-ops are a debugging trap — say WHY the click did
+            // nothing (ui#440 live-testing).
+            console.warn(
+                `[VacantPlayer] seat ${index} click ignored:`,
+                isUserAlreadyPlaying
+                    ? "this wallet is already seated at the table"
+                    : gameOptions?.maxPlayers === undefined
+                      ? "game state not loaded yet (no gameOptions — stale/pre-fix table or WS not connected)"
+                      : "seat not joinable (taken or not in availableSeats)"
+            );
+        }, [isUserAlreadyPlaying, canJoinThisSeat, handleJoinClick, index, gameOptions?.maxPlayers]);
 
         // Detect if this is Sit & Go (fixed buy-in) or Cash game (variable buy-in)
         const isSitAndGo = useMemo(() => {
