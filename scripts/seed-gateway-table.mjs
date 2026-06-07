@@ -22,6 +22,7 @@
  */
 import { ethers } from "ethers";
 import { bech32 } from "bech32";
+import { webcrypto } from "node:crypto";
 
 const COSMOS_HD_PATH = "m/44'/118'/0'/0/0";
 const TABLE_ADDRESS = "b521qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6qtnh3";
@@ -44,6 +45,22 @@ const stopAfter = arg("stop-after", "deal"); // none | join | blinds | deal (non
 // Game ids are 0x hashes on-chain — match that shape so FE routing,
 // explorers, and any id-format assumptions behave like production.
 const gameId = arg("table-id", ethers.keccak256(ethers.randomBytes(32)));
+
+function shuffledDeck() {
+    const cards = [];
+    for (const s of ["C", "D", "H", "S"]) {
+        for (const r of ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]) {
+            cards.push(r + s);
+        }
+    }
+    const rand = new Uint32Array(cards.length);
+    webcrypto.getRandomValues(rand);
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = rand[i] % (i + 1);
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    return cards.join("-");
+}
 
 function makeWallet(mnemonic) {
     const wallet = mnemonic
@@ -114,12 +131,15 @@ await post("/tables", {
         state: {
             address: TABLE_ADDRESS,
             gameOptions,
+            // CSPRNG-shuffled deck for hand 1 — without it the engine's
+            // default deterministic deck deals the same board every time
+            // (poker-vm#2221; chain VRF replaces this via pokerchain#217).
+            deck: shuffledDeck(),
             dealer: null,
             smallBlindPosition: 0,
             bigBlindPosition: 0,
             players: [],
             communityCards: [],
-            deck: "",
             pots: ["0"],
             totalPot: "0",
             nextToAct: -1,
