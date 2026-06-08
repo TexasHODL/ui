@@ -37,7 +37,7 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
     // so the index comes from the table's shared next-action index.
     if (getGameTransport() === "gateway") {
         const index = nextActionIndex(getLatestGameState());
-        const result = await executeGatewayAction(tableId, NonPlayerActionType.JOIN, index, buyInAmount, `seat=${seat}`);
+        const result = await executeGatewayAction(tableId, NonPlayerActionType.JOIN, index, buyInAmount, `seat=${seat}`, network);
         return {
             hash: result.hash,
             gameId: tableId,
