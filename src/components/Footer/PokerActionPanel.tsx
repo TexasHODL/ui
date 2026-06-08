@@ -69,7 +69,17 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // this, the button stops spinning ~50ms after click but the panel sits
     // with stale legalActions for the rest of the block budget, letting the
     // player re-click the same action. See block52/ui#364.
+    //
+    // pendingHandNumber is the safety net for actions that complete the hand
+    // (last action on the river, fold that ends a heads-up hand, etc). On
+    // those, actionCount may reset for the new hand so `current > pending`
+    // never becomes true and the spinner was stuck until the 8s timeout
+    // escape hatch — visible as "previous round's spinner still spinning
+    // in the next round". A handNumber bump is the canonical "new hand
+    // started" signal and implies our action was committed (otherwise the
+    // new hand wouldn't exist).
     const [pendingActionCount, setPendingActionCount] = useState<number | null>(null);
+    const [pendingHandNumber, setPendingHandNumber] = useState<number | null>(null);
 
     // Gateway transport: the engine's actionCount does NOT advance in
     // gateway states (stays 0), so the actionCount watcher never fires and
@@ -333,9 +343,11 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const handleActionWithTransaction = useCallback(
         async (actionName: string, actionFn: () => Promise<string | null>, skipActionSound = false) => {
             const submittedAt = gameState?.actionCount ?? 0;
+            const submittedAtHand = gameState?.handNumber ?? null;
             try {
                 setLoadingAction(actionName);
                 setPendingActionCount(submittedAt);
+                setPendingHandNumber(submittedAtHand);
                 setPendingActionIndex(nextActionIndex(gameState));
                 if (!skipActionSound && playerActionSounds) {
                     playActionSound(actionName);
@@ -350,27 +362,35 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 console.error(`Error executing ${actionName}:`, error);
                 setLoadingAction(null);
                 setPendingActionCount(null);
+                setPendingHandNumber(null);
                 setPendingActionIndex(null);
                 throw error;
             }
         },
-        [gameState?.actionCount, onTransactionSubmitted, playActionSound, playerActionSounds]
+        [gameState?.actionCount, gameState?.handNumber, onTransactionSubmitted, playActionSound, playerActionSounds]
     );
 
     // Canonical clear: the backend advanced past the point at which we
-    // submitted — actionCount on chain, shared next-action index on the
-    // gateway (either signal suffices).
+    // submitted. Three composable signals — ANY one suffices:
+    //   - actionCount advanced (chain, mid-hand — #364)
+    //   - shared next-action index advanced (gateway, where actionCount
+    //     never moves — ui#440)
+    //   - handNumber advanced (hand-boundary actions, where actionCount
+    //     resets so `>` never fires — this PR)
     useEffect(() => {
-        if (isNullish(pendingActionCount) && isNullish(pendingActionIndex)) return;
+        if (isNullish(pendingActionCount) && isNullish(pendingActionIndex) && isNullish(pendingHandNumber)) return;
         const currentCount = gameState?.actionCount;
+        const currentHand = gameState?.handNumber;
         const countAdvanced = !isNullish(pendingActionCount) && !isNullish(currentCount) && currentCount > pendingActionCount;
         const indexAdvanced = !isNullish(pendingActionIndex) && nextActionIndex(gameState) > pendingActionIndex;
-        if (countAdvanced || indexAdvanced) {
+        const handAdvanced = !isNullish(pendingHandNumber) && !isNullish(currentHand) && currentHand > pendingHandNumber;
+        if (countAdvanced || indexAdvanced || handAdvanced) {
             setLoadingAction(null);
             setPendingActionCount(null);
             setPendingActionIndex(null);
+            setPendingHandNumber(null);
         }
-    }, [gameState, pendingActionCount, pendingActionIndex]);
+    }, [gameState, pendingActionCount, pendingActionIndex, pendingHandNumber]);
 
     // Escape hatch: WS push never arrived (chain stalled, WS disconnect,
     // or — rare — CheckTx passed but DeliverTx rejected so actionCount
@@ -385,6 +405,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             );
             setLoadingAction(null);
             setPendingActionCount(null);
+            setPendingHandNumber(null);
             setPendingActionIndex(null);
         }, DIRTY_STATE_TIMEOUT_MS);
         return () => clearTimeout(t);
