@@ -1,7 +1,7 @@
-import { getSigningClient } from "../../utils/cosmos/client";
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
+import { executeTransportAction } from "./transportAction";
 
 /**
  * Deal cards in a poker game using Cosmos SDK SigningCosmosClient.
@@ -12,19 +12,7 @@ import type { PlayerActionResult } from "../../types";
  * @throws Error if Cosmos wallet is not initialized or if the action fails
  */
 export async function dealCards(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        NonPlayerActionType.DEAL,
-        0n
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: NonPlayerActionType.DEAL
-    };
+    return executeTransportAction(tableId, NonPlayerActionType.DEAL, 0n, network);
 }
 
 /**
@@ -41,18 +29,5 @@ export async function dealCardsWithEntropy(
     network: NetworkEndpoints,
     entropy: string
 ): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        NonPlayerActionType.DEAL,
-        0n,
-        entropy  // Pass entropy as optional data parameter
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: NonPlayerActionType.DEAL
-    };
+    return executeTransportAction(tableId, NonPlayerActionType.DEAL, 0n, network, entropy);
 }

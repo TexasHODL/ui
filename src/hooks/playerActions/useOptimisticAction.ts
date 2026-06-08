@@ -1,8 +1,9 @@
 import { useCallback } from "react";
 import { useGameActions } from "../../context/gameState/GameActionsContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
-import { useNetwork, NetworkEndpoints } from "../../context/NetworkContext";
-import { getSigningClient } from "../../utils/cosmos/client";
+import { useNetwork } from "../../context/NetworkContext";
+import { getGameTransport } from "../../utils/gameTransport";
+import { executeTransportAction } from "./transportAction";
 import type { PlayerActionResult } from "../../types";
 import { PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
 
@@ -45,42 +46,6 @@ interface UseOptimisticActionReturn {
 }
 
 /**
- * Execute a poker action on the Cosmos blockchain.
- *
- * Uses the SDK's performActionSync method (CheckTx-only, returns in
- * ~50-100ms) rather than performAction (waits for block inclusion,
- * ~5s with current chain config). The authoritative state arrives
- * via the WebSocket push once the block commits; the SDK throws here
- * only on CheckTx rejection (invalid signature, insufficient gas,
- * malformed message) — that's the immediate rollback signal.
- *
- * The "no WS confirmation within N seconds" timeout-based rollback
- * is a separate enhancement tracked as a follow-up on block52/ui#359.
- *
- * Refs: block52/ui#359, block52/poker-vm#2104.
- */
-async function executeAction(
-    tableId: string,
-    action: OptimisticActionType,
-    amount: bigint,
-    network: NetworkEndpoints
-): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        action,
-        amount
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: action
-    };
-}
-
-/**
  * Hook that wraps player actions with optimistic updates.
  *
  * This hook:
@@ -111,24 +76,20 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
                 throw new Error(`Amount required for ${action}`);
             }
 
-            // Step 1: Send via WebSocket for immediate optimistic broadcast.
-            // If this fails, fall through to the SDK transaction anyway — the WS
-            // broadcast is purely a latency optimization for other subscribers.
-            try {
-                await sendAction(action, amount?.toString());
-            } catch {
-                // intentional: WS broadcast is best-effort
+            // Chain transport: announce via WS first (best-effort latency
+            // optimization for other subscribers). Gateway transport needs
+            // no announce — the gateway broadcast IS the validated state.
+            if (getGameTransport() !== "gateway") {
+                try {
+                    await sendAction(action, amount?.toString());
+                } catch {
+                    // intentional: WS broadcast is best-effort
+                }
             }
 
-            // Step 2: Execute the blockchain transaction via SDK
-            const result = await executeAction(
-                tableId,
-                action,
-                amount ?? 0n,
-                currentNetwork
-            );
-
-            return result;
+            // Single transport-aware executor (ui#440): SDK performActionSync
+            // on chain, signed POST /actions on gateway.
+            return executeTransportAction(tableId, action, amount ?? 0n, currentNetwork);
         },
         [sendAction, currentNetwork]
     );

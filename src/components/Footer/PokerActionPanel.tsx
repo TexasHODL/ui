@@ -17,6 +17,7 @@ import { formatDisplayAmount } from "../../utils/numberUtils";
 import { useTableState, useNextToActInfo } from "../../hooks";
 import { useActionSounds } from "../../hooks/notifications/useActionSounds";
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
+import { nextActionIndex } from "../../hooks/playerActions/transportAction";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useGameSettings } from "../../context/GameSettingsContext";
 import { dealCardsWithEntropy } from "../../hooks/playerActions/dealCards";
@@ -69,6 +70,13 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // with stale legalActions for the rest of the block budget, letting the
     // player re-click the same action. See block52/ui#364.
     const [pendingActionCount, setPendingActionCount] = useState<number | null>(null);
+
+    // Gateway transport: the engine's actionCount does NOT advance in
+    // gateway states (stays 0), so the actionCount watcher never fires and
+    // every action rode the timeout (ui#440 live-testing). The table's
+    // shared next-action index (any player's legalActions[].index) advances
+    // on every applied action on BOTH transports — watch it too.
+    const [pendingActionIndex, setPendingActionIndex] = useState<number | null>(null);
 
     // How long to wait for the chain to confirm before re-enabling the
     // button anyway. Generous enough to survive a slow WS / 5s commit
@@ -328,6 +336,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             try {
                 setLoadingAction(actionName);
                 setPendingActionCount(submittedAt);
+                setPendingActionIndex(nextActionIndex(gameState));
                 if (!skipActionSound && playerActionSounds) {
                     playActionSound(actionName);
                 }
@@ -341,22 +350,27 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 console.error(`Error executing ${actionName}:`, error);
                 setLoadingAction(null);
                 setPendingActionCount(null);
+                setPendingActionIndex(null);
                 throw error;
             }
         },
         [gameState?.actionCount, onTransactionSubmitted, playActionSound, playerActionSounds]
     );
 
-    // Canonical clear: chain has advanced past the actionCount at which
-    // we submitted, i.e. our action was committed.
+    // Canonical clear: the backend advanced past the point at which we
+    // submitted — actionCount on chain, shared next-action index on the
+    // gateway (either signal suffices).
     useEffect(() => {
-        if (isNullish(pendingActionCount)) return;
-        const current = gameState?.actionCount;
-        if (!isNullish(current) && current > pendingActionCount) {
+        if (isNullish(pendingActionCount) && isNullish(pendingActionIndex)) return;
+        const currentCount = gameState?.actionCount;
+        const countAdvanced = !isNullish(pendingActionCount) && !isNullish(currentCount) && currentCount > pendingActionCount;
+        const indexAdvanced = !isNullish(pendingActionIndex) && nextActionIndex(gameState) > pendingActionIndex;
+        if (countAdvanced || indexAdvanced) {
             setLoadingAction(null);
             setPendingActionCount(null);
+            setPendingActionIndex(null);
         }
-    }, [gameState?.actionCount, pendingActionCount]);
+    }, [gameState, pendingActionCount, pendingActionIndex]);
 
     // Escape hatch: WS push never arrived (chain stalled, WS disconnect,
     // or — rare — CheckTx passed but DeliverTx rejected so actionCount
@@ -371,6 +385,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             );
             setLoadingAction(null);
             setPendingActionCount(null);
+            setPendingActionIndex(null);
         }, DIRTY_STATE_TIMEOUT_MS);
         return () => clearTimeout(t);
     }, [pendingActionCount]);
