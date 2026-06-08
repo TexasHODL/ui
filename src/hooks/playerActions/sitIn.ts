@@ -1,7 +1,7 @@
-import { getSigningClient } from "../../utils/cosmos/client";
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
+import { executeTransportAction } from "./transportAction";
 
 // TODO: Import from @block52/poker-vm-sdk once exported (see #1844)
 export type SitInMethod = "next-bb" | "post-now";
@@ -22,18 +22,5 @@ export async function sitIn(
     network: NetworkEndpoints,
     method: SitInMethod = SIT_IN_METHOD_POST_NOW
 ): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        NonPlayerActionType.SIT_IN,
-        0n,
-        `method=${method}`
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: NonPlayerActionType.SIT_IN
-    };
+    return executeTransportAction(tableId, NonPlayerActionType.SIT_IN, 0n, network, `method=${method}`);
 }

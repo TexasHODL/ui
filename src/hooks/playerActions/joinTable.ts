@@ -1,5 +1,7 @@
-import { COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
+import { COSMOS_CONSTANTS, NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { getSigningClient } from "../../utils/cosmos/client";
+import { getGameTransport } from "../../utils/gameTransport";
+import { executeGatewayAction, getLatestGameState, nextActionIndex } from "./transportAction";
 import type { JoinTableOptions } from "./types";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { JoinTableResult } from "../../types";
@@ -29,6 +31,20 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
     const seat = options.seatNumber !== undefined && options.seatNumber !== null
         ? options.seatNumber
         : 0;
+
+    // Gateway transport (ui#440): join is a signed gateway action with the
+    // seat in the (signature-bound) data field. A joiner isn't seated yet,
+    // so the index comes from the table's shared next-action index.
+    if (getGameTransport() === "gateway") {
+        const index = nextActionIndex(getLatestGameState());
+        const result = await executeGatewayAction(tableId, NonPlayerActionType.JOIN, index, buyInAmount, `seat=${seat}`);
+        return {
+            hash: result.hash,
+            gameId: tableId,
+            seat,
+            buyInAmount: buyInAmount.toString()
+        };
+    }
 
     // Call SigningCosmosClient.joinGame()
     const transactionHash = await signingClient.joinGame(

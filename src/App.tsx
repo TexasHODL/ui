@@ -32,6 +32,7 @@ import { GameSettingsProvider } from "./context/GameSettingsContext";
 import { generateCSSVariables } from "./utils/colorConfig";
 import { useEffect, useState, lazy, Suspense } from "react";
 import FaviconSetter from "./components/FaviconSetter";
+import { GatewayTransportBanner } from "./components/GatewayTransportBanner";
 import { GlobalHeader } from "./components/GlobalHeader";
 import { ProfileAvatarProvider } from "./context/profile/ProfileAvatarContext";
 import { ProfileAvatarModal } from "./components/profile";
@@ -90,6 +91,7 @@ function AppContent() {
     return (
         <div className="bg-[#2c3245] min-h-screen">
             <FaviconSetter />
+            <GatewayTransportBanner />
             <GlobalHeader />
             <ProfileAvatarModal />
             <Routes>

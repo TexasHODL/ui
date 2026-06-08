@@ -27,6 +27,7 @@ import CustomDealer from "../../../assets/CustomDealer.svg";
 import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../../utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
+import { getGameTransport } from "../../../utils/gameTransport";
 import { useNetwork } from "../../../context/NetworkContext";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
@@ -81,8 +82,19 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const handleSeatClick = useCallback(() => {
             if (!isUserAlreadyPlaying && canJoinThisSeat) {
                 handleJoinClick();
+                return;
             }
-        }, [isUserAlreadyPlaying, canJoinThisSeat, handleJoinClick]);
+            // Silent no-ops are a debugging trap — say WHY the click did
+            // nothing (ui#440 live-testing).
+            console.error(
+                `[VacantPlayer] seat ${index} click ignored:`,
+                isUserAlreadyPlaying
+                    ? "this wallet is already seated at the table"
+                    : gameOptions?.maxPlayers === undefined
+                      ? "game state not loaded yet (no gameOptions — stale/pre-fix table or WS not connected)"
+                      : "seat not joinable (taken or not in availableSeats)"
+            );
+        }, [isUserAlreadyPlaying, canJoinThisSeat, handleJoinClick, index, gameOptions?.maxPlayers]);
 
         // Detect if this is Sit & Go (fixed buy-in) or Cash game (variable buy-in)
         const isSitAndGo = useMemo(() => {
@@ -106,6 +118,11 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
         // Check if buy-in exceeds available balance
         const exceedsBalance = useMemo(() => {
+            // Gateway transport (ui#440): the buy-in is applied by the
+            // gateway's engine, not drawn from the on-chain balance — the
+            // chain-balance gate would block every gateway join until
+            // settlement lands (poker-vm#2221), so skip it.
+            if (getGameTransport() === "gateway") return false;
             const buyInValue = parseFloat(buyInAmount) || 0;
             const usdcBalance = cosmosWallet.balance.find(b => b.denom === "usdc");
             if (!usdcBalance) return true; // If user has no USDC balance, treat as exceeding balance

@@ -1,7 +1,7 @@
-import { getSigningClient } from "../../utils/cosmos/client";
 import { PlayerActionType } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
+import { executeTransportAction } from "./transportAction";
 
 /**
  * Muck cards in a poker game using Cosmos SDK SigningCosmosClient.
@@ -12,17 +12,5 @@ import type { PlayerActionResult } from "../../types";
  * @throws Error if Cosmos wallet is not initialized or if the action fails
  */
 export async function muckCards(tableId: string, network: NetworkEndpoints): Promise<PlayerActionResult> {
-    const { signingClient } = await getSigningClient(network);
-
-    const transactionHash = await signingClient.performActionSync(
-        tableId,
-        PlayerActionType.MUCK,
-        0n
-    );
-
-    return {
-        hash: transactionHash,
-        gameId: tableId,
-        action: PlayerActionType.MUCK
-    };
+    return executeTransportAction(tableId, PlayerActionType.MUCK, 0n, network);
 }
