@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { getSigningClient } from "../../utils/cosmos/client";
+import { getGameTransport } from "../../utils/gameTransport";
+import { executeGatewayAction, getLatestGameState, nextActionIndex } from "../playerActions/transportAction";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 
 /**
@@ -45,9 +48,19 @@ export const useTableTopUp = (tableId: string, network: NetworkEndpoints) => {
                 throw new Error("Invalid top-up amount. Must be a positive number.");
             }
 
+            // Gateway transport (ui#440): top-up is a signed gateway action.
+            // The engine queues it (flushed at the next hand); the relayed tx
+            // settles it on-chain. KNOWN GAP: perform_action "top-up" queues
+            // the chips but the escrow DEPOSIT lives in MsgTopUp, so the
+            // optimistic chips aren't yet backed by a real deposit (#2243).
+            if (getGameTransport() === "gateway") {
+                const index = nextActionIndex(getLatestGameState());
+                const result = await executeGatewayAction(tableId, NonPlayerActionType.TOP_UP, index, topUpAmount, "", network);
+                return { hash: result.hash, gameId: tableId, amount: topUpAmount.toString() };
+            }
+
             // Call SigningCosmosClient.topUp()
             const transactionHash = await signingClient.topUp(tableId, topUpAmount);
-
 
             return {
                 hash: transactionHash,
