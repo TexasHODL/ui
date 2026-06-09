@@ -18,6 +18,7 @@ import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
 import { getSigningClient } from "../../utils/cosmos/client";
 import { signActionMessage } from "../../utils/cosmos/signing";
+import { signSettlementTx } from "../../utils/cosmos/settlementTx";
 import { getGameTransport, getGatewayApi } from "../../utils/gameTransport";
 
 let latestGameState: TexasHoldemStateDTO | undefined;
@@ -73,7 +74,7 @@ export async function executeTransportAction(
             // Per Commandment 7: surface it — no guessed indices.
             throw new Error(`No legal action index available for ${action} — game state may be stale`);
         }
-        return executeGatewayAction(tableId, action, actionIndex, amount, data ?? "");
+        return executeGatewayAction(tableId, action, actionIndex, amount, data ?? "", network);
     }
 
     const { signingClient } = await getSigningClient(network);
@@ -86,7 +87,14 @@ export async function executeTransportAction(
     };
 }
 
-export async function executeGatewayAction(tableId: string, action: string, actionIndex: number, amount: bigint, data: string): Promise<PlayerActionResult> {
+export async function executeGatewayAction(
+    tableId: string,
+    action: string,
+    actionIndex: number,
+    amount: bigint,
+    data: string,
+    network: NetworkEndpoints
+): Promise<PlayerActionResult> {
     const address = localStorage.getItem("user_cosmos_address");
     if (!address) {
         throw new Error("No Block52 wallet address found. Please connect your wallet.");
@@ -99,6 +107,17 @@ export async function executeGatewayAction(tableId: string, action: string, acti
         throw new Error("Failed to sign action — wallet mnemonic unavailable");
     }
 
+    // Settlement relay (§6.10): sign the action as a cosmos tx and attach it
+    // for the gateway to relay to the chain. Best-effort — undefined for
+    // unfunded accounts (gameplay still proceeds on the EIP-191 path).
+    let tx: string | undefined;
+    try {
+        const { signingClient } = await getSigningClient(network);
+        tx = await signSettlementTx(signingClient, address, network, tableId, action, amount, data);
+    } catch (err) {
+        console.error("[settlement] tx signing skipped:", err);
+    }
+
     const response = await getGatewayApi().submitAction({
         gameId: tableId,
         action,
@@ -108,6 +127,7 @@ export async function executeGatewayAction(tableId: string, action: string, acti
         address,
         signature,
         data,
+        tx,
         clientTs: Date.now()
     });
 

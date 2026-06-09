@@ -15,6 +15,9 @@ export interface GatewayActionRequest {
     address: string;
     signature: string;
     data: string;
+    // tx is the base64 cosmos TxRaw for settlement relay (§6.10). Best-effort;
+    // absent for unfunded accounts.
+    tx?: string;
     clientTs?: number;
 }
 
