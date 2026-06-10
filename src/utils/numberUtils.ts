@@ -1,6 +1,7 @@
 import { BigUnit } from "bigunit";
 import { ethers } from "ethers";
 import { microToUsdc, USDC_TO_MICRO } from "../constants/currency";
+import { isNullish } from "./guards";
 
 /**
  * Format a USDC balance from micro-units (6 decimals) to display format
@@ -33,7 +34,7 @@ export const formatToFixedFromString = (value: string | number): string => {
 export const formatWeiToDollars = (weiAmount: string | bigint | undefined | null): string => {
     try {
         // Handle undefined or null values
-        if (weiAmount === undefined || weiAmount === null) {
+        if (isNullish(weiAmount)) {
             return "0.00";
         }
 
@@ -59,7 +60,7 @@ export const formatWeiToDollars = (weiAmount: string | bigint | undefined | null
 export const formatWeiToSimpleDollars = (weiAmount: string | bigint | undefined | null): string => {
     try {
         // Handle undefined or null values
-        if (weiAmount === undefined || weiAmount === null) {
+        if (isNullish(weiAmount)) {
             return "0.00";
         }
 
@@ -79,7 +80,7 @@ export const formatWeiToSimpleDollars = (weiAmount: string | bigint | undefined 
 export const formatWeiToUSD = (weiAmount: string | number | undefined | null): string => {
     try {
         // Handle undefined or null values
-        if (weiAmount === undefined || weiAmount === null) {
+        if (isNullish(weiAmount)) {
             return "0.00";
         }
 
@@ -125,7 +126,7 @@ export const convertAmountToBigInt = (amount: string, decimals: number): bigint 
 export const formatUSDCToSimpleDollars = (usdcAmount: string | bigint | undefined | null): string => {
     try {
         // Handle undefined or null values
-        if (usdcAmount === undefined || usdcAmount === null) {
+        if (isNullish(usdcAmount)) {
             return "0.00";
         }
 
@@ -199,7 +200,7 @@ export const formatDisplayAmount = (value: number, isTournament: boolean): strin
 export const formatChipAmount = (chipAmount: string | bigint | undefined | null): string => {
     try {
         // Handle undefined or null values
-        if (chipAmount === undefined || chipAmount === null) {
+        if (isNullish(chipAmount)) {
             return "0.00";
         }
 

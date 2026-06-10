@@ -1,4 +1,5 @@
 import { GameOptionsDTO } from "@block52/poker-vm-sdk";
+import { isBlank, isNullish, hasContent, hasElements } from "./guards";
 
 export interface GameOptionsValidationResult {
     isValid: boolean;
@@ -40,20 +41,19 @@ export function validateGameOptions(
     // Check all required fields using explicit null/undefined checks.
     // Per Commandment 9, blind/buyIn fields are strings — a falsy check (!value)
     // would incorrectly reject 0 (number) which JSON.parse may produce.
-    if (options.smallBlind == null || options.smallBlind === "") missingFields.push("smallBlind");
-    if (options.bigBlind == null || options.bigBlind === "") missingFields.push("bigBlind");
-    if (options.timeout == null) missingFields.push("timeout");
-    if (options.minBuyIn == null || options.minBuyIn === "") missingFields.push("minBuyIn");
-    if (options.maxBuyIn == null || options.maxBuyIn === "") missingFields.push("maxBuyIn");
-    if (options.maxPlayers == null) missingFields.push("maxPlayers");
-    if (options.minPlayers == null) missingFields.push("minPlayers");
+    if (isBlank(options.smallBlind)) missingFields.push("smallBlind");
+    if (isBlank(options.bigBlind)) missingFields.push("bigBlind");
+    if (isNullish(options.timeout)) missingFields.push("timeout");
+    if (isBlank(options.minBuyIn)) missingFields.push("minBuyIn");
+    if (isBlank(options.maxBuyIn)) missingFields.push("maxBuyIn");
+    if (isNullish(options.maxPlayers)) missingFields.push("maxPlayers");
+    if (isNullish(options.minPlayers)) missingFields.push("minPlayers");
 
     // Check critical fields (smallBlind, bigBlind)
-    const hasCriticalFields = options.smallBlind != null && options.smallBlind !== ""
-        && options.bigBlind != null && options.bigBlind !== "";
+    const hasCriticalFields = hasContent(options.smallBlind) && hasContent(options.bigBlind);
 
     // Log warnings for missing fields
-    if (missingFields.length > 0) {
+    if (hasElements(missingFields)) {
         console.error("⚠️ Missing game options fields from server:", missingFields);
     }
 

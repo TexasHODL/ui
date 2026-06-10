@@ -20,6 +20,7 @@ export {
 } from "@block52/poker-vm-sdk";
 
 import { GameFormat, GameVariant, GameOptionsDTO, TexasHoldemStateDTO, COSMOS_CONSTANTS, isTournamentFormat as isTournamentFormatFn } from "@block52/poker-vm-sdk";
+import { isBlank, isNullish, hasElements } from "./guards";
 
 /**
  * Result of extracting game data from a WebSocket message
@@ -100,12 +101,12 @@ export const validateGameState = (
     const missingFields: string[] = [];
 
     // Validate format
-    if (!format || format === "") {
+    if (isBlank(format)) {
         missingFields.push("format");
     }
 
     // Validate variant
-    if (!variant || variant === "") {
+    if (isBlank(variant)) {
         missingFields.push("variant");
     }
 
@@ -117,27 +118,27 @@ export const validateGameState = (
         // Use explicit null/undefined checks — NOT falsy checks.
         // Per Commandment 9, these are string fields. A falsy check (!value)
         // would incorrectly reject 0 (number) which JSON.parse may produce.
-        if (gameOptions.smallBlind == null || gameOptions.smallBlind === "") {
+        if (isBlank(gameOptions.smallBlind)) {
             missingFields.push("gameOptions.smallBlind");
         }
-        if (gameOptions.bigBlind == null || gameOptions.bigBlind === "") {
+        if (isBlank(gameOptions.bigBlind)) {
             missingFields.push("gameOptions.bigBlind");
         }
-        if (gameOptions.minBuyIn == null || gameOptions.minBuyIn === "") {
+        if (isBlank(gameOptions.minBuyIn)) {
             missingFields.push("gameOptions.minBuyIn");
         }
-        if (gameOptions.maxBuyIn == null || gameOptions.maxBuyIn === "") {
+        if (isBlank(gameOptions.maxBuyIn)) {
             missingFields.push("gameOptions.maxBuyIn");
         }
-        if (gameOptions.minPlayers == null) {
+        if (isNullish(gameOptions.minPlayers)) {
             missingFields.push("gameOptions.minPlayers");
         }
-        if (gameOptions.maxPlayers == null) {
+        if (isNullish(gameOptions.maxPlayers)) {
             missingFields.push("gameOptions.maxPlayers");
         }
     }
 
-    if (missingFields.length > 0) {
+    if (hasElements(missingFields)) {
         return {
             valid: false,
             missingFields,
@@ -311,7 +312,7 @@ export const getBlindsForDisplay = (
  * getGameTypeMnemonic(undefined)  // ""
  */
 export const getGameTypeMnemonic = (minPlayers: number | undefined): string => {
-    if (minPlayers === undefined) return "";
+    if (isNullish(minPlayers)) return "";
     if (minPlayers === 2) return "Heads Up";
     if (minPlayers === 6) return "6-Max";
     if (minPlayers === 9) return "Full Ring";
