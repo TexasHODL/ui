@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useGameProgress } from "../game/useGameProgress";
 import { PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+import { isEmpty } from "../../utils/guards";
 
 export interface PlayerActionDisplay {
   action: string;
@@ -73,7 +74,7 @@ export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay =
 
   // Performance optimization: Cache the most recent action index to avoid recalculating
   const mostRecentActionIndex = useMemo(() => {
-    if (!previousActions || previousActions.length === 0) return -1;
+    if (isEmpty(previousActions)) return -1;
 
     // Find the highest index efficiently
     return Math.max(...previousActions.map(action => action.index));
@@ -81,7 +82,7 @@ export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay =
 
   // Get the GLOBALLY most recent action and check if it belongs to this player
   const latestAction = useMemo(() => {
-    if (!previousActions || previousActions.length === 0 || mostRecentActionIndex === -1) return null;
+    if (isEmpty(previousActions) || mostRecentActionIndex === -1) return null;
 
     // Find the action with the most recent index
     const globallyMostRecentAction = previousActions.find(action => action.index === mostRecentActionIndex) || null;

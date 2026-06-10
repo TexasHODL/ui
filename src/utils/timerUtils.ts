@@ -1,4 +1,5 @@
 import { ActionDTO } from "@block52/poker-vm-sdk";
+import { hasElements } from "./guards";
 
 /** Default timeout in seconds for game creation */
 export const DEFAULT_TIMEOUT_SECONDS = 30;
@@ -39,7 +40,7 @@ export const normalizeTimestamp = (timestamp: number): number => {
  * Falls back to Date.now() when the array is empty / undefined.
  */
 export const getLatestActionTimestampMs = (previousActions: ActionDTO[] | undefined): number => {
-    if (!previousActions || previousActions.length === 0) {
+    if (!hasElements(previousActions)) {
         return Date.now();
     }
     const sorted = [...previousActions].sort((a, b) => b.timestamp - a.timestamp);

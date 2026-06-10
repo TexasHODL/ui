@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { TableTurnIndexReturn } from "../../types/index";
+import { isEmpty } from "../../utils/guards";
 
 /**
  * Custom hook to get the next turn index for actions at a table
@@ -21,7 +22,7 @@ export function useTableTurnIndex(): TableTurnIndexReturn {
       // Get the previousActions array
       const previousActions = gameState.previousActions || [];
       
-      if (previousActions.length === 0) {
+      if (isEmpty(previousActions)) {
         return 0; // If no previous actions, start with index 0
       }
       

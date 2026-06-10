@@ -3,6 +3,7 @@ import { PlayerDTO, LegalActionDTO } from "@block52/poker-vm-sdk";
 import { NextToActInfoReturn } from "../../types/index";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getTimeoutMs, timeoutToSeconds } from "../../utils/timerUtils";
+import { isNullish } from "../../utils/guards";
 
 /**
  * Custom hook to fetch and provide information about who is next to act
@@ -36,7 +37,7 @@ export const useNextToActInfo = (_tableId?: string): NextToActInfoReturn => {
             }
 
             const nextToActSeat = gameState.nextToAct;
-            if (nextToActSeat === undefined || nextToActSeat === null) {
+            if (isNullish(nextToActSeat)) {
                 return defaultValues;
             }
 

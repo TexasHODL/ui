@@ -5,6 +5,7 @@ import { executeGatewayAction, getLatestGameState, nextActionIndex } from "./tra
 import type { JoinTableOptions } from "./types";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { JoinTableResult } from "../../types";
+import { hasValue } from "../../utils/guards";
 
 /**
  * Joins a poker table using Cosmos SDK SigningCosmosClient.
@@ -28,7 +29,7 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
     const buyInAmount = BigInt(Math.floor(amountInUsdc * Math.pow(10, COSMOS_CONSTANTS.USDC_DECIMALS)));
 
     // If seatNumber is not provided, default to 0
-    const seat = options.seatNumber !== undefined && options.seatNumber !== null
+    const seat = hasValue(options.seatNumber)
         ? options.seatNumber
         : 0;
 

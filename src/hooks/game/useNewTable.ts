@@ -5,6 +5,7 @@ import { useNetwork } from "../../context/NetworkContext";
 import {  convertBlindsForBlockchain } from "../../utils/gameFormatUtils";
 import { DEFAULT_TIMEOUT_SECONDS } from "../../utils/timerUtils";
 import { usdcToMicroBigInt } from "../../constants/currency";
+import { hasValue } from "../../utils/guards";
 
 // Type for rake configuration options
 export interface RakeOptions {
@@ -145,7 +146,7 @@ export const useNewTable = (): UseNewTableReturn => {
                 // have failed (non-zero code). Surface the raw_log so the UI
                 // doesn't show a misleading success state.
                 const code = tx?.tx_response?.code;
-                if (code !== undefined && code !== 0) {
+                if (hasValue(code) && code !== 0) {
                     throw new Error(tx?.tx_response?.raw_log || `tx failed with code ${code}`);
                 }
 

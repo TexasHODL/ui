@@ -2,6 +2,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { PlayerDTO, TexasHoldemStateDTO, WinnerDTO } from "@block52/poker-vm-sdk";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { WinnerInfo, WinnerInfoReturn } from "../../types/index";
+import { hasElements } from "../../utils/guards";
 
 /**
  * Extract winner information from game state
@@ -12,7 +13,7 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO) {
     if (!gameData) return null;
 
     // Check for explicit winners array in the game data
-    if (gameData.winners && gameData.winners.length > 0) {
+    if (hasElements(gameData.winners)) {
         return gameData.winners.map((winner: WinnerDTO) => {
             // Get the player object for this winner to find their seat
             const player = gameData.players?.find((p: PlayerDTO) => p.address?.toLowerCase() === winner.address?.toLowerCase());

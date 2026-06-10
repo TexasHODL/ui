@@ -4,6 +4,7 @@
 
 // NodeRpcClient removed from SDK - using CosmosClient instead
 // import { NodeRpcClient } from "@block52/poker-vm-sdk";
+import { hasValue } from "./guards";
 
 // Singleton instance for NodeRpcClient (deprecated - kept for potential future use)
 let clientInstance: unknown = null;
@@ -58,7 +59,7 @@ export const clearPrivateKey = (): void => {
  * @returns True if private key exists in storage
  */
 export const hasPrivateKey = (): boolean => {
-    return getPrivateKey() !== null;
+    return hasValue(getPrivateKey());
 };
 
 /**
