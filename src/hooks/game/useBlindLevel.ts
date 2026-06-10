@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatChipCount } from "../../utils/potDisplayUtils";
-import { hasContent, hasValue } from "../../utils/guards";
+import { hasContent, hasValue, isNullish } from "../../utils/guards";
 
 export interface BlindLevelInfo {
     /** Current blind level (0-based), undefined if not provided by backend */
@@ -70,10 +70,10 @@ export const useBlindLevel = (startTime?: number): BlindLevelInfo => {
     const levelDurationSeconds = blindLevelDuration ? blindLevelDuration * 60 : 0;
 
     // Timer: compute seconds remaining in current level
-    const hasTimer = isActive && levelDurationSeconds > 0 && startTime !== undefined && startTime > 0;
+    const hasTimer = isActive && levelDurationSeconds > 0 && hasValue(startTime) && startTime > 0;
 
     const secondsRemaining = useMemo(() => {
-        if (!hasTimer || !startTime || level === undefined) return -1;
+        if (!hasTimer || !startTime || isNullish(level)) return -1;
         const elapsedMs = now - startTime;
         const elapsedSeconds = Math.floor(elapsedMs / 1000);
         const currentLevelEndSeconds = (level + 1) * levelDurationSeconds;

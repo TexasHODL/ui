@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { chipPosition } from "../../utils/PositionArray";
 import { useTableState } from "../game/useTableState";
 import { ChipPositionsReturn, TableStateReturn, PositionArray } from "../../types/index";
+import { hasElements } from "../../utils/guards";
 
 /**
  * Custom hook to manage chip positions based on table size
@@ -33,7 +34,7 @@ export const useChipPositions = (startIndex: number = 0): ChipPositionsReturn =>
     }
     
     // Apply reordering if needed
-    if (startIndex > 0 && baseArray.length > 0) {
+    if (startIndex > 0 && hasElements(baseArray)) {
       const reorderedArray = [
         ...baseArray.slice(startIndex),
         ...baseArray.slice(0, startIndex)

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { getCosmosUrls } from "../../utils/cosmos/urls";
 import { useNetwork } from "../../context/NetworkContext";
 import { PlayerDTO } from "@block52/poker-vm-sdk";
+import { isEmpty } from "../../utils/guards";
 
 interface TablePlayerCount {
     tableId: string;
@@ -28,7 +29,7 @@ export const useTablePlayerCounts = (tableAddresses: string[]) => {
 
     useEffect(() => {
         const fetchPlayerCounts = async () => {
-            if (!tableAddresses || tableAddresses.length === 0) return;
+            if (isEmpty(tableAddresses)) return;
 
             setIsLoading(true);
             const newCounts = new Map<string, TablePlayerCount>();

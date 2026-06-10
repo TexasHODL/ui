@@ -1,5 +1,6 @@
 import { isTournamentFormat, isSitAndGoFormat, GameFormat, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { formatUSDCToSimpleDollars } from "./numberUtils";
+import { hasElements } from "./guards";
 
 export interface PotDisplayValues {
     totalPot: string;
@@ -29,7 +30,7 @@ export function formatPotDisplay(
     gameFormat: GameFormat | undefined,
     round?: TexasHoldemRound
 ): PotDisplayValues {
-    const mainPotRaw = pots.length > 0 ? BigInt(pots[0]) : 0n;
+    const mainPotRaw = hasElements(pots) ? BigInt(pots[0]) : 0n;
     const totalPotRaw = totalPot ? BigInt(totalPot) : mainPotRaw;
 
     const isTournamentStyle = isTournamentFormat(gameFormat) || isSitAndGoFormat(gameFormat);

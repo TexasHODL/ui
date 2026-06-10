@@ -20,6 +20,7 @@ import { getSigningClient } from "../../utils/cosmos/client";
 import { signActionMessage } from "../../utils/cosmos/signing";
 import { signSettlementTx } from "../../utils/cosmos/settlementTx";
 import { getGameTransport, getGatewayApi } from "../../utils/gameTransport";
+import { hasValue, isNullish } from "../../utils/guards";
 
 let latestGameState: TexasHoldemStateDTO | undefined;
 
@@ -36,7 +37,7 @@ export function setLatestGameState(gameState: TexasHoldemStateDTO | undefined): 
 export function nextActionIndex(gameState: TexasHoldemStateDTO | undefined): number {
     for (const player of gameState?.players ?? []) {
         const index = player.legalActions?.[0]?.index;
-        if (index !== undefined) {
+        if (hasValue(index)) {
             return index;
         }
     }
@@ -70,7 +71,7 @@ export async function executeTransportAction(
         const address = localStorage.getItem("user_cosmos_address");
         const currentPlayer = latestGameState?.players?.find(p => p.address === address);
         const actionIndex = currentPlayer?.legalActions?.[0]?.index;
-        if (actionIndex === undefined) {
+        if (isNullish(actionIndex)) {
             // Per Commandment 7: surface it — no guessed indices.
             throw new Error(`No legal action index available for ${action} — game state may be stale`);
         }

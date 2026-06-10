@@ -9,6 +9,8 @@
  * by PlayerActionButtons via the "waiting-for-players" kind.
  */
 
+import { hasElements } from "./guards";
+
 export type TableStatusMessage =
     | { kind: "seat-label"; seatNumber: number; text: string }
     | { kind: "your-turn"; text: string }
@@ -104,5 +106,5 @@ export function getWaitingForPlayerLabel(
  * Convenience check for whether any status messages should be rendered.
  */
 export function hasTableStatusMessages(input: TableStatusDisplayInput): boolean {
-    return getTableStatusMessages(input).length > 0;
+    return hasElements(getTableStatusMessages(input));
 }

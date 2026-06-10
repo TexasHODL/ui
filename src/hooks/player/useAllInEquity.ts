@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useShowingCardsByAddress } from "./useShowingCardsByAddress";
+import { hasValue } from "../../utils/guards";
 import {
     PlayerStatus,
     PlayerDTO,
@@ -169,7 +170,7 @@ export function useAllInEquity(): AllInEquityResult {
             const newEquities = new Map<number, number>();
             winPercentages.forEach((pct, idx) => {
                 const seat = playersWithVisibleCards[idx]?.seat;
-                if (seat !== undefined) {
+                if (hasValue(seat)) {
                     newEquities.set(seat, pct);
                 }
             });

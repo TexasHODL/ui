@@ -3,6 +3,7 @@ import { useGameUI } from "../../context/gameState/GameUIContext";
 import { PlayerLegalActionsResult } from "./types";
 import { LegalActionDTO, PlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useRef, useMemo, useState, useEffect } from "react";
+import { hasElements } from "../../utils/guards";
 
 // 🔍 DEBUG: Enhanced logging utility for easy data export (same as GameStateContext)
 const debugLog = (eventType: string, data: any) => {
@@ -71,7 +72,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
             let currentPlayer: PlayerDTO | null = null;
             let isPlayerInGame = false;
 
-            if (gameState.players?.length > 0) {
+            if (hasElements(gameState.players)) {
                 // Find player with exact address match (case-insensitive)
                 currentPlayer = gameState.players?.find((player: PlayerDTO) => player.address?.toLowerCase() === userAddress) ?? null;
                 isPlayerInGame = !!currentPlayer;
@@ -145,7 +146,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
 
     // 🔍 DEBUG: Optimized logging - only when result actually changes
     useEffect(() => {
-        if (result.isPlayerTurn || result.legalActions.length > 0) {
+        if (result.isPlayerTurn || hasElements(result.legalActions)) {
             const currentState = JSON.stringify({
                 playerSeat: result.playerSeat,
                 isPlayerTurn: result.isPlayerTurn,
