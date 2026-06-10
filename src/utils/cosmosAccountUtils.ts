@@ -5,6 +5,7 @@
 
 import { getCosmosClient } from "./cosmos/client";
 import type { NetworkEndpoints } from "./cosmos/urls";
+import { truncateMiddle } from "./stringUtils";
 
 // Local type definition (not exported from SDK main index)
 interface Coin {
@@ -45,9 +46,7 @@ export const getCosmosAddressSync = (): string | null => {
  * @returns Formatted address string like "b521rg...fj9p" or empty string if no address
  */
 export const getFormattedCosmosAddress = (length: number = 6): string => {
-    const address = getCosmosAddressSync();
-    if (!address) return "";
-    return `${address.slice(0, length)}...${address.slice(-4)}`;
+    return truncateMiddle(getCosmosAddressSync(), length, 4);
 };
 
 /**

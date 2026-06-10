@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { truncateMiddle } from "../../utils/stringUtils";
 import { useParams, Link } from "react-router-dom";
 import { FaCopy, FaCheck } from "react-icons/fa";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
@@ -113,7 +114,7 @@ export default function HandReplayPage() {
 
     const truncateId = (id: string) => {
         if (id.length <= 24) return id;
-        return `${id.slice(0, 16)}...${id.slice(-8)}`;
+        return truncateMiddle(id, 16, 8);
     };
 
     return (

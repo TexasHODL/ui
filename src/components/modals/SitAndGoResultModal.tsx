@@ -17,6 +17,7 @@
  * Refs block52/ui#371, originally tracked in block52/poker-vm#2106.
  */
 import React, { useEffect, useMemo, useState } from "react";
+import { truncateMiddle } from "../../utils/stringUtils";
 import { useSitAndGoPlayerResults } from "../../hooks/game/useSitAndGoPlayerResults";
 import { useFetchSngClaimSignature } from "../../hooks/game/useFetchSngClaimSignature";
 import { useClaimSngWinNFT } from "../../hooks/wallet/useClaimSngWinNFT";
@@ -232,7 +233,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                                 rel="noopener noreferrer"
                                 className="underline hover:text-green-200"
                             >
-                                {`${claimHash.slice(0, 10)}…${claimHash.slice(-8)}`}
+                                {truncateMiddle(claimHash, 10, 8, "…")}
                             </a>
                         </p>
                     )}

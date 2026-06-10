@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { truncateMiddle } from "../utils/stringUtils";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -416,7 +417,7 @@ export default function WithdrawalDashboard() {
                                         <tr key={withdrawal.nonce} className="hover:bg-gray-700/50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-white font-mono text-sm" title={withdrawal.nonce}>
-                                                    #{withdrawal.nonce.slice(0, 10)}...{withdrawal.nonce.slice(-4)}
+                                                    #{truncateMiddle(withdrawal.nonce, 10, 4)}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
