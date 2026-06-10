@@ -260,7 +260,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Auto-new-hand hook - automatically triggers new hand when conditions are met
     // Can be disabled via URL query param: ?autonewhand=false or via settings panel
-    useAutoNewHand(
+    const { isDealingNewHand } = useAutoNewHand(
         tableId,
         network,
         hasNewHandAction,
@@ -543,6 +543,22 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                             label="START NEW HAND"
                             loading={loadingAction === "new-hand"}
                             onClick={() => handleActionWithTransaction("new-hand", () => handleStartNewHand(tableId, network))}
+                            variant="primary"
+                            className="px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base font-bold"
+                        />
+                    </div>
+                )}
+
+                {/* Auto-new-hand: hold on the showdown for a beat, showing a
+                    "Dealing hand #X…" indicator before the next hand deals (ui#443) */}
+                {autoNewHandEnabled && isDealingNewHand && (
+                    <div className="flex justify-center mb-2 lg:mb-3">
+                        <ActionButton
+                            action="new-hand"
+                            label={`Dealing hand #${(gameState?.handNumber ?? 0) + 1}`}
+                            loading={true}
+                            disabled={true}
+                            onClick={() => {}}
                             variant="primary"
                             className="px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base font-bold"
                         />
