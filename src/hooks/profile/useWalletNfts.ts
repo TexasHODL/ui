@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ETH_CHAIN_ID } from "../../config/constants";
 import { normalizeIpfsUri, isAllowedAvatarUrl } from "../../utils/profile/ipfs";
 import type { WalletNftAsset } from "../../types/profile/avatar";
+import { hasContent } from "../../utils/guards";
 
 interface ProfileNftConfig {
     chainId: number;
@@ -104,7 +105,7 @@ export const useWalletNfts = (walletAddress: string | undefined, isConnected: bo
     const [nftsWarning, setNftsWarning] = useState<string | null>(null);
 
     const hasIndexerConfigured = useMemo(() => {
-        return PROFILE_NFT_CONFIG.indexerUrlTemplate.trim().length > 0 || PROFILE_NFT_CONFIG.fallbackAlchemyUrl.trim().length > 0;
+        return hasContent(PROFILE_NFT_CONFIG.indexerUrlTemplate.trim()) || hasContent(PROFILE_NFT_CONFIG.fallbackAlchemyUrl.trim());
     }, []);
     const hasSourceConfigured = hasIndexerConfigured;
 

@@ -1,5 +1,6 @@
 import { ActionDTO, PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { microToUsdc } from "../constants/currency";
+import { isEmpty } from "./guards";
 
 /**
  * Calculate the total amount to display on the raise button.
@@ -21,14 +22,14 @@ export const calculateRaiseToDisplay = (playerSumOfBets: string, raiseAmount: nu
 
 export const getRaiseToAmount = (raiseAmount: number, actions: ActionDTO[], currentRound: TexasHoldemRound, userAddress: string): number => {
     // If no actions, return raiseAmount
-    if (!actions || actions.length === 0) {
+    if (isEmpty(actions)) {
         return raiseAmount;
     }
 
     // Get players previous actions
     const previousActions = actions.filter(action => action.playerId?.toLowerCase() === userAddress.toLowerCase());
 
-    if (!previousActions || previousActions.length === 0) {
+    if (isEmpty(previousActions)) {
         // If no previous actions, return raiseAmount
         return raiseAmount;
     }

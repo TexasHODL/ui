@@ -8,6 +8,7 @@ import { foldHand } from "../playerActions/foldHand";
 import { checkHand } from "../playerActions/checkHand";
 import { usePlayerLegalActions } from "../playerActions/usePlayerLegalActions";
 import { useGameOptions } from "../game/useGameOptions";
+import { isEmpty, isNullish } from "../../utils/guards";
 import { getTimeoutMs, timeoutToSeconds, getLatestActionTimestampMs, calcTimeRemaining, calcProgressPercent } from "../../utils/timerUtils";
 
 // Global state to track time extensions per seat
@@ -49,7 +50,7 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
 
     // Find the player by seat number
     const player = useMemo((): PlayerDTO | null => {
-        if (!gameState?.players || playerSeat === undefined) {
+        if (!gameState?.players || isNullish(playerSeat)) {
             return null;
         }
         return gameState.players.find((p: PlayerDTO) => p.seat === playerSeat) || null;
@@ -146,7 +147,7 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
         }
 
         // Check if player has legal actions (can actually act)
-        if (!legalActions || legalActions.length === 0) {
+        if (isEmpty(legalActions)) {
             latestValues.current.isExecutingAutoAction = false;
             return;
         }

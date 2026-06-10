@@ -1,5 +1,6 @@
 import { ethers } from "ethers";
 import { formatMicroAsUsdc } from "../constants/currency";
+import { truncateMiddle } from "./stringUtils";
 
 /**
  * Get public key from private key
@@ -22,7 +23,7 @@ export const getPublicKey = (privateKey: string): string => {
  * @returns Formatted string with first 6 and last 4 characters
  */
 export const formatPlayerId = (playerId: string): string => {
-    return `${playerId.slice(0, 6)}...${playerId.slice(-4)}`;
+    return truncateMiddle(playerId, 6, 4);
 };
 
 /**

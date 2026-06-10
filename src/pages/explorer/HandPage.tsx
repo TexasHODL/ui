@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { truncateMiddle } from "../../utils/stringUtils";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { TexasHoldemStateDTO, PlayerDTO } from "@block52/poker-vm-sdk";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
@@ -30,7 +31,7 @@ interface HandsResponse {
 
 function truncateAddress(addr: string): string {
     if (!addr || addr.length < 12) return addr;
-    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    return truncateMiddle(addr, 6, 4);
 }
 
 function formatStack(stack: string): string {

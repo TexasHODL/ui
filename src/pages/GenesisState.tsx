@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { truncateMiddle } from "../utils/stringUtils";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -192,7 +193,7 @@ export default function GenesisState() {
     };
 
     const shortenAddress = (address: string): string => {
-        return `${address.slice(0, 12)}...${address.slice(-8)}`;
+        return truncateMiddle(address, 12, 8);
     };
 
     const isMyWallet = (address: string): boolean => {

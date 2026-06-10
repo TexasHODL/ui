@@ -3,6 +3,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { PlayerDTO } from "@block52/poker-vm-sdk";
 import { VacantSeatResponse } from "../../types/index";
 import { isValidPlayerAddress } from "../../utils/addressUtils";
+import { isEmpty, isNullish, hasElements } from "../../utils/guards";
 
 /**
  * Custom hook to manage data for vacant seats
@@ -26,7 +27,7 @@ export const useVacantSeatData = (): VacantSeatResponse => {
 
     // Check if user is already playing at the table
     const isUserAlreadyPlaying = React.useMemo(() => {
-        return !!(userAddress && players.length > 0 && 
+        return !!(userAddress && hasElements(players) &&
             players.some((player: PlayerDTO) => player.address?.toLowerCase() === userAddress));
     }, [players, userAddress]);
 
@@ -44,9 +45,9 @@ export const useVacantSeatData = (): VacantSeatResponse => {
     // Get array of all empty seat indexes - optimized to avoid repeated function calls
     const emptySeatIndexes: number[] = React.useMemo(() => {
         // Game state not loaded yet — no seats to show
-        if (maxPlayers === undefined) return [];
+        if (isNullish(maxPlayers)) return [];
 
-        if (players.length === 0) {
+        if (isEmpty(players)) {
             // If no players, all seats are empty
             return Array.from({ length: maxPlayers }, (_, i) => i + 1);
         }

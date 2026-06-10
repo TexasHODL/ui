@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { ResultDTO, GameFormat } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../context/GameStateContext";
+import { hasElements } from "../../utils/guards";
 
 // Hook return type for individual player result
 export interface PlayerResultData {
@@ -42,7 +43,7 @@ export const useSitAndGoPlayerResults = (): SitAndGoPlayerResultsReturn => {
 
     // Check if game has results
     const hasResults = useMemo(() => {
-        return allResults.length > 0;
+        return hasElements(allResults);
     }, [allResults]);
 
     // Get result for a specific player address.

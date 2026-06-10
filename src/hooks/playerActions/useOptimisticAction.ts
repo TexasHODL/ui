@@ -6,6 +6,7 @@ import { getGameTransport } from "../../utils/gameTransport";
 import { executeTransportAction } from "./transportAction";
 import type { PlayerActionResult } from "../../types";
 import { PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
+import { isNullish, hasValue } from "../../utils/guards";
 
 /**
  * Actions that can be performed optimistically.
@@ -72,7 +73,7 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
         ): Promise<PlayerActionResult> => {
 
             // Validate amount for actions that require it
-            if (ACTIONS_REQUIRING_AMOUNT.has(action) && amount === undefined) {
+            if (ACTIONS_REQUIRING_AMOUNT.has(action) && isNullish(amount)) {
                 throw new Error(`Amount required for ${action}`);
             }
 
@@ -96,6 +97,6 @@ export function useOptimisticAction(): UseOptimisticActionReturn {
 
     return {
         performOptimisticAction,
-        isPending: pendingAction !== null
+        isPending: hasValue(pendingAction)
     };
 }

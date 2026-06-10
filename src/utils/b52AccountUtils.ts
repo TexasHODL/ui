@@ -4,6 +4,8 @@
 
 // NodeRpcClient removed from SDK - using CosmosClient instead
 // import { NodeRpcClient } from "@block52/poker-vm-sdk";
+import { hasValue } from "./guards";
+import { truncateMiddle } from "./stringUtils";
 
 // Singleton instance for NodeRpcClient (deprecated - kept for potential future use)
 let clientInstance: unknown = null;
@@ -29,9 +31,7 @@ export const getPublicKey = (): string | null => {
  * @returns Formatted address string like "0x1234...abcd" or empty string if no address
  */
 export const getFormattedAddress = (length: number = 6): string => {
-    const pubKey = getPublicKey();
-    if (!pubKey) return "";
-    return `${pubKey.slice(0, length)}...${pubKey.slice(-4)}`;
+    return truncateMiddle(getPublicKey(), length, 4);
 };
 
 /**
@@ -58,7 +58,7 @@ export const clearPrivateKey = (): void => {
  * @returns True if private key exists in storage
  */
 export const hasPrivateKey = (): boolean => {
-    return getPrivateKey() !== null;
+    return hasValue(getPrivateKey());
 };
 
 /**

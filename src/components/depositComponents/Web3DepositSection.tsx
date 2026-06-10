@@ -1,4 +1,5 @@
 import React from "react";
+import { truncateMiddle } from "../../utils/stringUtils";
 import styles from "./DepositComponents.module.css";
 
 interface Web3DepositSectionProps {
@@ -90,7 +91,7 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                     <div className="space-y-4">
                         <div className={`flex justify-between items-center ${styles.connectedText}`}>
                             <span>
-                                Connected: {web3Address?.slice(0, 6)}...{web3Address?.slice(-4)}
+                                Connected: {truncateMiddle(web3Address, 6, 4)}
                             </span>
                             <button
                                 onClick={onDisconnect}

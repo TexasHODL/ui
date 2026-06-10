@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { hasValue } from "../../utils/guards";
 
 interface UseReplayModeReturn {
     isReplayMode: boolean;
@@ -34,7 +35,7 @@ export const useReplayMode = (): UseReplayModeReturn => {
         return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
     }, [searchParams]);
 
-    const isReplayMode = handNumber !== null && actionIndex !== null;
+    const isReplayMode = hasValue(handNumber) && hasValue(actionIndex);
 
     const clearReplayParams = () => {
         const newParams = new URLSearchParams(searchParams);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { truncateMiddle } from "../utils/stringUtils";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -523,7 +524,7 @@ export default function BridgeAdminDashboard() {
                                             <div className="flex justify-between">
                                                 <span className="text-gray-400">Address:</span>
                                                 <span className="text-white font-mono text-xs">
-                                                    {hotWalletInfo.address.slice(0, 10)}...{hotWalletInfo.address.slice(-8)}
+                                                    {truncateMiddle(hotWalletInfo.address, 10, 8)}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between">

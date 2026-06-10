@@ -2,6 +2,7 @@
  * Formatting utility functions for the UI
  */
 import { bech32 } from "bech32";
+import { truncateMiddle } from "./stringUtils";
 
 /**
  * Truncates a hash string to show only the beginning and end
@@ -14,7 +15,7 @@ import { bech32 } from "bech32";
 export const truncateHash = (hash: string, length: number = 8): string => {
     if (!hash) return "N/A";
     if (hash.length <= length * 2) return hash;
-    return `${hash.slice(0, length)}...${hash.slice(-length)}`;
+    return truncateMiddle(hash, length, length);
 };
 
 /**

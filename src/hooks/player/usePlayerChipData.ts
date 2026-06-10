@@ -4,6 +4,7 @@ import { PlayerChipDataReturn } from "../../types/index";
 import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
 import { shouldShowChips, getRelevantChipAmounts, calculateCurrentRoundBetting, hasPlayerBetInRound } from "../../utils/chipUtils";
+import { hasElements } from "../../utils/guards";
 
 /**
  * Per-seat chip data for a single player.
@@ -30,7 +31,7 @@ export const usePlayerChipData = (seatIndex: number): PlayerChipDataReturn => {
     const previousActions: ActionDTO[] = gameState?.previousActions ?? [];
     // Monotonic fingerprint of the action log — changes only when a new
     // action lands, not on every gameState identity flip.
-    const lastActionIndex = previousActions.length > 0 ? previousActions[previousActions.length - 1].index : -1;
+    const lastActionIndex = hasElements(previousActions) ? previousActions[previousActions.length - 1].index : -1;
     const actionsFingerprint = `${previousActions.length}:${lastActionIndex}`;
 
     const chipAmount = useMemo<string>(() => {
@@ -57,7 +58,7 @@ export const usePlayerChipData = (seatIndex: number): PlayerChipDataReturn => {
         if (!round) return [];
 
         const amounts = getRelevantChipAmounts(player.address, round, previousActions);
-        if (amounts.length > 0) return amounts;
+        if (hasElements(amounts)) return amounts;
 
         // Fallback: render the running total as a single group when no per-action
         // amounts matched (covers edge cases like first-action sumOfBets display)
