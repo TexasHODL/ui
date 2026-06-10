@@ -10,8 +10,17 @@ const mockGetSigningClient = getSigningClient as jest.MockedFunction<typeof getS
 type SigningClient = Awaited<ReturnType<typeof getSigningClient>>["signingClient"];
 
 describe("leaveTable", () => {
+    const savedTransport = process.env.VITE_GAME_TRANSPORT;
+
     beforeEach(() => {
         jest.clearAllMocks();
+        // These assert the chain-direct path; chain is now opt-out (#440).
+        process.env.VITE_GAME_TRANSPORT = "chain";
+    });
+
+    afterEach(() => {
+        process.env.VITE_GAME_TRANSPORT = savedTransport;
+        if (savedTransport === undefined) delete process.env.VITE_GAME_TRANSPORT;
     });
 
     const fakeNetwork = { name: "testnet", rpc: "http://x", rest: "http://y" } as unknown as NetworkEndpoints;

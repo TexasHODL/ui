@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
 import { Modal } from "../common/Modal";
 import styles from "./ProfileAvatarModal.module.css";
+import { isEmpty, hasElements } from "../../utils/guards";
 
 export const ProfileAvatarModal: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = React.useState(false);
@@ -139,12 +140,12 @@ export const ProfileAvatarModal: React.FC = () => {
                             </p>
                         )}
 
-                        {isLoadingNfts && walletNfts.length === 0 && !isRefreshing && <p className={styles.emptyText}>Scanning wallet NFTs...</p>}
+                        {isLoadingNfts && isEmpty(walletNfts) && !isRefreshing && <p className={styles.emptyText}>Scanning wallet NFTs...</p>}
                         {registrationError && <p className={styles.emptyText}>Registration failed: {registrationError}</p>}
                         {nftsError && <p className={styles.emptyText}>{nftsError}</p>}
                         {nftsWarning && <p className={styles.emptyText}>{nftsWarning}</p>}
 
-                        {walletNfts.length > 0 && (
+                        {hasElements(walletNfts) && (
                             <input
                                 type="text"
                                 value={searchTerm}
@@ -154,11 +155,11 @@ export const ProfileAvatarModal: React.FC = () => {
                             />
                         )}
 
-                        {!isLoadingNfts && walletNfts.length === 0 && hasSourceConfigured && !nftsError && (
+                        {!isLoadingNfts && isEmpty(walletNfts) && hasSourceConfigured && !nftsError && (
                             <p className={styles.emptyText}>No NFTs found in this wallet.</p>
                         )}
 
-                        {!isLoadingNfts && walletNfts.length > 0 && filteredWalletNfts.length === 0 && (
+                        {!isLoadingNfts && hasElements(walletNfts) && isEmpty(filteredWalletNfts) && (
                             <p className={styles.emptyText}>No NFTs match your search.</p>
                         )}
 
