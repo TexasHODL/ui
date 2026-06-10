@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { truncateMiddle } from "../../utils/stringUtils";
 import { colors } from "../../utils/colorConfig";
 import { Modal, LoadingSpinner } from "../common";
 import styles from "./DeleteTableModal.module.css";
@@ -38,7 +39,7 @@ const ForceCloseTableModal: React.FC<ForceCloseTableModalProps> = React.memo(
             }
         }, [onConfirm, onClose]);
 
-        const truncatedId = `${gameId.slice(0, 6)}...${gameId.slice(-6)}`;
+        const truncatedId = truncateMiddle(gameId, 6, 6);
         const playerWord = seatedPlayerCount === 1 ? "player" : "players";
 
         return (

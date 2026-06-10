@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { truncateMiddle } from "../utils/stringUtils";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
 import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
@@ -340,7 +341,7 @@ const TableList: React.FC = () => {
                                         <td className="px-4 py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <span className="text-gray-300 font-mono text-sm">
-                                                    {`${game.gameId.slice(0, 4)}...${game.gameId.slice(-4)}`}
+                                                    {truncateMiddle(game.gameId, 4, 4)}
                                                 </span>
                                                 <button
                                                     onClick={() => copyToClipboard(game.gameId)}
