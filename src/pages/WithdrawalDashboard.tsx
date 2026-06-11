@@ -3,6 +3,7 @@ import { truncateMiddle } from "../utils/stringUtils";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
+import { copyToClipboard } from "../utils/clipboard";
 import { ethers } from "ethers";
 import { formatMicroAsUsdc, usdcToMicroBigInt } from "../constants/currency";
 import { getSigningClient } from "../utils/cosmos/client";
@@ -426,10 +427,7 @@ export default function WithdrawalDashboard() {
                                                         {withdrawal.baseAddress}
                                                     </span>
                                                     <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(withdrawal.baseAddress);
-                                                            toast.success("Address copied!");
-                                                        }}
+                                                        onClick={() => copyToClipboard(withdrawal.baseAddress, "Address copied!")}
                                                         className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

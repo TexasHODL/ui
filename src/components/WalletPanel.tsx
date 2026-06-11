@@ -2,13 +2,10 @@ import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import styles from "./WalletPanel.module.css";
-import { toast } from "react-toastify";
+import { copyToClipboard as copyToClipboardUtil } from "../utils/clipboard";
 
 // Copy to clipboard utility
-const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success(`${label} copied to clipboard!`);
-};
+const copyToClipboard = (text: string, label: string) => copyToClipboardUtil(text, `${label} copied to clipboard!`);
 
 interface WalletPanelProps {
     onDeposit: () => void;

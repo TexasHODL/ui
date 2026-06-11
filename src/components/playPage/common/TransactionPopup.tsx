@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { copyToClipboard } from "../../../utils/clipboard";
 
 interface TransactionPopupProps {
     txHash: string | null;
@@ -59,10 +59,7 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({ txHash, onClose }) 
                                 {txHash}
                             </code>
                             <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(txHash);
-                                    toast.success("Transaction hash copied!");
-                                }}
+                                onClick={() => copyToClipboard(txHash, "Transaction hash copied!")}
                                 className="p-2 text-gray-400 hover:text-white transition-colors flex-shrink-0"
                                 title="Copy transaction hash"
                             >
