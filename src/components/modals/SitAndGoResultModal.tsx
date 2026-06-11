@@ -24,6 +24,7 @@ import { useClaimSngWinNFT } from "../../hooks/wallet/useClaimSngWinNFT";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { isNullish } from "../../utils/guards";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 type ClaimState =
     | { kind: "idle" }
@@ -57,7 +58,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     // Read the user address fresh on mount only. The active wallet
     // never changes mid-session for a given table view.
     const userAddress = useMemo(
-        () => localStorage.getItem("user_cosmos_address")?.toLowerCase() ?? null,
+        () => localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase() ?? null,
         [],
     );
 

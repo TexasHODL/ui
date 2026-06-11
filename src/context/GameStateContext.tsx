@@ -7,6 +7,7 @@ import { setLatestGameState } from "../hooks/playerActions/transportAction";
 import { validateGameState, extractGameDataFromMessage } from "../utils/gameFormatUtils";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 import { GameDataProvider, useGameData } from "./gameState/GameDataContext";
 import { GameMetaProvider, useGameMeta } from "./gameState/GameMetaContext";
 import { GameUIProvider, useGameUI, PendingAction } from "./gameState/GameUIContext";
@@ -104,7 +105,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             }
 
             // Get Cosmos player address
-            const playerAddress = localStorage.getItem("user_cosmos_address");
+            const playerAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
 
             if (!playerAddress) {
                 setError(new Error("No Block52 wallet address found. Please connect your wallet."));
@@ -254,7 +255,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         }
 
                         // Valid data - update state
-                        const playerAddress = localStorage.getItem("user_cosmos_address");
+                        const playerAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
                         const currentPlayer = (gameStateData as TexasHoldemStateDTO)?.players?.find(p => p.address === playerAddress);
                         console.log("🎮 Game state updated. Current player status:", currentPlayer?.status, "| Player:", currentPlayer?.address?.slice(0, 10));
                         setGameState(gameStateData as TexasHoldemStateDTO);
@@ -355,7 +356,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             }
 
             // Get Cosmos player address
-            const playerAddress = localStorage.getItem("user_cosmos_address");
+            const playerAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
 
             if (!playerAddress) {
                 throw new Error("No Block52 wallet address found. Please connect your wallet.");

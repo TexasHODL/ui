@@ -6,6 +6,7 @@
 // import { NodeRpcClient } from "@block52/poker-vm-sdk";
 import { hasValue } from "./guards";
 import { truncateMiddle } from "./stringUtils";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 // Singleton instance for NodeRpcClient (deprecated - kept for potential future use)
 let clientInstance: unknown = null;
@@ -15,7 +16,7 @@ let clientInstance: unknown = null;
  * @returns The private key string or null if not found
  */
 export const getPrivateKey = (): string | null => {
-    return localStorage.getItem("user_eth_private_key");
+    return localStorage.getItem(STORAGE_KEYS.ethPrivateKey);
 };
 
 /**
@@ -23,7 +24,7 @@ export const getPrivateKey = (): string | null => {
  * @returns The Cosmos address string or null if not found
  */
 export const getPublicKey = (): string | null => {
-    return localStorage.getItem("user_cosmos_address");
+    return localStorage.getItem(STORAGE_KEYS.cosmosAddress);
 };
 
 /**
@@ -39,7 +40,7 @@ export const getFormattedAddress = (length: number = 6): string => {
  * @param privateKey The private key to store
  */
 export const setPrivateKey = (privateKey: string): void => {
-    localStorage.setItem("user_eth_private_key", privateKey);
+    localStorage.setItem(STORAGE_KEYS.ethPrivateKey, privateKey);
     // Clear the client instance when private key changes
     clientInstance = null;
 };
@@ -48,7 +49,7 @@ export const setPrivateKey = (privateKey: string): void => {
  * Remove the user's private key from browser storage
  */
 export const clearPrivateKey = (): void => {
-    localStorage.removeItem("user_eth_private_key");
+    localStorage.removeItem(STORAGE_KEYS.ethPrivateKey);
     // Clear the client instance when private key is removed
     clientInstance = null;
 };

@@ -5,6 +5,7 @@ import { useNetwork } from "../../context/NetworkContext";
 import { ClickableAddress } from "../../components/explorer/ClickableAddress";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { formatProposerAddress } from "../../utils/formatUtils";
+import { truncateMiddle } from "../../utils/stringUtils";
 import styles from "./BlockDetailPage.module.css";
 // Define block response type locally to match Cosmos API response
 interface CosmosBlockResponse {
@@ -131,7 +132,7 @@ export default function BlockDetailPage() {
     const truncateHash = (hash: string, length: number = 16) => {
         if (!hash) return "N/A";
         if (hash.length <= length * 2) return hash;
-        return `${hash.slice(0, length)}...${hash.slice(-length)}`;
+        return truncateMiddle(hash, length, length);
     };
 
     const formatTimestamp = (timestamp: string) => {

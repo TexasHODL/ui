@@ -15,6 +15,7 @@ import { getCosmosBalance } from "../../utils/cosmosAccountUtils";
 import { useNetwork } from "../../context/NetworkContext";
 import { colors as _colors, hexToRgba as _hexToRgba } from "../../utils/colorConfig";
 import { microToUsdc } from "../../constants/currency";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { isEmpty, hasElements, isBlank } from "../../utils/guards";
@@ -39,7 +40,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     const { subscribeToTable, gameState: _gameState } = useGameStateContext();
 
     // Get Cosmos address once
-    const publicKey = useMemo(() => localStorage.getItem("user_cosmos_address") || undefined, []);
+    const publicKey = useMemo(() => localStorage.getItem(STORAGE_KEYS.cosmosAddress) || undefined, []);
 
     // Calculate formatted values
     const { maxBuyInFormatted, balanceFormatted, smallBlindFormatted, bigBlindFormatted, startingStackFormatted } = useMemo(() => {
@@ -166,8 +167,8 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
             setHasJoined(true);
 
             // Store buy-in info in localStorage for the table component
-            localStorage.setItem("buy_in_amount", maxBuyInFormatted);
-            localStorage.setItem("wait_for_big_blind", JSON.stringify(false));
+            localStorage.setItem(STORAGE_KEYS.buyInAmount, maxBuyInFormatted);
+            localStorage.setItem(STORAGE_KEYS.waitForBigBlind, JSON.stringify(false));
 
             // Force a re-subscription to get the latest state
             subscribeToTable(tableId);
