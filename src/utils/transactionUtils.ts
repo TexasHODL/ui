@@ -2,6 +2,8 @@
  * Transaction formatting utilities
  */
 
+import { truncateMiddle } from "./stringUtils";
+
 /**
  * Format a transaction for display purposes
  * Prioritizes action over messageType and cleans up the display text
@@ -73,7 +75,7 @@ export function getTransferDirectionClass(direction?: "sent" | "received"): stri
 export function formatShortHash(hash: string, startChars = 8, endChars = 8): string {
     if (!hash) return "";
     if (hash.length <= startChars + endChars + 3) return hash;
-    return `${hash.slice(0, startChars)}...${hash.slice(-endChars)}`;
+    return truncateMiddle(hash, startChars, endChars);
 }
 
 /**

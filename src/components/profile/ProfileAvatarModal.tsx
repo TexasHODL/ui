@@ -4,11 +4,11 @@ import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
 import { Modal } from "../common/Modal";
 import styles from "./ProfileAvatarModal.module.css";
 import { isEmpty, hasElements } from "../../utils/guards";
+import { useCopyToClipboard } from "../../hooks/useCopyToClipboard";
 
 export const ProfileAvatarModal: React.FC = () => {
     const [isRefreshing, setIsRefreshing] = React.useState(false);
     const [searchTerm, setSearchTerm] = React.useState("");
-    const [addressCopied, setAddressCopied] = React.useState(false);
     const [justRegistered, setJustRegistered] = React.useState(false);
     const [registeringAssetId, setRegisteringAssetId] = React.useState<string | null>(null);
     const prevIsRegistering = React.useRef(false);
@@ -31,6 +31,8 @@ export const ProfileAvatarModal: React.FC = () => {
         isRegistering,
         registrationError
     } = useProfileAvatar();
+
+    const { copy, copied } = useCopyToClipboard();
 
     // Detect registration completion
     React.useEffect(() => {
@@ -61,12 +63,9 @@ export const ProfileAvatarModal: React.FC = () => {
 
     const handleCopyAddress = React.useCallback(() => {
         if (walletAddress) {
-            navigator.clipboard.writeText(walletAddress);
-            setAddressCopied(true);
-            toast.success("Address copied!");
-            setTimeout(() => setAddressCopied(false), 2000);
+            copy(walletAddress, "Address copied!");
         }
-    }, [walletAddress]);
+    }, [copy, walletAddress]);
 
     const filteredWalletNfts = React.useMemo(() => {
         const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -121,7 +120,7 @@ export const ProfileAvatarModal: React.FC = () => {
                                     className={styles.copyButton}
                                     title="Copy address"
                                 >
-                                    {addressCopied ? (
+                                    {copied ? (
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                                         </svg>

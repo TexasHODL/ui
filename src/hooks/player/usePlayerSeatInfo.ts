@@ -3,6 +3,7 @@ import { PlayerDTO } from "@block52/poker-vm-sdk";
 import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
 import { PlayerSeatInfoReturn } from "../../types/index";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 /**
  * Custom hook to manage player seat information
@@ -19,7 +20,7 @@ export const usePlayerSeatInfo = (): PlayerSeatInfoReturn => {
 
     // Get user address from local storage
     const userWalletAddress = useMemo(() => {
-        const address = localStorage.getItem("user_cosmos_address");
+        const address = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
         return address ? address.toLowerCase() : null;
     }, []);
 

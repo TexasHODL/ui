@@ -1,5 +1,5 @@
 import React from "react";
-import { toast } from "react-toastify";
+import { copyToClipboard as copyToClipboardUtil } from "../../utils/clipboard";
 import { formatMicroAsUsdc } from "../../constants/currency";
 
 interface Withdrawal {
@@ -40,10 +40,7 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
 }) => {
     if (!isOpen || !withdrawal) return null;
 
-    const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success(`${label} copied!`);
-    };
+    const copyToClipboard = (text: string, label: string) => copyToClipboardUtil(text, `${label} copied!`);
 
     // Parse signature components (r, s, v) from hex signature
     const parseSignatureComponents = (hexSig: string | null) => {

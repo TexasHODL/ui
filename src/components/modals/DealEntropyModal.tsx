@@ -3,6 +3,7 @@ import { Modal, LoadingSpinner } from "../common";
 import CryptoJS from "crypto-js";
 import type { DealEntropyModalProps } from "./types";
 import styles from "./DealEntropyModal.module.css";
+import { truncateMiddle } from "../../utils/stringUtils";
 
 /**
  * Generates a random hex string using crypto.getRandomValues
@@ -33,7 +34,7 @@ function combineEntropy(systemEntropy: string, passwordHash: string): string {
  */
 function truncateHash(hash: string, chars: number = 12): string {
     if (hash.length <= chars * 2 + 4) return hash;
-    return `${hash.slice(0, chars + 2)}...${hash.slice(-chars)}`;
+    return truncateMiddle(hash, chars + 2, chars);
 }
 
 const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId, onClose, onDeal }) => {

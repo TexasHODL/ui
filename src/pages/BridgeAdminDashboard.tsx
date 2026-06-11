@@ -3,6 +3,7 @@ import { truncateMiddle } from "../utils/stringUtils";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
+import { copyToClipboard } from "../utils/clipboard";
 import { ethers } from "ethers";
 import { formatMicroAsUsdc } from "../constants/currency";
 import { getSigningClient } from "../utils/cosmos/client";
@@ -12,6 +13,7 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { COSMOS_BRIDGE_ADDRESS } from "../config/constants";
 import { useCosmosApi } from "../context/CosmosApiContext";
 import { usePaymentApi } from "../context/PaymentApiContext";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 /**
  * BridgeAdminDashboard - Admin interface for viewing and processing bridge deposits
@@ -68,7 +70,7 @@ export default function BridgeAdminDashboard() {
     const [currentPage, setCurrentPage] = useState(1);
     // Load items per page from localStorage, default to 50
     const [itemsPerPage, setItemsPerPage] = useState(() => {
-        const saved = localStorage.getItem("bridge_items_per_page");
+        const saved = localStorage.getItem(STORAGE_KEYS.bridgeItemsPerPage);
         return saved ? parseInt(saved) : 50;
     });
     const [totalDepositsFound, setTotalDepositsFound] = useState(0);
@@ -77,7 +79,7 @@ export default function BridgeAdminDashboard() {
     const [filter, setFilter] = useState<"all" | "processed" | "pending">("all");
     // Load sort order from localStorage, default to descending (newest first)
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">(() => {
-        const saved = localStorage.getItem("bridge_sort_order");
+        const saved = localStorage.getItem(STORAGE_KEYS.bridgeSortOrder);
         return (saved as "asc" | "desc") || "desc";
     });
     const [configError, setConfigError] = useState<string | null>(null);
@@ -376,7 +378,7 @@ export default function BridgeAdminDashboard() {
     // Handle items per page change - save to localStorage
     const handleItemsPerPageChange = (value: number) => {
         setItemsPerPage(value);
-        localStorage.setItem("bridge_items_per_page", value.toString());
+        localStorage.setItem(STORAGE_KEYS.bridgeItemsPerPage, value.toString());
         setCurrentPage(1);
     };
 
@@ -384,7 +386,7 @@ export default function BridgeAdminDashboard() {
     const handleSortOrderChange = () => {
         const newOrder = sortOrder === "desc" ? "asc" : "desc";
         setSortOrder(newOrder);
-        localStorage.setItem("bridge_sort_order", newOrder);
+        localStorage.setItem(STORAGE_KEYS.bridgeSortOrder, newOrder);
     };
 
     // Process all pending deposits
@@ -805,10 +807,7 @@ export default function BridgeAdminDashboard() {
                                                         {deposit.recipient}
                                                     </span>
                                                     <button
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(deposit.recipient);
-                                                            toast.success("Address copied!");
-                                                        }}
+                                                        onClick={() => copyToClipboard(deposit.recipient, "Address copied!")}
                                                         className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

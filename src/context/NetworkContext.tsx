@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 /**
  * NetworkEndpoints describes all endpoints for a given network.
@@ -128,7 +129,7 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
     // Initialize network from localStorage or default to Block52
     const [currentNetwork, setCurrentNetwork] = useState<NetworkEndpoints>(() => {
         // Try to load user's saved network preference from localStorage
-        const saved = localStorage.getItem("selectedNetwork");
+        const saved = localStorage.getItem(STORAGE_KEYS.selectedNetwork);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -161,7 +162,7 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
 
     // Save to localStorage whenever network changes
     useEffect(() => {
-        localStorage.setItem("selectedNetwork", JSON.stringify(currentNetwork));
+        localStorage.setItem(STORAGE_KEYS.selectedNetwork, JSON.stringify(currentNetwork));
     }, [currentNetwork]);
 
     // Save discovered networks to localStorage
