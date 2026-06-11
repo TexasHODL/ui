@@ -26,76 +26,6 @@ export const formatToFixedFromString = (value: string | number): string => {
     return microToUsdc(value).toFixed(2);
 };
 
-/**
- * @deprecated This function uses 18 decimals (Wei format) but USDC uses 6 decimals.
- * Use formatMicroAsUsdc() from constants/currency.ts for USDC amounts.
- * Only use this function for actual ETH amounts.
- */
-export const formatWeiToDollars = (weiAmount: string | bigint | undefined | null): string => {
-    try {
-        // Handle undefined or null values
-        if (isNullish(weiAmount)) {
-            return "0.00";
-        }
-
-        // Convert from Wei (18 decimals) to standard units
-        const usdValue = Number(ethers.formatUnits(weiAmount.toString(), 18));
-
-        // Format to always show 2 decimal places
-        return usdValue.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    } catch (error) {
-        console.error("Error formatting Wei amount:", error);
-        return "0.00";
-    }
-};
-
-/**
- * @deprecated This function uses 18 decimals (Wei format) but USDC uses 6 decimals.
- * Use formatMicroAsUsdc() from constants/currency.ts for USDC amounts.
- * Only use this function for actual ETH amounts.
- */
-export const formatWeiToSimpleDollars = (weiAmount: string | bigint | undefined | null): string => {
-    try {
-        // Handle undefined or null values
-        if (isNullish(weiAmount)) {
-            return "0.00";
-        }
-
-        const etherValue = ethers.formatUnits(weiAmount.toString(), 18);
-        return parseFloat(etherValue).toFixed(2);
-    } catch (error) {
-        console.error("Error formatting Wei amount:", error);
-        return "0.00";
-    }
-};
-
-/**
- * @deprecated This function uses 18 decimals (Wei format) but USDC uses 6 decimals.
- * Use formatMicroAsUsdc() from constants/currency.ts for USDC amounts.
- * Only use this function for actual ETH amounts.
- */
-export const formatWeiToUSD = (weiAmount: string | number | undefined | null): string => {
-    try {
-        // Handle undefined or null values
-        if (isNullish(weiAmount)) {
-            return "0.00";
-        }
-
-        // Convert from Wei (18 decimals) to standard units
-        const usdValue = Number(ethers.formatUnits(weiAmount.toString(), 18));
-        // Format to 2 decimal places and add commas
-        return usdValue.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    } catch (error) {
-        console.error("Error formatting Wei amount:", error);
-        return "0.00";
-    }
-};
 
 /**
  * Formats a winning amount with appropriate styling
@@ -190,29 +120,6 @@ export const formatForCashGame = (value: number): string => {
  */
 export const formatDisplayAmount = (value: number, isTournament: boolean): string => {
     return isTournament ? formatForSitAndGo(value) : formatForCashGame(value);
-};
-
-/**
- * @deprecated This function has incorrect conversion logic. USDC values should be in
- * micro-USDC format (6 decimals), not Wei format (18 decimals).
- * Use formatMicroAsUsdc() from constants/currency.ts instead.
- */
-export const formatChipAmount = (chipAmount: string | bigint | undefined | null): string => {
-    try {
-        // Handle undefined or null values
-        if (isNullish(chipAmount)) {
-            return "0.00";
-        }
-
-        // Convert from Wei format (18 decimals) to USDC-compatible format
-        // Divide by 10^14 to get the correct USDC amount, then format with 6 decimals
-        const converted = BigInt(chipAmount.toString()) / BigInt("100000000000000");
-        const usdcValue = ethers.formatUnits(converted.toString(), 6);
-        return parseFloat(usdcValue).toFixed(2);
-    } catch (error) {
-        console.error("Error formatting chip amount:", error);
-        return "0.00";
-    }
 };
 
 /** Format a numeric dollar value for display: "12.50" */
