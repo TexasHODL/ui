@@ -4,6 +4,7 @@ import { PlayerLegalActionsResult } from "./types";
 import { LegalActionDTO, PlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { hasElements } from "../../utils/guards";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 // 🔍 DEBUG: Enhanced logging utility for easy data export (same as GameStateContext)
 const debugLog = (eventType: string, data: any) => {
@@ -32,7 +33,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
     // localStorage is synchronous — read once via useState's initializer so we
     // don't trigger an extra render with a setState-in-effect.
     const [userAddress] = useState<string | null>(
-        () => localStorage.getItem("user_cosmos_address")?.toLowerCase() || null
+        () => localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase() || null
     );
 
     const { gameState } = useGameData();

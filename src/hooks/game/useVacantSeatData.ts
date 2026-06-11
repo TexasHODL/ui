@@ -4,6 +4,7 @@ import { PlayerDTO } from "@block52/poker-vm-sdk";
 import { VacantSeatResponse } from "../../types/index";
 import { isValidPlayerAddress } from "../../utils/addressUtils";
 import { isEmpty, isNullish, hasElements } from "../../utils/guards";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 /**
  * Custom hook to manage data for vacant seats
@@ -16,7 +17,7 @@ export const useVacantSeatData = (): VacantSeatResponse => {
     
     const userAddress = React.useMemo(() => {
         // Use Cosmos address (b52...) instead of Ethereum address
-        return localStorage.getItem("user_cosmos_address")?.toLowerCase() || null;
+        return localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase() || null;
     }, []);
 
     // Memoize players array and maxPlayers to avoid repeated property access

@@ -9,6 +9,7 @@ import { checkHand } from "../playerActions/checkHand";
 import { usePlayerLegalActions } from "../playerActions/usePlayerLegalActions";
 import { useGameOptions } from "../game/useGameOptions";
 import { isEmpty, isNullish } from "../../utils/guards";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { getTimeoutMs, timeoutToSeconds, getLatestActionTimestampMs, calcTimeRemaining, calcProgressPercent } from "../../utils/timerUtils";
 
 // Global state to track time extensions per seat
@@ -75,7 +76,7 @@ export const usePlayerTimer = (tableId?: string, playerSeat?: number): PlayerTim
 
     // Check if this player is the current user
     const isCurrentUser = useMemo((): boolean => {
-        const userAddress = localStorage.getItem("user_cosmos_address")?.toLowerCase();
+        const userAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase();
         return player?.address?.toLowerCase() === userAddress;
     }, [player]);
 

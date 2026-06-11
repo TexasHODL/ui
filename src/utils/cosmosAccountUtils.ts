@@ -6,6 +6,7 @@
 import { getCosmosClient } from "./cosmos/client";
 import type { NetworkEndpoints } from "./cosmos/urls";
 import { truncateMiddle } from "./stringUtils";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 // Local type definition (not exported from SDK main index)
 interface Coin {
@@ -37,7 +38,7 @@ export const getCosmosAddress = async (network: NetworkEndpoints): Promise<strin
  */
 export const getCosmosAddressSync = (): string | null => {
     // Get from localStorage using the correct key (see utils/cosmos/storage.ts)
-    return localStorage.getItem("user_cosmos_address") || null;
+    return localStorage.getItem(STORAGE_KEYS.cosmosAddress) || null;
 };
 
 /**

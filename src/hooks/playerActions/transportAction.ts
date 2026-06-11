@@ -13,6 +13,7 @@
  * published by GameStateContext via setLatestGameState().
  */
 import { NonPlayerActionType, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
@@ -68,7 +69,7 @@ export async function executeTransportAction(
     data?: string
 ): Promise<PlayerActionResult> {
     if (getGameTransport() === "gateway" && !CHAIN_ANCHORED_ACTIONS.has(action)) {
-        const address = localStorage.getItem("user_cosmos_address");
+        const address = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
         const currentPlayer = latestGameState?.players?.find(p => p.address === address);
         const actionIndex = currentPlayer?.legalActions?.[0]?.index;
         if (isNullish(actionIndex)) {
@@ -96,7 +97,7 @@ export async function executeGatewayAction(
     data: string,
     network: NetworkEndpoints
 ): Promise<PlayerActionResult> {
-    const address = localStorage.getItem("user_cosmos_address");
+    const address = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
     if (!address) {
         throw new Error("No Block52 wallet address found. Please connect your wallet.");
     }

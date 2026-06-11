@@ -4,6 +4,7 @@ import { NextToActInfoReturn } from "../../types/index";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getTimeoutMs, timeoutToSeconds } from "../../utils/timerUtils";
 import { isNullish } from "../../utils/guards";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 /**
  * Custom hook to fetch and provide information about who is next to act
@@ -48,7 +49,7 @@ export const useNextToActInfo = (_tableId?: string): NextToActInfoReturn => {
             }
 
             // Check if it's the current user's turn
-            const userAddress = localStorage.getItem("user_cosmos_address")?.toLowerCase();
+            const userAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase();
             const isCurrentUserTurn = player.address?.toLowerCase() === userAddress;
 
             // Get available actions - ensure it's an array
