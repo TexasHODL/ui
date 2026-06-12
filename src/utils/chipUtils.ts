@@ -1,5 +1,6 @@
 import { ActionDTO, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { MAX_ACTION_GROUPS } from "../constants/chips";
+import { hasContent } from "./guards";
 
 /** Action types that place chips on the table */
 export const CHIP_ACTIONS: string[] = [
@@ -104,9 +105,8 @@ export const calculateCurrentRoundBetting = (
         action.playerId === playerAddress &&
         action.round === currentRound &&
         CHIP_ACTIONS.includes(action.action) &&
-        action.amount &&
-        action.amount !== "0" &&
-        action.amount !== ""
+        hasContent(action.amount) &&
+        action.amount !== "0"
     );
 
     const totalCurrentRoundBetting = currentRoundActions.reduce((sum, action) => {

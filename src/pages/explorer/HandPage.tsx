@@ -6,7 +6,7 @@ import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { useNetwork } from "../../context/NetworkContext";
 import { getCardImageUrl, getCardBackUrl, getDealerImageUrl } from "../../utils/cardImages";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
-import { isEmpty, hasElements } from "../../utils/guards";
+import { isEmpty, hasElements, hasContent } from "../../utils/guards";
 import styles from "./HandPage.module.css";
 
 const INDEXER_URL = import.meta.env.VITE_INDEXER_URL || "https://indexer.block52.xyz";
@@ -470,7 +470,7 @@ export default function HandPage() {
                                             <span className="text-gray-500 text-xs w-6 text-right">{i + 1}.</span>
                                             <span className="text-gray-400 font-mono text-xs">{truncateAddress(action.playerId)}</span>
                                             <span className={`font-semibold ${styles.brandText}`}>{action.action}</span>
-                                            {action.amount && action.amount !== "" && action.amount !== "0" && (
+                                            {hasContent(action.amount) && action.amount !== "0" && (
                                                 <span className="text-white">{formatStack(action.amount)}</span>
                                             )}
                                             {action.round && (
