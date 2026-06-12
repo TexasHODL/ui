@@ -1,11 +1,41 @@
-import { COSMOS_CONSTANTS, NonPlayerActionType } from "@block52/poker-vm-sdk";
+import { COSMOS_CONSTANTS, NonPlayerActionType, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { getSigningClient } from "../../utils/cosmos/client";
 import { getGameTransport } from "../../utils/gameTransport";
 import { executeGatewayAction, getLatestGameState, nextActionIndex } from "./transportAction";
 import type { JoinTableOptions } from "./types";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { JoinTableResult } from "../../types";
-import { hasValue } from "../../utils/guards";
+import { hasValue, isNullish } from "../../utils/guards";
+
+/**
+ * Resolves the concrete seat a join should claim.
+ *
+ * "Random seat" used to be expressed as seat 0 ("let the server pick"), but
+ * that only ever worked for cash: the engine's Sit-and-Go / tournament JOIN
+ * does NOT treat 0 as random — it seats the player literally at 0, the
+ * "not-seated" sentinel (chain seats are 1-indexed), so the join lands broken.
+ * When no seat is requested we therefore pick a real empty seat from the latest
+ * broadcast state instead of sending 0.
+ */
+export function resolveJoinSeat(requestedSeat: number | undefined, gameState: TexasHoldemStateDTO | undefined): number {
+    if (hasValue(requestedSeat) && requestedSeat > 0) {
+        return requestedSeat;
+    }
+
+    const maxPlayers = gameState?.gameOptions?.maxPlayers;
+    if (isNullish(maxPlayers)) {
+        // Per Commandment 7: surface it — never fall back to the broken seat 0.
+        throw new Error("Cannot resolve a seat to join — game state not loaded yet");
+    }
+
+    const occupied = new Set((gameState?.players ?? []).map(p => p.seat));
+    for (let seat = 1; seat <= maxPlayers; seat++) {
+        if (!occupied.has(seat)) {
+            return seat;
+        }
+    }
+    throw new Error("No available seats to join");
+}
 
 /**
  * Joins a poker table using Cosmos SDK SigningCosmosClient.
@@ -28,10 +58,9 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
     const amountInUsdc = parseFloat(options.amount);
     const buyInAmount = BigInt(Math.floor(amountInUsdc * Math.pow(10, COSMOS_CONSTANTS.USDC_DECIMALS)));
 
-    // If seatNumber is not provided, default to 0
-    const seat = hasValue(options.seatNumber)
-        ? options.seatNumber
-        : 0;
+    // Resolve a real seat — never the broken seat-0 "random" sentinel (which
+    // the SNG/tournament engine mis-seats). See resolveJoinSeat.
+    const seat = resolveJoinSeat(options.seatNumber, getLatestGameState());
 
     // Gateway transport (ui#440): join is a signed gateway action with the
     // seat in the (signature-bound) data field. A joiner isn't seated yet,
