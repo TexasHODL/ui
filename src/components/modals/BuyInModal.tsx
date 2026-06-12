@@ -8,6 +8,7 @@ import { joinTable } from "../../hooks/playerActions/joinTable";
 import { JoinTableOptions } from "../../hooks/playerActions/types";
 import { useCosmosWallet } from "../../hooks";
 import { usdcToMicroBigInt, microToUsdc } from "../../constants/currency";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useNetwork } from "../../context/NetworkContext";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getBlindsForDisplay } from "../../utils/gameFormatUtils";
@@ -115,7 +116,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
     const handleBuyInChange = useCallback((amount: string) => {
         setBuyInAmount(amount);
         setBuyInError("");
-        localStorage.setItem("buy_in_amount", amount);
+        localStorage.setItem(STORAGE_KEYS.buyInAmount, amount);
     }, []);
 
     const handleJoinClick = useCallback(() => {
@@ -138,8 +139,8 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 return;
             }
 
-            localStorage.setItem("buy_in_amount", buyInAmount);
-            localStorage.setItem("wait_for_big_blind", JSON.stringify(waitForBigBlind));
+            localStorage.setItem(STORAGE_KEYS.buyInAmount, buyInAmount);
+            localStorage.setItem(STORAGE_KEYS.waitForBigBlind, JSON.stringify(waitForBigBlind));
 
             onJoin(buyInAmount, waitForBigBlind);
         } catch (_error) {

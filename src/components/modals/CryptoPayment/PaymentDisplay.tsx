@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { toast } from "react-toastify";
 import type { PaymentDisplayProps } from "../types";
 import { toSmallestUnit, ethToWei } from "../../../utils/currencyUtils";
+import { useCopyToClipboard } from "../../../hooks/useCopyToClipboard";
 import styles from "./PaymentDisplay.module.css";
 
 // USDT ERC-20 contract address on Ethereum mainnet
@@ -33,7 +33,7 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
     expiresAt,
     priceAmount
 }) => {
-    const [copied, setCopied] = useState(false);
+    const { copy, copied } = useCopyToClipboard();
 
     const currencyKey = payCurrency.toLowerCase();
     const info = CURRENCY_INFO[currencyKey];
@@ -63,18 +63,6 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
                 return paymentAddress;
         }
     }, [currencyKey, paymentAddress, payAmount]);
-
-    const handleCopy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-            setCopied(true);
-            toast.success("Address copied to clipboard!", { autoClose: 2000 });
-            setTimeout(() => setCopied(false), 2000);
-        } catch (err) {
-            console.error("Failed to copy:", err);
-            toast.error("Failed to copy address", { autoClose: 2000 });
-        }
-    };
 
     const formatExpiration = (isoString: string) => {
         const date = new Date(isoString);
@@ -144,7 +132,7 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
                         className="w-full p-3 pr-20 border border-gray-600 bg-gray-900 text-white rounded-lg font-mono text-sm"
                     />
                     <button
-                        onClick={() => handleCopy(paymentAddress)}
+                        onClick={() => copy(paymentAddress, "Address copied to clipboard!")}
                         className={`absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 rounded text-xs font-semibold transition-all text-white ${
                             copied ? styles.copyButtonCopied : styles.copyButtonDefault
                         }`}

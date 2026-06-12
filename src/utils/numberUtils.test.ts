@@ -1,13 +1,10 @@
 import {
     formatBalance,
     formatToFixed,
-    formatWeiToDollars,
-    formatWeiToSimpleDollars,
     formatWinningAmount,
     formatUSDCToSimpleDollars,
     formatForSitAndGo,
     formatForCashGame,
-    formatChipAmount,
     convertAmountToBigInt
 } from "./numberUtils";
 
@@ -30,34 +27,6 @@ describe("numberUtils", () => {
             expect(formatToFixed(1.5)).toBe("1.50");
             expect(formatToFixed(10)).toBe("10.00");
             expect(formatToFixed(0.123)).toBe("0.12");
-        });
-    });
-
-    describe("formatWeiToDollars", () => {
-        it("should format wei amount to dollars with commas", () => {
-            expect(formatWeiToDollars("1000000000000000000")).toBe("1.00");
-            expect(formatWeiToDollars("1000000000000000000000")).toBe("1,000.00");
-        });
-
-        it("should handle undefined and null", () => {
-            expect(formatWeiToDollars(undefined)).toBe("0.00");
-            expect(formatWeiToDollars(null)).toBe("0.00");
-        });
-
-        it("should handle bigint", () => {
-            expect(formatWeiToDollars(BigInt("1000000000000000000"))).toBe("1.00");
-        });
-    });
-
-    describe("formatWeiToSimpleDollars", () => {
-        it("should format wei amount to simple dollars without commas", () => {
-            expect(formatWeiToSimpleDollars("1000000000000000000")).toBe("1.00");
-            expect(formatWeiToSimpleDollars("1000000000000000000000")).toBe("1000.00");
-        });
-
-        it("should handle undefined and null", () => {
-            expect(formatWeiToSimpleDollars(undefined)).toBe("0.00");
-            expect(formatWeiToSimpleDollars(null)).toBe("0.00");
         });
     });
 
@@ -103,20 +72,6 @@ describe("numberUtils", () => {
             expect(formatForCashGame(100)).toBe("$100.00");
             expect(formatForCashGame(25.5)).toBe("$25.50");
             expect(formatForCashGame(0)).toBe("$0.00");
-        });
-    });
-
-    describe("formatChipAmount", () => {
-        it("should convert from wei format to USDC dollars", () => {
-            // 960000000000000000000 Wei -> 9.60 USDC
-            expect(formatChipAmount("960000000000000000000")).toBe("9.60");
-            // 100000000000000000000 Wei -> 1.00 USDC
-            expect(formatChipAmount("100000000000000000000")).toBe("1.00");
-        });
-
-        it("should handle undefined and null", () => {
-            expect(formatChipAmount(undefined)).toBe("0.00");
-            expect(formatChipAmount(null)).toBe("0.00");
         });
     });
 

@@ -2,8 +2,6 @@
  * Browser storage utilities for Cosmos wallet data
  */
 
-import { truncateMiddle } from "../stringUtils";
-
 // Storage keys for cosmos data
 export const STORAGE_COSMOS_MNEMONIC = "user_cosmos_mnemonic";
 export const STORAGE_COSMOS_ADDRESS = "user_cosmos_address";
@@ -46,12 +44,4 @@ export const setCosmosAddress = (address: string): void => {
 export const clearCosmosData = (): void => {
     localStorage.removeItem(STORAGE_COSMOS_MNEMONIC);
     localStorage.removeItem(STORAGE_COSMOS_ADDRESS);
-};
-
-/**
- * Get formatted cosmos address for display (shortened with ellipsis)
- * @returns Formatted address string like "b521234...abcd" or empty string if no address
- */
-export const getFormattedCosmosAddress = (length: number = 6): string => {
-    return truncateMiddle(getCosmosAddress(), length, 4);
 };

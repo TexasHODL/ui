@@ -6,12 +6,7 @@
 import { getCosmosClient } from "./cosmos/client";
 import type { NetworkEndpoints } from "./cosmos/urls";
 import { truncateMiddle } from "./stringUtils";
-
-// Local type definition (not exported from SDK main index)
-interface Coin {
-    denom: string;
-    amount: string;
-}
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 /**
  * Get the user's Cosmos address from the initialized client
@@ -37,7 +32,7 @@ export const getCosmosAddress = async (network: NetworkEndpoints): Promise<strin
  */
 export const getCosmosAddressSync = (): string | null => {
     // Get from localStorage using the correct key (see utils/cosmos/storage.ts)
-    return localStorage.getItem("user_cosmos_address") || null;
+    return localStorage.getItem(STORAGE_KEYS.cosmosAddress) || null;
 };
 
 /**
@@ -88,38 +83,5 @@ export const getCosmosBalance = async (network: NetworkEndpoints, denom: string 
     } catch (error) {
         console.error("❌ Error fetching Cosmos balance:", error);
         throw new Error(`Failed to fetch Block52 balance: ${error instanceof Error ? error.message : "Unknown error"}`);
-    }
-};
-
-/**
- * Get all balances for the connected Cosmos account
- * @param network - The network endpoints to use
- * @returns Promise with array of all token balances
- * @throws Error if wallet is not connected or fetch fails
- */
-export const getAllCosmosBalances = async (network: NetworkEndpoints): Promise<Array<{ denom: string; amount: string }>> => {
-    const client = getCosmosClient(network);
-
-    if (!client) {
-        throw new Error("No Block52 wallet connected. Please create or import a wallet first.");
-    }
-
-    // Get address from localStorage instead of client.getWalletAddress() (which doesn't work in REST-only mode)
-    const address = getCosmosAddressSync();
-    if (!address) {
-        throw new Error("No Block52 address found. Please create or import a wallet first.");
-    }
-
-    try {
-        const balances = await client.getAllBalances(address);
-
-        // Convert Coin[] to our format
-        return balances.map((coin: Coin) => ({
-            denom: coin.denom,
-            amount: coin.amount
-        }));
-    } catch (error) {
-        console.error("❌ Error fetching all Cosmos balances:", error);
-        throw new Error(`Failed to fetch all balances: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 };

@@ -10,6 +10,7 @@
 
 import { ethers } from "ethers";
 import { getCosmosMnemonic } from "./storage";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 // Cosmos HD derivation path (same as poker-cli uses: sdk.GetConfig().GetFullBIP44Path())
 const COSMOS_HD_PATH = "m/44'/118'/0'/0/0";
@@ -75,7 +76,7 @@ export async function createAuthPayload(): Promise<{
         }
 
         // Get the Cosmos address from storage (already derived during wallet creation)
-        const cosmosAddress = localStorage.getItem("user_cosmos_address");
+        const cosmosAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
         if (!cosmosAddress) {
             console.error("[signing] No Cosmos address found in storage");
             return null;

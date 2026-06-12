@@ -4,6 +4,7 @@ import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
 import { microToUsdc } from "../../constants/currency";
+import { truncateMiddle } from "../../utils/stringUtils";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements } from "../../utils/guards";
@@ -278,10 +279,7 @@ export default function AllAccountsPage() {
         return `${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })} ${displayDenom}`;
     };
 
-    const truncateAddress = (addr: string) => {
-        if (addr.length <= 20) return addr;
-        return `${addr.substring(0, 12)}...${addr.substring(addr.length - 8)}`;
-    };
+    const truncateAddress = (addr: string) => (addr.length <= 20 ? addr : truncateMiddle(addr, 12, 8));
 
     const toggleSort = (field: "balance" | "address") => {
         if (sortBy === field) {

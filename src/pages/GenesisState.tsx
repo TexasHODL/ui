@@ -4,6 +4,7 @@ import { hasElements } from "../utils/guards";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
+import { copyToClipboard as copyToClipboardUtil } from "../utils/clipboard";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { useCosmosApi } from "../context/CosmosApiContext";
@@ -172,10 +173,7 @@ export default function GenesisState() {
         }
     };
 
-    const copyToClipboard = (text: string, label: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success(`${label} copied to clipboard!`);
-    };
+    const copyToClipboard = (text: string, label: string) => copyToClipboardUtil(text, `${label} copied to clipboard!`);
 
     const formatAmount = (amount: string, denom: string): string => {
         const num = BigInt(amount);

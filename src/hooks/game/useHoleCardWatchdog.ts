@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../context/GameStateContext";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 /**
  * Watchdog for issue #409: hole cards occasionally not visible to the owning player.
@@ -46,7 +47,7 @@ export const useHoleCardWatchdog = (tableId: string | undefined): void => {
         const round = gameState.round;
         if (!round || !ROUNDS_THAT_DEAL_CARDS.has(round)) return;
 
-        const ownAddress = localStorage.getItem("user_cosmos_address");
+        const ownAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
         if (!ownAddress) return;
 
         const me = gameState.players?.find(p => p.address?.toLowerCase() === ownAddress.toLowerCase());

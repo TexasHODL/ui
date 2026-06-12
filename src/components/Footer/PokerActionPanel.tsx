@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { hasContent, hasElements, isNullish } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
+import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import {
     getActionFlags,
@@ -133,7 +134,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     } = useGameSettings();
 
     // Get user address
-    const userAddress = useMemo(() => localStorage.getItem("user_cosmos_address")?.toLowerCase(), []);
+    const userAddress = useMemo(() => localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase(), []);
 
     // Get user player
     const userPlayer = useMemo(() => getUserPlayer(players, userAddress), [players, userAddress]);

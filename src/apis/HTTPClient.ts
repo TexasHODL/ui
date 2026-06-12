@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse, AxiosInstance } from "axios";
+import { STORAGE_KEYS } from "../constants/storageKeys";
 
 export interface HTTPClientConfig {
     baseUrl: string;
@@ -23,7 +24,7 @@ export default class HTTPClient {
         if (config.secure) {
             this.client.interceptors.request.use(
                 async config => {
-                    const token = await window.localStorage.getItem("token");
+                    const token = await window.localStorage.getItem(STORAGE_KEYS.authToken);
                     if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
                     return config;
                 },

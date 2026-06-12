@@ -7,6 +7,7 @@ import { isEmpty } from "../utils/guards";
 import { useNewTable } from "../hooks/game/useNewTable";
 import { useFindGames } from "../hooks/game/useFindGames";
 import { toast } from "react-toastify";
+import { copyToClipboard } from "../utils/clipboard";
 import { formatMicroAsUsdc, USDC_DECIMALS } from "../constants/currency";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import TableList from "../components/TableList";
@@ -858,10 +859,7 @@ export default function TableAdminPage() {
                             <div className="flex items-center justify-between gap-2">
                                 <code className="text-blue-400 text-xs font-mono break-all">{successTxHash}</code>
                                 <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(successTxHash);
-                                        toast.success("Transaction hash copied!");
-                                    }}
+                                    onClick={() => copyToClipboard(successTxHash, "Transaction hash copied!")}
                                     className="p-2 text-gray-400 hover:text-white transition-colors flex-shrink-0"
                                     title="Copy transaction hash"
                                 >

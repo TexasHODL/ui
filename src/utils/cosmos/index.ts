@@ -25,7 +25,6 @@ export {
     setCosmosMnemonic,
     setCosmosAddress,
     clearCosmosData,
-    getFormattedCosmosAddress,
     STORAGE_COSMOS_MNEMONIC,
     STORAGE_COSMOS_ADDRESS
 } from "./storage";
