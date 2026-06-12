@@ -13,6 +13,7 @@ import { useTableState } from "../../../../hooks/game/useTableState";
 import { useVacantSeatData } from "../../../../hooks/game/useVacantSeatData";
 import { isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { UseTableBoardReturn } from "../types";
+import { hasElements } from "../../../../utils/guards";
 
 export const useTableBoard = (): UseTableBoardReturn => {
     const { gameState, gameFormat } = useGameStateContext();
@@ -28,12 +29,12 @@ export const useTableBoard = (): UseTableBoardReturn => {
     }, [gameState?.communityCards]);
 
     // Check if we have community cards
-    const hasCommunityCards = communityCards.length > 0;
+    const hasCommunityCards = hasElements(communityCards);
 
     // Determine if sit & go is waiting for players
     const isSitAndGoWaitingForPlayers = useMemo(() => {
         const isSitAndGo = isSitAndGoFormat(gameFormat);
-        const hasEmptySeats = emptySeatIndexes.length > 0;
+        const hasEmptySeats = hasElements(emptySeatIndexes);
         return isSitAndGo && isUserAlreadyPlaying && hasEmptySeats;
     }, [gameFormat, isUserAlreadyPlaying, emptySeatIndexes.length]);
 

@@ -7,6 +7,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatedBackground } from "../common/AnimatedBackground";
+import { hasElements } from "../../utils/guards";
 
 export interface ValidationError {
     missingFields: string[];
@@ -26,7 +27,7 @@ function TableErrorPage({ error, tableId, onRetry }: TableErrorPageProps): React
 
     // Extract for TypeScript inference
     const missingFields: string[] = error.missingFields;
-    const hasMissingFields = missingFields.length > 0;
+    const hasMissingFields = hasElements(missingFields);
 
     const handleBackToLobby = () => {
         navigate("/tables");

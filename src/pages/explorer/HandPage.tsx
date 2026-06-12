@@ -6,6 +6,7 @@ import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { useNetwork } from "../../context/NetworkContext";
 import { getCardImageUrl, getCardBackUrl, getDealerImageUrl } from "../../utils/cardImages";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+import { isEmpty, hasElements } from "../../utils/guards";
 import styles from "./HandPage.module.css";
 
 const INDEXER_URL = import.meta.env.VITE_INDEXER_URL || "https://indexer.block52.xyz";
@@ -94,7 +95,7 @@ function PlayerCard({ player, isDealer }: { player: PlayerDTO; isDealer: boolean
     const isFolded = player.status === "folded";
     const isBusted = player.status === "busted";
     const dimmed = isFolded || isBusted;
-    const hasHoleCards = player.holeCards && player.holeCards.length > 0;
+    const hasHoleCards = hasElements(player.holeCards);
 
     return (
         <div className={`${styles.playerCard} ${dimmed ? styles.playerDimmed : ""}`}>
@@ -342,7 +343,7 @@ export default function HandPage() {
     useEffect(() => {
         if (selectedHand) {
             fetchGameState(selectedHand.block_height);
-        } else if (handsLoaded && hands.length === 0 && gameId) {
+        } else if (handsLoaded && isEmpty(hands) && gameId) {
             // Indexer returned no hands — fall back to current state
             fetchCurrentGameState();
         }
@@ -460,7 +461,7 @@ export default function HandPage() {
                         )}
 
                         {/* Previous actions log */}
-                        {gameState && gameState.previousActions && gameState.previousActions.length > 0 && (
+                        {gameState && hasElements(gameState.previousActions) && (
                             <div className={`backdrop-blur-md p-4 rounded-xl shadow-2xl mt-4 ${styles.containerCard}`}>
                                 <h3 className="text-lg font-bold text-white mb-3">Actions</h3>
                                 <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -482,7 +483,7 @@ export default function HandPage() {
                         )}
 
                         {/* Winners */}
-                        {gameState && gameState.winners && gameState.winners.length > 0 && (
+                        {gameState && hasElements(gameState.winners) && (
                             <div className={`backdrop-blur-md p-4 rounded-xl shadow-2xl mt-4 ${styles.containerCard}`}>
                                 <h3 className="text-lg font-bold text-white mb-3">Winners</h3>
                                 {gameState.winners.map((w, i) => (
@@ -490,7 +491,7 @@ export default function HandPage() {
                                         <span className="text-gray-400 font-mono text-xs">{truncateAddress(w.address)}</span>
                                         <span className={`font-bold ${styles.successText}`}>{formatPot(w.amount)}</span>
                                         {w.description && <span className="text-gray-400 text-xs">({w.description})</span>}
-                                        {w.cards && w.cards.length > 0 && (
+                                        {hasElements(w.cards) && (
                                             <div className="flex gap-1">
                                                 {w.cards.map((c, ci) => (
                                                     <img key={ci} src={getCardImageUrl(c)} alt={c} className="w-6 h-9" />
@@ -504,7 +505,7 @@ export default function HandPage() {
                     </div>
 
                     {/* Sidebar: hand list */}
-                    {hands.length > 0 && (
+                    {hasElements(hands) && (
                         <div className="lg:w-64 flex-shrink-0">
                             <div className={`backdrop-blur-md rounded-xl shadow-2xl overflow-hidden ${styles.containerCard}`}>
                                 <div className={`px-4 py-3 ${styles.headerCard}`}>

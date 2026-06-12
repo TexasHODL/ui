@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
+import { isEmpty } from "../utils/guards";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -402,7 +403,7 @@ export default function WithdrawalDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-700">
-                                {filteredWithdrawals.length === 0 ? (
+                                {isEmpty(filteredWithdrawals) ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
                                             {isLoading

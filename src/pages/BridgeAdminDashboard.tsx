@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
+import { isEmpty } from "../utils/guards";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -390,7 +391,7 @@ export default function BridgeAdminDashboard() {
     // Process all pending deposits
     const handleProcessAllPending = async () => {
         const pendingDeposits = deposits.filter(d => d.status === "pending");
-        if (pendingDeposits.length === 0) {
+        if (isEmpty(pendingDeposits)) {
             toast.info("No pending deposits to process");
             return;
         }
@@ -787,7 +788,7 @@ export default function BridgeAdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-700">
-                                {filteredDeposits.length === 0 ? (
+                                {isEmpty(filteredDeposits) ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
                                             {isLoading ? "Loading deposits..." : "No deposits found"}

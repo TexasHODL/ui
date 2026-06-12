@@ -5,6 +5,7 @@ import { createAuthPayload } from "../utils/cosmos/signing";
 import { getGameTransport, getGatewayWsUrl, normalizeGatewayMessage } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
 import { validateGameState, extractGameDataFromMessage } from "../utils/gameFormatUtils";
+import { hasElements } from "../utils/guards";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
 import { GameDataProvider, useGameData } from "./gameState/GameDataContext";
@@ -221,7 +222,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                                     avatar: player.avatar
                                 }));
 
-                            if (playersWithAvatars.length > 0) {
+                            if (hasElements(playersWithAvatars)) {
                                 console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
                                     gameId: message.gameId,
                                     event: message.event,

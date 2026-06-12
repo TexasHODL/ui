@@ -5,6 +5,7 @@ import { FaCopy, FaCheck } from "react-icons/fa";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import { getCardImageUrl } from "../../utils/cardImages";
+import { hasElements } from "../../utils/guards";
 import type { HandDetail, HandListItem, HandListResponse } from "./types";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 
@@ -136,7 +137,7 @@ export default function HandReplayPage() {
                             </button>
                         </div>
                     </div>
-                ) : !handNumber && hands.length > 0 ? (
+                ) : !handNumber && hasElements(hands) ? (
                     /* Hands list mode — no hand number in URL */
                     <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
                         <h2 className="text-2xl font-bold text-white mb-2">Hands for Game</h2>
@@ -191,7 +192,7 @@ export default function HandReplayPage() {
                         {/* Community Cards */}
                         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
                             <h3 className="text-lg font-semibold text-white mb-4">Community Cards</h3>
-                            {communityCards.length > 0 ? (
+                            {hasElements(communityCards) ? (
                                 <div className="flex gap-3">
                                     {communityCards.map((card, idx) => (
                                         <img key={idx} src={getCardImageUrl(card)} alt={card} className="w-[70px] h-[105px] rounded shadow-lg" />
@@ -203,7 +204,7 @@ export default function HandReplayPage() {
                         </div>
 
                         {/* Revealed Hole Cards */}
-                        {holeCards.length > 0 && (
+                        {hasElements(holeCards) && (
                             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
                                 <h3 className="text-lg font-semibold text-white mb-4">Revealed Hole Cards</h3>
                                 <div className="flex gap-3">
@@ -234,7 +235,7 @@ export default function HandReplayPage() {
                         )}
 
                         {/* Full Deck (Provably Fair) */}
-                        {deckCards.length > 0 && (
+                        {hasElements(deckCards) && (
                             <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
                                 <h3 className="text-lg font-semibold text-white mb-4">Full Deck (Provably Fair)</h3>
                                 <p className="text-sm text-gray-400 mb-4">

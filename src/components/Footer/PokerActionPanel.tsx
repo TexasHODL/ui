@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { hasContent, isNullish } from "../../utils/guards";
+import { hasContent, hasElements, isNullish } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import {
@@ -472,7 +472,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
         return {
             canFoldAnytime: hasFoldAction && playerStatus !== PlayerStatus.FOLDED && showButtons,
-            showActionButtons: isUsersTurn && legalActions && legalActions.length > 0 && showButtons,
+            showActionButtons: isUsersTurn && hasElements(legalActions) && showButtons,
             showSmallBlindButton: shouldShowSmallBlindButton && showButtons,
             showBigBlindButton: shouldShowBigBlindButton && showButtons
         };

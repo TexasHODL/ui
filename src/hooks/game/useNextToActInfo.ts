@@ -3,7 +3,7 @@ import { PlayerDTO, LegalActionDTO } from "@block52/poker-vm-sdk";
 import { NextToActInfoReturn } from "../../types/index";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { getTimeoutMs, timeoutToSeconds } from "../../utils/timerUtils";
-import { isNullish } from "../../utils/guards";
+import { isEmpty, isNullish } from "../../utils/guards";
 
 /**
  * Custom hook to fetch and provide information about who is next to act
@@ -32,7 +32,7 @@ export const useNextToActInfo = (_tableId?: string): NextToActInfoReturn => {
         };
 
         try {
-            if (!gameState || !gameState.players || !Array.isArray(gameState.players) || gameState.players.length === 0) {
+            if (!gameState || !gameState.players || !Array.isArray(gameState.players) || isEmpty(gameState.players)) {
                 return defaultValues;
             }
 
