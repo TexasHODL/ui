@@ -9,7 +9,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ethers } from "ethers";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { useSitAndGoPlayerJoinRandomSeat } from "../../hooks/game/useSitAndGoPlayerJoinRandomSeat";
+import { joinTable } from "../../hooks/playerActions/joinTable";
 import { formatUSDCToSimpleDollars, formatForSitAndGo } from "../../utils/numberUtils";
 import { getCosmosBalance } from "../../utils/cosmosAccountUtils";
 import { useNetwork } from "../../context/NetworkContext";
@@ -27,14 +27,12 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(true);
     const [buyInError, setBuyInError] = useState("");
     const [hasJoined, setHasJoined] = useState(false);
+    const [isJoining, setIsJoining] = useState(false);
     const { currentNetwork } = useNetwork();
 
     // Get game options
     const { gameOptions } = useGameOptions();
     const { emptySeatIndexes, isUserAlreadyPlaying } = useVacantSeatData();
-
-    // Use the Sit & Go specific join hook with random seat selection
-    const { joinSitAndGo, isJoining } = useSitAndGoPlayerJoinRandomSeat();
 
     // Get the game state context to force refresh after joining
     const { subscribeToTable, gameState: _gameState } = useGameStateContext();
@@ -147,20 +145,25 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 return;
             }
 
+            setIsJoining(true);
 
-            // STEP 1: Convert USDC microunits from gameOptions to dollar amount (number)
-            // gameOptions.maxBuyIn is in USDC microunits (e.g., "1000000" for $1)
-            const buyInAmountInMicrounits = gameOptions.maxBuyIn;
-            const buyInAmountInDollars = microToUsdc(buyInAmountInMicrounits);
+            // Convert the fixed SNG buy-in from USDC microunits to a dollar
+            // string — joinTable converts back to microunits internally.
+            const buyInAmountInDollars = microToUsdc(gameOptions.maxBuyIn);
 
-
-            // STEP 2: Pass the dollar amount (number) to the hook
-            // The hook will handle the conversion back to USDC microunits internally
-            await joinSitAndGo({
+            // Route the join through joinTable so it uses the active transport
+            // (gateway by default, ui#440). The previous path
+            // (useSitAndGoPlayerJoinRandomSeat) submitted chain-direct with
+            // seat 0 — invisible to the gateway the UI reads from, and
+            // mis-seated by the SNG engine. Claim a concrete empty seat.
+            await joinTable(
                 tableId,
-                amount: buyInAmountInDollars // Pass as number (dollars), not string (microunits)
-                // No need to specify seat - SDK will pick randomly
-            });
+                {
+                    amount: String(buyInAmountInDollars),
+                    seatNumber: emptySeatIndexes[0]
+                },
+                currentNetwork
+            );
 
 
             // Mark as joined and notify parent
@@ -189,8 +192,10 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         } catch (error: any) {
             console.error("❌ Failed to join Sit & Go:", error);
             setBuyInError(error.message || "Failed to join table");
+        } finally {
+            setIsJoining(false);
         }
-    }, [publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, joinSitAndGo, subscribeToTable, onJoinSuccess]);
+    }, [publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess]);
 
     // Don't show modal if user is already playing or has joined
     if (isUserAlreadyPlaying || hasJoined) {

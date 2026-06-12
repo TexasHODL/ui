@@ -21,7 +21,7 @@ import { getSigningClient } from "../../utils/cosmos/client";
 import { signActionMessage } from "../../utils/cosmos/signing";
 import { signSettlementTx } from "../../utils/cosmos/settlementTx";
 import { getGameTransport, getGatewayApi } from "../../utils/gameTransport";
-import { hasValue, isNullish } from "../../utils/guards";
+import { isNullish } from "../../utils/guards";
 
 let latestGameState: TexasHoldemStateDTO | undefined;
 
@@ -31,18 +31,30 @@ export function setLatestGameState(gameState: TexasHoldemStateDTO | undefined): 
 }
 
 /**
- * Next action index for a player not yet seated (join): every seated
- * player's legalActions carry the table's next index; an empty table
- * starts at 1.
+ * Next action index for a player not yet seated (join).
+ *
+ * The engine validates `index === actionCount + previousActions.length + 1`
+ * (TexasHoldem.getActionIndex), which is the SDK's canonical
+ * getNextActionIndex. We must reproduce that formula exactly.
+ *
+ * The previous approach — reading a seated player's `legalActions[0].index`
+ * with a fallback of 1 — only holds while the game is running. A Sit-and-Go
+ * waiting to fill has SEATED (not yet ACTIVE) players that carry NO
+ * legalActions, so it fell through to the stale `1` fallback: the first join
+ * (index 1) landed, but every subsequent join still sent `1` while the engine
+ * now expected 2, 3, … → "Invalid action index", join rejected (ui#440).
+ * Cash games hid this because you join a running table whose seated players
+ * do carry the correct index.
  */
 export function nextActionIndex(gameState: TexasHoldemStateDTO | undefined): number {
-    for (const player of gameState?.players ?? []) {
-        const index = player.legalActions?.[0]?.index;
-        if (hasValue(index)) {
-            return index;
-        }
+    const previousActions = gameState?.previousActions;
+    if (previousActions && previousActions.length > 0) {
+        return previousActions[previousActions.length - 1].index + 1;
     }
-    return 1;
+    // Fresh/empty table: actionCount is 0 here, so this is 1 — matching the
+    // prior empty-table default while staying correct for a seeded table whose
+    // count is already non-zero.
+    return (gameState?.actionCount ?? 0) + 1;
 }
 
 /** Latest snapshot, for callers that resolve their own index (join). */
