@@ -26,6 +26,7 @@ import { getCardImageUrl, getCardBackUrl, CardBackStyle } from "../../../utils/c
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
+import { hasElements } from "../../../utils/guards";
 import styles from "./PlayersCommon.module.css";
 
 type OppositePlayerProps = {
@@ -67,7 +68,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
     }, [getSeatResult, isSitAndGo, index]);
 
     // 1) detect when any winner exists
-    const hasWinner = React.useMemo(() => Array.isArray(winnerInfo) && winnerInfo.length > 0, [winnerInfo]);
+    const hasWinner = React.useMemo(() => hasElements(winnerInfo), [winnerInfo]);
 
     // Check if this player is a winner
     const isWinner = React.useMemo(() => {

@@ -3,6 +3,7 @@ import { GameFormat, CosmosClient, getDefaultCosmosConfig, PlayerDTO } from "@bl
 import { Link, useNavigate } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { isValidPlayerAddress } from "../utils/addressUtils";
+import { isEmpty } from "../utils/guards";
 import { useNewTable } from "../hooks/game/useNewTable";
 import { useFindGames } from "../hooks/game/useFindGames";
 import { toast } from "react-toastify";
@@ -239,7 +240,7 @@ export default function TableAdminPage() {
         const currentTableIds = tables.map(t => t.gameId).join(",");
 
         // Only fetch if tables changed (not just reference equality)
-        if (tables.length === 0 || currentTableIds === tableIdsRef.current) {
+        if (isEmpty(tables) || currentTableIds === tableIdsRef.current) {
             return;
         }
 

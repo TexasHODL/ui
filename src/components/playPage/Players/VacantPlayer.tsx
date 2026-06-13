@@ -28,6 +28,7 @@ import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../..
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
 import { getGameTransport } from "../../../utils/gameTransport";
+import { hasElements } from "../../../utils/guards";
 import { useNetwork } from "../../../context/NetworkContext";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
@@ -330,7 +331,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                 <div className="mb-6">
                                     <div className="text-xs text-gray-400 mb-2">Your USDC Balance:</div>
                                     {/* Require update here when cosmos client return array of usdc = 0 instead of returning an empty array */}
-                                    {cosmosWallet.balance.length > 0 ? (
+                                    {hasElements(cosmosWallet.balance) ? (
                                         cosmosWallet.balance.map((balance, idx) => {
                                             if (balance.denom === "usdc") {
                                                 const usdcAmount = microToUsdc(balance.amount);

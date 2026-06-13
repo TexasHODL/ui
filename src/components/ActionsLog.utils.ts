@@ -1,6 +1,7 @@
 import { ActionDTO, TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { formatPlayerId, formatAmount } from "../utils/accountUtils";
 import { WinnerInfo } from "../types/index";
+import { hasElements } from "../utils/guards";
 
 export const formatActionName = (action: string): string => {
     switch (action.toLowerCase()) {
@@ -81,6 +82,5 @@ export const shouldShowWinnerSummary = (
     winnerInfo: WinnerInfo[] | null | undefined
 ): boolean => {
     return gameState?.round === TexasHoldemRound.END
-        && Array.isArray(winnerInfo)
-        && winnerInfo.length > 0;
+        && hasElements(winnerInfo);
 };

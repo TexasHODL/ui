@@ -14,6 +14,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { getBlindsForDisplay } from "../../utils/gameFormatUtils";
 import { GameFormat } from "@block52/poker-vm-sdk";
 import DepositCore from "./DepositCore";
+import { isEmpty, hasElements } from "../../utils/guards";
 import styles from "./BuyInModal.module.css";
 
 import type { BuyInModalProps } from "./types";
@@ -98,7 +99,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
 
     // Check if random seat join is available
     const canJoinRandomSeat = useMemo(() => {
-        return !isUserAlreadyPlaying && emptySeatIndexes.length > 0 && !isDisabled && !isJoiningRandomSeat && !exceedsBalance;
+        return !isUserAlreadyPlaying && hasElements(emptySeatIndexes) && !isDisabled && !isJoiningRandomSeat && !exceedsBalance;
     }, [isUserAlreadyPlaying, emptySeatIndexes.length, isDisabled, isJoiningRandomSeat, exceedsBalance]);
 
     const viewTableDisabled = exceedsBalance;
@@ -171,7 +172,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             }
 
             // Get a random empty seat
-            if (emptySeatIndexes.length === 0) {
+            if (isEmpty(emptySeatIndexes)) {
                 setBuyInError("No empty seats available.");
                 return;
             }
@@ -258,7 +259,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                         <div className="text-red-400 text-sm text-center py-2">Error loading balances</div>
                     ) : !cosmosWallet.address ? (
                         <div className="text-gray-400 text-sm text-center py-2">No wallet connected</div>
-                    ) : cosmosWallet.balance.length === 0 ? (
+                    ) : isEmpty(cosmosWallet.balance) ? (
                         <div className="text-yellow-400 text-sm text-center py-2">⚠️ No tokens found - You need tokens to play!</div>
                     ) : (
                         <div className="space-y-2">

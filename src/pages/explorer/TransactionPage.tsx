@@ -6,6 +6,7 @@ import { colors } from "../../utils/colorConfig";
 import { renderJSONWithClickableAddresses } from "../../components/explorer/ClickableAddress";
 import { CosmosTransaction, CosmosEvent, CosmosEventAttribute, CosmosMessage } from "./types";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
+import { hasElements } from "../../utils/guards";
 import styles from "./TransactionPage.module.css";
 
 export default function TransactionPage() {
@@ -199,7 +200,7 @@ export default function TransactionPage() {
                             </div>
 
                             {/* Messages */}
-                            {transaction.tx.body.messages.length > 0 && (
+                            {hasElements(transaction.tx.body.messages) && (
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-3">Messages ({transaction.tx.body.messages.length})</h3>
                                     <div className="space-y-3">
@@ -359,7 +360,7 @@ export default function TransactionPage() {
 
                             {/* Event Explanation */}
                             {transaction.tx_response.events &&
-                                transaction.tx_response.events.length > 0 &&
+                                hasElements(transaction.tx_response.events) &&
                                 (() => {
                                     // Helper function to explain each event type
                                     const explainEvent = (event: CosmosEvent, index: number) => {
@@ -587,7 +588,7 @@ export default function TransactionPage() {
                                 })()}
 
                             {/* Events */}
-                            {transaction.tx_response.events && transaction.tx_response.events.length > 0 && (
+                            {hasElements(transaction.tx_response.events) && (
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-3">Raw Events Data ({transaction.tx_response.events.length})</h3>
                                     <pre

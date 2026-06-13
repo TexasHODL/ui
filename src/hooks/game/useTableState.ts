@@ -5,6 +5,7 @@ import { TexasHoldemRound, GameFormat } from "@block52/poker-vm-sdk";
 import { TableStateReturn } from "../../types/index";
 import { getGameFormat } from "../../utils/gameFormatUtils";
 import { formatMicroAsUsdc } from "../../constants/currency";
+import { hasElements } from "../../utils/guards";
 
 
 const DEFAULT_TABLE_SIZE = 9;
@@ -46,7 +47,7 @@ export const useTableState = (): TableStateReturn => {
         let totalPotWei = "0";
         if (gameState.totalPot) {
             totalPotWei = gameState.totalPot;
-        } else if (gameState.pots && Array.isArray(gameState.pots) && gameState.pots.length > 0) {
+        } else if (hasElements(gameState.pots)) {
             totalPotWei = gameState.pots[0];
         }
 

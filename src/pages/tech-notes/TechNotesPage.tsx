@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
+import { isEmpty, hasElements } from "../../utils/guards";
 
 const RELEASE_NOTES_URL =
     import.meta.env.VITE_APP_RELEASE_NOTE_URL ?? "https://raw.githubusercontent.com/block52/cards/refs/heads/main/release-notes/release-notes.json";
@@ -135,9 +136,9 @@ export default function TechNotesPage() {
                     </div>
                 )}
 
-                {!loading && !error && notes.length === 0 && <div className="text-center py-20 text-gray-500">No release notes found.</div>}
+                {!loading && !error && isEmpty(notes) && <div className="text-center py-20 text-gray-500">No release notes found.</div>}
 
-                {!loading && !error && notes.length > 0 && (
+                {!loading && !error && hasElements(notes) && (
                     <div className="flex flex-col gap-4">
                         {notes.map(note => (
                             <NoteCard key={note.id} note={note} />
