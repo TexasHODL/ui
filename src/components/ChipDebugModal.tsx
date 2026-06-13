@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from "react";
 import Chip from "./playPage/common/Chip";
 import { decomposeAmount, ChipStackEntry, parseCustomAmounts, chipColorClass } from "../utils/chipBreakdown";
+import { hasElements } from "../utils/guards";
 
 /**
  * Convert a dollar amount to USDC micro-unit string (6 decimals).
@@ -72,7 +73,7 @@ const ChipDebugModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         setCustomAmounts(text);
         setActivePresetIndex(null);
         const parsed = parseCustom(text);
-        if (parsed.length > 0) {
+        if (hasElements(parsed)) {
             setLiveAmounts(parsed);
         }
     }, [parseCustom]);

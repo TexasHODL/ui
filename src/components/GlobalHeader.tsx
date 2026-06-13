@@ -4,6 +4,7 @@ import { NetworkSelector } from "./NetworkSelector";
 import { useNetwork } from "../context/NetworkContext";
 import { getCosmosClient } from "../utils/cosmos/client";
 import { ProfileAvatarButton } from "./profile";
+import { hasElements } from "../utils/guards";
 import styles from "./GlobalHeader.module.css";
 
 interface MenuItem {
@@ -81,7 +82,7 @@ export const GlobalHeader: React.FC = () => {
                 if (!cosmosClient) return;
 
                 const blocks = await cosmosClient.getLatestBlocks(1);
-                if (blocks.length > 0) {
+                if (hasElements(blocks)) {
                     setLatestBlockHeight(blocks[0].block.header.height);
                     setHasError(false);
                 }

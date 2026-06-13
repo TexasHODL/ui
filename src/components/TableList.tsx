@@ -11,7 +11,7 @@ import DeleteTableModal from "./modals/DeleteTableModal";
 import ForceCloseTableModal from "./modals/ForceCloseTableModal";
 import { Pagination, SortButton, SortDirection } from "./common";
 import styles from "./TableList.module.css";
-import { isNullish } from "../utils/guards";
+import { isNullish, isEmpty } from "../utils/guards";
 
 const PAGE_SIZE = 20;
 
@@ -310,7 +310,7 @@ const TableList: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-700">
-                        {games.length === 0 ? (
+                        {isEmpty(games) ? (
                             <tr>
                                 <td colSpan={9} className="px-6 py-12 text-center text-gray-400">
                                     <div className="mb-4">

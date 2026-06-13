@@ -5,6 +5,7 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { DiscoveredNode, discoverNodes, probeNodes, getCachedNodes, cacheNodes, clearNodeCache } from "../services/nodeDiscovery";
+import { isEmpty, hasElements } from "../utils/guards";
 
 // Filter out localhost for production view
 const productionNodes = NETWORK_PRESETS.filter(n => n.name !== "Localhost");
@@ -55,7 +56,7 @@ export default function NodesPage() {
     // Handles variations like "Texas Hodl" matching "validator-texashodl"
     const isValidator = useCallback(
         (moniker: string): boolean => {
-            if (!moniker || validators.length === 0) return false;
+            if (!moniker || isEmpty(validators)) return false;
             // Normalize: lowercase, remove spaces/dashes/underscores
             const normalize = (s: string) => s.toLowerCase().replace(/[\s\-_]/g, "");
             const normalizedMoniker = normalize(moniker);
@@ -132,7 +133,7 @@ export default function NodesPage() {
             cacheNodes(newDiscovered);
 
             // Now probe the discovered nodes to check reachability
-            if (newDiscovered.length > 0) {
+            if (hasElements(newDiscovered)) {
                 setIsProbing(true);
                 const probed = await probeNodes(newDiscovered);
                 setDiscoveredNodes(probed);
@@ -333,10 +334,10 @@ export default function NodesPage() {
                 <div>
                     <h2 className="text-lg font-semibold text-white mb-4">
                         Discovered Nodes
-                        {discoveredNodes.length > 0 && <span className="ml-2 text-sm font-normal text-gray-400">({discoveredNodes.length} found)</span>}
+                        {hasElements(discoveredNodes) && <span className="ml-2 text-sm font-normal text-gray-400">({discoveredNodes.length} found)</span>}
                     </h2>
 
-                    {discoveredNodes.length === 0 ? (
+                    {isEmpty(discoveredNodes) ? (
                         <div className="text-center py-8 bg-gray-800/50 border border-gray-700 rounded-lg">
                             <svg className="w-12 h-12 text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

@@ -1,3 +1,5 @@
+import { hasContent } from "./guards";
+
 // JWT Cookie management functions
 export const setAuthCookie = (): void => {
     const expirationDate = new Date();
@@ -32,7 +34,7 @@ export const checkAuthCookie = (): boolean => {
 // Check if password protection is enabled via env variable
 export const isPasswordProtectionEnabled = (): boolean => {
     const envPassword = import.meta.env.VITE_SITE_PASSWORD;
-    return typeof envPassword === "string" && envPassword.length > 0;
+    return hasContent(envPassword);
 };
 
 // Password validation function

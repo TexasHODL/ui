@@ -6,6 +6,7 @@ import { getCosmosMnemonic } from "../utils/cosmos/storage";
 import { useNetwork } from "../context/NetworkContext";
 import { USDC_TO_MICRO, microToUsdc } from "../constants/currency";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
+import { isEmpty } from "../utils/guards";
 import { isTournamentFormat } from "../utils/gameFormatUtils";
 import styles from "./TestSigningPage.module.css";
 
@@ -832,7 +833,7 @@ export default function TestSigningPage() {
                                 <div className="text-gray-300">
                                     <span className="font-semibold">Balances:</span>
                                 </div>
-                                {balances.length === 0 ? (
+                                {isEmpty(balances) ? (
                                     <div className="text-yellow-400 text-sm ml-4">⚠️ No tokens found - You need tokens to send transactions!</div>
                                 ) : (
                                     <div className="ml-4 space-y-2">
