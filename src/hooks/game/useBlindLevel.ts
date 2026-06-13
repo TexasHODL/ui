@@ -33,18 +33,20 @@ export interface BlindLevelInfo {
  * Hook that reads blind level information from the backend game state
  * for SNG/Tournament games.
  *
- * The level, current blinds, and next blinds all come from the PVM via
- * GameOptionsDTO. The timer countdown requires a game start time.
- *
- * @param startTime - Optional epoch ms when the game started (for timer)
+ * The level, current blinds, next blinds, and the level start time all come
+ * from the PVM via GameOptionsDTO. The timer countdown requires levelStartTime.
  */
-export const useBlindLevel = (startTime?: number): BlindLevelInfo => {
+export const useBlindLevel = (): BlindLevelInfo => {
     const { gameState, gameFormat } = useGameStateContext();
     const [now, setNow] = useState<number>(0);
 
     const isActive = isSitAndGoFormat(gameFormat) || isTournamentFormat(gameFormat);
 
     const gameOptions = gameState?.gameOptions;
+
+    // Epoch ms when the current blind level started (for the countdown).
+    // Read directly off gameOptions — useGameOptions() does not surface this field.
+    const startTime = gameOptions?.levelStartTime;
 
     // Current blinds from backend (already escalated by PVM)
     const currentSB = gameOptions?.smallBlind ? Number(gameOptions.smallBlind) : 0;
