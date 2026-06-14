@@ -5,6 +5,7 @@ import { truncateHash, formatTimestampRelative, formatProposerAddress } from "..
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
+import { isEmpty, hasElements } from "../../utils/guards";
 
 // Define block response type locally to match Cosmos API response
 interface CosmosBlockResponse {
@@ -89,7 +90,7 @@ export default function BlocksPage() {
             const fullMessage = errorMessage + suggestion;
 
             // Graceful degradation: Keep old blocks if we have cached data
-            if (blocks.length > 0) {
+            if (hasElements(blocks)) {
                 setError(`⚠️ Network unavailable - showing cached data. ${fullMessage}`);
             } else {
                 setError(fullMessage);
@@ -120,7 +121,7 @@ export default function BlocksPage() {
         };
     }, [currentNetwork, fetchBlocks]);
 
-    if (loading && blocks.length === 0) {
+    if (loading && isEmpty(blocks)) {
         return (
             <div className="min-h-screen flex items-center justify-center relative">
                 <AnimatedBackground />
@@ -134,7 +135,7 @@ export default function BlocksPage() {
         );
     }
 
-    if (error && blocks.length === 0) {
+    if (error && isEmpty(blocks)) {
         return (
             <div className="min-h-screen p-8 relative">
                 <AnimatedBackground />
@@ -205,7 +206,7 @@ export default function BlocksPage() {
                                             </a>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {block.block.data.txs.length === 0 ? (
+                                            {isEmpty(block.block.data.txs) ? (
                                                 <span className="text-gray-400">0 txs</span>
                                             ) : (
                                                 <span className="text-green-400 font-semibold">

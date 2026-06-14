@@ -184,12 +184,11 @@ Displays Sit & Go tournament results and prize distribution.
 const { results, prizes, isComplete } = useSitAndGoPlayerResults();
 ```
 
-#### `useSitAndGoPlayerJoinRandomSeat()`
-Auto-assigns random seat when joining Sit & Go.
-
-```typescript
-const { joinRandomSeat, isJoining } = useSitAndGoPlayerJoinRandomSeat();
-```
+> **Note:** Sit & Go joins go through the transport-aware `joinTable()`
+> (`hooks/playerActions/joinTable.ts`) like every other join, which resolves a
+> concrete empty seat and routes through the active transport (gateway by
+> default, ui#440). The old `useSitAndGoPlayerJoinRandomSeat` hook — chain-direct
+> with the seat-0 "random" sentinel — was removed.
 
 ### Winner Display
 

@@ -7,6 +7,7 @@ import { microToUsdc } from "../../constants/currency";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
+import { isEmpty, hasElements } from "../../utils/guards";
 import { Pagination } from "../../components/common";
 import styles from "./AllAccountsPage.module.css";
 import { useCosmosApi } from "../../context/CosmosApiContext";
@@ -354,7 +355,7 @@ export default function AllAccountsPage() {
                                 <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${styles.loadingSpinner}`}></div>
                                 <p className="text-gray-400">Loading accounts...</p>
                             </div>
-                        ) : filteredAndSortedAccounts.length === 0 ? (
+                        ) : isEmpty(filteredAndSortedAccounts) ? (
                             <div className="p-8 text-center">
                                 <p className="text-gray-400">No accounts found</p>
                             </div>
@@ -424,7 +425,7 @@ export default function AllAccountsPage() {
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    {account.balances.length === 0 ? (
+                                                    {isEmpty(account.balances) ? (
                                                         <span className="text-gray-500">-</span>
                                                     ) : (
                                                         <div className="flex flex-col items-end gap-1">
@@ -445,7 +446,7 @@ export default function AllAccountsPage() {
                                 </table>
                             </div>
                         )}
-                        {!loading && filteredAndSortedAccounts.length > 0 && (
+                        {!loading && hasElements(filteredAndSortedAccounts) && (
                             <Pagination
                                 currentPage={currentPage}
                                 totalItems={filteredAndSortedAccounts.length}

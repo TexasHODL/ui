@@ -7,6 +7,7 @@ import { microToUsdc } from "../constants/currency";
 import styles from "./TransactionPanel.module.css";
 import { formatTransactionLabel, formatTransferDirection, getTransferDirectionClass, formatShortHash, formatGameId } from "../utils/transactionUtils";
 import { useCosmosApi } from "../context/CosmosApiContext";
+import { isEmpty, hasElements } from "../utils/guards";
 
 interface Transaction {
     txhash: string;
@@ -203,7 +204,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
 
             {/* Content */}
             <div className="p-4">
-                {loading && transactions.length === 0 ? (
+                {loading && isEmpty(transactions) ? (
                     <div className="flex items-center justify-center py-8">
                         <svg className="animate-spin h-6 w-6 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -221,7 +222,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                             Try again
                         </button>
                     </div>
-                ) : transactions.length === 0 ? (
+                ) : isEmpty(transactions) ? (
                     <div className="text-center py-6">
                         <svg className="w-10 h-10 mx-auto text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
@@ -271,7 +272,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                 )}
 
                 {/* View All Link */}
-                {transactions.length > 0 && cosmosWalletAddress && (
+                {hasElements(transactions) && cosmosWalletAddress && (
                     <button
                         onClick={() => navigate(`/explorer/address/${cosmosWalletAddress}`)}
                         className={`w-full mt-4 text-center text-sm transition-all hover:opacity-80 flex items-center justify-center gap-2 ${styles.primaryText}`}

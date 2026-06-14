@@ -13,6 +13,7 @@ import { useTableData } from "../../../../hooks/game/useTableData";
 import { usePlayerSeatInfo } from "../../../../hooks/player/usePlayerSeatInfo";
 import { useTableState } from "../../../../hooks/game/useTableState";
 import { UsePlayerLayoutReturn } from "../types";
+import { isEmpty } from "../../../../utils/guards";
 
 export const usePlayerLayout = (): UsePlayerLayoutReturn => {
     const { tableSize } = useTableState();
@@ -22,7 +23,7 @@ export const usePlayerLayout = (): UsePlayerLayoutReturn => {
 
     // Calculate player positions based on table layout
     const playerPositions = useMemo(() => {
-        if (!tableDataPlayers || tableDataPlayers.length === 0) {
+        if (isEmpty(tableDataPlayers)) {
             return [];
         }
 

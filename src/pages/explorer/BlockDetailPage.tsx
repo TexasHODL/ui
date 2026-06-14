@@ -5,6 +5,7 @@ import { useNetwork } from "../../context/NetworkContext";
 import { ClickableAddress } from "../../components/explorer/ClickableAddress";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { formatProposerAddress } from "../../utils/formatUtils";
+import { isEmpty, hasElements } from "../../utils/guards";
 import { truncateMiddle } from "../../utils/stringUtils";
 import styles from "./BlockDetailPage.module.css";
 // Define block response type locally to match Cosmos API response
@@ -420,11 +421,11 @@ export default function BlockDetailPage() {
                 {/* Transactions Card */}
                 <div className={`backdrop-blur-md rounded-xl shadow-2xl overflow-hidden ${styles.containerCard}`}>
                     <div className={`px-6 py-4 ${styles.headerCard}`}>
-                        <h2 className="text-2xl font-bold text-white">Transactions {block.block.data.txs.length > 0 && `(${block.block.data.txs.length})`}</h2>
+                        <h2 className="text-2xl font-bold text-white">Transactions {hasElements(block.block.data.txs) && `(${block.block.data.txs.length})`}</h2>
                     </div>
 
                     <div className="p-6">
-                        {block.block.data.txs.length === 0 ? (
+                        {isEmpty(block.block.data.txs) ? (
                             <div className="text-center py-12">
                                 <p className="text-gray-400 text-lg">No transactions in this block</p>
                             </div>

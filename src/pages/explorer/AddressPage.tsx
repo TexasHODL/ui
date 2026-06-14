@@ -5,6 +5,7 @@ import { useNetwork } from "../../context/NetworkContext";
 import { microToUsdc } from "../../constants/currency";
 import { Coin } from "./types";
 import { formatTimestampRelative } from "../../utils/formatUtils";
+import { isEmpty, hasElements } from "../../utils/guards";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import styles from "./AddressPage.module.css";
@@ -201,7 +202,7 @@ export default function AddressPage() {
                 )}
 
                 {/* Results */}
-                {!loading && !error && (balances.length > 0 || transactions.length > 0) && (
+                {!loading && !error && (hasElements(balances) || hasElements(transactions)) && (
                     <>
                         {/* Tabs */}
                         <div className={`backdrop-blur-md p-2 rounded-xl shadow-2xl mb-6 flex gap-2 ${styles.containerCard}`}>
@@ -223,7 +224,7 @@ export default function AddressPage() {
                         {activeTab === "balances" && (
                             <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                                 <h2 className="text-2xl font-bold text-white mb-4">Token Balances</h2>
-                                {balances.length === 0 ? (
+                                {isEmpty(balances) ? (
                                     <p className="text-gray-400 text-center py-8">No balances found for this address</p>
                                 ) : (
                                     <div className="space-y-3">
@@ -249,7 +250,7 @@ export default function AddressPage() {
                         {activeTab === "transactions" && (
                             <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                                 <h2 className="text-2xl font-bold text-white mb-4">Transaction History</h2>
-                                {transactions.length === 0 ? (
+                                {isEmpty(transactions) ? (
                                     <p className="text-gray-400 text-center py-8">No transactions found for this address</p>
                                 ) : (
                                     <div className="space-y-3">
@@ -297,7 +298,7 @@ export default function AddressPage() {
                 )}
 
                 {/* No Results */}
-                {!loading && !error && balances.length === 0 && transactions.length === 0 && urlAddress && (
+                {!loading && !error && isEmpty(balances) && isEmpty(transactions) && urlAddress && (
                     <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-center">No data found for this address</p>
                     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNetwork } from "../context/NetworkContext";
+import { hasElements } from "../utils/guards";
 import styles from "./NetworkSelector.module.css";
 
 export const NetworkSelector: React.FC = () => {
@@ -96,7 +97,7 @@ export const NetworkSelector: React.FC = () => {
                     })}
 
                     {/* Discovered Networks Section */}
-                    {discoveredNetworks.length > 0 && (
+                    {hasElements(discoveredNetworks) && (
                         <>
                             {/* Section Header */}
                             <div

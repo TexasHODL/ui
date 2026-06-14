@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import styles from "./ClickableAddress.module.css";
-import { isNullish } from "../../utils/guards";
+import { isNullish, isEmpty } from "../../utils/guards";
 
 interface ClickableAddressProps {
     address: string;
@@ -63,7 +63,7 @@ export const renderJSONWithClickableAddresses = (obj: unknown, depth = 0): React
     }
 
     if (Array.isArray(obj)) {
-        if (obj.length === 0) {
+        if (isEmpty(obj)) {
             return <span>[]</span>;
         }
         return (
@@ -84,7 +84,7 @@ export const renderJSONWithClickableAddresses = (obj: unknown, depth = 0): React
 
     if (typeof obj === "object") {
         const entries = Object.entries(obj as Record<string, unknown>);
-        if (entries.length === 0) {
+        if (isEmpty(entries)) {
             return <span>{"{}"}</span>;
         }
         return (

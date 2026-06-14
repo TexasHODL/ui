@@ -100,7 +100,7 @@ export function usePlayerLegalActions(): PlayerLegalActionsResult {
 
             // Calculate the common action turn index
             let actionTurnIndex: number = 0;
-            if (Array.isArray(currentPlayer.legalActions) && currentPlayer.legalActions.length > 0) {
+            if (hasElements(currentPlayer.legalActions)) {
                 const firstActionIndex = currentPlayer.legalActions[0].index;
 
                 // Verify that all actions have the same index (for debugging)

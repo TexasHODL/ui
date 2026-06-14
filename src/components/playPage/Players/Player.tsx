@@ -17,6 +17,7 @@ import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext"
 import { useNetwork } from "../../../context/NetworkContext";
 import { handleSitIn } from "../../common/actionHandlers";
 import { SIT_IN_METHOD_POST_NOW } from "../../../hooks/playerActions";
+import { hasElements } from "../../../utils/guards";
 import styles from "./PlayersCommon.module.css";
 
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
@@ -86,7 +87,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         const shouldShowTimerExtension = playerCount >= 2 && canExtend && isCurrentUserTurn && !isExtending;
 
         // 1) detect when any winner exists
-        const hasWinner = useMemo(() => Array.isArray(winnerInfo) && winnerInfo.length > 0, [winnerInfo]);
+        const hasWinner = useMemo(() => hasElements(winnerInfo), [winnerInfo]);
 
         // 2) memoize winner check
         const isWinner = useMemo(() => !!winnerInfo?.some((w: WinnerInfo) => w.seat === index), [winnerInfo, index]);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
+import { hasElements } from "../utils/guards";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -310,7 +311,7 @@ export default function GenesisState() {
                                 {/* Balances */}
                                 <div className="mt-3">
                                     <h4 className="text-sm text-gray-400 mb-2">Balances:</h4>
-                                    {account.balances.length > 0 ? (
+                                    {hasElements(account.balances) ? (
                                         <div className="space-y-1">
                                             {account.balances.map(balance => (
                                                 <div key={balance.denom} className="flex items-center gap-2">
@@ -384,7 +385,7 @@ export default function GenesisState() {
                                             )}
 
                                             {/* Show balances if account is in genesis */}
-                                            {genesisAccount && genesisAccount.balances.length > 0 && (
+                                            {genesisAccount && hasElements(genesisAccount.balances) && (
                                                 <div className="mt-2">
                                                     <span className="text-xs text-gray-500">Balances: </span>
                                                     {genesisAccount.balances.map((bal, idx) => (
@@ -428,7 +429,7 @@ export default function GenesisState() {
                 </div>
 
                 {/* Validators Info */}
-                {validators.length > 0 && (
+                {hasElements(validators) && (
                     <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
                         <h2 className="text-2xl font-bold text-white mb-4">👑 Validators ({validators.length})</h2>
                         <div className="space-y-3">

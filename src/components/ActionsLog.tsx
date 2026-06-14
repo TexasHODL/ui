@@ -9,6 +9,7 @@ import { formatActionName, formatRoundName, getActionLine, getWinnerLine, should
 import { FaCopy, FaCheck, FaFileDownload, FaShare } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { useGameStateContext } from "../context/GameStateContext";
+import { isEmpty, hasElements } from "../utils/guards";
 import styles from "./ActionsLog.module.css";
 
 // Simple component to display only the action log
@@ -62,7 +63,7 @@ const ActionsLog: React.FC = () => {
 
     // Function to copy action log to clipboard
     const handleCopyLog = () => {
-        if (!previousActions || previousActions.length === 0) {
+        if (isEmpty(previousActions)) {
             toast.info("No actions to copy");
             return;
         }
@@ -173,7 +174,7 @@ const ActionsLog: React.FC = () => {
                 </div>
             </div>
             
-            {previousActions && previousActions.length > 0 ? (
+            {hasElements(previousActions) ? (
                 <div className="space-y-0.5 p-2">
                     {previousActions.map((action: ActionDTO, index: number) => (
                         <div

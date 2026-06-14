@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
+import { isEmpty, isBlank, hasContent } from "../utils/guards";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
@@ -183,7 +184,7 @@ export default function BridgeAdminDashboard() {
                     const [account, amount] = await contract.deposits(i);
 
                     // If account is empty, deposit doesn't exist
-                    if (!account || account === "") {
+                    if (isBlank(account)) {
                         setTotalDepositsFound(i); // Set total to the last found index
                         break;
                     }
@@ -208,7 +209,7 @@ export default function BridgeAdminDashboard() {
                 // Check if next item exists to determine if there are more pages
                 try {
                     const [account] = await contract.deposits(endIndex);
-                    if (account && account !== "") {
+                    if (hasContent(account)) {
                         setTotalDepositsFound(endIndex + 1); // At least one more exists
                     } else {
                         setTotalDepositsFound(endIndex); // This is the last page
@@ -392,7 +393,7 @@ export default function BridgeAdminDashboard() {
     // Process all pending deposits
     const handleProcessAllPending = async () => {
         const pendingDeposits = deposits.filter(d => d.status === "pending");
-        if (pendingDeposits.length === 0) {
+        if (isEmpty(pendingDeposits)) {
             toast.info("No pending deposits to process");
             return;
         }
@@ -789,7 +790,7 @@ export default function BridgeAdminDashboard() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-700">
-                                {filteredDeposits.length === 0 ? (
+                                {isEmpty(filteredDeposits) ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
                                             {isLoading ? "Loading deposits..." : "No deposits found"}

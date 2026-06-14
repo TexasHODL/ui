@@ -149,6 +149,7 @@ import { useTurnNotification } from "../../hooks/notifications/useTurnNotificati
 // Mobile Portrait Blocking (#200)
 import { useMobileFullscreen } from "../../hooks/game/useMobileFullscreen";
 import { MobileOrientationOverlay } from "./Table/components/MobileOrientationOverlay";
+import { hasElements } from "../../utils/guards";
 
 //* Here's the typical sequence of a poker hand:
 //* ANTE - Initial forced bets
@@ -679,7 +680,7 @@ const Table = React.memo(() => {
     // This is true when: it's a sit-and-go, the user is seated, but not all seats are filled
     const isSitAndGoWaitingForPlayers = useMemo(() => {
         const isSitAndGo = isSitAndGoFormat(gameFormat);
-        const hasEmptySeats = emptySeatIndexes.length > 0;
+        const hasEmptySeats = hasElements(emptySeatIndexes);
         const result = isSitAndGo && isUserAlreadyPlaying && hasEmptySeats;
 
         return result;
@@ -797,9 +798,10 @@ const Table = React.memo(() => {
     // Add the useGameOptions hook
     const { gameOptions } = useGameOptions();
 
-    // Blind level info for SNG/Tournament games.
-    // When the chain doesn't supply levelStartTime, hasTimer stays false and the countdown is hidden.
-    const blindLevel = useBlindLevel(gameOptions?.levelStartTime);
+    // Blind level info for SNG/Tournament games. The hook reads levelStartTime
+    // directly off gameState.gameOptions; when the chain doesn't supply it,
+    // hasTimer stays false and the countdown is hidden.
+    const blindLevel = useBlindLevel();
 
     // Add the useGameResults hook
     const { results } = useGameResults();
@@ -977,7 +979,7 @@ const Table = React.memo(() => {
     }, [currentUserSeat, tableSize, seatAtBottom]);
 
     // Winner animations
-    const hasWinner = Array.isArray(winnerInfo) && winnerInfo.length > 0;
+    const hasWinner = hasElements(winnerInfo);
 
     // Restore the useEffect for the timer
     useEffect(() => {
