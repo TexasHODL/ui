@@ -7,7 +7,7 @@ import { useNetwork } from "../context/NetworkContext";
 import { USDC_TO_MICRO, microToUsdc } from "../constants/currency";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { isEmpty } from "../utils/guards";
-import { isTournamentFormat } from "../utils/gameFormatUtils";
+import { isTournamentFormat, toGameFormat } from "../utils/gameFormatUtils";
 import styles from "./TestSigningPage.module.css";
 
 interface TestResult {
@@ -982,7 +982,10 @@ export default function TestSigningPage() {
                                     <label className="block text-sm text-gray-400 mb-1">Game Format</label>
                                     <select
                                         value={gameFormat}
-                                        onChange={e => setGameFormat(e.target.value as GameFormat)}
+                                        onChange={e => {
+                                            const format = toGameFormat(e.target.value);
+                                            if (format) setGameFormat(format);
+                                        }}
                                         className={`w-full p-2 rounded-lg text-white ${styles.inputField}`}
                                     >
                                         <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>

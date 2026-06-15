@@ -28,7 +28,7 @@ import type { CreateTableOptions } from "../hooks/game/useNewTable"; // Import t
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
-import { isTournamentFormat } from "../utils/gameFormatUtils";
+import { isTournamentFormat, toGameFormat } from "../utils/gameFormatUtils";
 
 // Password protection utils
 import {
@@ -707,7 +707,10 @@ const Dashboard: React.FC = () => {
                                         <label className="block text-white text-sm mb-1">Game Type</label>
                                         <select
                                             value={modalGameFormat}
-                                            onChange={e => setModalGameFormat(e.target.value as GameFormat)}
+                                            onChange={e => {
+                                                const format = toGameFormat(e.target.value);
+                                                if (format) setModalGameFormat(format);
+                                            }}
                                             className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                         >
                                             <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
