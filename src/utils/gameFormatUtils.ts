@@ -19,8 +19,29 @@ export {
     parseGameVariant
 } from "@block52/poker-vm-sdk";
 
-import { GameFormat, GameVariant, GameOptionsDTO, TexasHoldemStateDTO, COSMOS_CONSTANTS, isTournamentFormat as isTournamentFormatFn } from "@block52/poker-vm-sdk";
+import { GameFormat, GameVariant, GameOptionsDTO, TexasHoldemStateDTO, COSMOS_CONSTANTS, isTournamentFormat as isTournamentFormatFn, parseGameFormat as parseGameFormatFn, parseGameVariant as parseGameVariantFn } from "@block52/poker-vm-sdk";
 import { isBlank, isNullish, hasElements } from "./guards";
+
+/**
+ * Coerce a raw format string into a GameFormat, returning undefined for missing
+ * or unrecognized values. The SDK's parseGameFormat returns the sentinel
+ * "unknown", but UI state is typed `GameFormat | undefined` — routing through
+ * this keeps malformed chain data out of state instead of an inline cast
+ * (Commandment 12) that would store a fake value (Commandment 7).
+ */
+export const toGameFormat = (value: string | undefined): GameFormat | undefined => {
+    const parsed = parseGameFormatFn(value);
+    return parsed === "unknown" ? undefined : parsed;
+};
+
+/**
+ * Coerce a raw variant string into a GameVariant, returning undefined for
+ * missing or unrecognized values. See {@link toGameFormat}.
+ */
+export const toGameVariant = (value: string | undefined): GameVariant | undefined => {
+    const parsed = parseGameVariantFn(value);
+    return parsed === "unknown" ? undefined : parsed;
+};
 
 /**
  * Result of extracting game data from a WebSocket message

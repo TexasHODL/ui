@@ -8,7 +8,9 @@ import {
     convertAmountForBlockchain,
     convertBlindsForBlockchain,
     getBlindsForDisplay,
-    getGameTypeMnemonic
+    getGameTypeMnemonic,
+    toGameFormat,
+    toGameVariant
 } from "./gameFormatUtils";
 
 describe("gameFormatUtils", () => {
@@ -545,6 +547,33 @@ describe("gameFormatUtils", () => {
 
         it("should return empty string for undefined", () => {
             expect(getGameTypeMnemonic(undefined)).toBe("");
+        });
+    });
+
+    describe("toGameFormat", () => {
+        it("should parse valid format strings to the enum", () => {
+            expect(toGameFormat("cash")).toBe(GameFormat.CASH);
+            expect(toGameFormat("sit-and-go")).toBe(GameFormat.SIT_AND_GO);
+            expect(toGameFormat("tournament")).toBe(GameFormat.TOURNAMENT);
+        });
+
+        it("should return undefined for missing or unrecognized values", () => {
+            expect(toGameFormat(undefined)).toBeUndefined();
+            expect(toGameFormat("")).toBeUndefined();
+            expect(toGameFormat("not-a-format")).toBeUndefined();
+        });
+    });
+
+    describe("toGameVariant", () => {
+        it("should parse valid variant strings to the enum", () => {
+            expect(toGameVariant("texas-holdem")).toBe(GameVariant.TEXAS_HOLDEM);
+            expect(toGameVariant("omaha")).toBe(GameVariant.OMAHA);
+        });
+
+        it("should return undefined for missing or unrecognized values", () => {
+            expect(toGameVariant(undefined)).toBeUndefined();
+            expect(toGameVariant("")).toBeUndefined();
+            expect(toGameVariant("not-a-variant")).toBeUndefined();
         });
     });
 });

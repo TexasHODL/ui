@@ -4,7 +4,7 @@ import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-
 import { createAuthPayload } from "../utils/cosmos/signing";
 import { getGameTransport, getGatewayWsUrl, normalizeGatewayMessage } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
-import { validateGameState, extractGameDataFromMessage } from "../utils/gameFormatUtils";
+import { validateGameState, extractGameDataFromMessage, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { hasElements } from "../utils/guards";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
@@ -249,8 +249,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                             // Still update gameState so the table renders what it can
                             setGameState(gameStateData as TexasHoldemStateDTO);
                             setLatestGameState(gameStateData as TexasHoldemStateDTO);
-                            setGameFormat(rawFormat as GameFormat | undefined);
-                            setGameVariant(rawVariant as GameVariant | undefined);
+                            setGameFormat(toGameFormat(rawFormat));
+                            setGameVariant(toGameVariant(rawVariant));
                             setPendingAction(null);
                             return;
                         }
@@ -261,8 +261,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         console.log("🎮 Game state updated. Current player status:", currentPlayer?.status, "| Player:", currentPlayer?.address?.slice(0, 10));
                         setGameState(gameStateData as TexasHoldemStateDTO);
                         setLatestGameState(gameStateData as TexasHoldemStateDTO);
-                        setGameFormat(rawFormat as GameFormat);
-                        setGameVariant(rawVariant as GameVariant);
+                        setGameFormat(toGameFormat(rawFormat));
+                        setGameVariant(toGameVariant(rawVariant));
                         setError(null);
                         setValidationError(null);
                         setPendingAction(null);
@@ -412,8 +412,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 const rawVariant = parsed.variant;
 
                 setGameState(gameStateData as TexasHoldemStateDTO);
-                setGameFormat(rawFormat as GameFormat | undefined);
-                setGameVariant(rawVariant as GameVariant | undefined);
+                setGameFormat(toGameFormat(rawFormat));
+                setGameVariant(toGameVariant(rawVariant));
                 setPendingAction(null);
             } catch (err) {
                 console.error("[GameStateContext] Failed to load historical state:", err);
