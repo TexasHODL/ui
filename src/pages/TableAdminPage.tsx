@@ -14,7 +14,7 @@ import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
-import { isTournamentFormat, getGameFormat } from "../utils/gameFormatUtils";
+import { isTournamentFormat, getGameFormat, toGameFormat } from "../utils/gameFormatUtils";
 
 // Game creation fee in base units (1 usdc = 0.000001 USDC)
 // This matches GameCreationCost in pokerchain/x/poker/types/types.go
@@ -375,7 +375,10 @@ export default function TableAdminPage() {
                             <label className="text-gray-300 text-xs mb-1 block">Game Type</label>
                             <select
                                 value={gameFormat}
-                                onChange={e => handleGameFormatChange(e.target.value as GameFormat)}
+                                onChange={e => {
+                                    const format = toGameFormat(e.target.value);
+                                    if (format) handleGameFormatChange(format);
+                                }}
                                 className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
                             >
                                 <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
