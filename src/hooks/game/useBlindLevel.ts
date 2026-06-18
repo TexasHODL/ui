@@ -76,11 +76,15 @@ export const useBlindLevel = (): BlindLevelInfo => {
 
     const secondsRemaining = useMemo(() => {
         if (!hasTimer || !startTime || isNullish(level)) return -1;
-        const elapsedMs = now - startTime;
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-        const currentLevelEndSeconds = (level + 1) * levelDurationSeconds;
-        return Math.max(0, currentLevelEndSeconds - elapsedSeconds);
-    }, [hasTimer, startTime, now, level, levelDurationSeconds]);
+        // `startTime` is the CURRENT level's start (callers pass
+        // gameOptions.levelStartTime), so the remaining time is simply the level
+        // duration minus the time elapsed within this level. The old formula used
+        // (level + 1) * levelDurationSeconds — a cumulative-from-game-start end —
+        // which over-counted by level * duration (e.g. a 3-min level showed ~5.5
+        // min at level 1, ~8.5 min at level 2) and never reset. (poker-vm#2292)
+        const elapsedInLevelSeconds = Math.floor((now - startTime) / 1000);
+        return Math.max(0, levelDurationSeconds - elapsedInLevelSeconds);
+    }, [hasTimer, startTime, now, levelDurationSeconds, level]);
 
     // Tick the timer every second when active (same pattern as usePlayerTimer)
     useEffect(() => {
