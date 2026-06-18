@@ -86,10 +86,15 @@ describe("useBlindLevel — countdown resets per level (poker-vm#2292)", () => {
         expect(result.current.secondsRemaining).toBe(LEVEL_SECONDS - 30); // 150, NOT (2+1)*180-30 = 510
     });
 
-    it("counts down within a level and clamps at 0", () => {
+    it("counts down within a level, then goes negative (overtime) past the level end", () => {
         const start = 1_000_000_360_000;
         expect(renderAt(start, 170, buildOptions({ blindLevel: 2 })).result.current.secondsRemaining).toBe(10);
+        // Hand still in progress past the level end: backend holds levelStartTime
+        // steady, so the UI shows overtime as negative (e.g. -70 → "-1:10" in red),
+        // NOT clamped to 0. (poker-vm#2292)
         nowSpy.mockRestore();
-        expect(renderAt(start, 250, buildOptions({ blindLevel: 2 })).result.current.secondsRemaining).toBe(0);
+        expect(renderAt(start, 190, buildOptions({ blindLevel: 2 })).result.current.secondsRemaining).toBe(-10);
+        nowSpy.mockRestore();
+        expect(renderAt(start, 250, buildOptions({ blindLevel: 2 })).result.current.secondsRemaining).toBe(-70);
     });
 });
