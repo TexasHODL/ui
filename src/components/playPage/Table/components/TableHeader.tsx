@@ -24,10 +24,13 @@ import { BlindLevelInfo } from "../../../../hooks/game/useBlindLevel";
 import styles from "./TableHeader.module.css";
 
 const formatBlindCountdown = (secondsRemaining: number): string => {
-    const safe = Math.max(0, secondsRemaining);
-    const minutes = Math.floor(safe / 60);
-    const seconds = safe % 60;
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    // Negative = overtime (hand still running past the level end); show the
+    // elapsed-over time with a leading minus, e.g. -0:10. (poker-vm#2292)
+    const isOvertime = secondsRemaining < 0;
+    const abs = Math.abs(secondsRemaining);
+    const minutes = Math.floor(abs / 60);
+    const seconds = abs % 60;
+    return `${isOvertime ? "-" : ""}${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
 export interface TableHeaderProps {
@@ -244,7 +247,16 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         <div className="flex items-center space-x-1 sm:space-x-2">
                             {blindLevel.isActive ? (
                                 <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>
-                                    {blindLevel.level !== undefined && `Level ${blindLevel.level + 1} `}{blindLevel.currentBlindsFormatted} Next {blindLevel.nextBlindsFormatted}{blindLevel.hasTimer && ` (${formatBlindCountdown(blindLevel.secondsRemaining)})`}
+                                    {blindLevel.level !== undefined && `Level ${blindLevel.level + 1} `}{blindLevel.currentBlindsFormatted} Next {blindLevel.nextBlindsFormatted}
+                                    {blindLevel.hasTimer && (
+                                        <>
+                                            {" ("}
+                                            <span className={blindLevel.secondsRemaining < 0 ? "text-red-500" : "text-yellow-300"}>
+                                                {formatBlindCountdown(blindLevel.secondsRemaining)}
+                                            </span>
+                                            {")"}
+                                        </>
+                                    )}
                                 </span>
                             ) : (
                                 <span className={`text-[10px] sm:text-[15px] font-semibold ${styles.secondaryText}`}>

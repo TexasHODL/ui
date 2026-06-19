@@ -19,7 +19,11 @@ export interface BlindLevelInfo {
     currentBlindsFormatted: string;
     /** Formatted next blinds string (e.g., "100/200") */
     nextBlindsFormatted: string;
-    /** Seconds remaining until next blind level (-1 if unknown) */
+    /**
+     * Seconds remaining in the current blind level. Negative while a hand runs
+     * past the level end (overtime); -1 when unknown (no timer — gated by
+     * hasTimer before display).
+     */
     secondsRemaining: number;
     /** Duration of each blind level in seconds */
     levelDurationSeconds: number;
@@ -76,11 +80,20 @@ export const useBlindLevel = (): BlindLevelInfo => {
 
     const secondsRemaining = useMemo(() => {
         if (!hasTimer || !startTime || isNullish(level)) return -1;
-        const elapsedMs = now - startTime;
-        const elapsedSeconds = Math.floor(elapsedMs / 1000);
-        const currentLevelEndSeconds = (level + 1) * levelDurationSeconds;
-        return Math.max(0, currentLevelEndSeconds - elapsedSeconds);
-    }, [hasTimer, startTime, now, level, levelDurationSeconds]);
+        // `startTime` is the CURRENT level's start (callers pass
+        // gameOptions.levelStartTime), so the remaining time is simply the level
+        // duration minus the time elapsed within this level. The old formula used
+        // (level + 1) * levelDurationSeconds — a cumulative-from-game-start end —
+        // which over-counted by level * duration (e.g. a 3-min level showed ~5.5
+        // min at level 1, ~8.5 min at level 2) and never reset. (poker-vm#2292)
+        // Do NOT clamp to 0: while a hand is still in progress past the level
+        // end, the backend holds levelStartTime steady, so this goes negative —
+        // the UI shows that overtime in red (e.g. -0:10). Once the hand
+        // completes the backend advances levelStartTime and the clock resets to
+        // the new level (e.g. 2:50 for a 3-min level that ran 10s over). (poker-vm#2292)
+        const elapsedInLevelSeconds = Math.floor((now - startTime) / 1000);
+        return levelDurationSeconds - elapsedInLevelSeconds;
+    }, [hasTimer, startTime, now, levelDurationSeconds, level]);
 
     // Tick the timer every second when active (same pattern as usePlayerTimer)
     useEffect(() => {
