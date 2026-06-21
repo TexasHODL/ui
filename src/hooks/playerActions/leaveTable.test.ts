@@ -10,19 +10,12 @@ const mockGetSigningClient = getSigningClient as jest.MockedFunction<typeof getS
 type SigningClient = Awaited<ReturnType<typeof getSigningClient>>["signingClient"];
 
 describe("leaveTable", () => {
-    const savedTransport = process.env.VITE_GAME_TRANSPORT;
-
     beforeEach(() => {
         jest.clearAllMocks();
-        // These assert the chain-direct path; chain is now opt-out (#440).
-        process.env.VITE_GAME_TRANSPORT = "chain";
     });
 
-    afterEach(() => {
-        process.env.VITE_GAME_TRANSPORT = savedTransport;
-        if (savedTransport === undefined) delete process.env.VITE_GAME_TRANSPORT;
-    });
-
+    // leave is a money-mover: ALWAYS direct to chain (MsgLeaveGame), regardless
+    // of game transport — it never routes through the gateway relay. (#467)
     const fakeNetwork = { name: "testnet", rpc: "http://x", rest: "http://y" } as unknown as NetworkEndpoints;
 
     it("broadcasts MsgLeaveGame via signingClient.leaveGame with the tableId only", async () => {
@@ -41,6 +34,27 @@ describe("leaveTable", () => {
             gameId: "game-abc",
             action: NonPlayerActionType.LEAVE
         });
+    });
+
+    it("stays direct-to-chain even under gateway transport (#467)", async () => {
+        const savedTransport = process.env.VITE_GAME_TRANSPORT;
+        process.env.VITE_GAME_TRANSPORT = "gateway";
+        try {
+            const leaveGame = jest.fn().mockResolvedValue("0xfeed");
+            mockGetSigningClient.mockResolvedValue({
+                signingClient: { leaveGame } as unknown as SigningClient,
+                userAddress: "b52test"
+            });
+
+            const result = await leaveTable("game-gw", fakeNetwork);
+
+            // Must call the SDK direct path, NOT route through the gateway relay.
+            expect(leaveGame).toHaveBeenCalledWith("game-gw");
+            expect(result.hash).toBe("0xfeed");
+        } finally {
+            process.env.VITE_GAME_TRANSPORT = savedTransport;
+            if (savedTransport === undefined) delete process.env.VITE_GAME_TRANSPORT;
+        }
     });
 
     it("propagates chain errors so the modal can surface them inline", async () => {
