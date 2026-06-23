@@ -1,11 +1,17 @@
 /**
  * Settlement-tx signing for the optimistic gateway (poker-vm spec §6.10).
  *
- * In gateway mode each action is signed as a cosmos MsgPerformAction TxRaw
- * (SDK signPerformAction, no broadcast) and attached to the gateway POST;
- * the gateway relays the bytes to the chain's existing pipeline so balances
- * settle at the boundaries (hand-end/leave). This is ADDITIVE — the EIP-191
- * gateway action still drives gameplay; the tx is best-effort settlement.
+ * Gameplay actions are signed as a cosmos MsgPerformAction TxRaw (SDK
+ * signPerformAction, no broadcast) and attached to the gateway POST; the
+ * gateway relays the bytes to the chain's existing pipeline. This is ADDITIVE
+ * — the EIP-191 gateway action still drives gameplay; the tx is best-effort
+ * settlement.
+ *
+ * Money-movers (join / leave / top-up) are signed as their DEDICATED message
+ * (MsgJoinGame / MsgLeaveGame / MsgTopUp) instead — a MsgPerformAction does no
+ * bank movement, so relaying one would settle the action without moving funds
+ * (block52/poker-vm#2325). The player signs; the gateway relays the correct
+ * message after PVM-verifying the optimistic apply.
  *
  * Sequence is tracked LOCALLY (query the account once, +1 per signed action):
  * optimistic actions are signed faster than the chain commits, so a
@@ -15,6 +21,7 @@
  *   - account not on-chain (unfunded) → no tx (gameplay still works, no settlement)
  *   - sign error → no tx + sequence reset so the next action re-syncs
  */
+import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import type { SigningCosmosClient } from "@block52/poker-vm-sdk";
 
 import type { NetworkEndpoints } from "../../context/NetworkContext";
@@ -83,18 +90,56 @@ export async function signSettlementTx(
     if (!state) {
         return undefined;
     }
+    const signerData = {
+        accountNumber: state.accountNumber,
+        sequence: state.sequence,
+        chainId: COSMOS_CHAIN_ID
+    };
     try {
-        const { base64 } = await signingClient.signPerformAction(tableId, action, amount, data, {
-            accountNumber: state.accountNumber,
-            sequence: state.sequence,
-            chainId: COSMOS_CHAIN_ID
-        });
+        // Money-movers settle via their dedicated message (does the bank
+        // movement); everything else is a MsgPerformAction. (#2325)
+        const { base64 } = await signMoneyMover(signingClient, tableId, action, amount, data, signerData)
+            ?? await signingClient.signPerformAction(tableId, action, amount, data, signerData);
         state.sequence += 1; // advance locally for the next action
         return base64;
     } catch (err) {
         console.error("[settlement] sign failed, resetting sequence:", err);
         resetSettlementSequence(address);
         return undefined;
+    }
+}
+
+/** Parses `seat=N` out of the join action's data field. */
+function seatFromData(data: string): number {
+    const match = /seat=(\d+)/.exec(data);
+    if (!match) {
+        throw new Error(`join settlement tx requires a seat in data, got: "${data}"`);
+    }
+    return parseInt(match[1], 10);
+}
+
+/**
+ * Signs the dedicated money-mover message for join/leave/top-up, or returns
+ * undefined for any other action (caller falls back to MsgPerformAction).
+ * Returns the same {base64,...} shape as signPerformAction. (#2325)
+ */
+function signMoneyMover(
+    signingClient: SigningCosmosClient,
+    tableId: string,
+    action: string,
+    amount: bigint,
+    data: string,
+    signerData: { accountNumber: number; sequence: number; chainId: string }
+): Promise<{ base64: string }> | undefined {
+    switch (action) {
+        case NonPlayerActionType.JOIN:
+            return signingClient.signJoinGame(tableId, seatFromData(data), amount, signerData);
+        case NonPlayerActionType.LEAVE:
+            return signingClient.signLeaveGame(tableId, signerData);
+        case NonPlayerActionType.TOP_UP:
+            return signingClient.signTopUp(tableId, amount, signerData);
+        default:
+            return undefined;
     }
 }
 

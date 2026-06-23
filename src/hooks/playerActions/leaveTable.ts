@@ -1,5 +1,7 @@
 import { getSigningClient } from "../../utils/cosmos/client";
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
+import { getGameTransport } from "../../utils/gameTransport";
+import { executeGatewayAction, getLatestGameState, nextActionIndex } from "./transportAction";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { LeaveTableResult } from "../../types";
 
@@ -16,9 +18,17 @@ import type { LeaveTableResult } from "../../types";
  * @throws Error if Cosmos wallet is not initialized or if the chain rejects the leave
  */
 export async function leaveTable(tableId: string, network: NetworkEndpoints): Promise<LeaveTableResult> {
-    // Money-mover: always direct to chain (MsgLeaveGame does the refund). Never
-    // via the gateway relay, which would forward a MsgPerformAction and skip the
-    // bank movement. Matches transfers. (#467)
+    // WS-first money-mover (#2325): under gateway transport the leave is
+    // PVM-verified and applied optimistically by the gateway, which then relays
+    // the player's PRE-SIGNED MsgLeaveGame (attached by executeGatewayAction →
+    // signSettlementTx) for the refund.
+    if (getGameTransport() === "gateway") {
+        const index = nextActionIndex(getLatestGameState());
+        const result = await executeGatewayAction(tableId, NonPlayerActionType.LEAVE, index, 0n, "", network);
+        return { hash: result.hash, gameId: tableId, action: NonPlayerActionType.LEAVE };
+    }
+
+    // Direct-to-chain (non-gateway): broadcast MsgLeaveGame ourselves.
     const { signingClient } = await getSigningClient(network);
     const hash = await signingClient.leaveGame(tableId);
     return { hash, gameId: tableId, action: NonPlayerActionType.LEAVE };
