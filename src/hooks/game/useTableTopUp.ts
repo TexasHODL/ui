@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { getSigningClient } from "../../utils/cosmos/client";
+import { getGameTransport } from "../../utils/gameTransport";
+import { executeGatewayAction, getLatestGameState, nextActionIndex } from "../playerActions/transportAction";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 
 /**
@@ -45,10 +48,18 @@ export const useTableTopUp = (tableId: string, network: NetworkEndpoints) => {
                 throw new Error("Invalid top-up amount. Must be a positive number.");
             }
 
-            // Money-mover: always direct to chain (MsgTopUp does the escrow
-            // deposit). Never via the gateway relay, which would forward a
-            // MsgPerformAction that queues chips without a real deposit. Closes
-            // #2243. (#467)
+            // WS-first money-mover (#2325): under gateway transport the top-up
+            // is PVM-verified and applied optimistically by the gateway, which
+            // relays the player's PRE-SIGNED MsgTopUp (attached by
+            // executeGatewayAction → signSettlementTx) for the escrow deposit.
+            // Closes the perform_action top-up gap (#2243).
+            if (getGameTransport() === "gateway") {
+                const index = nextActionIndex(getLatestGameState());
+                const result = await executeGatewayAction(tableId, NonPlayerActionType.TOP_UP, index, topUpAmount, "", network);
+                return { hash: result.hash, gameId: tableId, amount: topUpAmount.toString() };
+            }
+
+            // Direct-to-chain (non-gateway): broadcast MsgTopUp ourselves.
             const transactionHash = await signingClient.topUp(tableId, topUpAmount);
 
             return {
