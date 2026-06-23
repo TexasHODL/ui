@@ -90,15 +90,16 @@ export const useNewTable = (): UseNewTableReturn => {
                 };
             }
 
-            // Convert SNG options if provided. blindLevelDuration is required by
-            // the SDK's SNGConfig (the chain rejects a zero/missing value —
-            // poker-vm#2282), so apply the documented 10-minute default when the
-            // caller omits it.
+            // Convert SNG options if provided. The SDK's SNGConfig requires
+            // blindLevelDuration; when the caller omits it we pass 0 (NO invented
+            // default — Commandment #7). The chain rejects a zero
+            // blindLevelDuration (poker-vm#2282), so a missing value fails loud
+            // at the chain level rather than being papered over in the UI.
             let sngConfig = undefined;
             if (gameOptions.sng) {
                 sngConfig = {
                     startingStack: BigInt(gameOptions.sng.startingStack),
-                    blindLevelDuration: gameOptions.sng.blindLevelDuration ?? 10
+                    blindLevelDuration: gameOptions.sng.blindLevelDuration ?? 0
                 };
             }
 
