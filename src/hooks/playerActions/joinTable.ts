@@ -62,9 +62,12 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
     // the SNG/tournament engine mis-seats). See resolveJoinSeat.
     const seat = resolveJoinSeat(options.seatNumber, getLatestGameState());
 
-    // Gateway transport (ui#440): join is a signed gateway action with the
-    // seat in the (signature-bound) data field. A joiner isn't seated yet,
-    // so the index comes from the table's shared next-action index.
+    // WS-first money-mover (#2325): under gateway transport the join goes
+    // through the gateway, which PVM-verifies and applies it optimistically,
+    // then relays the player's PRE-SIGNED MsgJoinGame (attached by
+    // executeGatewayAction → signSettlementTx) for the escrow. The seat rides
+    // in the signature-bound data field; a joiner isn't seated yet, so the
+    // index is the table's shared next-action index.
     if (getGameTransport() === "gateway") {
         const index = nextActionIndex(getLatestGameState());
         const result = await executeGatewayAction(tableId, NonPlayerActionType.JOIN, index, buyInAmount, `seat=${seat}`, network);
@@ -76,7 +79,7 @@ export async function joinTable(tableId: string, options: JoinTableOptions, netw
         };
     }
 
-    // Call SigningCosmosClient.joinGame()
+    // Direct-to-chain (non-gateway): broadcast MsgJoinGame ourselves.
     const transactionHash = await signingClient.joinGame(
         tableId,
         seat,

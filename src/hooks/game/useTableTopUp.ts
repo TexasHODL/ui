@@ -48,18 +48,18 @@ export const useTableTopUp = (tableId: string, network: NetworkEndpoints) => {
                 throw new Error("Invalid top-up amount. Must be a positive number.");
             }
 
-            // Gateway transport (ui#440): top-up is a signed gateway action.
-            // The engine queues it (flushed at the next hand); the relayed tx
-            // settles it on-chain. KNOWN GAP: perform_action "top-up" queues
-            // the chips but the escrow DEPOSIT lives in MsgTopUp, so the
-            // optimistic chips aren't yet backed by a real deposit (#2243).
+            // WS-first money-mover (#2325): under gateway transport the top-up
+            // is PVM-verified and applied optimistically by the gateway, which
+            // relays the player's PRE-SIGNED MsgTopUp (attached by
+            // executeGatewayAction → signSettlementTx) for the escrow deposit.
+            // Closes the perform_action top-up gap (#2243).
             if (getGameTransport() === "gateway") {
                 const index = nextActionIndex(getLatestGameState());
                 const result = await executeGatewayAction(tableId, NonPlayerActionType.TOP_UP, index, topUpAmount, "", network);
                 return { hash: result.hash, gameId: tableId, amount: topUpAmount.toString() };
             }
 
-            // Call SigningCosmosClient.topUp()
+            // Direct-to-chain (non-gateway): broadcast MsgTopUp ourselves.
             const transactionHash = await signingClient.topUp(tableId, topUpAmount);
 
             return {
