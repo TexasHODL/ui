@@ -22,7 +22,7 @@
  *   - sign error → no tx + sequence reset so the next action re-syncs
  */
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
-import type { SigningCosmosClient } from "@block52/poker-vm-sdk";
+import type { SigningCosmosClient, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import { getCosmosUrls } from "./client";
@@ -38,6 +38,21 @@ const unfundedWarned = new Set<string>();
 /** Clears tracked sequence so the next action re-fetches it (call on re-sync). */
 export function resetSettlementSequence(address: string): void {
     seqByAddress.delete(address);
+}
+
+/**
+ * Derives the place-1-first finishing order (player addresses) from a finished
+ * SNG's results[]. Empty when the game isn't finalized (no results), so the
+ * chain falls back to its own state for cash/already-finalized leaves. The
+ * chain re-validates this ordering and owns the payout amounts (pokerchain#229);
+ * we only report who finished where, from the gateway-broadcast results.
+ */
+export function finishingOrderFromState(gameState: TexasHoldemStateDTO | undefined): string[] {
+    const results = gameState?.results;
+    if (!results || results.length === 0) {
+        return [];
+    }
+    return [...results].sort((a, b) => a.place - b.place).map(r => r.playerId);
 }
 
 async function loadSeqState(address: string, restEndpoint: string): Promise<SeqState | null> {
@@ -83,7 +98,8 @@ export async function signSettlementTx(
     tableId: string,
     action: string,
     amount: bigint,
-    data: string
+    data: string,
+    finishingOrder: string[] = []
 ): Promise<string | undefined> {
     const { restEndpoint } = getCosmosUrls(network);
     const state = await loadSeqState(address, restEndpoint);
@@ -98,7 +114,7 @@ export async function signSettlementTx(
     try {
         // Money-movers settle via their dedicated message (does the bank
         // movement); everything else is a MsgPerformAction. (#2325)
-        const { base64 } = await signMoneyMover(signingClient, tableId, action, amount, data, signerData)
+        const { base64 } = await signMoneyMover(signingClient, tableId, action, amount, data, signerData, finishingOrder)
             ?? await signingClient.signPerformAction(tableId, action, amount, data, signerData);
         state.sequence += 1; // advance locally for the next action
         return base64;
@@ -122,6 +138,12 @@ function seatFromData(data: string): number {
  * Signs the dedicated money-mover message for join/leave/top-up, or returns
  * undefined for any other action (caller falls back to MsgPerformAction).
  * Returns the same {base64,...} shape as signPerformAction. (#2325)
+ *
+ * For a LEAVE on a finished SNG, `finishingOrder` (place-1-first addresses,
+ * derived from the broadcast state's results[]) is attached so the chain can
+ * finalize and pay the prize even though it never saw the tournament-ending
+ * gameplay action under WS-first (pokerchain#229). Empty for everything else —
+ * the chain ignores it for cash leaves and SNGs it already finalized.
  */
 function signMoneyMover(
     signingClient: SigningCosmosClient,
@@ -129,13 +151,14 @@ function signMoneyMover(
     action: string,
     amount: bigint,
     data: string,
-    signerData: { accountNumber: number; sequence: number; chainId: string }
+    signerData: { accountNumber: number; sequence: number; chainId: string },
+    finishingOrder: string[]
 ): Promise<{ base64: string }> | undefined {
     switch (action) {
         case NonPlayerActionType.JOIN:
             return signingClient.signJoinGame(tableId, seatFromData(data), amount, signerData);
         case NonPlayerActionType.LEAVE:
-            return signingClient.signLeaveGame(tableId, signerData);
+            return signingClient.signLeaveGame(tableId, signerData, finishingOrder);
         case NonPlayerActionType.TOP_UP:
             return signingClient.signTopUp(tableId, amount, signerData);
         default:
