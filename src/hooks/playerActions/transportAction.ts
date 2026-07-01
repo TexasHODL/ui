@@ -19,7 +19,7 @@ import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
 import { getSigningClient } from "../../utils/cosmos/client";
 import { signActionMessage } from "../../utils/cosmos/signing";
-import { signSettlementTx } from "../../utils/cosmos/settlementTx";
+import { finishingOrderFromState, signSettlementTx } from "../../utils/cosmos/settlementTx";
 import { getGameTransport, getGatewayApi } from "../../utils/gameTransport";
 import { isNullish } from "../../utils/guards";
 
@@ -124,10 +124,17 @@ export async function executeGatewayAction(
     // Settlement relay (§6.10): sign the action as a cosmos tx and attach it
     // for the gateway to relay to the chain. Best-effort — undefined for
     // unfunded accounts (gameplay still proceeds on the EIP-191 path).
+    //
+    // For a LEAVE on a finished SNG, attach the place-1-first finishing order
+    // from the broadcast state so the chain can finalize and pay the prize —
+    // under WS-first it never saw the tournament-ending action, so its Results
+    // are empty until we tell it the order (pokerchain#229). Empty for every
+    // other case; the chain ignores it.
+    const finishingOrder = action === NonPlayerActionType.LEAVE ? finishingOrderFromState(latestGameState) : [];
     let tx: string | undefined;
     try {
         const { signingClient } = await getSigningClient(network);
-        tx = await signSettlementTx(signingClient, address, network, tableId, action, amount, data);
+        tx = await signSettlementTx(signingClient, address, network, tableId, action, amount, data, finishingOrder);
     } catch (err) {
         console.error("[settlement] tx signing skipped:", err);
     }
