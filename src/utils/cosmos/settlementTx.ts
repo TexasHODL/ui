@@ -22,6 +22,7 @@
  *   - sign error → no tx + sequence reset so the next action re-syncs
  */
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
+import { hasElements } from "../guards";
 import type { SigningCosmosClient, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 
 import type { NetworkEndpoints } from "../../context/NetworkContext";
@@ -49,7 +50,7 @@ export function resetSettlementSequence(address: string): void {
  */
 export function finishingOrderFromState(gameState: TexasHoldemStateDTO | undefined): string[] {
     const results = gameState?.results;
-    if (!results || results.length === 0) {
+    if (!hasElements(results)) {
         return [];
     }
     return [...results].sort((a, b) => a.place - b.place).map(r => r.playerId);
