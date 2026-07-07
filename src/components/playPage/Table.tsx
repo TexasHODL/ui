@@ -98,6 +98,7 @@ import { useHoleCardWatchdog } from "../../hooks/game/useHoleCardWatchdog"; //#4
 //todo wire up to use the sdk instead of the proxy
 // 4. Player Actions
 import { leaveTable } from "../../hooks/playerActions/leaveTable";
+import { claimWinnings } from "../../hooks/playerActions/claimWinnings";
 
 // 5. Winner Info
 import { useWinnerInfo } from "../../hooks/game/useWinnerInfo"; // Provides winner information for animations
@@ -1144,6 +1145,16 @@ const Table = React.memo(() => {
         fetchAccountBalance();
     }, [id, currentPlayerData, currentNetwork, fetchAccountBalance]);
 
+    // Claim a decided SNG/Tournament prize (record hand-end state + settle).
+    // Distinct from leaving — the roster is frozen post-start. (pokerchain#239)
+    const handleClaimWinnings = useCallback(async () => {
+        if (!id) {
+            throw new Error("Cannot claim: missing table ID");
+        }
+        await claimWinnings(id, currentNetwork);
+        fetchAccountBalance();
+    }, [id, currentNetwork, fetchAccountBalance]);
+
     // Show error page if connection/general error occurred
     // Do NOT show the error page when the user has no wallet — the overlay handles that case.
     if (error && id && hasWallet) {
@@ -1472,6 +1483,7 @@ const Table = React.memo(() => {
                 isLeaveModalOpen={isLeaveModalOpen}
                 handleLeaveModalClose={handleLeaveModalClose}
                 handleLeaveTableConfirm={handleLeaveTableConfirm}
+                handleClaimWinnings={handleClaimWinnings}
                 currentPlayerStack={currentPlayerData?.stack || "0"}
                 isInActiveHand={isGameInProgress && currentUserSeat > 0}
             />

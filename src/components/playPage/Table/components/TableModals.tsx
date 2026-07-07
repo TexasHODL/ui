@@ -43,6 +43,7 @@ export interface TableModalsProps {
     isLeaveModalOpen: boolean;
     handleLeaveModalClose: () => void;
     handleLeaveTableConfirm: () => Promise<void>;
+    handleClaimWinnings: () => Promise<void>;
     currentPlayerStack: string;
     isInActiveHand: boolean;
 }
@@ -63,6 +64,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
     isLeaveModalOpen,
     handleLeaveModalClose,
     handleLeaveTableConfirm,
+    handleClaimWinnings,
     currentPlayerStack,
     isInActiveHand
 }) => {
@@ -93,7 +95,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
                 table is finished — no balance-still-on-table concern.
                 block52/ui#371. */}
             {gameFormat && isSitAndGoFormat(gameFormat) && (
-                <SitAndGoResultModal tableId={tableId} onLeave={handleLeaveTableConfirm} />
+                <SitAndGoResultModal tableId={tableId} onLeave={handleLeaveTableConfirm} onClaim={handleClaimWinnings} />
             )}
 
             {/* Transaction Popup - Bottom Right */}
