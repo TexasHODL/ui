@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SitAndGoResultModal } from "./SitAndGoResultModal";
 
 // Mock the data hook — the modal's trigger logic depends entirely on
@@ -113,15 +113,33 @@ describe("SitAndGoResultModal", () => {
         expect(screen.queryByTestId("sng-result-payout")).toBeNull();
     });
 
-    it("Leave Table button fires onLeave and persists dismissal", async () => {
+    it("unpaid finisher: Leave Table button fires onLeave and persists dismissal", async () => {
         const onLeave = jest.fn();
-        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
+        mockGetPlayerResult.mockReturnValue({ place: 4, payout: "0", isWinner: false });
         render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={onLeave} onClaim={jest.fn()} />);
 
         fireEvent.click(screen.getByTestId("sng-result-leave-btn"));
 
         expect(onLeave).toHaveBeenCalledTimes(1);
         // Persisted dismissal flag is now set so a remount won't re-pop the modal.
+        expect(localStorage.getItem(`viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`)).toBe("true");
+    });
+
+    it("paid finisher: shows Claim (not Leave); claim calls onClaim then the button dismisses", async () => {
+        const onClaim = jest.fn().mockResolvedValue(undefined);
+        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
+        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={onClaim} />);
+
+        // A paid finisher claims — no Leave button is offered.
+        expect(screen.queryByTestId("sng-result-leave-btn")).toBeNull();
+        const claimBtn = screen.getByTestId("sng-result-claim-winnings-btn");
+
+        fireEvent.click(claimBtn);
+        await waitFor(() => expect(onClaim).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(claimBtn).toHaveTextContent(/paid!/i));
+
+        // The "Paid!" button now dismisses the modal (no chain leave).
+        fireEvent.click(screen.getByTestId("sng-result-claim-winnings-btn"));
         expect(localStorage.getItem(`viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`)).toBe("true");
     });
 
