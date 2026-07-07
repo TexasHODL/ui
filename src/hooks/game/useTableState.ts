@@ -8,8 +8,6 @@ import { formatMicroAsUsdc } from "../../constants/currency";
 import { hasElements } from "../../utils/guards";
 
 
-const DEFAULT_TABLE_SIZE = 9;
-
 /**
  * Custom hook to fetch and provide table state information
  * 
@@ -24,12 +22,15 @@ export const useTableState = (): TableStateReturn => {
     const { gameFormat } = useGameMeta();
     const { isLoading, error } = useGameUI();
 
-    // Default values in case of error or loading
+    // Placeholder while loading / on error. tableSize is 0 — NOT a real seat
+    // count. Consumers MUST gate on isLoading/error before reading tableSize;
+    // the real value (gameState.gameOptions.maxPlayers) only exists once state
+    // has arrived. Fabricating a seat count here caused the 9->real flash (#466).
     const defaultState: TableStateReturn = {
         currentRound: TexasHoldemRound.PREFLOP,
         totalPot: "0",
         formattedTotalPot: "0.00",
-        tableSize: DEFAULT_TABLE_SIZE,
+        tableSize: 0,
         tableFormat: GameFormat.CASH,
         roundType: TexasHoldemRound.PREFLOP,
         isLoading,
@@ -57,8 +58,10 @@ export const useTableState = (): TableStateReturn => {
         // Extract the current round
         const currentRound = gameState.round || TexasHoldemRound.PREFLOP;
 
-        // Extract table size (maximum players)
-        const tableSize = gameState.gameOptions?.maxPlayers;
+        // Extract table size (maximum players). Required field per SDK —
+        // no optional chaining; if it's missing that's a chain bug that
+        // must surface, not be masked by a default (12 Commandments #6/#7).
+        const tableSize = gameState.gameOptions.maxPlayers;
 
         // Extract table format
         const tableFormat = getGameFormat(gameFormat);
