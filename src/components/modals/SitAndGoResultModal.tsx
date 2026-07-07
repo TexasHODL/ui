@@ -135,6 +135,14 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
         await onLeave();
     };
 
+    // Dismiss only — closes the modal without firing the chain leave. Used after
+    // a paid finisher has claimed (post-start the roster is frozen; they claim,
+    // they don't leave).
+    const handleDismiss = () => {
+        localStorage.setItem(dismissKey(tableId, userAddress), "true");
+        setDismissed(true);
+    };
+
     const handleClaimWinningsClick = async () => {
         try {
             setPrizeClaim({ kind: "claiming" });
@@ -219,13 +227,13 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
 
                     {isPaid && (
                         <button
-                            onClick={handleClaimWinningsClick}
-                            disabled={prizeClaim.kind === "claiming" || prizeClaim.kind === "done"}
+                            onClick={prizeClaim.kind === "done" ? handleDismiss : handleClaimWinningsClick}
+                            disabled={prizeClaim.kind === "claiming"}
                             data-testid="sng-result-claim-winnings-btn"
                             className="w-full py-3 px-4 mb-3 rounded-lg border border-green-500/40 bg-green-500/10 text-green-300 text-sm font-semibold hover:bg-green-500/20 hover:border-green-500/60 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {prizeClaim.kind === "claiming" && "Claiming…"}
-                            {prizeClaim.kind === "done" && "✓ Winnings claimed"}
+                            {prizeClaim.kind === "done" && "✓ Paid!"}
                             {(prizeClaim.kind === "idle" || prizeClaim.kind === "error") && `Claim $${formatUSDCToSimpleDollars(payout)}`}
                         </button>
                     )}
@@ -277,13 +285,17 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                         </p>
                     )}
 
-                    <button
-                        onClick={handleLeaveClick}
-                        data-testid="sng-result-leave-btn"
-                        className="w-full py-3 px-4 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20 hover:border-red-500/60 transition-colors duration-200"
-                    >
-                        Leave Table
-                    </button>
+                    {/* Paid finishers claim (above) and dismiss via the Paid! button —
+                        no Leave. Unpaid finishers have no prize, so keep a dismiss. */}
+                    {!isPaid && (
+                        <button
+                            onClick={handleLeaveClick}
+                            data-testid="sng-result-leave-btn"
+                            className="w-full py-3 px-4 rounded-lg border border-red-500/40 bg-red-500/10 text-red-400 text-sm font-semibold hover:bg-red-500/20 hover:border-red-500/60 transition-colors duration-200"
+                        >
+                            Leave Table
+                        </button>
+                    )}
 
                     <div className="text-center mt-4">
                         <div className="flex items-center justify-center gap-1">
