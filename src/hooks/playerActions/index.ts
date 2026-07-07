@@ -5,6 +5,7 @@ import { dealCards } from "./dealCards";
 import { foldHand } from "./foldHand";
 import { joinTable } from "./joinTable";
 import { leaveTable } from "./leaveTable";
+import { claimWinnings } from "./claimWinnings";
 import { muckCards } from "./muckCards";
 import { postBigBlind } from "./postBigBlind";
 import { postSmallBlind } from "./postSmallBlind";
@@ -32,6 +33,7 @@ export {
     foldHand,
     joinTable,
     leaveTable,
+    claimWinnings,
     muckCards,
     postBigBlind,
     postSmallBlind,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { hasValue } from "../../utils/guards";
 import * as React from "react";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
 import useDepositUSDC from "../../hooks/wallet/useDepositUSDC";
@@ -400,7 +401,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                                 </div>
                             )}
 
-                            {balance !== undefined && balance !== null && (
+                            {hasValue(balance) && (
                                 <div className="mb-4 p-3 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Web3 Wallet Balance</span>
                                     <span className="text-white font-semibold">
@@ -430,7 +431,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                                     />
                                     <button
                                         onClick={() => {
-                                            if (balance !== undefined && balance !== null && decimals) {
+                                            if (hasValue(balance) && decimals) {
                                                 setAmount(formatUSDCToSimpleDollars(balance));
                                             }
                                         }}

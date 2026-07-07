@@ -1,3 +1,4 @@
+import { isNullish } from "../utils/guards";
 /**
  * Currency conversion constants for USDC
  *
@@ -70,7 +71,7 @@ export function microToUsdc(microAmount: number | string | bigint): number {
  * @returns The value as bigint
  */
 export function parseMicroToBigInt(value: string | number | bigint | undefined): bigint {
-    if (value === undefined || value === null) return 0n;
+    if (isNullish(value)) return 0n;
     if (typeof value === "bigint") return value;
     if (typeof value === "number") return BigInt(Math.floor(value));
     // Handle string - remove any decimal places (shouldn't have any for micro-units)
