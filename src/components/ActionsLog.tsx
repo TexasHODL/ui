@@ -127,7 +127,7 @@ const ActionsLog: React.FC = () => {
         // action in the current hand — NOT the array length — since the chain
         // matches on ActionDTO.Index.
         const actions = gameState.previousActions ?? [];
-        const latestActionIndex = actions.length > 0 ? actions[actions.length - 1].index : 0;
+        const latestActionIndex = hasElements(actions) ? actions[actions.length - 1].index : 0;
         const shareUrl = `${window.location.origin}/table/${id}?hand=${gameState.handNumber}&index=${latestActionIndex}`;
 
         copyTextToClipboard(

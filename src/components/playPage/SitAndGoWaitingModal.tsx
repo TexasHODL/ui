@@ -5,6 +5,7 @@
  * and are waiting for more players to fill the table before the game starts.
  */
 import React, { useCallback, useMemo, useState } from "react";
+import { hasValue, isNullish } from "../../utils/guards";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getGameTypeMnemonic } from "../../utils/gameFormatUtils";
@@ -47,9 +48,9 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ onLeaveConf
         }
     }, [onLeaveConfirm]);
 
-    const chipsLabel = playerStack !== undefined ? formatSitAndGoStackString(playerStack) : null;
+    const chipsLabel = hasValue(playerStack) ? formatSitAndGoStackString(playerStack) : null;
     const buyInLabel = gameOptions?.startingStack ? formatSitAndGoStackString(gameOptions.startingStack) : null;
-    const canShowLeaveUi = onLeaveConfirm !== undefined && playerStack !== undefined;
+    const canShowLeaveUi = hasValue(onLeaveConfirm) && hasValue(playerStack);
 
     // Calculate players joined
     const playersJoined = useMemo(() => {
@@ -62,7 +63,7 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ onLeaveConf
     const playerCountLabel = getGameTypeMnemonic(gameOptions?.minPlayers);
 
     // Don't render until game options are loaded
-    if (maxPlayers === undefined) {
+    if (isNullish(maxPlayers)) {
         return null;
     }
 

@@ -21,7 +21,7 @@ import { getSigningClient } from "../../utils/cosmos/client";
 import { signActionMessage } from "../../utils/cosmos/signing";
 import { finishingOrderFromState, signSettlementTx } from "../../utils/cosmos/settlementTx";
 import { getGameTransport, getGatewayApi } from "../../utils/gameTransport";
-import { isNullish } from "../../utils/guards";
+import { isNullish, hasElements } from "../../utils/guards";
 
 let latestGameState: TexasHoldemStateDTO | undefined;
 
@@ -48,7 +48,7 @@ export function setLatestGameState(gameState: TexasHoldemStateDTO | undefined): 
  */
 export function nextActionIndex(gameState: TexasHoldemStateDTO | undefined): number {
     const previousActions = gameState?.previousActions;
-    if (previousActions && previousActions.length > 0) {
+    if (hasElements(previousActions)) {
         return previousActions[previousActions.length - 1].index + 1;
     }
     // Fresh/empty table: actionCount is 0 here, so this is 1 — matching the
