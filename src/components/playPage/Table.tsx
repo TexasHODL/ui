@@ -1097,7 +1097,7 @@ const Table = React.memo(() => {
         }
         try {
              const actions = gameState?.previousActions ?? [];
-            const latestActionIndex = actions.length > 0 ? actions[actions.length - 1].index : 0;
+            const latestActionIndex = hasElements(actions) ? actions[actions.length - 1].index : 0;
             const shareUrl = `${window.location.origin}/table/${id}?hand=${handNumber}&index=${latestActionIndex}`;
             await navigator.clipboard.writeText(shareUrl);
             toast.success("Hand link copied to clipboard!", {

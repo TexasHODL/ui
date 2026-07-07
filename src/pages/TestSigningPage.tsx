@@ -1216,7 +1216,7 @@ export default function TestSigningPage() {
                 {/* Test Results */}
                 <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerPanel}`}>
                     <h2 className="text-2xl font-bold text-white mb-4">Test Results</h2>
-                    {testResults.length === 0 ? (
+                    {isEmpty(testResults) ? (
                         <p className="text-gray-400">No tests run yet</p>
                     ) : (
                         <div className="space-y-3">
