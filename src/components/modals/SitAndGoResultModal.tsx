@@ -50,9 +50,16 @@ interface SitAndGoResultModalProps {
      * `handleLeaveTableConfirm` here.
      */
     onLeave: () => void | Promise<void>;
+    /**
+     * Invoked when a paid finisher clicks "Claim winnings". Fires the SNG prize
+     * claim (record hand-end state + settle via MsgLeaveGame). Distinct from
+     * onLeave: post-start the roster is frozen — finishers claim, they don't
+     * leave. (pokerchain#239)
+     */
+    onClaim: () => Promise<void>;
 }
 
-export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onLeave }) => {
+export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onLeave, onClaim }) => {
     const { isSitAndGo, getPlayerResult } = useSitAndGoPlayerResults();
 
     // Read the user address fresh on mount only. The active wallet
@@ -94,6 +101,8 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const { claim, isClaimConfirmed, claimError, hash: claimHash } = useClaimSngWinNFT();
     const { address: web3Address, isConnected: isWeb3Connected, open: openWalletConnect } = useUserWalletConnect();
     const [claimState, setClaimState] = useState<ClaimState>({ kind: "idle" });
+    // USDC prize claim (record hand-end + settle), distinct from the NFT claim.
+    const [prizeClaim, setPrizeClaim] = useState<{ kind: "idle" | "claiming" | "done" | "error"; message?: string }>({ kind: "idle" });
 
     // Flip to "done" once wagmi's useWaitForTransactionReceipt fires.
     useEffect(() => {
@@ -124,6 +133,16 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
         localStorage.setItem(dismissKey(tableId, userAddress), "true");
         setDismissed(true);
         await onLeave();
+    };
+
+    const handleClaimWinningsClick = async () => {
+        try {
+            setPrizeClaim({ kind: "claiming" });
+            await onClaim();
+            setPrizeClaim({ kind: "done" });
+        } catch (e) {
+            setPrizeClaim({ kind: "error", message: e instanceof Error ? e.message : "Claim failed" });
+        }
     };
 
     const handleClaimClick = async () => {
@@ -196,6 +215,25 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                                 ${formatUSDCToSimpleDollars(payout)}
                             </div>
                         </div>
+                    )}
+
+                    {isPaid && (
+                        <button
+                            onClick={handleClaimWinningsClick}
+                            disabled={prizeClaim.kind === "claiming" || prizeClaim.kind === "done"}
+                            data-testid="sng-result-claim-winnings-btn"
+                            className="w-full py-3 px-4 mb-3 rounded-lg border border-green-500/40 bg-green-500/10 text-green-300 text-sm font-semibold hover:bg-green-500/20 hover:border-green-500/60 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {prizeClaim.kind === "claiming" && "Claiming…"}
+                            {prizeClaim.kind === "done" && "✓ Winnings claimed"}
+                            {(prizeClaim.kind === "idle" || prizeClaim.kind === "error") && `Claim $${formatUSDCToSimpleDollars(payout)}`}
+                        </button>
+                    )}
+
+                    {prizeClaim.kind === "error" && (
+                        <p className="text-xs text-red-400 text-center mb-3" data-testid="sng-result-prize-claim-error">
+                            {prizeClaim.message}
+                        </p>
                     )}
 
                     {isPaid && (
