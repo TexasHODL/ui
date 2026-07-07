@@ -232,9 +232,9 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                             data-testid="sng-result-claim-winnings-btn"
                             className="w-full py-3 px-4 mb-3 rounded-lg border border-green-500/40 bg-green-500/10 text-green-300 text-sm font-semibold hover:bg-green-500/20 hover:border-green-500/60 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {prizeClaim.kind === "claiming" && "Claiming…"}
+                            {prizeClaim.kind === "claiming" && "Collecting…"}
                             {prizeClaim.kind === "done" && "✓ Paid!"}
-                            {(prizeClaim.kind === "idle" || prizeClaim.kind === "error") && `Claim $${formatUSDCToSimpleDollars(payout)}`}
+                            {(prizeClaim.kind === "idle" || prizeClaim.kind === "error") && `Collect $${formatUSDCToSimpleDollars(payout)}`}
                         </button>
                     )}
 
