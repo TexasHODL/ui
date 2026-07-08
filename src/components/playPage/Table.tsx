@@ -776,15 +776,24 @@ const Table = React.memo(() => {
     // Broadcast action sounds to all players at the table (not just the local user)
     useGameStateSounds(playerActionSounds);
 
-    // Add the useTableState hook to get table state properties
-    const { tableSize } = useTableState();
+    // Add the useTableState hook to get table state properties.
+    // tableSize is only valid once state has loaded — while isLoading it is a
+    // placeholder (0) and must not drive layout, or the board flashes from a
+    // fabricated seat count to the real one (#466).
+    const { tableSize, isLoading: isTableStateLoading } = useTableState();
 
     // Container refs for geometry engine
     const tableContainerRef = useRef<HTMLDivElement>(null);
     const tableDivRef = useRef<HTMLDivElement>(null);
 
-    // StageGeometry layout system — supports 2/4/6/9 tables, auto-fit to any viewport
-    const tableLayout = useTableLayout((tableSize as 2 | 4 | 6 | 9) || 9, tableContainerRef);
+    // StageGeometry layout system — supports 2/4/6/9 tables, auto-fit to any viewport.
+    // This hook runs on EVERY render, including while loading (hooks can't be
+    // conditional), and getSeatPositions() indexes SEAT_COORDS[tableSize] — which
+    // is undefined for the loading placeholder 0 and throws. So feed it a valid
+    // fallback (9) while loading; the loading guard below still prevents any
+    // fabricated board from being PAINTED until tableSize is real (#466), so this
+    // computed-but-unrendered layout causes no flash.
+    const tableLayout = useTableLayout((tableSize || 9) as 2 | 4 | 6 | 9, tableContainerRef);
     const { dealerSeat } = useDealerPosition();
 
     // Mobile portrait blocking (#200)
@@ -1182,6 +1191,28 @@ const Table = React.memo(() => {
             subscribeToTable(id);
         };
         return <TableErrorPage error={validationError} tableId={id} onRetry={handleRetry} />;
+    }
+
+    // Loading guard (#466): do NOT paint the board until real game state arrives.
+    // The seat ring and the felt zoom are both derived from tableSize
+    // (gameState.gameOptions.maxPlayers). Rendering before that value exists
+    // meant painting a fabricated 9-seat table and then re-laying-out to the
+    // real size — a visible flash. Render the felt background + a spinner
+    // instead, so seats/felt only lay out once, at the correct size.
+    if (isTableStateLoading || !gameState) {
+        return (
+            <div className="table-container">
+                <div className="flex-grow relative overflow-visible flex items-center justify-center">
+                    {/* Background layers — same as the live table for a seamless transition */}
+                    <HexagonPattern patternId="hexagons-table-loading" />
+                    <div className="background-shimmer shimmer-animation" />
+                    <div className="background-animated-static" />
+                    <div className="background-base-static" />
+                    {/* Centered spinner */}
+                    <div className="relative z-20 h-10 w-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
+                </div>
+            </div>
+        );
     }
 
     return (
