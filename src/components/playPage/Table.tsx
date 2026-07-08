@@ -786,9 +786,13 @@ const Table = React.memo(() => {
     const tableDivRef = useRef<HTMLDivElement>(null);
 
     // StageGeometry layout system — supports 2/4/6/9 tables, auto-fit to any viewport.
-    // No default seat count: the loading guard below prevents the board from
-    // rendering until tableSize is the real value from gameState (#466).
-    const tableLayout = useTableLayout(tableSize as 2 | 4 | 6 | 9, tableContainerRef);
+    // This hook runs on EVERY render, including while loading (hooks can't be
+    // conditional), and getSeatPositions() indexes SEAT_COORDS[tableSize] — which
+    // is undefined for the loading placeholder 0 and throws. So feed it a valid
+    // fallback (9) while loading; the loading guard below still prevents any
+    // fabricated board from being PAINTED until tableSize is real (#466), so this
+    // computed-but-unrendered layout causes no flash.
+    const tableLayout = useTableLayout((tableSize || 9) as 2 | 4 | 6 | 9, tableContainerRef);
     const { dealerSeat } = useDealerPosition();
 
     // Mobile portrait blocking (#200)
