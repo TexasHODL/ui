@@ -1,4 +1,5 @@
 import React from "react";
+import { hasValue } from "../../../utils/guards";
 import { usePlayerActionDropBox } from "../../../hooks/player/usePlayerActionDropBox";
 import { useSeatJoinNotification } from "../../../hooks/notifications/useSeatJoinNotification";
 import { useGameStateContext } from "../../../context/GameStateContext";
@@ -231,8 +232,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
 
     const showEquityChip =
         !isWinner &&
-        playerEquity !== null &&
-        playerEquity !== undefined;
+        hasValue(playerEquity);
 
     return (
         <div className="badge-container">
