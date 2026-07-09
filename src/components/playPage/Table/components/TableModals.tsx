@@ -101,14 +101,23 @@ export const TableModals: React.FC<TableModalsProps> = ({
             {/* Transaction Popup - Bottom Right */}
             <TransactionPopup txHash={recentTxHash} onClose={handleCloseTransactionPopup} />
 
-            {/* Leave Table Modal */}
-            <LeaveTableModal
-                isOpen={isLeaveModalOpen}
-                onClose={handleLeaveModalClose}
-                onConfirm={handleLeaveTableConfirm}
-                playerStack={currentPlayerStack}
-                isInActiveHand={isInActiveHand}
-            />
+            {/* Leave Table Modal — cash games only.
+                SNG/Tournament players cannot leave an in-play tournament
+                (frozen roster; the chain drops LEAVE from legal actions once a
+                blind is posted — poker-vm#2343/#2349). Showing this generic
+                modal after a bust-out let players wrongly leave, rebuy, and
+                re-trigger the waiting modal for everyone (block52/ui#465). SNG
+                leave/terminal flows are handled by SitAndGoWaitingModal
+                (pre-start un-join) and SitAndGoResultModal (post-finish claim). */}
+            {!(gameFormat && isSitAndGoFormat(gameFormat)) && (
+                <LeaveTableModal
+                    isOpen={isLeaveModalOpen}
+                    onClose={handleLeaveModalClose}
+                    onConfirm={handleLeaveTableConfirm}
+                    playerStack={currentPlayerStack}
+                    isInActiveHand={isInActiveHand}
+                />
+            )}
         </>
     );
 };

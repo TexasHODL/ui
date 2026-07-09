@@ -18,7 +18,7 @@ import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import SngPayoutPanel from "../../SngPayoutPanel";
-import { formatGameFormatDisplay } from "../../../../utils/gameFormatUtils";
+import { formatGameFormatDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { GameFormat, GameOptionsDTO, PlayerDTO } from "@block52/poker-vm-sdk";
 import { BlindLevelInfo } from "../../../../hooks/game/useBlindLevel";
 import styles from "./TableHeader.module.css";
@@ -315,8 +315,11 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         {openSidebar ? <LuPanelLeftOpen size={14} /> : <LuPanelLeftClose size={14} />}
                     </span>
 
-                    {/* Only show Leave Table button if user is seated */}
-                    {currentPlayerData && (
+                    {/* Only show Leave Table button if user is seated — and never
+                        for SNG, where the roster is frozen once play starts
+                        (poker-vm#2343) and leave/claim is handled by the SNG
+                        modals (block52/ui#465). */}
+                    {currentPlayerData && !(gameFormat && isSitAndGoFormat(gameFormat)) && (
                         <span
                             className={`text-xs sm:text-[16px] cursor-pointer flex items-center gap-0.5 transition-colors duration-300 ml-2 sm:ml-3 ${styles.leaveTableButton}`}
                             onClick={handleLeaveTableClick}
