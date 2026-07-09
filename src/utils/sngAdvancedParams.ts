@@ -35,8 +35,11 @@ export interface AdvancedSngParams {
     blindLevelDuration?: number; // Minutes per blind level
 }
 
-/** All recognised keys — used to reject unknown fields. */
-const KNOWN_KEYS: (keyof AdvancedSngParams)[] = [
+/**
+ * All recognised param keys — the single source of truth for both validation
+ * (rejecting unknown fields) and the UI's "recognised fields" hint.
+ */
+export const ADVANCED_SNG_FIELDS: (keyof AdvancedSngParams)[] = [
     "maxPlayers",
     "buyIn",
     "startingStack",
@@ -45,13 +48,14 @@ const KNOWN_KEYS: (keyof AdvancedSngParams)[] = [
     "blindLevelDuration"
 ];
 
-export interface AdvancedSngParseResult {
-    isValid: boolean;
-    /** Parsed params, present only when isValid is true. */
-    params?: AdvancedSngParams;
-    /** Validation errors — non-empty when isValid is false. */
-    errors: string[];
-}
+/**
+ * Discriminated union so `params` is guaranteed present (never nullish) on the
+ * success branch — callers narrow on `isValid` and get typed params with no
+ * further guard needed.
+ */
+export type AdvancedSngParseResult =
+    | { isValid: true; params: AdvancedSngParams; errors: [] }
+    | { isValid: false; errors: string[] };
 
 export interface BlindLevelPreview {
     level: number;
@@ -108,13 +112,13 @@ export function parseAdvancedSngParams(raw: string): AdvancedSngParseResult {
 
     // Reject unknown keys so typos surface instead of being silently ignored.
     for (const key of Object.keys(obj)) {
-        if (!KNOWN_KEYS.includes(key as keyof AdvancedSngParams)) {
-            errors.push(`Unknown field "${key}". Allowed: ${KNOWN_KEYS.join(", ")}.`);
+        if (!ADVANCED_SNG_FIELDS.includes(key as keyof AdvancedSngParams)) {
+            errors.push(`Unknown field "${key}". Allowed: ${ADVANCED_SNG_FIELDS.join(", ")}.`);
         }
     }
 
     // Numeric + positive checks for every present field.
-    for (const key of KNOWN_KEYS) {
+    for (const key of ADVANCED_SNG_FIELDS) {
         if (isNullish(obj[key])) continue;
         if (!isFiniteNumber(obj[key])) {
             errors.push(`"${key}" must be a number.`);
@@ -193,11 +197,11 @@ export function buildSngPreview(input: SngPreviewInput): SngPreview {
  */
 export function mergeAdvancedParams(current: SngPreviewInput, params: AdvancedSngParams): SngPreviewInput {
     return {
-        maxPlayers: params.maxPlayers ?? current.maxPlayers,
-        buyIn: params.buyIn ?? current.buyIn,
-        startingStack: params.startingStack ?? current.startingStack,
-        smallBlind: params.smallBlind ?? current.smallBlind,
-        bigBlind: params.bigBlind ?? current.bigBlind,
-        blindLevelDuration: params.blindLevelDuration ?? current.blindLevelDuration
+        maxPlayers: hasValue(params.maxPlayers) ? params.maxPlayers : current.maxPlayers,
+        buyIn: hasValue(params.buyIn) ? params.buyIn : current.buyIn,
+        startingStack: hasValue(params.startingStack) ? params.startingStack : current.startingStack,
+        smallBlind: hasValue(params.smallBlind) ? params.smallBlind : current.smallBlind,
+        bigBlind: hasValue(params.bigBlind) ? params.bigBlind : current.bigBlind,
+        blindLevelDuration: hasValue(params.blindLevelDuration) ? params.blindLevelDuration : current.blindLevelDuration
     };
 }

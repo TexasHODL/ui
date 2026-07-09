@@ -19,6 +19,7 @@ describe("parseAdvancedSngParams", () => {
     it("parses a valid full object", () => {
         const result = parseAdvancedSngParams(JSON.stringify(BASE));
         expect(result.isValid).toBe(true);
+        if (!result.isValid) throw new Error("expected valid");
         expect(result.errors).toEqual([]);
         expect(result.params).toEqual(BASE);
     });
@@ -26,6 +27,7 @@ describe("parseAdvancedSngParams", () => {
     it("parses a partial object", () => {
         const result = parseAdvancedSngParams("{ \"startingStack\": 3000 }");
         expect(result.isValid).toBe(true);
+        if (!result.isValid) throw new Error("expected valid");
         expect(result.params).toEqual({ startingStack: 3000 });
     });
 
@@ -101,7 +103,8 @@ describe("parseAdvancedSngParams", () => {
     it("allows a fractional buyIn (dollars)", () => {
         const result = parseAdvancedSngParams("{ \"buyIn\": 10.5 }");
         expect(result.isValid).toBe(true);
-        expect(result.params?.buyIn).toBe(10.5);
+        if (!result.isValid) throw new Error("expected valid");
+        expect(result.params.buyIn).toBe(10.5);
     });
 });
 

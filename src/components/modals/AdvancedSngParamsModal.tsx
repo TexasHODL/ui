@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Modal } from "../common";
+import { hasContent } from "../../utils/guards";
 import {
     parseAdvancedSngParams,
     buildSngPreview,
     mergeAdvancedParams,
+    ADVANCED_SNG_FIELDS,
     type AdvancedSngParams,
     type SngPreviewInput
 } from "../../utils/sngAdvancedParams";
@@ -37,20 +39,20 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
     // Re-validate on every keystroke. A blank field is "not yet valid" but we
     // don't want to shout an error before the user has typed anything.
     const parseResult = useMemo(() => parseAdvancedSngParams(jsonText), [jsonText]);
-    const showErrors = jsonText.trim().length > 0 && !parseResult.isValid;
+    const showErrors = hasContent(jsonText.trim()) && !parseResult.isValid;
 
     // Preview reflects the merged result (form values + valid overrides). While
     // the JSON is invalid we preview the current form values so the panel isn't
     // empty.
     const preview = useMemo(() => {
-        const merged = parseResult.isValid && parseResult.params
+        const merged = parseResult.isValid
             ? mergeAdvancedParams(current, parseResult.params)
             : current;
         return buildSngPreview(merged);
     }, [parseResult, current]);
 
     const handleApply = () => {
-        if (parseResult.isValid && parseResult.params) {
+        if (parseResult.isValid) {
             onApply(parseResult.params);
             setJsonText("");
             onClose();
@@ -73,10 +75,13 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
         >
             <p className="text-gray-400 text-xs mb-3">
                 Paste a JSON object to override any Sit &amp; Go setting. Recognised fields:{" "}
-                <code className="text-blue-300">maxPlayers</code>, <code className="text-blue-300">buyIn</code>,{" "}
-                <code className="text-blue-300">startingStack</code>, <code className="text-blue-300">smallBlind</code>,{" "}
-                <code className="text-blue-300">bigBlind</code>, <code className="text-blue-300">blindLevelDuration</code>.
-                Blinds &amp; stacks are in chips; buy-in is in USDC.
+                {ADVANCED_SNG_FIELDS.map((field, i) => (
+                    <React.Fragment key={field}>
+                        {i > 0 && ", "}
+                        <code className="text-blue-300">{field}</code>
+                    </React.Fragment>
+                ))}
+                . Blinds &amp; stacks are in chips; buy-in is in USDC.
             </p>
 
             <textarea
@@ -103,7 +108,7 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
             {/* Preview */}
             <div className="mt-4">
                 <p className="text-gray-300 text-sm font-semibold mb-2">
-                    Preview {parseResult.isValid && jsonText.trim().length > 0 ? "(with custom params)" : "(current settings)"}
+                    Preview {parseResult.isValid && hasContent(jsonText.trim()) ? "(with custom params)" : "(current settings)"}
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
