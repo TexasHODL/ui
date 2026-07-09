@@ -2,7 +2,7 @@ import { createContext, FC, ReactNode, useContext, useMemo } from "react";
 import { CosmosApi } from "../apis/Api";
 import { useNetwork } from "./NetworkContext";
 
-const CosmosApiContext = createContext<CosmosApi>(null as any);
+const CosmosApiContext = createContext<CosmosApi | null>(null);
 
 export const CosmosApiProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const { currentNetwork } = useNetwork();
@@ -13,5 +13,9 @@ export const CosmosApiProvider: FC<{ children: ReactNode }> = ({ children }) => 
 export const useCosmosApi = (baseUrl?: string): CosmosApi => {
     const contextApi = useContext(CosmosApiContext);
     const customApi = useMemo(() => (baseUrl ? new CosmosApi({ baseUrl, secure: true, timeout: 5000 }) : null), [baseUrl]);
-    return customApi ?? contextApi;
+    const api = customApi ?? contextApi;
+    if (!api) {
+        throw new Error("useCosmosApi must be used within a CosmosApiProvider (or called with a baseUrl)");
+    }
+    return api;
 };

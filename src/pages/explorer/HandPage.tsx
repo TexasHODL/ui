@@ -3,13 +3,12 @@ import { truncateMiddle } from "../../utils/stringUtils";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
 import { TexasHoldemStateDTO, PlayerDTO } from "@block52/poker-vm-sdk";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
-import { useNetwork } from "../../context/NetworkContext";
+import { useIndexerApi } from "../../context/IndexerApiContext";
+import { useCosmosApi } from "../../context/CosmosApiContext";
 import { getCardImageUrl, getCardBackUrl, getDealerImageUrl } from "../../utils/cardImages";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { isEmpty, hasElements, hasContent } from "../../utils/guards";
 import styles from "./HandPage.module.css";
-
-const INDEXER_URL = import.meta.env.VITE_INDEXER_URL || "https://indexer.block52.xyz";
 
 // ---- Types ----
 
@@ -236,7 +235,8 @@ export default function HandPage() {
     const { gameId } = useParams<{ gameId: string }>();
     const [searchParams, setSearchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { currentNetwork } = useNetwork();
+    const indexerApi = useIndexerApi();
+    const cosmosApi = useCosmosApi();
 
     const handParam = searchParams.get("hand");
     const blockParam = searchParams.get("block");
@@ -266,9 +266,7 @@ export default function HandPage() {
             return;
         }
         try {
-            const res = await fetch(`${INDEXER_URL}/api/v1/hands?game_id=${encodeURIComponent(gameId)}`);
-            if (!res.ok) throw new Error(`Indexer returned ${res.status}`);
-            const data: HandsResponse = await res.json();
+            const data = await indexerApi.getHands(gameId) as HandsResponse;
             setHands(data.data);
         } catch (err: unknown) {
             console.error("Error fetching hands from indexer:", err);
@@ -276,7 +274,7 @@ export default function HandPage() {
         } finally {
             setHandsLoaded(true);
         }
-    }, [gameId]);
+    }, [gameId, indexerApi]);
 
     // Fetch historical game state at a specific block height
     const fetchGameState = useCallback(async (blockHeight: number) => {
@@ -285,16 +283,7 @@ export default function HandPage() {
             setLoading(true);
             setError(null);
 
-            const restEndpoint = currentNetwork.rest;
-            const url = `${restEndpoint}/block52/pokerchain/poker/v1/game_state_public/${encodeURIComponent(gameId)}`;
-
-            const res = await fetch(url, {
-                headers: { "x-cosmos-block-height": String(blockHeight) }
-            });
-
-            if (!res.ok) throw new Error(`Chain returned ${res.status}`);
-
-            const data = await res.json();
+            const data = await cosmosApi.getPublicGameStateAtBlock(gameId, blockHeight) as { game_state?: string };
             if (!data.game_state) throw new Error("No game_state in response");
 
             const parsed: TexasHoldemStateDTO = JSON.parse(data.game_state);
@@ -305,7 +294,7 @@ export default function HandPage() {
         } finally {
             setLoading(false);
         }
-    }, [gameId, currentNetwork]);
+    }, [gameId, cosmosApi]);
 
     // Fetch current game state (fallback when no block height)
     const fetchCurrentGameState = useCallback(async () => {
@@ -314,12 +303,7 @@ export default function HandPage() {
             setLoading(true);
             setError(null);
 
-            const restEndpoint = currentNetwork.rest;
-            const url = `${restEndpoint}/block52/pokerchain/poker/v1/game_state_public/${encodeURIComponent(gameId)}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Chain returned ${res.status}`);
-
-            const data = await res.json();
+            const data = await cosmosApi.getPublicGameState(gameId) as { game_state?: string };
             if (!data.game_state) throw new Error("No game_state in response");
 
             const parsed: TexasHoldemStateDTO = JSON.parse(data.game_state);
@@ -329,7 +313,7 @@ export default function HandPage() {
         } finally {
             setLoading(false);
         }
-    }, [gameId, currentNetwork]);
+    }, [gameId, cosmosApi]);
 
     // Load hands on mount
     useEffect(() => {

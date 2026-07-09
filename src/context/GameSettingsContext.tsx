@@ -48,7 +48,7 @@ export interface GameSettingsContextValue extends GameSettings {
     toggleSeatAtBottom: () => void;
 }
 
-const GameSettingsContext = createContext<GameSettingsContextValue>(null as any);
+const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
 
 export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [autoDeal, setAutoDeal] = useState<boolean>(() =>
@@ -182,4 +182,10 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return <GameSettingsContext.Provider value={value}>{children}</GameSettingsContext.Provider>;
 };
 
-export const useGameSettings = (): GameSettingsContextValue => useContext(GameSettingsContext);
+export const useGameSettings = (): GameSettingsContextValue => {
+    const context = useContext(GameSettingsContext);
+    if (!context) {
+        throw new Error("useGameSettings must be used within a GameSettingsProvider");
+    }
+    return context;
+};

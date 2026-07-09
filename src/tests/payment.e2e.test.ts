@@ -2,16 +2,7 @@
  * @jest-environment node
  */
 import { PaymentApi } from "../apis/Api";
-
-interface PaymentData {
-    payment_id: string;
-    pay_address: string;
-    pay_amount: number;
-    pay_currency: string;
-    price_amount: number;
-    expires_at: string;
-    success?: boolean;
-}
+import type { PaymentData } from "../types/payment";
 
 interface HotWalletInfo {
     address: string;

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { getCosmosUrls } from "../../utils/cosmos/urls";
-import { useNetwork } from "../../context/NetworkContext";
+import { useCosmosApi } from "../../context/CosmosApiContext";
 import { PlayerDTO } from "@block52/poker-vm-sdk";
 import { isEmpty } from "../../utils/guards";
 
@@ -22,7 +21,7 @@ interface TablePlayerCount {
 export const useTablePlayerCounts = (tableAddresses: string[]) => {
     const [playerCounts, setPlayerCounts] = useState<Map<string, TablePlayerCount>>(new Map());
     const [isLoading, setIsLoading] = useState(false);
-    const { currentNetwork } = useNetwork();
+    const cosmosApi = useCosmosApi();
 
     // Memoize the table addresses string to avoid unnecessary re-renders
     const tableAddressesKey = useMemo(() => tableAddresses.join(","), [tableAddresses]);
@@ -35,21 +34,11 @@ export const useTablePlayerCounts = (tableAddresses: string[]) => {
             const newCounts = new Map<string, TablePlayerCount>();
 
             try {
-                const { restEndpoint } = getCosmosUrls(currentNetwork);
-
                 // Fetch game state for each table in parallel from Cosmos blockchain
                 const promises = tableAddresses.map(async (gameId) => {
                     try {
                         // Query Cosmos REST API for game state
-                        const response = await fetch(
-                            `${restEndpoint}/block52/pokerchain/poker/v1/game_state/${gameId}`
-                        );
-
-                        if (!response.ok) {
-                            throw new Error(`Failed to fetch game state: ${response.statusText}`);
-                        }
-
-                        const data = await response.json();
+                        const data = await cosmosApi.getGameState(gameId) as { game_state?: string };
 
                         // Parse the game_state JSON string
                         if (data.game_state) {
@@ -102,7 +91,7 @@ export const useTablePlayerCounts = (tableAddresses: string[]) => {
         const interval = setInterval(fetchPlayerCounts, 10000);
 
         return () => clearInterval(interval);
-    }, [tableAddresses, tableAddressesKey, currentNetwork]); // Re-run when table list changes
+    }, [tableAddresses, tableAddressesKey, cosmosApi]); // Re-run when table list changes
 
     return { playerCounts, isLoading };
 };

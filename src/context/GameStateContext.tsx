@@ -133,7 +133,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             wsRef.current = ws;
 
             ws.onopen = async () => {
-                console.log("🔌 WebSocket connected to:", fullWsUrl);
                 // Create authenticated subscription message with signature
                 const authPayload = await createAuthPayload();
 
@@ -155,7 +154,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                           signature: authPayload?.signature
                       };
 
-                console.log("📤 Sending subscription message:", subscriptionMessage);
                 ws.send(JSON.stringify(subscriptionMessage));
                 setIsLoading(false);
 
@@ -175,7 +173,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
 
             ws.onmessage = event => {
                 try {
-                    console.log("📬 Raw WebSocket message received:", event.data);
                     let message = JSON.parse(event.data);
                     hasReceivedMessageRef.current = true;
 
@@ -200,7 +197,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         (cosmosEvents.includes(message.event) && message.gameId === tableId);
 
                     if (isStateUpdate) {
-                        console.log("📨 WebSocket message received:", message.event || message.type, "for gameId:", message.gameId || message.tableAddress);
                         // Extract game state, format, and variant from message
                         const { gameState: gameStateData, format: rawFormat, variant: rawVariant } = extractGameDataFromMessage(message);
 
@@ -256,9 +252,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         }
 
                         // Valid data - update state
-                        const playerAddress = localStorage.getItem(STORAGE_KEYS.cosmosAddress);
-                        const currentPlayer = (gameStateData as TexasHoldemStateDTO)?.players?.find(p => p.address === playerAddress);
-                        console.log("🎮 Game state updated. Current player status:", currentPlayer?.status, "| Player:", currentPlayer?.address?.slice(0, 10));
                         setGameState(gameStateData as TexasHoldemStateDTO);
                         setLatestGameState(gameStateData as TexasHoldemStateDTO);
                         setGameFormat(toGameFormat(rawFormat));
@@ -304,8 +297,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 }
             };
 
-            ws.onclose = (event) => {
-                console.log("🔌 WebSocket closed. Code:", event.code, "Reason:", event.reason, "Clean:", event.wasClean);
+            ws.onclose = () => {
                 if (wsRef.current === ws) {
                     wsRef.current = null;
                 }
