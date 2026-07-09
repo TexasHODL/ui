@@ -8,6 +8,7 @@ export class PaymentApi extends HTTPClient {
     public getHotWalletInfo = () => this.get("/api/nowpayments/hot-wallet-info");
     public manualBridge = (data: { cosmosAddress: string; amount: string }) => this.post("/api/nowpayments/manual-bridge", data);
     public approveBridge = () => this.post("/api/nowpayments/approve-bridge");
+    public createDepositSession = (data: { userAddress: string; depositAddress: string }) => this.post("/deposit-sessions", data);
 }
 
 export class CosmosApi extends HTTPClient {
@@ -26,6 +27,12 @@ export class CosmosApi extends HTTPClient {
         });
     public getGameStateAt = (gameId: string, handNumber: number, actionIndex: number) =>
         this.get(`block52/pokerchain/poker/v1/game_state_at/${gameId}/${handNumber}/${actionIndex}`);
+    public getPublicGameState = (gameId: string) =>
+        this.get(`/block52/pokerchain/poker/v1/game_state_public/${gameId}`);
+    public getPublicGameStateAtBlock = (gameId: string, blockHeight: number) =>
+        this.get(`/block52/pokerchain/poker/v1/game_state_public/${gameId}`, {
+            headers: { "x-cosmos-block-height": String(blockHeight) }
+        });
     public getWithdrawalRequests = () => this.get("/pokerchain/poker/withdrawal_requests");
     public getIsTxProcessed = (txHash: string) => this.get(`/block52/pokerchain/poker/v1/is_tx_processed/${txHash}`);
     public getNftAvatar = (cosmosAddress: string) => this.get(`/pokerchain/poker/nft_avatar/${cosmosAddress}`);

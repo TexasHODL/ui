@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { PROXY_URL } from "../../../config/constants";
+import { usePaymentApi } from "../../../context/PaymentApiContext";
 import spinner from "../../../assets/spinning-circles.svg";
 import btcLogo from "../../../assets/crypto/btc.svg";
 import usdcLogo from "../../../assets/crypto/usdc.svg";
@@ -41,26 +40,27 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, o
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showMore, setShowMore] = useState(false);
+    const paymentApi = usePaymentApi();
 
     useEffect(() => {
-        fetchCurrencies();
-    }, []);
+        const fetchCurrencies = async () => {
+            try {
+                setLoading(true);
+                const response = await paymentApi.getCurrencies() as { success?: boolean };
 
-    const fetchCurrencies = async () => {
-        try {
-            setLoading(true);
-            const response = await axios.get(`${PROXY_URL}/api/nowpayments/currencies`);
-
-            if (!response.data.success) {
-                setError("Failed to load currencies");
+                if (!response.success) {
+                    setError("Failed to load currencies");
+                }
+            } catch (err) {
+                console.error("Error fetching currencies:", err);
+                setError("Could not connect to payment service");
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            console.error("Error fetching currencies:", err);
-            setError("Could not connect to payment service");
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+
+        fetchCurrencies();
+    }, [paymentApi]);
 
     const displayCurrencies = showMore
         ? [...POPULAR_CURRENCIES, ...MORE_CURRENCIES]
