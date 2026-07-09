@@ -1315,7 +1315,10 @@ const Table = React.memo(() => {
                     {/* Right: Balance & Leave */}
                     <div className="flex items-center gap-2 bg-black bg-opacity-70 px-2 py-1 rounded-lg">
                         <span className="text-white text-xs font-mono">${balanceFormatted}</span>
-                        {currentPlayerData && (
+                        {/* No Leave in SNG — the roster is frozen once play
+                            starts (poker-vm#2343); SNG leave/claim flows live in
+                            the SNG modals (block52/ui#465). */}
+                        {currentPlayerData && !isSitAndGoFormat(gameFormat) && (
                             <>
                                 <span className="text-gray-300 text-xs">|</span>
                                 <span className="text-white text-xs cursor-pointer flex items-center gap-1" onClick={handleLeaveTableClick}>
