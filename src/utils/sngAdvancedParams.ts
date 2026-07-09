@@ -1,0 +1,201 @@
+/**
+ * Advanced Sit & Go parameter parsing, validation and preview.
+ *
+ * The Create Sit & Go form exposes an "advanced options" modal where a user
+ * can paste a raw JSON object of custom params. This module holds the pure,
+ * unit-tested logic for that flow: parse the JSON, validate it against the SNG
+ * create-table shape, and compute a human-readable preview (starting stacks,
+ * runners, blind levels) before anything is written back into the form.
+ *
+ * All values here are in the SAME units the form uses:
+ * - buyIn: dollars (USDC)
+ * - startingStack / smallBlind / bigBlind: chips (tournament chip units)
+ * - blindLevelDuration: minutes
+ * - maxPlayers: number of runners/entrants
+ */
+
+/** Chain-defined valid entrant counts for a Sit & Go. */
+export const VALID_SNG_RUNNER_COUNTS = [2, 4, 6, 9] as const;
+
+/** Number of blind levels shown in the preview structure. */
+export const SNG_PREVIEW_LEVEL_COUNT = 10;
+
+/**
+ * Custom advanced params a user may supply as JSON. Every field is optional —
+ * anything omitted falls back to the current form value when applied.
+ */
+export interface AdvancedSngParams {
+    maxPlayers?: number;        // Runners / entrants (must be one of VALID_SNG_RUNNER_COUNTS)
+    buyIn?: number;             // Buy-in in dollars
+    startingStack?: number;     // Starting chips per player
+    smallBlind?: number;        // Starting small blind (chips)
+    bigBlind?: number;          // Starting big blind (chips)
+    blindLevelDuration?: number; // Minutes per blind level
+}
+
+/** All recognised keys — used to reject unknown fields. */
+const KNOWN_KEYS: (keyof AdvancedSngParams)[] = [
+    "maxPlayers",
+    "buyIn",
+    "startingStack",
+    "smallBlind",
+    "bigBlind",
+    "blindLevelDuration"
+];
+
+export interface AdvancedSngParseResult {
+    isValid: boolean;
+    /** Parsed params, present only when isValid is true. */
+    params?: AdvancedSngParams;
+    /** Validation errors — non-empty when isValid is false. */
+    errors: string[];
+}
+
+export interface BlindLevelPreview {
+    level: number;
+    smallBlind: number;
+    bigBlind: number;
+    durationMinutes: number;
+}
+
+export interface SngPreview {
+    runners: number;
+    startingStack: number;
+    buyIn: number;
+    blindLevelDuration: number;
+    /** Total chips in play across all runners. */
+    totalChipsInPlay: number;
+    levels: BlindLevelPreview[];
+}
+
+function isFiniteNumber(value: unknown): value is number {
+    return typeof value === "number" && Number.isFinite(value);
+}
+
+/**
+ * Parse and validate a raw JSON string of advanced SNG params.
+ *
+ * Validation rules (all errors are collected, not fail-fast):
+ * - Must be valid JSON describing a plain object.
+ * - Unknown keys are rejected (typo protection).
+ * - Every present value must be a finite, positive number.
+ * - maxPlayers must be one of the chain-defined runner counts.
+ * - smallBlind must be less than bigBlind when both are present.
+ * - blindLevelDuration must be a positive integer number of minutes.
+ */
+export function parseAdvancedSngParams(raw: string): AdvancedSngParseResult {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
+        return { isValid: false, errors: ["Enter a JSON object of custom params."] };
+    }
+
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(trimmed);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        return { isValid: false, errors: [`Invalid JSON: ${message}`] };
+    }
+
+    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return { isValid: false, errors: ["Params must be a JSON object, e.g. { \"startingStack\": 1500 }."] };
+    }
+
+    const obj = parsed as Record<string, unknown>;
+    const errors: string[] = [];
+
+    // Reject unknown keys so typos surface instead of being silently ignored.
+    for (const key of Object.keys(obj)) {
+        if (!KNOWN_KEYS.includes(key as keyof AdvancedSngParams)) {
+            errors.push(`Unknown field "${key}". Allowed: ${KNOWN_KEYS.join(", ")}.`);
+        }
+    }
+
+    // Numeric + positive checks for every present field.
+    for (const key of KNOWN_KEYS) {
+        if (obj[key] === undefined) continue;
+        if (!isFiniteNumber(obj[key])) {
+            errors.push(`"${key}" must be a number.`);
+        } else if ((obj[key] as number) <= 0) {
+            errors.push(`"${key}" must be greater than 0.`);
+        }
+    }
+
+    const params: AdvancedSngParams = {};
+    if (isFiniteNumber(obj.maxPlayers)) params.maxPlayers = obj.maxPlayers;
+    if (isFiniteNumber(obj.buyIn)) params.buyIn = obj.buyIn;
+    if (isFiniteNumber(obj.startingStack)) params.startingStack = obj.startingStack;
+    if (isFiniteNumber(obj.smallBlind)) params.smallBlind = obj.smallBlind;
+    if (isFiniteNumber(obj.bigBlind)) params.bigBlind = obj.bigBlind;
+    if (isFiniteNumber(obj.blindLevelDuration)) params.blindLevelDuration = obj.blindLevelDuration;
+
+    // Cross-field / domain rules — only when the underlying value was numeric.
+    if (params.maxPlayers !== undefined && !VALID_SNG_RUNNER_COUNTS.includes(params.maxPlayers as 2 | 4 | 6 | 9)) {
+        errors.push(`"maxPlayers" must be one of ${VALID_SNG_RUNNER_COUNTS.join(", ")}.`);
+    }
+
+    if (params.smallBlind !== undefined && params.bigBlind !== undefined && params.smallBlind >= params.bigBlind) {
+        errors.push("\"smallBlind\" must be less than \"bigBlind\".");
+    }
+
+    if (params.startingStack !== undefined && !Number.isInteger(params.startingStack)) {
+        errors.push("\"startingStack\" must be a whole number of chips.");
+    }
+
+    if (params.blindLevelDuration !== undefined && !Number.isInteger(params.blindLevelDuration)) {
+        errors.push("\"blindLevelDuration\" must be a whole number of minutes.");
+    }
+
+    if (errors.length > 0) {
+        return { isValid: false, errors };
+    }
+
+    return { isValid: true, params, errors: [] };
+}
+
+export interface SngPreviewInput {
+    maxPlayers: number;
+    buyIn: number;
+    startingStack: number;
+    smallBlind: number;
+    bigBlind: number;
+    blindLevelDuration: number;
+}
+
+/**
+ * Build a preview of the resulting Sit & Go from effective values (form
+ * values merged with any applied advanced params). Blinds double each level,
+ * matching the structure shown in the create form.
+ */
+export function buildSngPreview(input: SngPreviewInput): SngPreview {
+    const levels: BlindLevelPreview[] = Array.from({ length: SNG_PREVIEW_LEVEL_COUNT }, (_, i) => ({
+        level: i + 1,
+        smallBlind: input.smallBlind * Math.pow(2, i),
+        bigBlind: input.bigBlind * Math.pow(2, i),
+        durationMinutes: input.blindLevelDuration
+    }));
+
+    return {
+        runners: input.maxPlayers,
+        startingStack: input.startingStack,
+        buyIn: input.buyIn,
+        blindLevelDuration: input.blindLevelDuration,
+        totalChipsInPlay: input.startingStack * input.maxPlayers,
+        levels
+    };
+}
+
+/**
+ * Merge applied advanced params over the current effective form values.
+ * Any param left undefined keeps the existing form value.
+ */
+export function mergeAdvancedParams(current: SngPreviewInput, params: AdvancedSngParams): SngPreviewInput {
+    return {
+        maxPlayers: params.maxPlayers ?? current.maxPlayers,
+        buyIn: params.buyIn ?? current.buyIn,
+        startingStack: params.startingStack ?? current.startingStack,
+        smallBlind: params.smallBlind ?? current.smallBlind,
+        bigBlind: params.bigBlind ?? current.bigBlind,
+        blindLevelDuration: params.blindLevelDuration ?? current.blindLevelDuration
+    };
+}
