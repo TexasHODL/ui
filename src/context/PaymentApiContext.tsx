@@ -2,7 +2,7 @@ import { createContext, FC, ReactNode, useContext, useMemo } from "react";
 import { PaymentApi } from "../apis/Api";
 import { PROXY_URL } from "../config/constants";
 
-const PaymentApiContext = createContext<PaymentApi>(null as any);
+const PaymentApiContext = createContext<PaymentApi | null>(null);
 
 export const PaymentApiProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const api = useMemo(
@@ -14,5 +14,9 @@ export const PaymentApiProvider: FC<{ children: ReactNode }> = ({ children }) =>
 };
 
 export const usePaymentApi = (): PaymentApi => {
-    return useContext(PaymentApiContext);
+    const context = useContext(PaymentApiContext);
+    if (!context) {
+        throw new Error("usePaymentApi must be used within a PaymentApiProvider");
+    }
+    return context;
 };
