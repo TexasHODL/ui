@@ -15,6 +15,8 @@ import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
 import { isTournamentFormat, getGameFormat, toGameFormat } from "../utils/gameFormatUtils";
+import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
+import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
 
 // Game creation fee in base units (1 usdc = 0.000001 USDC)
 // This matches GameCreationCost in pokerchain/x/poker/types/types.go
@@ -102,6 +104,19 @@ export default function TableAdminPage() {
     const [startingStack, setStartingStack] = useState(1500);
     const [blindLevelDuration, setBlindLevelDuration] = useState(10);
     const [showStructure, setShowStructure] = useState(false);
+    const [showAdvancedModal, setShowAdvancedModal] = useState(false);
+
+    // Apply advanced JSON params back into the SNG form state. Any field the
+    // user omitted keeps its current value (mergeAdvancedParams handles that in
+    // the modal; here we only write fields that were actually provided).
+    const handleApplyAdvancedParams = (params: AdvancedSngParams) => {
+        if (params.maxPlayers !== undefined) setMaxPlayers(params.maxPlayers);
+        if (params.startingStack !== undefined) setStartingStack(params.startingStack);
+        if (params.smallBlind !== undefined) setSngSmallBlind(params.smallBlind);
+        if (params.bigBlind !== undefined) setSngBigBlind(params.bigBlind);
+        if (params.blindLevelDuration !== undefined) setBlindLevelDuration(params.blindLevelDuration);
+        if (params.buyIn !== undefined) setTournamentBuyIn(params.buyIn.toString());
+    };
 
     // Calculate actual buy-in values from BB
     const { minBuyIn: calculatedMinBuyIn, maxBuyIn: calculatedMaxBuyIn } = useMemo(
@@ -588,6 +603,16 @@ export default function TableAdminPage() {
                                         Starting blinds: {sngSmallBlind} / {sngBigBlind} chips
                                     </p>
                                 </div>
+
+                                {/* Advanced Options — custom params via JSON */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvancedModal(true)}
+                                    className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <span>⚙</span>
+                                    Advanced Options (Custom Params)
+                                </button>
                             </div>
                         ) : (
                             <>
@@ -848,6 +873,21 @@ export default function TableAdminPage() {
                     </ul>
                 </div>
             </div>
+
+            {/* Advanced SNG Options Modal */}
+            <AdvancedSngParamsModal
+                isOpen={showAdvancedModal}
+                onClose={() => setShowAdvancedModal(false)}
+                current={{
+                    maxPlayers,
+                    buyIn: parseFloat(tournamentBuyIn) || 0,
+                    startingStack,
+                    smallBlind: sngSmallBlind,
+                    bigBlind: sngBigBlind,
+                    blindLevelDuration
+                }}
+                onApply={handleApplyAdvancedParams}
+            />
 
             {/* Success Modal */}
             {showSuccessModal && successTxHash && (
