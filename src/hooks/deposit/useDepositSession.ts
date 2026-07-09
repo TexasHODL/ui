@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import axios from "axios";
-import { DEPOSIT_ADDRESS, PROXY_URL } from "../../config/constants";
+import { DEPOSIT_ADDRESS } from "../../config/constants";
+import { usePaymentApi } from "../../context/PaymentApiContext";
 import { DepositSession, TransactionStatus } from "../../types";
 
 interface UseDepositSessionReturn {
@@ -20,6 +20,7 @@ interface UseDepositSessionReturn {
  * Hook for managing deposit session lifecycle
  */
 export const useDepositSession = (): UseDepositSessionReturn => {
+    const paymentApi = usePaymentApi();
     const [sessionId, setSessionId] = useState<string | null>(null);
     const [currentSession, setCurrentSession] = useState<DepositSession | null>(null);
     const [showQR, setShowQR] = useState<boolean>(false);
@@ -103,8 +104,7 @@ export const useDepositSession = (): UseDepositSessionReturn => {
             if (!sessionId || !currentSession || isDepositCompleted) return;
 
             try {
-                const response = await axios.get(`${PROXY_URL}/deposit-sessions/user/${userAddress}`);
-                const session = response.data;
+                const session = await paymentApi.getDepositSession(userAddress) as DepositSession & { txStatus?: TransactionStatus };
 
                 if (session) {
                     setCurrentSession(session);
@@ -119,22 +119,20 @@ export const useDepositSession = (): UseDepositSessionReturn => {
                 console.error("Error checking session status:", err);
             }
         },
-        [sessionId, currentSession, isDepositCompleted, transactionStatus]
+        [sessionId, currentSession, isDepositCompleted, transactionStatus, paymentApi]
     );
 
     // Create a new deposit session
     const createSession = useCallback(
         async (userAddress: string) => {
             try {
-                const payload = {
+                const session = await paymentApi.createDepositSession({
                     userAddress,
                     depositAddress: DEPOSIT_ADDRESS
-                };
+                }) as DepositSession & { _id: string };
 
-                const response = await axios.post(`${PROXY_URL}/deposit-sessions`, payload);
-
-                setCurrentSession(response.data);
-                setSessionId(response.data._id);
+                setCurrentSession(session);
+                setSessionId(session._id);
                 setShowQR(true);
                 setTimeLeft(300);
                 setError(null);
@@ -151,15 +149,16 @@ export const useDepositSession = (): UseDepositSessionReturn => {
                 return () => clearInterval(pollInterval);
             } catch (err: unknown) {
                 console.error("Failed to create deposit session:", err);
-                if (err && typeof err === "object" && "response" in err) {
-                    const axiosError = err as { response?: { data?: { error?: string } } };
-                    setError(axiosError.response?.data?.error || "Failed to create deposit session");
+                // HTTPClient throws the response body on error (see HTTPClient.onError)
+                if (err && typeof err === "object" && "error" in err) {
+                    const body = err as { error?: string };
+                    setError(body.error || "Failed to create deposit session");
                 } else {
                     setError("Failed to create deposit session");
                 }
             }
         },
-        [checkSessionStatus]
+        [checkSessionStatus, paymentApi]
     );
 
     // Reset session state
