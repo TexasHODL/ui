@@ -1,4 +1,5 @@
 import {
+    allInHand,
     betHand,
     callHand,
     checkHand,
@@ -215,11 +216,18 @@ const handlePostBigBlind = createTableIdAmountHandler("post big blind", postBigB
  */
 const handleRaise = createTableIdAmountHandler("raise", raiseHand);
 
+/**
+ * Handle all-in (shove) action.
+ * @param amount - The player's full remaining stack in micro-units as bigint (10^6 precision)
+ */
+const handleAllIn = createTableIdAmountHandler("all-in", allInHand);
+
 // =============================================================================
 // Exports
 // =============================================================================
 
 export {
+    handleAllIn,
     handleBet,
     handleCall,
     handleCheck,

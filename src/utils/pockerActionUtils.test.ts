@@ -1,5 +1,5 @@
 import { LegalActionDTO, NonPlayerActionType, PlayerActionType, PlayerDTO, PlayerStatus } from "@block52/poker-vm-sdk";
-import { getActionFlags, getFormattedMaxBetAmount, getInitialRaiseAmount, getTotalPotMicro, getUserPlayer, userInTable, validRaiseAmount } from "./pockerActionUtils";
+import { getActionFlags, getFormattedMaxBetAmount, getInitialRaiseAmount, getTotalPotMicro, getUserPlayer, shouldShowMainRowAllIn, userInTable, validRaiseAmount } from "./pockerActionUtils";
 
 describe("pockerActionUtils", () => {
     const players: PlayerDTO[] = [
@@ -159,6 +159,38 @@ describe("pockerActionUtils", () => {
 
         it("should return 0n for zero string", () => {
             expect(getTotalPotMicro("0")).toBe(0n);
+        });
+    });
+
+    // poker-vm#2351 / ui#457 — all-in is a FE label, synthesized from the
+    // player's stack. A dedicated main-row ALL-IN button shows only when the
+    // player faces a bet (CALL) but has no BET/RAISE slider to shove through.
+    describe("shouldShowMainRowAllIn", () => {
+        it("shows ALL-IN for a short shove (CALL only, no bet/raise, stack > 0)", () => {
+            // Short shove: stack (250) > call amount, but < a full min-raise, so
+            // the engine offers CALL but neither BET nor RAISE.
+            expect(shouldShowMainRowAllIn(true, false, false, 250n)).toBe(true);
+        });
+
+        it("shows ALL-IN for a capped call (CALL is the whole stack)", () => {
+            // Facing a bet >= stack: CALL present (capped at the stack), no raise.
+            expect(shouldShowMainRowAllIn(true, false, false, 150n)).toBe(true);
+        });
+
+        it("hides ALL-IN when RAISE is available (slider carries its own ALL-IN)", () => {
+            expect(shouldShowMainRowAllIn(true, false, true, 250n)).toBe(false);
+        });
+
+        it("hides ALL-IN when BET is available (slider carries its own ALL-IN)", () => {
+            expect(shouldShowMainRowAllIn(true, true, false, 250n)).toBe(false);
+        });
+
+        it("hides ALL-IN when the player is not facing a bet (no CALL)", () => {
+            expect(shouldShowMainRowAllIn(false, false, false, 250n)).toBe(false);
+        });
+
+        it("hides ALL-IN when the stack is zero", () => {
+            expect(shouldShowMainRowAllIn(true, false, false, 0n)).toBe(false);
         });
     });
 

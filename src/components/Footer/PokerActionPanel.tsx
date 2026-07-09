@@ -10,6 +10,7 @@ import {
     getInitialRaiseAmount,
     getTotalPotMicro,
     getUserPlayer,
+    shouldShowMainRowAllIn,
     validRaiseAmount
 } from "../../utils/pockerActionUtils";
 import { formatDisplayAmount } from "../../utils/numberUtils";
@@ -32,6 +33,7 @@ import { useAutoMuck } from "../../hooks/playerActions/useAutoMuck";
 
 // Import action handlers
 import {
+    handleAllIn,
     handleCall,
     handleCheck,
     handleFold,
@@ -308,6 +310,21 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const formattedBigBlindAmount = useMemo(() => formatDisplayAmount(toDisplay(bigBlindMicro), isTournament), [toDisplay, bigBlindMicro, isTournament]);
     const bigBlindUsdc = useMemo(() => toDisplay(bigBlindMicro), [toDisplay, bigBlindMicro]);
     const formattedCallAmount = useMemo(() => formatDisplayAmount(callAmount, isTournament), [callAmount, isTournament]);
+
+    // All-in as a FE label (poker-vm#2351). The engine never advertises an
+    // ALL_IN legal action; we synthesize the shove from the player's remaining
+    // stack. A dedicated ALL-IN button belongs on the main row when the player
+    // is facing a bet but NO bet/raise slider is offered (so RaiseBetControls
+    // won't mount to carry the slider's own ALL-IN preset):
+    //   - Short shove: stack > call amount but < a full min-raise. RAISE/BET are
+    //     both absent; CALL is present at the *call amount* (not the stack).
+    //   - Capped call: facing a bet >= stack. CALL is present, capped at the
+    //     whole stack (call amount === stack) and IS the all-in.
+    // In both, offer ALL-IN for the whole remaining stack; the engine commits it
+    // via a raw ALL_IN dispatch regardless of the legal-action surface.
+    const stackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
+    const showMainRowAllIn = shouldShowMainRowAllIn(hasCallAction, hasBetAction, hasRaiseAction, stackMicro);
+    const formattedAllInAmount = useMemo(() => formatDisplayAmount(toDisplay(stackMicro), isTournament), [toDisplay, stackMicro, isTournament]);
     const formattedMaxBetAmount = useMemo(
         () => getFormattedMaxBetAmount(hasBetAction, maxBet, maxRaise, isTournament),
         [hasBetAction, maxBet, maxRaise, isTournament]
@@ -514,6 +531,18 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         );
     };
 
+    // Main-row ALL-IN (short shove / capped call): the engine offers no
+    // bet/raise slider, so we shove the whole remaining stack directly via a raw
+    // ALL_IN dispatch. Unlike the slider's ALL-IN preset this commits
+    // immediately — there is no amount to stage. (poker-vm#2351, ui#457)
+    const handleMainRowAllInAction = async () => {
+        if (!hasContent(tableId)) return;
+        if (playerActionSounds) {
+            playActionSound("all-in");
+        }
+        await handleActionWithTransaction("all-in", () => handleAllIn(tableId, stackMicro, network), true);
+    };
+
     return (
         <div
             className={`fixed left-0 right-0 text-white flex justify-center items-center relative ${
@@ -622,10 +651,13 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                     previousActions={gameState?.previousActions || []}
                                     userAddress={userAddress || ""}
                                     isTournament={isTournament}
+                                    canAllIn={showMainRowAllIn}
+                                    allInAmount={formattedAllInAmount}
                                     onFold={() => handleActionWithTransaction("fold", () => handleFold(tableId, network))}
                                     onCheck={() => handleActionWithTransaction("check", () => handleCheck(tableId, network))}
                                     onCall={() => handleActionWithTransaction("call", () => handleCall(callAmountMicro, tableId, network))}
                                     onBetOrRaise={hasRaiseAction ? handleRaiseAction : handleBetAction}
+                                    onAllIn={handleMainRowAllInAction}
                                 />
 
                                 {/* Raise/Bet Controls */}

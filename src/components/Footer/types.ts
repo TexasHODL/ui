@@ -132,10 +132,16 @@ export interface MainActionButtonsProps {
     userAddress: string;
     isAllIn: boolean;
     isTournament: boolean;
+    /** Short shove / capped call: offer a dedicated ALL-IN button on the main row. */
+    canAllIn: boolean;
+    /** Formatted whole-stack amount shown on the main-row ALL-IN button. */
+    allInAmount: string;
     onFold: () => void;
     onCheck: () => void;
     onCall: () => void;
     onBetOrRaise: () => void;
+    /** Shove the whole remaining stack (short shove / capped call). */
+    onAllIn: () => void;
 }
 
 // ============================================================================

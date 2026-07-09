@@ -41,6 +41,25 @@ export const getUserPlayer = (players: PlayerDTO[] | null, userAddress: string |
     return players.find((player: PlayerDTO) => player.address?.toLowerCase() === userAddress.toLowerCase()) || null;
 };
 
+/**
+ * Whether to render a dedicated ALL-IN button on the main action row.
+ *
+ * "All-in" is a FE label, not a legal action — the engine never advertises
+ * ALL_IN in legalActions (poker-vm#2351). When a player is facing a bet (CALL
+ * present) but can neither BET nor RAISE through the slider, RaiseBetControls
+ * (which carries the slider's own ALL-IN preset) does not mount, so the only way
+ * to shove is a dedicated button that dispatches the whole stack. This covers:
+ *   - Short shove: stack > call amount but < a full min-raise.
+ *   - Capped call: facing a bet >= stack (CALL is the whole stack).
+ * Requires a positive remaining stack.
+ */
+export const shouldShowMainRowAllIn = (
+    hasCallAction: boolean,
+    hasBetAction: boolean,
+    hasRaiseAction: boolean,
+    stackMicro: bigint
+): boolean => hasCallAction && !hasBetAction && !hasRaiseAction && stackMicro > 0n;
+
 // Utility function to check if a specific action type is present in the legal actions array
 export const getActionFlags = (legalActions: LegalActionDTO[]): ActionFlags => ({
     hasSmallBlindAction: hasAction(legalActions, PlayerActionType.SMALL_BLIND),
