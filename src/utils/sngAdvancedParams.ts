@@ -14,6 +14,8 @@
  * - maxPlayers: number of runners/entrants
  */
 
+import { hasValue, isNullish, isBlank } from "./guards";
+
 /** Chain-defined valid entrant counts for a Sit & Go. */
 export const VALID_SNG_RUNNER_COUNTS = [2, 4, 6, 9] as const;
 
@@ -85,7 +87,7 @@ function isFiniteNumber(value: unknown): value is number {
  */
 export function parseAdvancedSngParams(raw: string): AdvancedSngParseResult {
     const trimmed = raw.trim();
-    if (trimmed.length === 0) {
+    if (isBlank(trimmed)) {
         return { isValid: false, errors: ["Enter a JSON object of custom params."] };
     }
 
@@ -97,7 +99,7 @@ export function parseAdvancedSngParams(raw: string): AdvancedSngParseResult {
         return { isValid: false, errors: [`Invalid JSON: ${message}`] };
     }
 
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (isNullish(parsed) || typeof parsed !== "object" || Array.isArray(parsed)) {
         return { isValid: false, errors: ["Params must be a JSON object, e.g. { \"startingStack\": 1500 }."] };
     }
 
@@ -113,7 +115,7 @@ export function parseAdvancedSngParams(raw: string): AdvancedSngParseResult {
 
     // Numeric + positive checks for every present field.
     for (const key of KNOWN_KEYS) {
-        if (obj[key] === undefined) continue;
+        if (isNullish(obj[key])) continue;
         if (!isFiniteNumber(obj[key])) {
             errors.push(`"${key}" must be a number.`);
         } else if ((obj[key] as number) <= 0) {
@@ -130,19 +132,19 @@ export function parseAdvancedSngParams(raw: string): AdvancedSngParseResult {
     if (isFiniteNumber(obj.blindLevelDuration)) params.blindLevelDuration = obj.blindLevelDuration;
 
     // Cross-field / domain rules — only when the underlying value was numeric.
-    if (params.maxPlayers !== undefined && !VALID_SNG_RUNNER_COUNTS.includes(params.maxPlayers as 2 | 4 | 6 | 9)) {
+    if (hasValue(params.maxPlayers) && !VALID_SNG_RUNNER_COUNTS.includes(params.maxPlayers as 2 | 4 | 6 | 9)) {
         errors.push(`"maxPlayers" must be one of ${VALID_SNG_RUNNER_COUNTS.join(", ")}.`);
     }
 
-    if (params.smallBlind !== undefined && params.bigBlind !== undefined && params.smallBlind >= params.bigBlind) {
+    if (hasValue(params.smallBlind) && hasValue(params.bigBlind) && params.smallBlind >= params.bigBlind) {
         errors.push("\"smallBlind\" must be less than \"bigBlind\".");
     }
 
-    if (params.startingStack !== undefined && !Number.isInteger(params.startingStack)) {
+    if (hasValue(params.startingStack) && !Number.isInteger(params.startingStack)) {
         errors.push("\"startingStack\" must be a whole number of chips.");
     }
 
-    if (params.blindLevelDuration !== undefined && !Number.isInteger(params.blindLevelDuration)) {
+    if (hasValue(params.blindLevelDuration) && !Number.isInteger(params.blindLevelDuration)) {
         errors.push("\"blindLevelDuration\" must be a whole number of minutes.");
     }
 
