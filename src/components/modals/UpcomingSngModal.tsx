@@ -57,6 +57,7 @@ const UpcomingSngModal: React.FC = () => {
             titleIcon="🏆"
             widthClass="w-[460px]"
             patternId="hexagons-upcoming-sng"
+            scrollable={false}
         >
             <p className="text-gray-400 text-xs mb-4">
                 Grab your seat at the next scheduled Sit &amp; Go. Times are shown in UTC with a live countdown to your local
