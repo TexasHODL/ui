@@ -24,6 +24,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
     userAddress,
     isAllIn,
     isTournament,
+    callIsAllIn,
     canAllIn,
     allInAmount,
     onFold,
@@ -85,11 +86,11 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     {loading === "call" ? (
                         <>
                             <LoadingSpinner size="sm" />
-                            CALLING...
+                            {callIsAllIn ? "JAMMING..." : "CALLING..."}
                         </>
                     ) : (
                         <>
-                            CALL <span className={styles.amountAccent}>{callAmount}</span>
+                            {callIsAllIn ? "CALL (ALL-IN)" : "CALL"} <span className={styles.amountAccent}>{callAmount}</span>
                         </>
                     )}
                 </button>
@@ -117,9 +118,10 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                 </button>
             )}
 
-            {/* Short shove / capped call: the engine offers no bet/raise slider,
-                so surface a dedicated ALL-IN that shoves the whole stack. It
-                commits immediately (no amount to stage). (poker-vm#2351, ui#457) */}
+            {/* Short shove: the all-in-only RAISE would render a degenerate
+                (min===max) slider, so surface a dedicated ALL-IN that dispatches
+                that RAISE for the whole stack. Commits immediately — no amount to
+                stage. (poker-vm#2353, ui#457) */}
             {canAllIn && (
                 <button
                     onClick={onAllIn}
@@ -128,7 +130,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                         isMobileLandscape ? "px-2 py-0.5 text-[10px]" : "px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm"
                     }`}
                 >
-                    {loading === "all-in" ? (
+                    {loading === "raise" ? (
                         <>
                             <LoadingSpinner size="sm" />
                             JAMMING...
