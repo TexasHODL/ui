@@ -10,6 +10,8 @@ import {
     getInitialRaiseAmount,
     getTotalPotMicro,
     getUserPlayer,
+    isCappedAllInCall,
+    isShortShoveRaise,
     validRaiseAmount
 } from "../../utils/pockerActionUtils";
 import { formatDisplayAmount } from "../../utils/numberUtils";
@@ -308,6 +310,19 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const formattedBigBlindAmount = useMemo(() => formatDisplayAmount(toDisplay(bigBlindMicro), isTournament), [toDisplay, bigBlindMicro, isTournament]);
     const bigBlindUsdc = useMemo(() => toDisplay(bigBlindMicro), [toDisplay, bigBlindMicro]);
     const formattedCallAmount = useMemo(() => formatDisplayAmount(callAmount, isTournament), [callAmount, isTournament]);
+
+    // All-in as a FE label (poker-vm#2351/#2353). The engine never advertises an
+    // ALL_IN action; a whole-stack commit arrives as a normal legal action whose
+    // `max` equals the stack. Two shapes need FE handling:
+    //   - Short-shove RAISE {min:stack,max:stack}: a min===max range breaks the
+    //     bet slider, so render a dedicated ALL-IN button that dispatches
+    //     RAISE(stack) and suppress the normal raise button + slider.
+    //   - Capped all-in CALL (facing a bet >= stack, no raise): the normal CALL
+    //     button already commits the whole stack — just relabel it "Call (All-In)".
+    const stackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
+    const shortShoveRaise = useMemo(() => isShortShoveRaise(legalActions, stackMicro), [legalActions, stackMicro]);
+    const callIsAllIn = useMemo(() => isCappedAllInCall(legalActions, stackMicro), [legalActions, stackMicro]);
+    const formattedAllInAmount = useMemo(() => formatDisplayAmount(toDisplay(stackMicro), isTournament), [toDisplay, stackMicro, isTournament]);
     const formattedMaxBetAmount = useMemo(
         () => getFormattedMaxBetAmount(hasBetAction, maxBet, maxRaise, isTournament),
         [hasBetAction, maxBet, maxRaise, isTournament]
@@ -514,6 +529,17 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         );
     };
 
+    // Short-shove ALL-IN: dispatch the all-in-only RAISE for the whole stack (the
+    // real legal action — no ALL_IN dispatch). Commits immediately; there is no
+    // amount to stage. (poker-vm#2353, ui#457)
+    const handleShortShoveAllInAction = async () => {
+        if (!hasContent(tableId)) return;
+        if (playerActionSounds) {
+            playActionSound("all-in");
+        }
+        await handleActionWithTransaction("raise", () => handleRaise(tableId, stackMicro, network), true);
+    };
+
     return (
         <div
             className={`fixed left-0 right-0 text-white flex justify-center items-center relative ${
@@ -610,8 +636,12 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                     // tx flicker) could otherwise paint a "CALL $0.00" button.
                                     canCall={hasCallAction && userPlayer?.status !== PlayerStatus.ALL_IN}
                                     callAmount={formattedCallAmount}
+                                    // Capped all-in call: the CALL commits the whole stack — relabel it.
+                                    callIsAllIn={callIsAllIn}
                                     canBet={hasBetAction}
-                                    canRaise={hasRaiseAction}
+                                    // Short-shove RAISE is an all-in-only range; the dedicated ALL-IN
+                                    // button handles it, so suppress the normal (slider-driven) raise.
+                                    canRaise={hasRaiseAction && !shortShoveRaise}
                                     raiseAmount={raiseAmount}
                                     isRaiseAmountInvalid={isRaiseAmountInvalid}
                                     playerStatus={userPlayer?.status || PlayerStatus.SEATED}
@@ -622,14 +652,19 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                     previousActions={gameState?.previousActions || []}
                                     userAddress={userAddress || ""}
                                     isTournament={isTournament}
+                                    canAllIn={shortShoveRaise}
+                                    allInAmount={formattedAllInAmount}
                                     onFold={() => handleActionWithTransaction("fold", () => handleFold(tableId, network))}
                                     onCheck={() => handleActionWithTransaction("check", () => handleCheck(tableId, network))}
                                     onCall={() => handleActionWithTransaction("call", () => handleCall(callAmountMicro, tableId, network))}
                                     onBetOrRaise={hasRaiseAction ? handleRaiseAction : handleBetAction}
+                                    onAllIn={handleShortShoveAllInAction}
                                 />
 
-                                {/* Raise/Bet Controls */}
-                                {(hasBetAction || hasRaiseAction) && (
+                                {/* Raise/Bet Controls — hidden for a short-shove RAISE, whose
+                                    all-in-only (min===max) range would render a degenerate slider;
+                                    the dedicated ALL-IN button drives that shove instead. */}
+                                {(hasBetAction || hasRaiseAction) && !shortShoveRaise && (
                                     <RaiseBetControls
                                         amount={raiseAmount}
                                         minAmount={hasBetAction ? minBet : minRaise}

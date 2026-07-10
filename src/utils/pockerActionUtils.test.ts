@@ -1,5 +1,5 @@
 import { LegalActionDTO, NonPlayerActionType, PlayerActionType, PlayerDTO, PlayerStatus } from "@block52/poker-vm-sdk";
-import { getActionFlags, getFormattedMaxBetAmount, getInitialRaiseAmount, getTotalPotMicro, getUserPlayer, userInTable, validRaiseAmount } from "./pockerActionUtils";
+import { getActionFlags, getFormattedMaxBetAmount, getInitialRaiseAmount, getTotalPotMicro, getUserPlayer, isCappedAllInCall, isShortShoveRaise, userInTable, validRaiseAmount } from "./pockerActionUtils";
 
 describe("pockerActionUtils", () => {
     const players: PlayerDTO[] = [
@@ -159,6 +159,60 @@ describe("pockerActionUtils", () => {
 
         it("should return 0n for zero string", () => {
             expect(getTotalPotMicro("0")).toBe(0n);
+        });
+    });
+
+    // poker-vm#2353 / ui#457 — all-in arrives as a normal legal action whose max
+    // equals the stack: an all-in-only RAISE (short shove) or a capped CALL.
+    const legal = (...entries: Array<[PlayerActionType, string, string]>): LegalActionDTO[] =>
+        entries.map(([action, min, max], index) => ({ action, min, max, index }));
+
+    describe("isShortShoveRaise", () => {
+        it("true for an all-in-only RAISE (min === max === stack)", () => {
+            const actions = legal([PlayerActionType.CALL, "200", "200"], [PlayerActionType.RAISE, "250", "250"]);
+            expect(isShortShoveRaise(actions, 250n)).toBe(true);
+        });
+
+        it("false for a normal raise range (min < max) — slider handles it", () => {
+            const actions = legal([PlayerActionType.CALL, "200", "200"], [PlayerActionType.RAISE, "400", "5000"]);
+            expect(isShortShoveRaise(actions, 5000n)).toBe(false);
+        });
+
+        it("false when the all-in-only RAISE max does not equal the stack", () => {
+            // Defensive: a min===max raise that isn't the whole stack is not a shove.
+            const actions = legal([PlayerActionType.RAISE, "250", "250"]);
+            expect(isShortShoveRaise(actions, 999n)).toBe(false);
+        });
+
+        it("false when there is no RAISE", () => {
+            expect(isShortShoveRaise(legal([PlayerActionType.CALL, "200", "200"]), 250n)).toBe(false);
+        });
+
+        it("false when the stack is zero", () => {
+            expect(isShortShoveRaise(legal([PlayerActionType.RAISE, "0", "0"]), 0n)).toBe(false);
+        });
+    });
+
+    describe("isCappedAllInCall", () => {
+        it("true when CALL is capped at the whole stack and there is no RAISE", () => {
+            expect(isCappedAllInCall(legal([PlayerActionType.CALL, "150", "150"]), 150n)).toBe(true);
+        });
+
+        it("false when a RAISE is available (not a capped call)", () => {
+            const actions = legal([PlayerActionType.CALL, "150", "150"], [PlayerActionType.RAISE, "250", "250"]);
+            expect(isCappedAllInCall(actions, 150n)).toBe(false);
+        });
+
+        it("false when CALL max is less than the stack (normal call)", () => {
+            expect(isCappedAllInCall(legal([PlayerActionType.CALL, "100", "100"]), 250n)).toBe(false);
+        });
+
+        it("false when there is no CALL", () => {
+            expect(isCappedAllInCall(legal([PlayerActionType.FOLD, "0", "0"]), 150n)).toBe(false);
+        });
+
+        it("false when the stack is zero", () => {
+            expect(isCappedAllInCall(legal([PlayerActionType.CALL, "0", "0"]), 0n)).toBe(false);
         });
     });
 
