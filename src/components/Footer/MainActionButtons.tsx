@@ -24,10 +24,14 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
     userAddress,
     isAllIn,
     isTournament,
+    callIsAllIn,
+    canAllIn,
+    allInAmount,
     onFold,
     onCheck,
     onCall,
-    onBetOrRaise
+    onBetOrRaise,
+    onAllIn
 }) => {
     // Calculate the total amount to display for raise button
     // This includes blinds posted during ANTE round when we're in PREFLOP
@@ -82,11 +86,11 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     {loading === "call" ? (
                         <>
                             <LoadingSpinner size="sm" />
-                            CALLING...
+                            {callIsAllIn ? "JAMMING..." : "CALLING..."}
                         </>
                     ) : (
                         <>
-                            CALL <span className={styles.amountAccent}>{callAmount}</span>
+                            {callIsAllIn ? "CALL (ALL-IN)" : "CALL"} <span className={styles.amountAccent}>{callAmount}</span>
                         </>
                     )}
                 </button>
@@ -109,6 +113,31 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                         <>
                             {canRaise ? "RAISE TO" : "BET"}{" "}
                             <span className={styles.amountAccent}>{formatDisplayAmount(raiseToAmount, isTournament)}</span>
+                        </>
+                    )}
+                </button>
+            )}
+
+            {/* Short shove: the all-in-only RAISE would render a degenerate
+                (min===max) slider, so surface a dedicated ALL-IN that dispatches
+                that RAISE for the whole stack. Commits immediately — no amount to
+                stage. (poker-vm#2353, ui#457) */}
+            {canAllIn && (
+                <button
+                    onClick={onAllIn}
+                    disabled={loading !== null}
+                    className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${
+                        isMobileLandscape ? "px-2 py-0.5 text-[10px]" : "px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm"
+                    }`}
+                >
+                    {loading === "raise" ? (
+                        <>
+                            <LoadingSpinner size="sm" />
+                            JAMMING...
+                        </>
+                    ) : (
+                        <>
+                            ALL-IN <span className={styles.amountAccent}>{allInAmount}</span>
                         </>
                     )}
                 </button>

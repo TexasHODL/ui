@@ -41,6 +41,33 @@ export const getUserPlayer = (players: PlayerDTO[] | null, userAddress: string |
     return players.find((player: PlayerDTO) => player.address?.toLowerCase() === userAddress.toLowerCase()) || null;
 };
 
+/**
+ * Whether a legal RAISE is an all-in-only "short shove" — an all-in-only range
+ * { min: stack, max: stack } (poker-vm#2353). This arises when the stack exceeds
+ * the call but can't make a full min-raise, so the engine offers RAISE only for
+ * the whole stack. A min===max range breaks the bet slider (div-by-zero in the
+ * fill %), so the FE renders a dedicated ALL-IN button for it and suppresses the
+ * normal raise button + slider. A normal (min < max) raise is left to the slider.
+ */
+export const isShortShoveRaise = (legalActions: LegalActionDTO[], stackMicro: bigint): boolean => {
+    if (stackMicro <= 0n) return false;
+    const raise = legalActions.find(a => a.action === PlayerActionType.RAISE);
+    return !!raise && raise.min === raise.max && parseMicroToBigInt(raise.max) === stackMicro;
+};
+
+/**
+ * Whether the CALL is a capped all-in call — CALL is the whole stack because the
+ * player faces a bet >= their stack, and there is no RAISE (poker-vm#2205/#2353).
+ * The normal CALL button already dispatches this (it commits the whole stack);
+ * the FE just relabels it "Call (All-In)". No separate action or button.
+ */
+export const isCappedAllInCall = (legalActions: LegalActionDTO[], stackMicro: bigint): boolean => {
+    if (stackMicro <= 0n) return false;
+    const raise = legalActions.find(a => a.action === PlayerActionType.RAISE);
+    const call = legalActions.find(a => a.action === PlayerActionType.CALL);
+    return !raise && !!call && parseMicroToBigInt(call.max) === stackMicro;
+};
+
 // Utility function to check if a specific action type is present in the legal actions array
 export const getActionFlags = (legalActions: LegalActionDTO[]): ActionFlags => ({
     hasSmallBlindAction: hasAction(legalActions, PlayerActionType.SMALL_BLIND),
