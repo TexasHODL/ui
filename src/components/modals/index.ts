@@ -14,6 +14,7 @@ export { default as LeaveTableModal } from "./LeaveTableModal";
 export { default as SitAndGoAutoJoinModal } from "./SitAndGoAutoJoinModal";
 export { default as SitAndGoResultModal } from "./SitAndGoResultModal";
 export { default as DealEntropyModal } from "./DealEntropyModal";
+export { default as UpcomingSngModal } from "./UpcomingSngModal";
 
 // Type exports
 export type {

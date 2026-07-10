@@ -21,5 +21,7 @@ export const STORAGE_KEYS = {
     /** Bridge admin dashboard page size. */
     bridgeItemsPerPage: "bridge_items_per_page",
     /** Bearer token injected by HTTPClient on secure requests. */
-    authToken: "token"
+    authToken: "token",
+    /** Whether the viewer has dismissed the upcoming Sit & Go welcome modal. */
+    seenUpcomingSngModal: "seen_upcoming_sng_modal"
 } as const;

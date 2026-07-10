@@ -12,7 +12,7 @@ import { calculateBuyIn } from "../utils/buyInUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
 import { usdcToMicroBigInt, formatMicroAsUsdc, microToUsdc } from "../constants/currency";
 
-import { WithdrawalModal, USDCDepositModal } from "../components/modals";
+import { WithdrawalModal, USDCDepositModal, UpcomingSngModal } from "../components/modals";
 import TableList from "../components/TableList";
 import WalletPanel from "../components/WalletPanel";
 import TransactionPanel from "../components/TransactionPanel";
@@ -1014,6 +1014,9 @@ const Dashboard: React.FC = () => {
                             }}
                         />
                     )}
+
+                    {/* Welcome modal: lists the next scheduled Sit & Go tournaments once per browser */}
+                    <UpcomingSngModal />
                 </>
             )}
         </div>
