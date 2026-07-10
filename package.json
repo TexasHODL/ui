@@ -80,6 +80,10 @@
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
     "@eslint/js": "^10.0.1",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -98,8 +102,7 @@
     "jest-environment-jsdom": "^30.3.0",
     "postcss": "^8.4.49",
     "prettier": "^3.8.0",
-    "ts-jest": "^29.2.5",
-    "typescript": "^5.7.2",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.57.2",
     "vite": "^8.0.13"
   },

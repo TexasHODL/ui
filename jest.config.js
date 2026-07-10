@@ -1,20 +1,16 @@
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'jsdom',
   testMatch: ['**/*.test.ts', '**/*.test.tsx'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/', '\\.e2e\\.test\\.'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: {
-        module: 'commonjs',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-        resolveJsonModule: true,
-        skipLibCheck: true,
-        jsx: 'react-jsx'
-      }
+    '^.+\\.tsx?$': ['babel-jest', {
+      presets: [
+        ['@babel/preset-env', { targets: { node: 'current' } }],
+        ['@babel/preset-react', { runtime: 'automatic' }],
+        '@babel/preset-typescript'
+      ]
     }]
   },
   // Transform ESM packages that Jest can't parse by default
