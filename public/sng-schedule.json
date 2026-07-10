@@ -2,7 +2,7 @@
     "tournaments": [
         {
             "id": "tuesday-10",
-            "name": "$10 Tuesday",
+            "name": "Ten Dollar Tuesdays",
             "buyIn": "$10",
             "dayOfWeek": 2,
             "hour": 18,
