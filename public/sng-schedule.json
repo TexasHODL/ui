@@ -1,0 +1,24 @@
+{
+    "tournaments": [
+        {
+            "id": "tuesday-10",
+            "name": "Ten Dollar Tuesdays",
+            "buyIn": "$10",
+            "dayOfWeek": 2,
+            "hour": 18,
+            "minute": 0,
+            "timeZone": "Australia/Sydney",
+            "link": "https://block52.xyz/sng/tuesday-10"
+        },
+        {
+            "id": "thursday-50",
+            "name": "$50 Thursday",
+            "buyIn": "$50",
+            "dayOfWeek": 4,
+            "hour": 18,
+            "minute": 0,
+            "timeZone": "Australia/Sydney",
+            "link": "https://block52.xyz/sng/thursday-50"
+        }
+    ]
+}
