@@ -26,6 +26,15 @@ export function getGatewayHttpUrl(): string {
     return viteEnv.VITE_GATEWAY_URL || DEFAULT_GATEWAY_URL;
 }
 
+/**
+ * Whether the gateway-transport banner should render. Hidden by default
+ * (ui#494 — it became noise once gateway turned into the default transport);
+ * set VITE_SHOW_BANNER=true to bring it back for at-a-glance transport checks.
+ */
+export function isTransportBannerEnabled(): boolean {
+    return (viteEnv.VITE_SHOW_BANNER || "").toLowerCase() === "true";
+}
+
 /** Derives the gateway's WebSocket endpoint from its HTTP base URL. */
 export function getGatewayWsUrl(): string {
     const base = getGatewayHttpUrl().replace(/\/$/, "");

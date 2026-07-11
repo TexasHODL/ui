@@ -1,14 +1,17 @@
 import React from "react";
-import { getGameTransport, getGatewayHttpUrl } from "../utils/gameTransport";
+import { getGameTransport, getGatewayHttpUrl, isTransportBannerEnabled } from "../utils/gameTransport";
 
 /**
  * Unmissable indicator that the app is running on the optimistic WS
  * gateway transport (ui#440) — so a tester can confirm at a glance that
- * VITE_GAME_TRANSPORT / VITE_GATEWAY_URL are set as intended. Renders
- * nothing on the default chain transport.
+ * VITE_GAME_TRANSPORT / VITE_GATEWAY_URL are set as intended.
+ *
+ * Hidden by default (ui#494): now that gateway is the default transport the
+ * banner showed for everyone. Opt in with VITE_SHOW_BANNER=true. Still renders
+ * nothing unless the app is actually on the gateway transport.
  */
 export const GatewayTransportBanner: React.FC = () => {
-    if (getGameTransport() !== "gateway") {
+    if (!isTransportBannerEnabled() || getGameTransport() !== "gateway") {
         return null;
     }
     return (
