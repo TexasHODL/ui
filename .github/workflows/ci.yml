@@ -57,3 +57,49 @@ jobs:
 
       - name: Run tests
         run: yarn test
+
+  e2e:
+    name: E2E (stub)
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # .env is gitignored; the stub-driven e2e only needs the gateway transport
+      # pointed at the local stub. VITE_PROJECT_ID is the public value from
+      # .env.example (required or the app throws at boot). See packages/e2e.
+      - name: Write .env for the stub e2e run
+        run: |
+          cat > .env <<'EOF'
+          VITE_PROJECT_ID=23ec57c1c95f3f54a97605975d4df7eb
+          VITE_GAME_TRANSPORT=gateway
+          VITE_GATEWAY_URL=http://localhost:8546/gateway
+          EOF
+
+      - name: Install Playwright browser (chromium)
+        run: yarn playwright install --with-deps chromium
+
+      # Playwright's webServer config boots `yarn stub` (:8546) and `yarn dev`
+      # (:5173) itself, waits for both to be healthy, then runs the specs.
+      - name: Run e2e
+        run: yarn workspace @block52/e2e test
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: packages/e2e/playwright-report/
+          retention-days: 7

@@ -109,6 +109,16 @@ export const NETWORK_PRESETS: NetworkEndpoints[] = [
         rest: "https://node.tommillerservices.com",
         grpc: "grpcs://node.tommillerservices.com:9443",
         ws: "wss://node.tommillerservices.com/ws" // WebSocket server not deployed yet
+    },
+    // [4] 🧪 Wallet Stub - Local @block52/wallet-stub server (docs/plans/2026_07_11_wallet_stub_server.md)
+    // Serves a funded balance + synthetic game state so the UI runs with no chain/funds.
+    // Run: `yarn stub`. Gameplay actions/WS use VITE_GATEWAY_URL (default the same origin).
+    {
+        name: "Stub",
+        rpc: "http://localhost:8546",
+        rest: "http://localhost:8546",
+        grpc: "http://localhost:8546",
+        ws: "ws://localhost:8546/ws"
     }
 ];
 
