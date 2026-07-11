@@ -39,8 +39,8 @@ describe("NetworkContext", () => {
     });
 
     describe("NETWORK_PRESETS", () => {
-        it("should have four network presets", () => {
-            expect(NETWORK_PRESETS).toHaveLength(4);
+        it("should have five network presets", () => {
+            expect(NETWORK_PRESETS).toHaveLength(5);
         });
 
         it("should have Block52 as first preset", () => {
@@ -61,6 +61,11 @@ describe("NetworkContext", () => {
         it("should have Miller Services as fourth preset", () => {
             expect(NETWORK_PRESETS[3].name).toBe("Miller Services");
             expect(NETWORK_PRESETS[3].ws).toBe("wss://node.tommillerservices.com/ws");
+        });
+
+        it("should have Stub as fifth preset (local dev/test stub)", () => {
+            expect(NETWORK_PRESETS[4].name).toBe("Stub");
+            expect(NETWORK_PRESETS[4].ws).toBe("ws://localhost:8546/ws");
         });
 
         it("should have all required endpoints for each preset", () => {
@@ -103,7 +108,7 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            expect(screen.getByTestId("network-count").textContent).toBe("4");
+            expect(screen.getByTestId("network-count").textContent).toBe("5");
         });
 
         it("should load saved network from localStorage", () => {
