@@ -677,7 +677,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                                       raiseAmount,
                                                       gameState?.previousActions || [],
                                                       gameState?.round || TexasHoldemRound.ANTE,
-                                                      userAddress || ""
+                                                      userAddress || "",
+                                                      isTournament
                                                   ) - raiseAmount
                                                 : 0
                                         }
@@ -685,6 +686,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                         callAmountMicro={callAmountMicro}
                                         isInvalid={isRaiseAmountInvalid}
                                         isMobileLandscape={isMobileLandscape}
+                                        isTournament={isTournament}
                                         currentRound={gameState?.round || TexasHoldemRound.ANTE}
                                         previousActions={gameState?.previousActions || []}
                                         disabled={!isUsersTurn}

@@ -1,4 +1,6 @@
 import React from "react";
+import { formatDisplayAmount, formatSliderInputValue, parseSliderInput } from "../../utils/numberUtils";
+import { hasValue } from "../../utils/guards";
 import type { RaiseSliderProps } from "./types";
 
 export const RaiseSlider: React.FC<RaiseSliderProps> = ({
@@ -11,12 +13,20 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
     isInvalid,
     disabled,
     isMobileLandscape,
+    isTournament,
     onChange,
     onIncrement,
     onDecrement
 }) => {
     const displayValue = value + displayOffset;
     const percentage = ((value - min) / (max - min)) * 100;
+
+    // Tournaments show whole chips (no "$", no decimals); cash shows "$X.XX".
+    const displayString = formatSliderInputValue(displayValue, isTournament);
+    const handleInput = (raw: string) => {
+        const next = parseSliderInput(raw, displayOffset, isTournament);
+        if (hasValue(next)) onChange(next);
+    };
 
     const inputFieldClassName = isInvalid
         ? "bg-gray-700/80 text-red-400 border-red-500 focus:border-red-600 focus:ring-1 focus:ring-red-500/50"
@@ -31,9 +41,9 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
             {/* Min/Max text - placed first in mobile landscape */}
             {isMobileLandscape && (
                 <div className="flex items-center text-[9px] text-gray-400 whitespace-nowrap">
-                    <span>Min:${min.toFixed(2)}</span>
+                    <span>Min:{formatDisplayAmount(min, isTournament)}</span>
                     <span className="mx-1">/</span>
-                    <span>Max:${formattedMax}</span>
+                    <span>Max:{formattedMax}</span>
                 </div>
             )}
 
@@ -87,20 +97,9 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                 <div className="flex flex-col items-end gap-1 min-w-0">
                     <input
                         type="text"
-                        inputMode="decimal"
-                        value={displayValue.toFixed(2)}
-                        onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                                onChange(0);
-                                return;
-                            }
-                            if (/^\d*\.?\d{0,2}$/.test(raw)) {
-                                if (!isNaN(Number(raw)) && /^\d*\.?\d{1,2}$/.test(raw)) {
-                                    onChange(Math.max(0, parseFloat(raw) - displayOffset));
-                                }
-                            }
-                        }}
+                        inputMode={isTournament ? "numeric" : "decimal"}
+                        value={displayString}
+                        onChange={(e) => handleInput(e.target.value)}
                         className={`${inputFieldClassName} px-1 lg:px-2 py-1 rounded text-xs lg:text-sm w-[80px] lg:w-[100px] transition-all duration-200 border`}
                         disabled={disabled}
                     />
@@ -110,20 +109,9 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
             {isMobileLandscape && (
                 <input
                     type="text"
-                    inputMode="decimal"
-                    value={displayValue.toFixed(2)}
-                    onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") {
-                            onChange(0);
-                            return;
-                        }
-                        if (/^\d*\.?\d{0,2}$/.test(raw)) {
-                            if (!isNaN(Number(raw)) && /^\d*\.?\d{1,2}$/.test(raw)) {
-                                onChange(Math.max(0, parseFloat(raw) - displayOffset));
-                            }
-                        }
-                    }}
+                    inputMode={isTournament ? "numeric" : "decimal"}
+                    value={displayString}
+                    onChange={(e) => handleInput(e.target.value)}
                     className={`${inputFieldClassName} px-1 py-0.5 rounded text-[10px] w-[50px] transition-all duration-200 border`}
                     disabled={disabled}
                 />
