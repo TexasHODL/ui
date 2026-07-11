@@ -10,12 +10,12 @@
 import type { NetworkEndpoints } from "./urls";
 
 // Mock the SDK so we can count derivations without doing real BIP39 work.
-const createSigningClientFromMnemonic = jest.fn();
+const mockCreateSigningClientFromMnemonic = jest.fn();
 
 jest.mock("@block52/poker-vm-sdk", () => ({
     CosmosClient: jest.fn(),
     SigningCosmosClient: jest.fn(),
-    createSigningClientFromMnemonic: (...args: unknown[]) => createSigningClientFromMnemonic(...args),
+    createSigningClientFromMnemonic: (...args: unknown[]) => mockCreateSigningClientFromMnemonic(...args),
     getDefaultCosmosConfig: () => ({
         chainId: "test-chain",
         prefix: "b52",
@@ -61,12 +61,12 @@ const ADDRESS_2 = "b521bbbb";
 describe("getSigningClient", () => {
     beforeEach(() => {
         clearSigningClientCache();
-        createSigningClientFromMnemonic.mockReset();
+        mockCreateSigningClientFromMnemonic.mockReset();
         mockAddress.mockReturnValue(ADDRESS_1);
         mockMnemonic.mockReturnValue(MNEMONIC);
 
         // Default: each derivation returns a fresh fake client.
-        createSigningClientFromMnemonic.mockImplementation(async () => ({
+        mockCreateSigningClientFromMnemonic.mockImplementation(async () => ({
             performActionSync: jest.fn(),
             disconnect: jest.fn()
         }));
@@ -77,13 +77,13 @@ describe("getSigningClient", () => {
         await getSigningClient(NETWORK_A);
         await getSigningClient(NETWORK_A);
 
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
     });
 
     it("dedupes concurrent callers into a single in-flight derivation", async () => {
         // Slow derivation so both calls land while the first is still pending.
         let resolveDerivation!: (client: unknown) => void;
-        createSigningClientFromMnemonic.mockImplementationOnce(
+        mockCreateSigningClientFromMnemonic.mockImplementationOnce(
             () => new Promise(resolve => { resolveDerivation = resolve; })
         );
 
@@ -93,7 +93,7 @@ describe("getSigningClient", () => {
         resolveDerivation({ performActionSync: jest.fn() });
         const [a, b] = await Promise.all([first, second]);
 
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
         expect(a.signingClient).toBe(b.signingClient);
     });
 
@@ -101,7 +101,7 @@ describe("getSigningClient", () => {
         await getSigningClient(NETWORK_A);
         await getSigningClient(NETWORK_B);
 
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
     });
 
     it("rebuilds when the wallet address changes (wallet swap)", async () => {
@@ -111,7 +111,7 @@ describe("getSigningClient", () => {
         mockAddress.mockReturnValue(ADDRESS_2);
         await getSigningClient(NETWORK_A);
 
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
     });
 
     it("rebuilds after clearSigningClientCache()", async () => {
@@ -119,11 +119,11 @@ describe("getSigningClient", () => {
         clearSigningClientCache();
         await getSigningClient(NETWORK_A);
 
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
     });
 
     it("drops the cache when derivation rejects so the next call retries", async () => {
-        createSigningClientFromMnemonic.mockRejectedValueOnce(new Error("boom"));
+        mockCreateSigningClientFromMnemonic.mockRejectedValueOnce(new Error("boom"));
 
         await expect(getSigningClient(NETWORK_A)).rejects.toThrow("boom");
 
@@ -131,27 +131,27 @@ describe("getSigningClient", () => {
         await Promise.resolve();
 
         // Second call should build a fresh promise rather than returning the rejected one.
-        createSigningClientFromMnemonic.mockResolvedValueOnce({ performActionSync: jest.fn() });
+        mockCreateSigningClientFromMnemonic.mockResolvedValueOnce({ performActionSync: jest.fn() });
         await getSigningClient(NETWORK_A);
 
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
     });
 
     it("throws if the wallet is not initialized", async () => {
         mockMnemonic.mockReturnValue(null);
 
         await expect(getSigningClient(NETWORK_A)).rejects.toThrow(/wallet not initialized/i);
-        expect(createSigningClientFromMnemonic).not.toHaveBeenCalled();
+        expect(mockCreateSigningClientFromMnemonic).not.toHaveBeenCalled();
     });
 });
 
 describe("withSigningClientRetry", () => {
     beforeEach(() => {
         clearSigningClientCache();
-        createSigningClientFromMnemonic.mockReset();
+        mockCreateSigningClientFromMnemonic.mockReset();
         mockAddress.mockReturnValue(ADDRESS_1);
         mockMnemonic.mockReturnValue(MNEMONIC);
-        createSigningClientFromMnemonic.mockImplementation(async () => ({
+        mockCreateSigningClientFromMnemonic.mockImplementation(async () => ({
             performActionSync: jest.fn(),
             disconnect: jest.fn()
         }));
@@ -163,7 +163,7 @@ describe("withSigningClientRetry", () => {
         });
 
         expect(result).toBe("ok");
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
     });
 
     it("does NOT retry application errors (e.g. CheckTx rejection)", async () => {
@@ -174,7 +174,7 @@ describe("withSigningClientRetry", () => {
         ).rejects.toThrow("insufficient gas");
 
         // No second client build — we don't want to double-submit a tx the chain rejected.
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(1);
     });
 
     it("retries once on transport errors with a fresh client", async () => {
@@ -186,7 +186,7 @@ describe("withSigningClientRetry", () => {
         });
 
         // First client + rebuilt client = 2 derivations.
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
         expect(callCount).toBe(2);
     });
 
@@ -198,6 +198,6 @@ describe("withSigningClientRetry", () => {
         ).rejects.toThrow("network unreachable");
 
         // First client + one rebuild attempt = 2 derivations, no more.
-        expect(createSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
+        expect(mockCreateSigningClientFromMnemonic).toHaveBeenCalledTimes(2);
     });
 });
