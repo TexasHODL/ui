@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useGameProgress } from "../game/useGameProgress";
+import { useGameStateContext } from "../../context/GameStateContext";
 import { PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
-import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
-import { isEmpty } from "../../utils/guards";
+import { formatForSitAndGo, formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+import { isTournamentFormat } from "../../utils/gameFormatUtils";
+import { isBlank, isEmpty } from "../../utils/guards";
 
 export interface PlayerActionDisplay {
   action: string;
@@ -44,21 +46,26 @@ const ACTION_DISPLAY_MAP: Record<string, string> = {
 // Actions that should NOT trigger the display (too frequent/not relevant)
 const FILTERED_ACTIONS = ["join", "deal", "new-hand"];
 
-// Format amount for display
-const formatActionAmount = (_action: string, amount?: string): string => {
-  if (!amount || amount === "0") return "";
+// Format an action's amount for the badge under a player's avatar.
+// Tournaments carry raw whole chips on the wire (e.g. "5" → " 5"); cash carries
+// USDC micro-units (÷10^6, e.g. "5000000" → " $5.00"). Mirrors Chip.tsx's split
+// so SNG amounts aren't mis-formatted as micro-USDC and shown as "$0.00" (#487).
+export const formatActionAmount = (amount: string | undefined, isTournament: boolean): string => {
+  if (isBlank(amount)) return "";
 
-  const numAmount = parseFloat(amount);
-  if (numAmount === 0) return "";
+  const numeric = Number(amount);
+  if (numeric === 0 || Number.isNaN(numeric)) return "";
 
-  // Convert from USDC micro format (6 decimals) to readable format
-  const formatted = formatUSDCToSimpleDollars(amount);
-  return ` $${formatted}`;
+  return isTournament ? ` ${formatForSitAndGo(numeric)}` : ` $${formatUSDCToSimpleDollars(amount)}`;
 };
 
 export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay => {
   // Use the same pattern as useGameProgress
   const { previousActions, handNumber, actionCount: _actionCount } = useGameProgress();
+
+  // Tournament/SNG amounts are raw chips; cash amounts are USDC micro-units.
+  const { gameFormat } = useGameStateContext();
+  const isTournament = isTournamentFormat(gameFormat);
 
   const [displayState, setDisplayState] = useState<PlayerActionDisplay>({
     action: "",
@@ -109,9 +116,9 @@ export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay =
     if (!latestAction) return null;
     return {
       action: ACTION_DISPLAY_MAP[latestAction.action] || latestAction.action.toUpperCase(),
-      amount: formatActionAmount(latestAction.action, latestAction.amount)
+      amount: formatActionAmount(latestAction.amount, isTournament)
     };
-  }, [latestAction]);
+  }, [latestAction, isTournament]);
 
   useEffect(() => {
     // Clear any existing timeout
