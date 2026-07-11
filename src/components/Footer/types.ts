@@ -164,6 +164,7 @@ export interface RaiseBetControlsProps {
     callAmountMicro: bigint;
     isInvalid: boolean;
     isMobileLandscape: boolean;
+    isTournament: boolean;
     currentRound: TexasHoldemRound;
     previousActions: ActionDTO[];
     disabled: boolean;
@@ -186,6 +187,7 @@ export interface RaiseSliderProps {
     isInvalid: boolean;
     disabled: boolean;
     isMobileLandscape: boolean;
+    isTournament: boolean;
     onChange: (value: number) => void;
     onIncrement: () => void;
     onDecrement: () => void;
@@ -199,6 +201,7 @@ export interface PotSizedBetButtonsProps {
     callAmountMicro: bigint;
     minAmount: number;
     maxAmount: number;
+    isTournament: boolean;
     currentRound: TexasHoldemRound;
     previousActions: ActionDTO[];
     disabled: boolean;

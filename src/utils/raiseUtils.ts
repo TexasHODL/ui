@@ -20,7 +20,13 @@ export const calculateRaiseToDisplay = (playerSumOfBets: string, raiseAmount: nu
     return currentBet + raiseAmount;
 };
 
-export const getRaiseToAmount = (raiseAmount: number, actions: ActionDTO[], currentRound: TexasHoldemRound, userAddress: string): number => {
+export const getRaiseToAmount = (
+    raiseAmount: number,
+    actions: ActionDTO[],
+    currentRound: TexasHoldemRound,
+    userAddress: string,
+    isTournament: boolean
+): number => {
     // If no actions, return raiseAmount
     if (isEmpty(actions)) {
         return raiseAmount;
@@ -56,8 +62,9 @@ export const getRaiseToAmount = (raiseAmount: number, actions: ActionDTO[], curr
     );
 
     // Sum the raise amount and previous bets/raises
+    // Tournaments carry raw whole chips on the wire; cash carries micro-USDC (÷10^6).
     const totalPreviousBetsAndRaises: number = previousBetsAndRaises.reduce((sum, action) => {
-        const amount = action.amount ? microToUsdc(action.amount) : 0;
+        const amount = action.amount ? (isTournament ? Number(action.amount) : microToUsdc(action.amount)) : 0;
         return sum + amount;
     }, 0);
 
