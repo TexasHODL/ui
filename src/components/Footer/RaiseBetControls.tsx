@@ -14,6 +14,7 @@ export const RaiseBetControls: React.FC<RaiseBetControlsProps> = ({
     callAmountMicro,
     isInvalid,
     isMobileLandscape,
+    isTournament,
     currentRound,
     previousActions,
     disabled,
@@ -35,6 +36,7 @@ export const RaiseBetControls: React.FC<RaiseBetControlsProps> = ({
                 isInvalid={isInvalid}
                 disabled={disabled}
                 isMobileLandscape={isMobileLandscape}
+                isTournament={isTournament}
                 onChange={onAmountChange}
                 onIncrement={onIncrement}
                 onDecrement={onDecrement}
@@ -47,6 +49,7 @@ export const RaiseBetControls: React.FC<RaiseBetControlsProps> = ({
                     callAmountMicro={callAmountMicro}
                     minAmount={minAmount}
                     maxAmount={maxAmount}
+                    isTournament={isTournament}
                     currentRound={currentRound}
                     previousActions={previousActions}
                     disabled={disabled}

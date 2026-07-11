@@ -8,6 +8,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
     callAmountMicro,
     minAmount,
     maxAmount,
+    isTournament,
     currentRound,
     previousActions,
     disabled,
@@ -30,7 +31,8 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
             },
             variation
         );
-        const amount = microBigIntToUsdc(potBetMicro);
+        // Tournaments deal in raw whole chips; cash converts micro-USDC (÷10^6) to dollars.
+        const amount = isTournament ? Number(potBetMicro) : microBigIntToUsdc(potBetMicro);
         // Clamp the amount between min and max
         return Math.min(Math.max(amount, minAmount), maxAmount);
     };

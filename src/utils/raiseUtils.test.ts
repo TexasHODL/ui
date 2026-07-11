@@ -127,26 +127,26 @@ describe("getRaiseToAmount", () => {
 
     describe("basic raise calculation", () => {
         it("should return raiseAmount when no actions exist", () => {
-            const result = getRaiseToAmount(100, [], TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, [], TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(100);
         });
 
         it("should return raiseAmount when actions array is undefined/null", () => {
-            const result = getRaiseToAmount(100, undefined as unknown as ActionDTO[], TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, undefined as unknown as ActionDTO[], TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(100);
         });
 
         it("should return raiseAmount when user has no previous actions", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.BET, 50, TexasHoldemRound.FLOP, OTHER_ADDRESS)];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(100);
         });
 
         it("should add user previous bet to raise amount", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.BET, 50, TexasHoldemRound.FLOP, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // raiseAmount + previous bet = 100 + 50 = 150
             expect(result).toBe(150);
         });
@@ -154,14 +154,14 @@ describe("getRaiseToAmount", () => {
         it("should add user previous raise to raise amount", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.RAISE, 75, TexasHoldemRound.FLOP, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(175);
         });
 
         it("should add user previous call to raise amount", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.CALL, 30, TexasHoldemRound.FLOP, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(130);
         });
     });
@@ -173,7 +173,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.RAISE, 60, TexasHoldemRound.FLOP, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // 100 + 20 + 60 = 180
             expect(result).toBe(180);
         });
@@ -184,7 +184,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.RAISE, 200, TexasHoldemRound.FLOP, OTHER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // Only user's 50 is added, not other's 200
             expect(result).toBe(150);
         });
@@ -197,7 +197,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.BET, 50, TexasHoldemRound.FLOP, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(75, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(75, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // Only flop bet (50) should be added
             expect(result).toBe(125);
         });
@@ -208,7 +208,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.BET, 40, TexasHoldemRound.TURN, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(80, actions, TexasHoldemRound.TURN, USER_ADDRESS);
+            const result = getRaiseToAmount(80, actions, TexasHoldemRound.TURN, USER_ADDRESS, false);
             // Only turn bet (40) should be added
             expect(result).toBe(120);
         });
@@ -218,7 +218,7 @@ describe("getRaiseToAmount", () => {
         it("should include small blind in preflop calculation", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.SMALL_BLIND, 10, TexasHoldemRound.ANTE, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS, false);
             // Small blind should be included
             expect(result).toBe(110);
         });
@@ -226,7 +226,7 @@ describe("getRaiseToAmount", () => {
         it("should include big blind in preflop calculation", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.BIG_BLIND, 20, TexasHoldemRound.ANTE, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS, false);
             // Big blind should be included
             expect(result).toBe(120);
         });
@@ -237,7 +237,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.RAISE, 60, TexasHoldemRound.PREFLOP, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS, false);
             // BB (20) + raise (60) = 80 added to raise amount
             expect(result).toBe(180);
         });
@@ -257,7 +257,7 @@ describe("getRaiseToAmount", () => {
                 }
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS.toLowerCase());
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS.toLowerCase(), false);
             expect(result).toBe(150);
         });
     });
@@ -269,7 +269,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.FOLD, 0, TexasHoldemRound.FLOP, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // Only bet should be counted
             expect(result).toBe(150);
         });
@@ -280,7 +280,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.BET, 30, TexasHoldemRound.FLOP, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // Only bet should be counted
             expect(result).toBe(130);
         });
@@ -290,7 +290,7 @@ describe("getRaiseToAmount", () => {
         it("should handle zero raise amount", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.BET, 50, TexasHoldemRound.FLOP, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(0, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(0, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(50);
         });
 
@@ -299,7 +299,7 @@ describe("getRaiseToAmount", () => {
                 createAction(PlayerActionType.CHECK, 0, TexasHoldemRound.FLOP, USER_ADDRESS)
             ];
 
-            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             // CHECK with zero amount shouldn't affect result
             expect(result).toBe(100);
         });
@@ -307,15 +307,67 @@ describe("getRaiseToAmount", () => {
         it("should handle decimal amounts correctly", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.BET, 0.5, TexasHoldemRound.FLOP, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(1.5, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(1.5, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBeCloseTo(2.0, 10);
         });
 
         it("should handle large amounts", () => {
             const actions: ActionDTO[] = [createAction(PlayerActionType.BET, 1000000, TexasHoldemRound.FLOP, USER_ADDRESS)];
 
-            const result = getRaiseToAmount(500000, actions, TexasHoldemRound.FLOP, USER_ADDRESS);
+            const result = getRaiseToAmount(500000, actions, TexasHoldemRound.FLOP, USER_ADDRESS, false);
             expect(result).toBe(1500000);
+        });
+    });
+
+    describe("tournament mode (raw whole chips, issue #488)", () => {
+        // In tournaments ActionDTO.amount is expressed in raw whole chips (NOT
+        // micro-USDC), so the offset must sum the amounts as-is, never ÷10^6.
+        const createChipAction = (
+            action: PlayerActionType,
+            chips: number,
+            round: TexasHoldemRound,
+            playerId: string = USER_ADDRESS
+        ): ActionDTO => ({
+            playerId,
+            seat: 1,
+            action,
+            amount: chips.toString(), // raw chips, not micro-USDC
+            round,
+            index: 0,
+            timestamp: Date.now()
+        });
+
+        it("should add previous chip bet as raw chips (no ÷10^6)", () => {
+            const actions: ActionDTO[] = [createChipAction(PlayerActionType.BET, 50, TexasHoldemRound.FLOP)];
+
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, true);
+            // 100 + 50 chips = 150 (a cash reading would give 100 + 0.00005)
+            expect(result).toBe(150);
+        });
+
+        it("should sum multiple chip bets and raises as whole chips", () => {
+            const actions: ActionDTO[] = [
+                createChipAction(PlayerActionType.BET, 20, TexasHoldemRound.FLOP),
+                createChipAction(PlayerActionType.RAISE, 60, TexasHoldemRound.FLOP)
+            ];
+
+            const result = getRaiseToAmount(100, actions, TexasHoldemRound.FLOP, USER_ADDRESS, true);
+            expect(result).toBe(180);
+        });
+
+        it("should include the big blind as raw chips preflop", () => {
+            const actions: ActionDTO[] = [createChipAction(PlayerActionType.BIG_BLIND, 20, TexasHoldemRound.ANTE)];
+
+            const result = getRaiseToAmount(1500, actions, TexasHoldemRound.PREFLOP, USER_ADDRESS, true);
+            expect(result).toBe(1520);
+        });
+
+        it("should stay an integer — never produce a fractional chip offset", () => {
+            const actions: ActionDTO[] = [createChipAction(PlayerActionType.BET, 75, TexasHoldemRound.FLOP)];
+
+            const result = getRaiseToAmount(1500, actions, TexasHoldemRound.FLOP, USER_ADDRESS, true);
+            expect(result).toBe(1575);
+            expect(Number.isInteger(result)).toBe(true);
         });
     });
 });

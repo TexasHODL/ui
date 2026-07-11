@@ -5,7 +5,9 @@ import {
     formatUSDCToSimpleDollars,
     formatForSitAndGo,
     formatForCashGame,
-    convertAmountToBigInt
+    convertAmountToBigInt,
+    formatSliderInputValue,
+    parseSliderInput
 } from "./numberUtils";
 
 describe("numberUtils", () => {
@@ -84,6 +86,79 @@ describe("numberUtils", () => {
         it("should return 0 for empty or invalid values", () => {
             expect(convertAmountToBigInt("", 18)).toBe(BigInt(0));
             expect(convertAmountToBigInt("0", 18)).toBe(BigInt(0));
+        });
+    });
+
+    // Bet/raise slider input helpers — issue #488 (SNG must show whole chips, no decimals)
+    describe("formatSliderInputValue", () => {
+        it("should render whole chips with no decimals for tournaments", () => {
+            expect(formatSliderInputValue(1500, true)).toBe("1500");
+            expect(formatSliderInputValue(0, true)).toBe("0");
+        });
+
+        it("should floor any stray fractional chip value for tournaments", () => {
+            expect(formatSliderInputValue(1500.5, true)).toBe("1500");
+            expect(formatSliderInputValue(1500.999, true)).toBe("1500");
+        });
+
+        it("should never emit comma separators (must stay parseable in the text input)", () => {
+            expect(formatSliderInputValue(1000000, true)).toBe("1000000");
+        });
+
+        it("should render dollars with 2 decimals for cash games", () => {
+            expect(formatSliderInputValue(12.5, false)).toBe("12.50");
+            expect(formatSliderInputValue(0, false)).toBe("0.00");
+            expect(formatSliderInputValue(1.005, false)).toBe("1.00");
+        });
+    });
+
+    describe("parseSliderInput", () => {
+        describe("tournament mode (whole chips)", () => {
+            it("should parse a whole-chip entry, subtracting the display offset", () => {
+                expect(parseSliderInput("1500", 0, true)).toBe(1500);
+                expect(parseSliderInput("1520", 20, true)).toBe(1500);
+            });
+
+            it("should reject any entry containing a decimal point", () => {
+                expect(parseSliderInput("1500.5", 0, true)).toBeNull();
+                expect(parseSliderInput("1500.", 0, true)).toBeNull();
+                expect(parseSliderInput(".5", 0, true)).toBeNull();
+            });
+
+            it("should reject non-numeric entries", () => {
+                expect(parseSliderInput("abc", 0, true)).toBeNull();
+            });
+
+            it("should treat an empty string as 0", () => {
+                expect(parseSliderInput("", 0, true)).toBe(0);
+            });
+
+            it("should never return a negative amount", () => {
+                expect(parseSliderInput("10", 50, true)).toBe(0);
+            });
+        });
+
+        describe("cash mode (dollars, up to 2 decimals)", () => {
+            it("should parse a dollar entry, subtracting the display offset", () => {
+                expect(parseSliderInput("12.50", 0, false)).toBe(12.5);
+                expect(parseSliderInput("12.50", 2.5, false)).toBe(10);
+            });
+
+            it("should not commit an incomplete decimal entry (mid-typing)", () => {
+                expect(parseSliderInput("12.", 0, false)).toBeNull();
+            });
+
+            it("should reject entries with more than 2 decimal places", () => {
+                expect(parseSliderInput("12.505", 0, false)).toBeNull();
+            });
+
+            it("should treat an empty string as 0", () => {
+                expect(parseSliderInput("", 0, false)).toBe(0);
+            });
+
+            it("should never return a negative amount", () => {
+                expect(parseSliderInput("1.00", 5, false)).toBe(0);
+            });
         });
     });
 });
