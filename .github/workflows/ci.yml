@@ -79,13 +79,16 @@ jobs:
 
       # .env is gitignored; the stub-driven e2e only needs the gateway transport
       # pointed at the local stub. VITE_PROJECT_ID is the public value from
-      # .env.example (required or the app throws at boot). See packages/e2e.
+      # .env.example (required or the app throws at boot). VITE_SHOW_BANNER=true
+      # opts the gateway-transport banner back in (hidden by default since ui#494)
+      # — the e2e specs use it as the "booted in gateway mode" signal. See packages/e2e.
       - name: Write .env for the stub e2e run
         run: |
           cat > .env <<'EOF'
           VITE_PROJECT_ID=23ec57c1c95f3f54a97605975d4df7eb
           VITE_GAME_TRANSPORT=gateway
           VITE_GATEWAY_URL=http://localhost:8546/gateway
+          VITE_SHOW_BANNER=true
           EOF
 
       - name: Install Playwright browser (chromium)
