@@ -36,6 +36,10 @@ export class CosmosApi extends HTTPClient {
     public getWithdrawalRequests = () => this.get("/pokerchain/poker/withdrawal_requests");
     public getIsTxProcessed = (txHash: string) => this.get(`/block52/pokerchain/poker/v1/is_tx_processed/${txHash}`);
     public getNftAvatar = (cosmosAddress: string) => this.get(`/pokerchain/poker/nft_avatar/${cosmosAddress}`);
+    // Tendermint base endpoints (used for node status / block-height probes across arbitrary node URLs)
+    public getLatestBlock = (signal?: AbortSignal) => this.get("/cosmos/base/tendermint/v1beta1/blocks/latest", { signal });
+    public getNodeInfo = (signal?: AbortSignal) => this.get("/cosmos/base/tendermint/v1beta1/node_info", { signal });
+    public getSyncing = (signal?: AbortSignal) => this.get("/cosmos/base/tendermint/v1beta1/syncing", { signal });
 }
 
 export class IndexerApi extends HTTPClient {

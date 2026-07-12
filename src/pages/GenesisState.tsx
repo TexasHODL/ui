@@ -67,9 +67,6 @@ export default function GenesisState() {
     const { currentNetwork } = useNetwork();
     const cosmosApi = useCosmosApi(currentNetwork.rest);
 
-    // Use REST endpoint from selected network (NetworkSelector dropdown)
-    const COSMOS_REST_URL = currentNetwork.rest;
-
     // Derive addresses from mnemonics on mount
     useEffect(() => {
         deriveAddresses();
@@ -149,18 +146,19 @@ export default function GenesisState() {
     const fetchBridgeState = async () => {
         setLoadingBridgeState(true);
         try {
-            // Fetch withdrawal requests
-            // Backend not yet Implemented
-            const withdrawalsResponse = await fetch(`${COSMOS_REST_URL}/pokerchain/poker/withdrawal_requests`);
-            const withdrawalsData = withdrawalsResponse.ok ? await withdrawalsResponse.json() : { withdrawal_requests: [] };
-
-            // Fetch processed ETH transactions (if endpoint exists)
-            // const processedTxsResponse = await fetch(`${COSMOS_REST_URL}/pokerchain/poker/processed_eth_txs`);
-            // const processedTxsData = processedTxsResponse.ok ? await processedTxsResponse.json() : { processed_eth_txs: [] };
+            // Fetch withdrawal requests. Backend endpoint is not yet implemented, so a
+            // failure here (e.g. 404) is expected — treat it as an empty result set.
+            let withdrawalRequests: any[] = [];
+            try {
+                const withdrawalsData = (await cosmosApi.getWithdrawalRequests()) as { withdrawal_requests?: any[] };
+                withdrawalRequests = withdrawalsData.withdrawal_requests || [];
+            } catch (withdrawalsErr) {
+                console.error("Withdrawal requests endpoint unavailable (backend not yet implemented):", withdrawalsErr);
+            }
 
             const state = {
-                withdrawal_requests: withdrawalsData.withdrawal_requests || []
-                // processed_eth_txs: processedTxsData.processed_eth_txs || []
+                withdrawal_requests: withdrawalRequests
+                // processed_eth_txs: [] — endpoint not yet implemented
             };
 
             setBridgeState(state);
