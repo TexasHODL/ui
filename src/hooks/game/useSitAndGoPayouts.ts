@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { GameFormat } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../context/GameStateContext";
-import { hasContent, hasValue } from "../../utils/guards";
+import { hasElements } from "../../utils/guards";
 
 export interface SitAndGoPayoutPlace {
     place: number;
@@ -15,44 +15,35 @@ export interface SitAndGoPayoutsReturn {
     places: SitAndGoPayoutPlace[];
 }
 
-// Single-table SNG payout curves (basis points, sum to 10000).
-// Must match pokerchain DefaultSngPayoutStructures
-// (x/poker/types/params.go) — those are the only entrant counts the
-// chain will create and finalize for SNG.
-const PAYOUT_CURVES: Record<number, number[]> = {
-    2: [10000],
-    4: [7000, 3000],
-    6: [6500, 3500],
-    9: [5000, 3000, 2000]
-};
-
 const EMPTY: SitAndGoPayoutsReturn = { isSitAndGo: false, prizePool: null, places: [] };
 
+/**
+ * Sit & Go prize structure for the Payouts panel.
+ *
+ * The structure is the engine's — surfaced on the game state as
+ * `gameState.payouts` (absolute per-place amounts; poker-vm#2361). The UI does
+ * NOT recompute a curve: doing so drifted from what the chain actually paid
+ * (issue #497 — a 6-max paid top 3 while the panel showed top 2). Display
+ * percentages are derived from the authoritative amounts.
+ */
 export const useSitAndGoPayouts = (): SitAndGoPayoutsReturn => {
     const { gameState, gameFormat } = useGameStateContext();
 
     return useMemo(() => {
         if (gameFormat !== GameFormat.SIT_AND_GO) return EMPTY;
 
-        const options = gameState?.gameOptions;
-        const minBuyIn = options?.minBuyIn;
-        const maxPlayers = options?.maxPlayers;
-        if (!hasContent(minBuyIn) || !hasValue(maxPlayers)) {
+        const payouts = gameState?.payouts;
+        if (!hasElements(payouts)) {
             return { isSitAndGo: true, prizePool: null, places: [] };
         }
 
-        const curve = PAYOUT_CURVES[maxPlayers];
-        if (!hasValue(curve)) {
-            return { isSitAndGo: true, prizePool: null, places: [] };
-        }
+        const prizePool = payouts.reduce((sum, p) => sum + BigInt(p.amount), 0n);
 
-        const buyIn = BigInt(minBuyIn);
-        const prizePool = buyIn * BigInt(maxPlayers);
-
-        const places: SitAndGoPayoutPlace[] = curve.map((bp, index) => ({
-            place: index + 1,
-            percentBasisPoints: bp,
-            payout: ((prizePool * BigInt(bp)) / 10000n).toString()
+        const places: SitAndGoPayoutPlace[] = payouts.map(p => ({
+            place: p.place,
+            // Derive the display % from the absolute amounts (single source of truth).
+            percentBasisPoints: prizePool > 0n ? Number((BigInt(p.amount) * 10000n) / prizePool) : 0,
+            payout: p.amount
         }));
 
         return {
@@ -60,5 +51,5 @@ export const useSitAndGoPayouts = (): SitAndGoPayoutsReturn => {
             prizePool: prizePool.toString(),
             places
         };
-    }, [gameFormat, gameState?.gameOptions]);
+    }, [gameFormat, gameState?.payouts]);
 };
