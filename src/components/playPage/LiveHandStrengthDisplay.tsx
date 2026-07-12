@@ -11,7 +11,7 @@ const LiveHandStrengthDisplay: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-[220px] right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50">
+    <div className="fixed bottom-[160px] right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50">
       <div className="flex flex-col items-end">
         <div className="text-white font-medium text-sm">{handStrength.descr}</div>
       </div>

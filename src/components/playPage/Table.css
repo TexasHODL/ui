@@ -188,22 +188,6 @@
     object-fit: contain;
 }
 
-/* Bottom-right club logo watermark overlay */
-.club-watermark {
-    position: fixed;
-    bottom: 150px;
-    right: 16px;
-    z-index: 15;
-    pointer-events: none;
-    opacity: 0.7;
-}
-
-.club-watermark img {
-    width: 64px;
-    height: 64px;
-    object-fit: contain;
-}
-
 .pot-display {
     font-size: 28px;
     background-color: color-mix(in srgb, #000000 25%, transparent);
