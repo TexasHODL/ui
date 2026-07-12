@@ -1,7 +1,7 @@
 import { BigUnit } from "bigunit";
 import { ethers } from "ethers";
 import { microToUsdc, USDC_TO_MICRO } from "../constants/currency";
-import { isNullish } from "./guards";
+import { isBlank, isNullish } from "./guards";
 
 /**
  * Format a USDC balance from micro-units (6 decimals) to display format
@@ -120,6 +120,43 @@ export const formatForCashGame = (value: number): string => {
  */
 export const formatDisplayAmount = (value: number, isTournament: boolean): string => {
     return isTournament ? formatForSitAndGo(value) : formatForCashGame(value);
+};
+
+/**
+ * Format the editable bet/raise slider input value.
+ * Tournament: whole chips with no separators and no decimals (e.g. "1500") so the
+ *   text input stays numerically parseable and never shows fractional chips.
+ * Cash: dollars with 2 decimals (e.g. "12.50").
+ * @param value The display value (already in chip units for tournaments, dollars for cash)
+ * @param isTournament Whether this is a tournament/SNG game
+ */
+export const formatSliderInputValue = (value: number, isTournament: boolean): string => {
+    return isTournament ? String(Math.floor(value)) : value.toFixed(2);
+};
+
+/**
+ * Parse a raw bet/raise slider input string into a new amount in value-space
+ * (i.e. pre-offset — the caller subtracts what was already committed this round).
+ * Returns `null` when the raw string is an incomplete or invalid entry that must
+ * not yet be committed (e.g. "12." mid-typing for cash, or any non-integer for a
+ * tournament), so callers can safely ignore it.
+ * @param raw The raw input string from the text box
+ * @param displayOffset Amount already committed this round (added to the value for display)
+ * @param isTournament Whole-chip (integer) vs cash (up to 2 decimals) parsing
+ */
+export const parseSliderInput = (raw: string, displayOffset: number, isTournament: boolean): number | null => {
+    if (isBlank(raw)) return 0;
+
+    if (isTournament) {
+        // Tournaments are whole chips only — reject anything with a decimal point.
+        if (!/^\d+$/.test(raw)) return null;
+        return Math.max(0, Math.floor(parseInt(raw, 10) - displayOffset));
+    }
+
+    // Cash: allow partial entry (e.g. "12.") but only commit a complete number.
+    if (!/^\d*\.?\d{0,2}$/.test(raw)) return null;
+    if (!/^\d*\.?\d{1,2}$/.test(raw) || isNaN(Number(raw))) return null;
+    return Math.max(0, parseFloat(raw) - displayOffset);
 };
 
 /** Format a numeric dollar value for display: "12.50" */

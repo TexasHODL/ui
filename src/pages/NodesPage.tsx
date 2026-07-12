@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { NETWORK_PRESETS, NetworkEndpoints, useNetwork } from "../context/NetworkContext";
+import { useCosmosApiFactory } from "../context/CosmosApiContext";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
@@ -23,6 +24,7 @@ interface ValidatorInfo {
 
 export default function NodesPage() {
     const { addDiscoveredNetwork, discoveredNetworks } = useNetwork();
+    const cosmosApiFactory = useCosmosApiFactory();
     const [discoveredNodes, setDiscoveredNodes] = useState<DiscoveredNode[]>([]);
     const [isDiscovering, setIsDiscovering] = useState(false);
     const [isProbing, setIsProbing] = useState(false);
@@ -33,24 +35,21 @@ export default function NodesPage() {
         // Try fetching from the first online preset node
         for (const node of productionNodes) {
             try {
-                const response = await fetch(`${node.rest}/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED`, {
-                    signal: AbortSignal.timeout(10000)
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    const validatorList: ValidatorInfo[] = (data.validators || []).map((v: any) => ({
-                        moniker: v.description?.moniker || "",
-                        operatorAddress: v.operator_address || "",
-                        status: v.status || ""
-                    }));
-                    setValidators(validatorList);
-                    return;
-                }
+                const data = (await cosmosApiFactory(node.rest).getValidatorsByStatus("BOND_STATUS_BONDED", AbortSignal.timeout(10000))) as {
+                    validators?: any[];
+                };
+                const validatorList: ValidatorInfo[] = (data.validators || []).map((v: any) => ({
+                    moniker: v.description?.moniker || "",
+                    operatorAddress: v.operator_address || "",
+                    status: v.status || ""
+                }));
+                setValidators(validatorList);
+                return;
             } catch {
                 // Try next node
             }
         }
-    }, []);
+    }, [cosmosApiFactory]);
 
     // Check if a moniker matches a validator
     // Handles variations like "Texas Hodl" matching "validator-texashodl"
@@ -78,11 +77,10 @@ export default function NodesPage() {
     // Check node status and get block height
     const checkNode = useCallback(async (network: NetworkEndpoints): Promise<NodeInfo> => {
         try {
-            const response = await fetch(`${network.rest}/cosmos/base/tendermint/v1beta1/blocks/latest`, { signal: AbortSignal.timeout(5000) });
-            if (!response.ok) {
-                return { status: "offline", blockHeight: null };
-            }
-            const data = await response.json();
+            const data = (await cosmosApiFactory(network.rest).getLatestBlock(AbortSignal.timeout(5000))) as {
+                block?: { header?: { height?: string } };
+                sdk_block?: { header?: { height?: string } };
+            };
             const header = data.block?.header || data.sdk_block?.header;
             return {
                 status: "online",
@@ -91,7 +89,7 @@ export default function NodesPage() {
         } catch {
             return { status: "offline", blockHeight: null };
         }
-    }, []);
+    }, [cosmosApiFactory]);
 
     // Check all nodes on page load
     const checkAllNodes = useCallback(async () => {

@@ -1,0 +1,24 @@
+{
+  "name": "@block52/pvm-stub",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local PVM/backend stub: stands in for the gateway (actions + WS), cosmos REST (balances, lobby, game_state), and a minimal poker engine — so the UI runs with no chain, funds, or bridge. See ui/docs/plans/2026_07_11_wallet_stub_server.md",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "hono": "^4.6.14",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

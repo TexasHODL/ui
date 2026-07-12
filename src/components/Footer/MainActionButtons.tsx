@@ -35,7 +35,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
 }) => {
     // Calculate the total amount to display for raise button
     // This includes blinds posted during ANTE round when we're in PREFLOP
-    const raiseToAmount = canRaise ? getRaiseToAmount(raiseAmount, previousActions, currentRound, userAddress) : raiseAmount;
+    const raiseToAmount = canRaise ? getRaiseToAmount(raiseAmount, previousActions, currentRound, userAddress, isTournament) : raiseAmount;
     return (
         <div className={`flex justify-between ${isMobileLandscape ? "gap-0.5" : "gap-1 lg:gap-2"}`}>
             {/* Show fold button if canFold OR if currently folding (to show spinner) */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { NETWORK_PRESETS, NetworkEndpoints, useNetwork } from "../context/NetworkContext";
+import { useCosmosApiFactory } from "../context/CosmosApiContext";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
@@ -80,6 +81,7 @@ export default function NodeStatusPage() {
     const { name } = useParams<{ name: string }>();
     const location = useLocation();
     const { discoveredNetworks } = useNetwork();
+    const cosmosApiFactory = useCosmosApiFactory();
     const [status, setStatus] = useState<NodeStatus>({
         online: false,
         nodeInfo: null,
@@ -105,16 +107,11 @@ export default function NodeStatusPage() {
 
         try {
             // Fetch node info, latest block, and sync status in parallel
+            const api = cosmosApiFactory(networkConfig.rest);
             const [nodeInfoRes, latestBlockRes, syncRes] = await Promise.allSettled([
-                fetch(`${networkConfig.rest}/cosmos/base/tendermint/v1beta1/node_info`, {
-                    signal: AbortSignal.timeout(10000)
-                }),
-                fetch(`${networkConfig.rest}/cosmos/base/tendermint/v1beta1/blocks/latest`, {
-                    signal: AbortSignal.timeout(10000)
-                }),
-                fetch(`${networkConfig.rest}/cosmos/base/tendermint/v1beta1/syncing`, {
-                    signal: AbortSignal.timeout(10000)
-                })
+                api.getNodeInfo(AbortSignal.timeout(10000)),
+                api.getLatestBlock(AbortSignal.timeout(10000)),
+                api.getSyncing(AbortSignal.timeout(10000))
             ]);
 
             let nodeInfo: NodeInfo | null = null;
@@ -122,21 +119,21 @@ export default function NodeStatusPage() {
             let syncStatus: SyncStatus | null = null;
             let online = false;
 
-            // Parse node info
-            if (nodeInfoRes.status === "fulfilled" && nodeInfoRes.value.ok) {
-                nodeInfo = await nodeInfoRes.value.json();
+            // Parse node info (HTTPClient rejects on non-2xx, so fulfilled === reachable)
+            if (nodeInfoRes.status === "fulfilled") {
+                nodeInfo = nodeInfoRes.value as NodeInfo;
                 online = true;
             }
 
             // Parse latest block
-            if (latestBlockRes.status === "fulfilled" && latestBlockRes.value.ok) {
-                latestBlock = await latestBlockRes.value.json();
+            if (latestBlockRes.status === "fulfilled") {
+                latestBlock = latestBlockRes.value as LatestBlock;
                 online = true;
             }
 
             // Parse sync status
-            if (syncRes.status === "fulfilled" && syncRes.value.ok) {
-                syncStatus = await syncRes.value.json();
+            if (syncRes.status === "fulfilled") {
+                syncStatus = syncRes.value as SyncStatus;
             }
 
             setStatus({
@@ -159,7 +156,7 @@ export default function NodeStatusPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [cosmosApiFactory]);
 
     useEffect(() => {
         if (network) {

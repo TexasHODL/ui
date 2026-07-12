@@ -3,8 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "proxy": "=https://paymentservice.texashodl.net",
+  "workspaces": [
+    "packages/*"
+  ],
   "dependencies": {
-    "@block52/poker-vm-sdk": "1.2.12",
+    "@block52/poker-vm-sdk": "1.2.13",
     "@metamask/sdk": "^0.34.0",
     "@reown/appkit": "1.6.7",
     "@reown/appkit-adapter-ethers": "1.6.7",
@@ -59,7 +62,8 @@
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "stub": "yarn workspace @block52/pvm-stub start"
   },
   "eslintConfig": {
     "extends": [
