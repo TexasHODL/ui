@@ -1525,13 +1525,6 @@ const Table = React.memo(() => {
             {/* Mobile Portrait Blocking (#200) */}
             <MobileOrientationOverlay isPortraitBlocked={isPortraitBlocked} onGoToLobby={handleLobbyClick} />
 
-            {/* Bottom-right club logo watermark */}
-            {clubLogo && (
-                <div className="club-watermark">
-                    <img src={clubLogo} alt="Club Logo" />
-                </div>
-            )}
-
             {/* No-wallet overlay — blurs the table and walks the user through wallet setup */}
             {!hasWallet && <NoWalletOverlay onWalletReady={handleWalletReady} />}
         </div>
