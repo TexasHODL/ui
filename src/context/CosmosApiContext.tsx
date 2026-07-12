@@ -19,3 +19,13 @@ export const useCosmosApi = (baseUrl?: string): CosmosApi => {
     }
     return api;
 };
+
+/**
+ * Returns a factory for building a CosmosApi bound to an arbitrary node REST URL.
+ * Used by node-discovery pages that probe many different node endpoints, where a
+ * single context-bound instance (tied to the current network) does not fit.
+ * Construction stays in the context layer so components never `new` an API class directly.
+ */
+export const useCosmosApiFactory = (): ((baseUrl: string) => CosmosApi) => {
+    return useMemo(() => (baseUrl: string) => new CosmosApi({ baseUrl, secure: true, timeout: 10000 }), []);
+};
