@@ -5,17 +5,37 @@ import { GatewayTransportBanner } from "../components/GatewayTransportBanner";
 
 // jest maps utils/viteEnv to process.env (see jest.config.js).
 describe("GatewayTransportBanner", () => {
-    const saved = { transport: process.env.VITE_GAME_TRANSPORT, url: process.env.VITE_GATEWAY_URL };
+    const saved = {
+        transport: process.env.VITE_GAME_TRANSPORT,
+        url: process.env.VITE_GATEWAY_URL,
+        show: process.env.VITE_SHOW_BANNER
+    };
+
+    const restore = (key: string, value: string | undefined) => {
+        if (value === undefined) {
+            delete process.env[key];
+        } else {
+            process.env[key] = value;
+        }
+    };
 
     afterEach(() => {
-        process.env.VITE_GAME_TRANSPORT = saved.transport;
-        process.env.VITE_GATEWAY_URL = saved.url;
-        if (saved.transport === undefined) delete process.env.VITE_GAME_TRANSPORT;
-        if (saved.url === undefined) delete process.env.VITE_GATEWAY_URL;
+        restore("VITE_GAME_TRANSPORT", saved.transport);
+        restore("VITE_GATEWAY_URL", saved.url);
+        restore("VITE_SHOW_BANNER", saved.show);
     });
 
-    it("shows by default — gateway is the default transport", () => {
-        delete process.env.VITE_GAME_TRANSPORT;
+    it("is hidden by default (ui#494) even on the default gateway transport", () => {
+        delete process.env.VITE_GAME_TRANSPORT; // gateway is the default
+        delete process.env.VITE_SHOW_BANNER;
+        process.env.VITE_GATEWAY_URL = "https://pvm.block52.xyz/gateway";
+        render(<GatewayTransportBanner />);
+        expect(screen.queryByTestId("gateway-transport-banner")).toBeNull();
+    });
+
+    it("shows when VITE_SHOW_BANNER=true on the gateway transport", () => {
+        delete process.env.VITE_GAME_TRANSPORT; // gateway is the default
+        process.env.VITE_SHOW_BANNER = "true";
         process.env.VITE_GATEWAY_URL = "https://pvm.block52.xyz/gateway";
         render(<GatewayTransportBanner />);
         const banner = screen.getByTestId("gateway-transport-banner");
@@ -23,8 +43,9 @@ describe("GatewayTransportBanner", () => {
         expect(banner.textContent).toContain("https://pvm.block52.xyz/gateway");
     });
 
-    it("renders nothing when chain transport is opted into", () => {
+    it("renders nothing on chain transport even when VITE_SHOW_BANNER=true", () => {
         process.env.VITE_GAME_TRANSPORT = "chain";
+        process.env.VITE_SHOW_BANNER = "true";
         render(<GatewayTransportBanner />);
         expect(screen.queryByTestId("gateway-transport-banner")).toBeNull();
     });

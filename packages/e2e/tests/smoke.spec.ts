@@ -9,8 +9,9 @@ import { test, expect, CASH_GAME_ID } from "./fixtures.js";
 
 test("app boots against the stub in gateway transport mode", async ({ page }) => {
   await page.goto("/");
-  // The global banner (App.tsx) only renders when VITE_GAME_TRANSPORT=gateway and
-  // prints the gateway URL — proving transport + target in one shot.
+  // The global banner (App.tsx) renders when VITE_GAME_TRANSPORT=gateway AND
+  // VITE_SHOW_BANNER=true (opt-in since ui#494; the e2e .env sets it) and prints
+  // the gateway URL — proving transport + target in one shot.
   await expect(page.getByTestId("gateway-transport-banner")).toBeVisible();
   await expect(page.getByText("http://localhost:8546/gateway")).toBeVisible();
 });
