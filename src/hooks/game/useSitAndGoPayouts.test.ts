@@ -1,5 +1,5 @@
 import { renderHook } from "@testing-library/react";
-import { GameFormat, GameOptionsDTO, TexasHoldemStateDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { GameFormat, GameOptionsDTO, PayoutPlaceDTO, TexasHoldemStateDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { useSitAndGoPayouts } from "./useSitAndGoPayouts";
 
 const mockUseGameStateContext = jest.fn();
@@ -18,8 +18,8 @@ const buildOptions = (overrides: Partial<GameOptionsDTO> = {}): GameOptionsDTO =
     ...overrides
 });
 
-const buildState = (options: GameOptionsDTO): TexasHoldemStateDTO => ({
-    gameOptions: options,
+const buildState = (payouts?: PayoutPlaceDTO[]): TexasHoldemStateDTO => ({
+    gameOptions: buildOptions(),
     smallBlindPosition: 1,
     bigBlindPosition: 2,
     dealer: 1,
@@ -37,6 +37,7 @@ const buildState = (options: GameOptionsDTO): TexasHoldemStateDTO => ({
     results: [],
     legalActions: [],
     availableSeats: [],
+    payouts,
     signature: "sig"
 });
 
@@ -51,14 +52,14 @@ describe("useSitAndGoPayouts", () => {
     beforeEach(() => jest.clearAllMocks());
 
     it("returns empty struct when format is cash", () => {
-        setContext(buildState(buildOptions()), GameFormat.CASH);
+        setContext(buildState([{ place: 1, amount: "20000000" }]), GameFormat.CASH);
         const { result } = renderHook(() => useSitAndGoPayouts());
         expect(result.current.isSitAndGo).toBe(false);
         expect(result.current.places).toEqual([]);
         expect(result.current.prizePool).toBeNull();
     });
 
-    it("returns empty places when gameOptions is missing", () => {
+    it("returns empty places when gameState is missing", () => {
         setContext(undefined, GameFormat.SIT_AND_GO);
         const { result } = renderHook(() => useSitAndGoPayouts());
         expect(result.current.isSitAndGo).toBe(true);
@@ -66,9 +67,16 @@ describe("useSitAndGoPayouts", () => {
         expect(result.current.prizePool).toBeNull();
     });
 
-    it("heads-up (2 players): single 100% payout", () => {
-        const options = buildOptions({ minBuyIn: "10000000", maxPlayers: 2 });
-        setContext(buildState(options));
+    it("returns empty places when the state carries no payouts yet", () => {
+        setContext(buildState(undefined));
+        const { result } = renderHook(() => useSitAndGoPayouts());
+        expect(result.current.isSitAndGo).toBe(true);
+        expect(result.current.places).toEqual([]);
+        expect(result.current.prizePool).toBeNull();
+    });
+
+    it("heads-up (single 100% payout) — reads state.payouts", () => {
+        setContext(buildState([{ place: 1, amount: "20000000" }]));
         const { result } = renderHook(() => useSitAndGoPayouts());
 
         expect(result.current.prizePool).toBe("20000000");
@@ -77,45 +85,28 @@ describe("useSitAndGoPayouts", () => {
         ]);
     });
 
-    it("4 players: 70/30 split", () => {
-        const options = buildOptions({ minBuyIn: "10000000", maxPlayers: 4 });
-        setContext(buildState(options));
-        const { result } = renderHook(() => useSitAndGoPayouts());
-
-        expect(result.current.prizePool).toBe("40000000");
-        expect(result.current.places.map(p => p.payout)).toEqual(["28000000", "12000000"]);
-    });
-
-    it("6 players: 65/35 split", () => {
-        const options = buildOptions({ minBuyIn: "10000000", maxPlayers: 6 });
-        setContext(buildState(options));
+    it("top-2 structure — derives prize pool and percentages from amounts", () => {
+        setContext(buildState([
+            { place: 1, amount: "39000000" },
+            { place: 2, amount: "21000000" }
+        ]));
         const { result } = renderHook(() => useSitAndGoPayouts());
 
         expect(result.current.prizePool).toBe("60000000");
         expect(result.current.places.map(p => p.payout)).toEqual(["39000000", "21000000"]);
+        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([6500, 3500]);
     });
 
-    it("9 players: 50/30/20 split", () => {
-        const options = buildOptions({ minBuyIn: "10000000", maxPlayers: 9 });
-        setContext(buildState(options));
+    it("top-3 structure — the reported 6-max bug now shows all three places", () => {
+        setContext(buildState([
+            { place: 1, amount: "36000000" },
+            { place: 2, amount: "18000000" },
+            { place: 3, amount: "6000000" }
+        ]));
         const { result } = renderHook(() => useSitAndGoPayouts());
 
-        expect(result.current.prizePool).toBe("90000000");
-        expect(result.current.places.map(p => p.payout)).toEqual([
-            "45000000",
-            "27000000",
-            "18000000"
-        ]);
-        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([5000, 3000, 2000]);
-    });
-
-    it("returns empty places when maxPlayers is outside the supported curve range", () => {
-        const options = buildOptions({ minBuyIn: "10000000", maxPlayers: 12 });
-        setContext(buildState(options));
-        const { result } = renderHook(() => useSitAndGoPayouts());
-
-        expect(result.current.isSitAndGo).toBe(true);
-        expect(result.current.places).toEqual([]);
-        expect(result.current.prizePool).toBeNull();
+        expect(result.current.prizePool).toBe("60000000");
+        expect(result.current.places.map(p => p.place)).toEqual([1, 2, 3]);
+        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([6000, 3000, 1000]);
     });
 });
