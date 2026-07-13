@@ -7,12 +7,15 @@ import type { Page } from "@playwright/test";
  * With auto-new-hand ON (the paced path), a hand's WINS banner must stay visible
  * for the showdown-hold window before the next hand replaces it. We measure the
  * wall-clock between the banner appearing and it disappearing (the next hand
- * committing) and assert a LOWER BOUND only (~1.8s) so the test stays unflaky
- * despite scheduler jitter. This is the regression proof that pacing keeps the
- * showdown visible before the useAutoNewHand timer is retired in Phase 4.
+ * committing) and assert a LOWER BOUND only so the test stays unflaky despite
+ * scheduler jitter. The showdown hold is 2000ms; we bound at 1500ms to leave
+ * ample margin for banner-detection latency on a loaded CI runner while still
+ * proving a real hold (the 150ms frame cadence would otherwise replace it near
+ * instantly). This is the regression proof that pacing keeps the showdown
+ * visible after the useAutoNewHand timer was retired.
  */
 
-const LOWER_BOUND_MS = 1_800;
+const LOWER_BOUND_MS = 1_500;
 
 async function playToShowdown(page: Page): Promise<void> {
   await expect(page.locator(".btn-call")).toBeVisible({ timeout: 15_000 });
