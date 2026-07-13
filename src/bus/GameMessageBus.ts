@@ -15,9 +15,25 @@
  *      action submission always reads a fresh action index (the plan's
  *      two-track invariant — pacing must NEVER delay this track);
  *   6. enqueue and drain STATE items one at a time (serialization guarantee),
- *      honoring each item's `holdPreviousMs` (delay before commit) then
- *      `minDisplayMs` (delay after commit, before the next commit) — Phase 3;
+ *      honoring each item's `holdPreviousMs` (delay before commit) then the
+ *      post-commit wait `max(minDisplayMs, all ack-bearing hints resolved)`
+ *      (Phase 3 + Phase 5);
  *   7. notify subscribers with the committed item (the RENDER track).
+ *
+ * Animation acks (Phase 5, §2.7):
+ *   - A decorator opts a hint into gating the drain by setting `ackTimeoutMs` on
+ *     it (required — no default). At ingest the bus stamps each opted-in hint with
+ *     an `ackId` (`${seq}:${hintIndex}`).
+ *   - After committing an item that carries ack-bearing hints, the drain does not
+ *     schedule the next commit until every such hint has resolved — either the
+ *     render layer called {@link ackAnimation} or the hint's `ackTimeoutMs` fired
+ *     — AND `minDisplayMs` has elapsed (the two run concurrently: the wait is
+ *     `max(minDisplayMs, ack resolution)`).
+ *   - Invariants: every pending ack holds a live timeout; {@link reset} abandons
+ *     all pending acks and their timers; backpressure (§2.6) abandons pending acks
+ *     the same way it compresses holds; non-state kinds bypass acks entirely;
+ *     unknown/duplicate/late `ackId`s are safe no-ops. Items WITHOUT ack-bearing
+ *     hints keep the pre-Phase-5 single-timer-per-commit drain unchanged.
  *
  * Pacing (Phase 3):
  *   - Only `kind === "state"` items are paced and queued. All other kinds
@@ -90,6 +106,15 @@ export class GameMessageBus {
     /** minDisplay owed by the last committed item, applied before the next commit. */
     private carryDelayMs = 0;
 
+    /**
+     * Ack-bearing hints of the just-committed item still awaiting resolution
+     * (Phase 5). Keyed by `ackId`; each entry owns a live timeout timer and a
+     * `resolve` callback that advances the drain. Empty except during a
+     * post-commit ack wait — at most one item's acks are ever pending at once
+     * (one-in-flight drain).
+     */
+    private readonly pendingAcks = new Map<string, { timer: ReturnType<typeof setTimeout>; resolve: () => void }>();
+
     /** Last snapshot seen at ingest — retained for event derivation + decorators. */
     private lastSnapshot: TexasHoldemStateDTO | undefined = undefined;
 
@@ -102,6 +127,8 @@ export class GameMessageBus {
         queueDepth: 0,
         lastEventCount: 0,
         totalEvents: 0,
+        pendingAcks: 0,
+        ackTimeouts: 0,
         commitLog: []
     };
 
@@ -152,6 +179,10 @@ export class GameMessageBus {
         // Run decorators to accumulate the item's decoration (Phase 3).
         this.applyDecorators(item, prevSnapshot);
 
+        // Stamp ack ids onto opted-in hints (Phase 5) — done by the bus, never by
+        // decorators, so ids are globally unique (`${seq}:${hintIndex}`).
+        this.assignAckIds(item);
+
         // Logical track — commit immediately, before any queueing/pacing.
         this.updateLogicalTrack(classified);
 
@@ -169,14 +200,37 @@ export class GameMessageBus {
      */
     public reset(): void {
         this.queue = [];
-        this.draining = false;
         this.carryDelayMs = 0;
         if (this.drainTimer !== null) {
             clearTimeout(this.drainTimer);
             this.drainTimer = null;
         }
+        // Abandon any in-flight ack wait: clear its timers and let its `resolve`
+        // callbacks fire against the now-empty queue (a harmless no-op) — no
+        // pending ack ever outlives a reset (Phase 5 invariant).
+        this.abandonAcks();
+        this.draining = false;
         this.lastSnapshot = undefined;
         this.introspection.queueDepth = 0;
+    }
+
+    /**
+     * Resolve a pending animation ack (Phase 5). Called by the render layer when
+     * an ack-bearing hint's choreography finishes. Cancels the hint's timeout and
+     * lets the drain advance once every ack of the committed item has resolved.
+     *
+     * Unknown, duplicate, or late `ackId`s are safe no-ops — the id may have
+     * already timed out, been abandoned by reset()/backpressure, or never existed.
+     */
+    public ackAnimation(ackId: string): void {
+        const entry = this.pendingAcks.get(ackId);
+        if (!entry) {
+            return;
+        }
+        clearTimeout(entry.timer);
+        this.pendingAcks.delete(ackId);
+        this.introspection.pendingAcks = this.pendingAcks.size;
+        entry.resolve();
     }
 
     /** The most recent snapshot seen at ingest (logical track view). */
@@ -211,6 +265,20 @@ export class GameMessageBus {
         }
     }
 
+    /**
+     * Stamp an `ackId` onto every hint that opted in (set `ackTimeoutMs`). The id
+     * is `${seq}:${hintIndex}` — globally unique because `seq` is monotonic and
+     * never reused. Hint objects are freshly created by each decorator per ingest,
+     * so mutating them here shares nothing across items (Phase 5).
+     */
+    private assignAckIds(item: GameStreamItem): void {
+        item.decoration.animations.forEach((hint, index) => {
+            if (hint.ackTimeoutMs !== undefined) {
+                hint.ackId = `${item.seq}:${index}`;
+            }
+        });
+    }
+
     private updateLogicalTrack(classified: ClassifiedMessage): void {
         if (classified.kind === "state") {
             this.lastSnapshot = classified.snapshot;
@@ -232,6 +300,12 @@ export class GameMessageBus {
         }
         this.queue.push(item);
         this.introspection.queueDepth = this.queue.length;
+        // Backpressure abandons an in-flight ack wait the same way it compresses
+        // holds (§2.6): if the newly-queued item pushes us over a cap while the
+        // drain is gated on acks, stop waiting so the queue can catch up.
+        if (this.pendingAcks.size > 0 && (this.queue.length > DEPTH_CAP || this.accumulatedHoldMs() > HOLD_CAP_MS)) {
+            this.abandonAcks();
+        }
         this.scheduleDrain();
     }
 
@@ -286,15 +360,98 @@ export class GameMessageBus {
             }
             this.introspection.queueDepth = this.queue.length;
             this.commit(item);
+            this.afterCommit(item, underPressure);
+        }, preDelay);
+    }
 
-            let minDisplayMs = item.decoration.minDisplayMs ?? 0;
-            if (underPressure && minDisplayMs > SHORTENED_HOLD_MS) {
-                // Shorten holds (incl. handEnded) so the queue can catch up (§2.6).
-                minDisplayMs = SHORTENED_HOLD_MS;
-            }
+    /**
+     * Post-commit wait (Phase 3 + Phase 5): the next commit is delayed by
+     * `max(minDisplayMs, all ack-bearing hints resolved)`.
+     *
+     * Fast path — an item with NO ack-bearing hints folds `minDisplayMs` into the
+     * next commit's pre-delay via `carryDelayMs` and recurses immediately, exactly
+     * as the pre-Phase-5 drain did (one timer boundary per commit).
+     *
+     * Ack path — an item WITH ack-bearing hints starts the `minDisplayMs` timer
+     * AND registers each ack (each with its own `ackTimeoutMs`); the next commit is
+     * scheduled only once BOTH the min-display elapsed and every ack resolved. Under
+     * backpressure, acks are abandoned (skipped) so the queue can catch up (§2.6).
+     */
+    private afterCommit(item: GameStreamItem, underPressure: boolean): void {
+        let minDisplayMs = item.decoration.minDisplayMs ?? 0;
+        if (underPressure && minDisplayMs > SHORTENED_HOLD_MS) {
+            // Shorten holds (incl. handEnded) so the queue can catch up (§2.6).
+            minDisplayMs = SHORTENED_HOLD_MS;
+        }
+
+        const ackHints = underPressure ? [] : item.decoration.animations.filter(h => h.ackId !== undefined);
+
+        if (ackHints.length === 0) {
             this.carryDelayMs = minDisplayMs;
             this.pump();
-        }, preDelay);
+            return;
+        }
+
+        // Ack path: gate the next commit on max(minDisplayMs, acks resolved).
+        let minDone = minDisplayMs === 0;
+        let remaining = ackHints.length;
+        const advance = () => {
+            if (minDone && remaining === 0) {
+                this.carryDelayMs = 0;
+                this.pump();
+            }
+        };
+        if (!minDone) {
+            this.drainTimer = setTimeout(() => {
+                this.drainTimer = null;
+                minDone = true;
+                advance();
+            }, minDisplayMs);
+        }
+        for (const hint of ackHints) {
+            this.registerAck(hint.ackId!, hint.ackTimeoutMs!, () => {
+                remaining -= 1;
+                advance();
+            });
+        }
+    }
+
+    /**
+     * Register a pending ack with a live timeout (Phase 5). The timeout firing
+     * counts as an ack timeout (introspection) and resolves the wait — a missing
+     * ack can never stall the drain. Duplicate ids (should not occur — seq is
+     * unique) are ignored.
+     */
+    private registerAck(ackId: string, timeoutMs: number, onResolve: () => void): void {
+        if (this.pendingAcks.has(ackId)) {
+            return;
+        }
+        const timer = setTimeout(() => {
+            this.pendingAcks.delete(ackId);
+            this.introspection.pendingAcks = this.pendingAcks.size;
+            this.introspection.ackTimeouts += 1;
+            onResolve();
+        }, timeoutMs);
+        this.pendingAcks.set(ackId, { timer, resolve: onResolve });
+        this.introspection.pendingAcks = this.pendingAcks.size;
+    }
+
+    /**
+     * Abandon every pending ack (Phase 5): clear its timeout and fire its
+     * `resolve` so any waiting drain advances immediately. Used by reset() and by
+     * backpressure — abandoning is NOT a timeout, so it never bumps `ackTimeouts`.
+     */
+    private abandonAcks(): void {
+        if (this.pendingAcks.size === 0) {
+            return;
+        }
+        const entries = [...this.pendingAcks.values()];
+        this.pendingAcks.clear();
+        this.introspection.pendingAcks = 0;
+        for (const { timer, resolve } of entries) {
+            clearTimeout(timer);
+            resolve();
+        }
     }
 
     /**

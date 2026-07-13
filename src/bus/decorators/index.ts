@@ -15,7 +15,7 @@ import { makeRemoteActionSound } from "./remoteActionSound";
 import { coalesceCatchUp } from "./coalesceCatchUp";
 
 export { showdownHold, SHOWDOWN_HOLD_MS } from "./showdownHold";
-export { communityCardStagger, CARD_STAGGER_MS } from "./communityCardStagger";
+export { communityCardStagger, CARD_STAGGER_MS, DEAL_CARDS_ACK_TIMEOUT_MS } from "./communityCardStagger";
 export { actionBadge } from "./actionBadge";
 export { makeRemoteActionSound } from "./remoteActionSound";
 export { coalesceCatchUp } from "./coalesceCatchUp";

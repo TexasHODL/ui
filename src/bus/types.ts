@@ -43,6 +43,27 @@ export interface AnimationHint {
     round?: string;
     /** The seat this animation belongs to (for the `actionBadge` hint). */
     seat?: number;
+
+    // ---- Animation-ack contract (Phase 5, §2.7) --------------------------------
+    //
+    // A hint gates the drain's post-commit wait by opting into an ACK. The
+    // contract is split so the two roles can never be confused:
+    //
+    //   - `ackTimeoutMs` is the OPT-IN, set BY THE DECORATOR. It is REQUIRED to
+    //     opt in (Commandment 7 — no default): the decorator that wants the drain
+    //     to wait for its animation must declare how long that animation may take.
+    //     When it fires, the bus treats the animation as done regardless (a
+    //     missing/late ack can never stall the stream).
+    //   - `ackId` is assigned BY THE BUS at ingest (derived `${seq}:${hintIndex}`),
+    //     NEVER by a decorator. It is present only on hints that opted in. The
+    //     render consumer calls `bus.ackAnimation(ackId)` when its choreography
+    //     finishes; the drain then commits the next item as soon as every
+    //     ack-bearing hint of the current item has resolved (via ack OR timeout),
+    //     bounded below by `minDisplayMs`.
+    /** Assigned by the bus (`${seq}:${hintIndex}`) on opted-in hints. Never set by decorators. */
+    ackId?: string;
+    /** Decorator opt-in: max time this animation may take before the drain proceeds anyway. */
+    ackTimeoutMs?: number;
 }
 
 /**
@@ -127,6 +148,10 @@ export interface BusIntrospection {
     lastEventCount: number;
     /** Running total of derived events across all commits. */
     totalEvents: number;
+    /** Ack-bearing hints currently awaiting `ackAnimation()`/timeout (Phase 5). */
+    pendingAcks: number;
+    /** Cumulative count of acks that fell back to their `ackTimeoutMs` (Phase 5). */
+    ackTimeouts: number;
     commitLog: Array<{ seq: number; committedAt: number; eventCount: number }>;
 }
 

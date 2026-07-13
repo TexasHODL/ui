@@ -9,9 +9,12 @@
  * fixing the old "flop only, never turn/river" bug — because it keys off the
  * derived event, not a `communityCards.length >= 3` boolean.
  *
- * This is an animation HINT only — it deliberately does NOT set a pacing delay
- * (`minDisplayMs`/`holdPreviousMs`), so normal betting flow is never slowed; the
- * cards animate in over the render layer while the next action can still arrive.
+ * It sets no `minDisplayMs`/`holdPreviousMs` — normal betting flow is never slowed
+ * by a fixed guess. Instead the hint opts into an ANIMATION ACK (Phase 5, §2.7):
+ * it declares `ackTimeoutMs`, and the render consumer (useCardAnimations) calls
+ * `bus.ackAnimation` when the last staggered flip completes. The drain then holds
+ * the next commit exactly as long as the reveal actually takes, bounded by the
+ * timeout so a missing ack (component unmounted / not rendered) can never stall.
  *
  * Pure function; unit-tested in isolation.
  */
@@ -19,6 +22,26 @@ import type { Decorator, Decoration, AnimationHint } from "../types";
 
 /** Per-card reveal stagger (ms) for a newly-dealt street. */
 export const CARD_STAGGER_MS = 100;
+
+/** Widest street: the flop deals 3 cards; turn/river deal 1. */
+export const MAX_STREET_CARDS = 3;
+
+/**
+ * The card flip's CSS reveal duration — matches OppositePlayerCards.css
+ * `transition: transform 1s ease-in-out`. Each staggered flip takes this long to
+ * finish visually after its flag flips.
+ */
+export const CARD_FLIP_REVEAL_MS = 1000;
+
+/** Slack for React render latency + scheduler jitter before the fallback fires. */
+export const ACK_MARGIN_MS = 500;
+
+/**
+ * Ack budget = last flip starts at (stagger × maxCards) + its reveal duration +
+ * a render/jitter margin = 100 × 3 + 1000 + 500 = 1800ms. If nobody acks, the
+ * drain falls back to this bound — worst case is the old fixed-timer behavior.
+ */
+export const DEAL_CARDS_ACK_TIMEOUT_MS = CARD_STAGGER_MS * MAX_STREET_CARDS + CARD_FLIP_REVEAL_MS + ACK_MARGIN_MS;
 
 export const communityCardStagger: Decorator = (item): Partial<Decoration> => {
     const animations: AnimationHint[] = [];
@@ -28,7 +51,9 @@ export const communityCardStagger: Decorator = (item): Partial<Decoration> => {
                 kind: "dealCards",
                 staggerMs: CARD_STAGGER_MS,
                 cards: event.newCommunityCards,
-                round: event.to
+                round: event.to,
+                // Opt into a drain-gating ack (ackId is stamped by the bus).
+                ackTimeoutMs: DEAL_CARDS_ACK_TIMEOUT_MS
             });
         }
     }

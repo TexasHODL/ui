@@ -6,7 +6,7 @@
  * decorator, not the whole pipeline.
  */
 import { showdownHold, SHOWDOWN_HOLD_MS } from "./showdownHold";
-import { communityCardStagger, CARD_STAGGER_MS } from "./communityCardStagger";
+import { communityCardStagger, CARD_STAGGER_MS, DEAL_CARDS_ACK_TIMEOUT_MS } from "./communityCardStagger";
 import { actionBadge } from "./actionBadge";
 import { makeRemoteActionSound } from "./remoteActionSound";
 import { coalesceCatchUp } from "./coalesceCatchUp";
@@ -68,7 +68,14 @@ describe("communityCardStagger", () => {
             undefined
         );
         expect(patch.animations).toEqual([
-            { kind: "dealCards", staggerMs: CARD_STAGGER_MS, cards: ["AH", "KD", "2C"], round: TexasHoldemRound.FLOP }
+            {
+                kind: "dealCards",
+                staggerMs: CARD_STAGGER_MS,
+                cards: ["AH", "KD", "2C"],
+                round: TexasHoldemRound.FLOP,
+                // Opts into a drain-gating ack; the bus stamps ackId later.
+                ackTimeoutMs: DEAL_CARDS_ACK_TIMEOUT_MS
+            }
         ]);
     });
 
