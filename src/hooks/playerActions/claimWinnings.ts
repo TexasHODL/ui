@@ -8,6 +8,25 @@ export interface ClaimWinningsResult {
 }
 
 /**
+ * A RecordHandEnd rejection is BENIGN only when the chain already holds an
+ * equal-or-more-complete finished state — i.e. another finisher already recorded
+ * the results. The chain signals this with ErrStaleHandEnd ("hand-end push is
+ * stale or the game is already finalized", pokerchain codespace `poker`), which
+ * surfaces in the broadcast error message. In that case the results are on-chain
+ * and the claim can proceed to settle.
+ *
+ * Every OTHER failure (network, auth/verification, malformed state, an unfunded
+ * account) is FATAL: the results are NOT on-chain, so settling anyway would pay
+ * nothing while showing no error. We must surface it instead. (block52/ui#503)
+ */
+function resultsAlreadyOnChain(err: unknown): boolean {
+    const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+    // Base ErrStaleHandEnd message is appended to all its wrapped variants
+    // (already-finalized / older-hand / fewer-results), so either token matches.
+    return msg.includes("already finalized") || msg.includes("stale");
+}
+
+/**
  * Claim a decided SNG/Tournament prize (pokerchain#239).
  *
  * Distinct from leaveTable: once a tournament starts the roster is frozen —
@@ -21,20 +40,29 @@ export interface ClaimWinningsResult {
  * so this works with GATEWAY_CHAIN=off and never routes an SNG cash-out through
  * the gateway (the chain rejects SNG leaves relayed as MsgPerformAction).
  *
- * @throws if the wallet is not initialized or the chain rejects the claim.
+ * @throws if the wallet is not initialized, if recording the finished hand fails
+ *   for any reason other than "already on-chain", or if the chain rejects the
+ *   settle.
  */
 export async function claimWinnings(tableId: string, network: NetworkEndpoints): Promise<ClaimWinningsResult> {
     const { signingClient } = await getSigningClient(network);
 
-    // 1. Deliver the finished results to the chain. Swallow failures: another
-    //    finisher may have already recorded them, or it's transient — the
-    //    results are (or will be) on-chain, so the claim proceeds either way.
+    // 1. Deliver the finished results to the chain so the settle in step 2 has
+    //    Results[] to pay from. A stale/already-finalized rejection is benign —
+    //    the results are already on-chain (another finisher recorded them) — so
+    //    proceed. Any other failure means the results did NOT land: surface it,
+    //    because settling against absent Results silently pays nothing
+    //    (block52/ui#503).
     const state = getLatestGameState();
     if (state) {
         try {
             await signingClient.recordHandEnd(tableId, JSON.stringify(state));
         } catch (err) {
-            console.warn("[sng] recordHandEnd skipped:", err);
+            if (!resultsAlreadyOnChain(err)) {
+                const detail = err instanceof Error ? err.message : String(err);
+                throw new Error(`Could not record the finished hand on-chain — the prize cannot be settled yet. ${detail}`);
+            }
+            console.warn("[sng] recordHandEnd: results already on-chain, proceeding to settle:", err);
         }
     }
 
