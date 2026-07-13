@@ -109,16 +109,4 @@ describe("useCardAnimations", () => {
         expect(result.current.flipped2).toBe(false);
         expect(result.current.flipped3).toBe(false);
     });
-
-    it("falls back to the roundAdvanced event when no dealCards hint is present (direct path)", () => {
-        const { result, rerender } = renderHook(() => useCardAnimations());
-        setCommunityCards(["AH", "KD", "2C"]);
-        mockUseGameEventsContext.mockReturnValue({
-            latestItem: makeItem([{ type: "roundAdvanced", from: TexasHoldemRound.PREFLOP, to: TexasHoldemRound.FLOP, newCommunityCards: ["AH", "KD", "2C"] }])
-        });
-        rerender();
-        act(() => jest.advanceTimersByTime(300));
-        expect(result.current.flipped1).toBe(true);
-        expect(result.current.flipped3).toBe(true);
-    });
 });

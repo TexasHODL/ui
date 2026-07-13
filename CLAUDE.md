@@ -396,8 +396,20 @@ The application uses **57 custom React hooks** organized by domain. See [`hooks/
 ### Data Flow Pattern
 
 ```
-Blockchain/API → WebSocket → Context → Hooks → Components
+Blockchain/API → WebSocket → Bus (serialize + decorate) → Context → Hooks → Components
 ```
+
+Inbound WS messages pass through the **WS Action Bus** (`src/bus/`) before they
+reach React. The bus serializes messages (one at a time, in arrival order),
+derives typed transitions (`playerJoined`, `handEnded`, `roundAdvanced`, …), and
+decorates them with pacing/animation/sound hints. It runs on **two tracks**:
+
+- **Logical track** — every snapshot updates `setLatestGameState` immediately at
+  ingest (zero added latency). Action submission and any submission decision
+  (e.g. auto-new-hand) read this track so they never act on stale indices.
+- **Rendered track** — the queue drains into `setGameState` at the pace the
+  decorations dictate (e.g. `showdownHold` keeps the winner banner up ~2s).
+  Everything visual reads this track via `GameDataContext`.
 
 Most hooks read from **GameStateContext** which maintains a WebSocket connection for real-time updates.
 
