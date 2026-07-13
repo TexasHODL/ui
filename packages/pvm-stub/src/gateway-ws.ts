@@ -95,6 +95,25 @@ export function broadcastRaw(gameId: string, frame: unknown): void {
   }
 }
 
+/**
+ * Forcibly close every socket subscribed to a game (POST /__control/disconnect).
+ * Simulates an unexpected mid-hand WS drop so the reconnect path can be driven.
+ * The client's `onclose` fires; the UI does not auto-resubscribe (no reconnect
+ * logic today — see reconnect.spec.ts), so a resubscribe must be user-driven.
+ */
+export function disconnectGame(gameId: string): void {
+  const set = subscribers.get(gameId);
+  if (!set) return;
+  for (const client of set) {
+    try {
+      client.close();
+    } catch {
+      // already closing/closed — ignore
+    }
+  }
+  set.clear();
+}
+
 function addSubscriber(gameId: string, client: WebSocket): void {
   let set = subscribers.get(gameId);
   if (!set) {

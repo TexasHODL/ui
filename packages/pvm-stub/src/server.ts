@@ -2,7 +2,7 @@ import type { Server } from "node:http";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { attachGatewayWs, broadcast, broadcastRaw } from "./gateway-ws.js";
+import { attachGatewayWs, broadcast, broadcastRaw, disconnectGame } from "./gateway-ws.js";
 import {
   applyAction,
   CASH_GAME_ID,
@@ -127,9 +127,18 @@ app.get("/cosmos/tx/v1beta1/txs", (c) => c.json({ txs: [], tx_responses: [], tot
 app.get("/pokerchain/poker/nft_avatar/:address", (c) => c.json({ avatar: "" }));
 
 // ---- control surface (test isolation) -----------------------------------
+// In-flight scripted-sequence timers (POST /__control/script), cleared on reset
+// or when a new script starts so a run never leaks frames into the next test.
+let scriptTimers: ReturnType<typeof setTimeout>[] = [];
+function clearScript(): void {
+  scriptTimers.forEach(clearTimeout);
+  scriptTimers = [];
+}
+
 // Reset all game state to fresh/empty between test runs (api-stub's /__control
 // pattern). No auth — the stub only runs in dev/test.
 app.post("/__control/reset", (c) => {
+  clearScript();
   resetTables(); // also clears stub config (frameDelayMs)
   return c.json({ ok: true });
 });
@@ -148,6 +157,34 @@ app.post("/__control/inject", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as { gameId?: string; frame?: unknown };
   const gameId = body.gameId ?? CASH_GAME_ID;
   broadcastRaw(gameId, body.frame);
+  return c.json({ ok: true });
+});
+
+// Replay a recorded frame sequence with timing (plan §5.3). Each entry's
+// `delayMs` is the absolute offset from the call, so `delayMs: 0` for all entries
+// reproduces a catch-up BURST (frames arrive back-to-back), while spaced offsets
+// reproduce a paced stream. Any previously-running script is cancelled first.
+// { gameId, frames: [{ frame, delayMs }] }.
+app.post("/__control/script", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as {
+    gameId?: string;
+    frames?: Array<{ frame: unknown; delayMs?: number }>;
+  };
+  const gameId = body.gameId ?? CASH_GAME_ID;
+  const frames = body.frames ?? [];
+  clearScript();
+  for (const entry of frames) {
+    const delay = Math.max(0, entry.delayMs ?? 0);
+    scriptTimers.push(setTimeout(() => broadcastRaw(gameId, entry.frame), delay));
+  }
+  return c.json({ ok: true, scheduled: frames.length });
+});
+
+// Forcibly drop a game's WS subscribers (simulate an unexpected mid-hand drop).
+// The UI has no auto-reconnect, so a resubscribe is user-driven. { gameId }.
+app.post("/__control/disconnect", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { gameId?: string };
+  disconnectGame(body.gameId ?? CASH_GAME_ID);
   return c.json({ ok: true });
 });
 
