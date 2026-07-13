@@ -1,7 +1,7 @@
 # WS Action Bus — Serialized, Decoratable Game-State Ingest
 
 **Date:** 2026-07-13
-**Status:** Phases 0–3 implemented on stacked branches `feat/ws-action-bus-phase-0-1` → `-phase-2` → `-phase-3` (local, unpushed). Phase 4 (cleanup: remove flag/direct path, delete `useAutoNewHand` timer after rewiring inputs to logical track, remove `window.seatJoinNotifications`, docs) not started. Notes: `useAutoNewHand` timer kept in Phase 3 — it runs concurrently with `showdownHold` off the same commit (~2s total, no doubling); animation-acks in the drain deferred (documented gap); the UI has no WS auto-reconnect, so `reconnect.spec.ts` recovers via user-driven re-open (adding auto-reconnect is a Phase 4+ candidate).
+**Status:** Phases 0–4 implemented on stacked branches `feat/ws-action-bus-phase-0-1` → `-phase-2` → `-phase-3` → `-phase-4` (local, unpushed). Phase 4 removed the `VITE_GAME_BUS` flag/direct path, deleted `useAutoNewHand`'s timer (triggers rewired to the logical track — a new-hand deal is a submission), replaced `window.seatJoinNotifications` with `playerJoined` events, and updated CLAUDE.md/hooks README. Phase 5 (animation acks, §2.7) in progress. Remaining post-Phase-5 candidates: WS auto-reconnect (the UI has none; `reconnect.spec.ts` recovers via user-driven re-open).
 **Owner:** Sam
 
 ## Goal
@@ -247,7 +247,36 @@ game outrunning a 2s showdown hold. Policy:
 - **Errors (`kind: "error"`) jump the queue** — surfaced immediately per
   Commandment 7.
 
-### 2.7 What this deliberately does not do
+### 2.7 Animation acks (Phase 5)
+
+Fixed `minDisplayMs` values are guesses about how long the UI's choreography
+takes; acks make the contract explicit — the drain holds the next commit
+until the components animating the current one say they're done, bounded by
+a timeout so a missing ack can never stall the stream.
+
+- **Hint contract:** each `AnimationHint` that wants to gate the drain
+  carries `ackId: string` (derived `${seq}:${hintIndex}`, assigned by the
+  bus, never by decorators) and `ackTimeoutMs: number` (required — no
+  default per Commandment 7; the decorator that requests an ack must say
+  how long it's allowed to take).
+- **Bus API:** `bus.ackAnimation(ackId)`. The drain's post-commit wait
+  becomes `max(minDisplayMs, all ack-bearing hints resolved)`, where each
+  pending ack resolves on `ackAnimation(ackId)` or its `ackTimeoutMs`,
+  whichever comes first.
+- **Deadlock safety (the invariants):** every pending ack has a live
+  timeout; `reset()` abandons all pending acks; coalescing pressure (§2.6)
+  abandons pending acks the same way it compresses holds; non-state kinds
+  still bypass everything. A component that unmounts mid-animation simply
+  lets the timeout fire — worst case is the old fixed-timer behavior.
+- **React side:** the events context exposes `ackAnimation`; a small
+  `useAnimationAck(hints)` helper hook returns per-hint `done()` callbacks.
+  `useCardAnimations` is the pilot consumer — it acks when the last
+  staggered flip completes instead of the bus guessing
+  `staggerMs × cards + flip duration`.
+- **Introspection:** `__B52_BUS__` gains `pendingAcks` and `ackTimeouts`
+  counters for e2e assertions.
+
+### 2.8 What this deliberately does not do
 
 - No external library (mitt/rxjs/zustand). The bus is ~200 lines of typed TS;
   the ordering/pacing semantics are the hard part and are ours either way.
@@ -309,9 +338,22 @@ Each phase is independently shippable and behavior-preserving until Phase 3.
 - Document the bus in `src/hooks/README.md` and update `CLAUDE.md` data-flow
   section (`WS → Bus (serialize + decorate) → Context → Hooks → Components`).
 
+### Phase 5 — Animation acks (§2.7)
+- `ackId`/`ackTimeoutMs` on `AnimationHint`; `bus.ackAnimation()`; drain
+  waits `max(minDisplayMs, acks resolved-or-timed-out)`.
+- `useAnimationAck` helper; migrate `useCardAnimations` as pilot (ack on
+  last flip complete).
+- Jest (fake timers): ack-early (commit at `minDisplayMs`), ack-late
+  (commit at ack), no-ack (commit at `ackTimeoutMs`), `reset()`/coalescing
+  abandon pending acks, non-state kinds unaffected.
+- E2e: extend `per-action-frames.spec.ts` (or add `animation-acks.spec.ts`)
+  asserting via `__B52_BUS__.pendingAcks`/`ackTimeouts` + commitLog timing
+  lower-bounds that the flop commit gated on the stagger completing and
+  that `ackTimeouts === 0` in the happy path.
+
 **Suggested sequencing:** Phases 0–1 in one PR (pure refactor + queue),
 Phase 2 next, Phase 3 split into (a) pacing engine and (b) per-consumer
-migrations, Phase 4 last.
+migrations, Phase 4 (cleanup), Phase 5 (animation acks) last.
 
 ---
 
