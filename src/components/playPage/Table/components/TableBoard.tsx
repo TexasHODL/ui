@@ -11,6 +11,7 @@
 import React, { useMemo } from "react";
 import { getCardImageUrl, getCardBackUrl, CardBackStyle } from "../../../../utils/cardImages";
 import { PotDisplayValues } from "../../../../utils/potDisplayUtils";
+import { useCardAnimations } from "../../../../hooks/animations/useCardAnimations";
 import OppositePlayerCards from "../../Card/OppositePlayerCards";
 import { TotalPotDisplay } from "./TotalPotDisplay";
 import { MainPotDisplay } from "./MainPotDisplay";
@@ -44,6 +45,15 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     tableTheme = "modern",
     winnerCards
 }) => {
+    // Phase 5 pilot: mounting useCardAnimations here (the always-mounted board)
+    // drives the WS-bus animation ack — when the staggered flop/turn/river reveal
+    // completes it calls bus.ackAnimation, releasing the drain's next commit. The
+    // flip flags gate an ADDITIVE reveal class on the flop slots; cards stay
+    // visible regardless of the flags, so a late mount / turn / river never hides a
+    // card (the flags only ever turn a decorative class ON).
+    const { flipped1, flipped2, flipped3 } = useCardAnimations();
+    const flopFlips = useMemo(() => [flipped1, flipped2, flipped3], [flipped1, flipped2, flipped3]);
+
     // Memoize community cards rendering
     const communityCardsElements = useMemo(() => {
         // Count how many contiguous real cards exist from position 0.
@@ -68,10 +78,13 @@ export const TableBoard: React.FC<TableBoardProps> = ({
             const shouldMute = isVisible && hasWinningCards && !winnerCards!.has(card);
 
             if (isVisible) {
+                // Additive reveal class on the flop slots once their staggered flip
+                // flag has flipped (never removes visibility — cards render either way).
+                const flipReveal = idx < flopFlips.length && flopFlips[idx] ? " community-card-flip-in" : "";
                 return (
                     <div
                         key={`${idx}-${card}`}
-                        className={`card animate-fall${isWinCard ? " animate-win-card" : ""}${shouldMute ? " opacity-40" : ""}`}
+                        className={`card animate-fall${isWinCard ? " animate-win-card" : ""}${shouldMute ? " opacity-40" : ""}${flipReveal}`}
                         style={{ animationDelay: `${idx * 150}ms` }}
                     >
                         <OppositePlayerCards frontSrc={getCardImageUrl(card)} backSrc={getCardBackUrl(cardBackStyle)} flipped />
@@ -87,7 +100,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                 );
             }
         });
-    }, [communityCards, cardBackStyle, winnerCards]);
+    }, [communityCards, cardBackStyle, winnerCards, flopFlips]);
 
     return (
         <>

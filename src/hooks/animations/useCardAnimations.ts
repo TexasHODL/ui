@@ -1,10 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useGameEventsContext } from "../../context/gameState/GameEventsContext";
+import { useAnimationAck } from "./useAnimationAck";
 import { CardAnimationsReturn } from "../../types/index";
 
 /** Flip flags this hook exposes (flop = 3). */
 const FLIP_SLOTS = 3;
+
+/**
+ * The card flip's CSS reveal duration (OppositePlayerCards.css
+ * `transition: transform 1s`). The ack fires this long after the LAST flip flag
+ * flips, i.e. when the last staggered reveal actually finishes on screen —
+ * comfortably inside the decorator's ackTimeoutMs budget.
+ */
+const FLIP_REVEAL_MS = 1000;
 
 /**
  * Custom hook to handle community-card deal animations.
@@ -29,6 +38,7 @@ export const useCardAnimations = (_tableId?: string): CardAnimationsReturn => {
 
     const { gameState } = useGameStateContext();
     const { latestItem } = useGameEventsContext();
+    const ackDone = useAnimationAck(latestItem?.decoration.animations ?? []);
 
     const communityCards = gameState?.communityCards || [];
     const showThreeCards = communityCards.length >= 3;
@@ -77,7 +87,18 @@ export const useCardAnimations = (_tableId?: string): CardAnimationsReturn => {
         for (let slot = 0; slot < slotsToFlip; slot++) {
             timersRef.current.push(setTimeout(() => setFlipped(slot, true), stagger * (slot + 1)));
         }
-    }, [latestItem]);
+
+        // Ack the bus when the last staggered flip has finished revealing (Phase 5):
+        // the drain then holds the next commit for exactly how long this reveal
+        // took, not a fixed guess. The last flag flips at stagger × slotsToFlip; the
+        // reveal finishes FLIP_REVEAL_MS after that. If this component unmounts
+        // first the timer is cleared and the bus's ackTimeoutMs takes over.
+        if (dealHint.ackId) {
+            const ackId = dealHint.ackId;
+            const doneAt = stagger * slotsToFlip + FLIP_REVEAL_MS;
+            timersRef.current.push(setTimeout(() => ackDone(ackId), doneAt));
+        }
+    }, [latestItem, ackDone]);
 
     // Cleanup on unmount.
     useEffect(() => () => clearTimers(), []);

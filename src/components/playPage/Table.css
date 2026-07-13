@@ -61,6 +61,21 @@
     animation: fall 1.0s ease-out backwards;
 }
 
+/*
+ * Additive community-card reveal (WS Action Bus, Phase 5). Applied by TableBoard
+ * once useCardAnimations has staggered the flop flip flags on — a subtle brighten
+ * that marks the freshly-dealt street. Purely decorative: the card is already
+ * visible via .animate-fall, so absence of this class never hides anything.
+ */
+@keyframes community-card-flip-in {
+    0%   { filter: brightness(1.4); }
+    100% { filter: brightness(1); }
+}
+
+.community-card-flip-in {
+    animation: community-card-flip-in 300ms ease-out;
+}
+
 /* Winning card highlight — lifts card upward and brightens it */
 @keyframes card-lift {
     0%   { transform: translateY(0)     scale(1);    filter: brightness(1); }

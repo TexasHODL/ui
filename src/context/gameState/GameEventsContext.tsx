@@ -16,17 +16,25 @@ import type { GameStreamItem } from "../../bus/types";
 interface GameEventsContextValue {
     /** The latest committed stream item, or null before the first commit. */
     latestItem: GameStreamItem | null;
+    /**
+     * Resolve a bus animation ack (Phase 5, §2.7). The render layer calls this
+     * (via {@link useAnimationAck}) when an ack-bearing hint's choreography
+     * finishes, so the drain commits the next item as soon as the animation is
+     * actually done rather than after a fixed guess. Stable identity.
+     */
+    ackAnimation: (ackId: string) => void;
 }
 
 const GameEventsContext = createContext<GameEventsContextValue | null>(null);
 
 interface GameEventsProviderProps {
     latestItem: GameStreamItem | null;
+    ackAnimation: (ackId: string) => void;
     children: React.ReactNode;
 }
 
-export const GameEventsProvider: React.FC<GameEventsProviderProps> = ({ latestItem, children }) => {
-    const value = useMemo<GameEventsContextValue>(() => ({ latestItem }), [latestItem]);
+export const GameEventsProvider: React.FC<GameEventsProviderProps> = ({ latestItem, ackAnimation, children }) => {
+    const value = useMemo<GameEventsContextValue>(() => ({ latestItem, ackAnimation }), [latestItem, ackAnimation]);
     return <GameEventsContext.Provider value={value}>{children}</GameEventsContext.Provider>;
 };
 

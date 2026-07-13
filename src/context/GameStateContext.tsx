@@ -91,6 +91,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         busRef.current = new GameMessageBus({ setLatestGameState });
     }
 
+    // Stable bridge from the render layer to the bus's animation-ack API (Phase 5).
+    // Exposed via GameEventsContext so animating hooks can report choreography
+    // completion without reaching into the bus directly.
+    const ackAnimation = useCallback((ackId: string) => {
+        busRef.current?.ackAnimation(ackId);
+    }, []);
+
     // Apply a classified message to the RENDER track (React state). Contains no
     // setLatestGameState calls — the logical track is updated by the bus at
     // ingest. setState dispatchers are stable, so this callback never changes
@@ -454,7 +461,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         validationError={validationError}
                         pendingAction={pendingAction}
                     >
-                        <GameEventsProvider latestItem={latestStreamItem}>
+                        <GameEventsProvider latestItem={latestStreamItem} ackAnimation={ackAnimation}>
                             <GameDataProvider gameState={gameState}>{children}</GameDataProvider>
                         </GameEventsProvider>
                     </GameUIProvider>
