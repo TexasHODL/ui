@@ -1,7 +1,7 @@
 # WS Action Bus — Serialized, Decoratable Game-State Ingest
 
 **Date:** 2026-07-13
-**Status:** Phases 0–4 implemented on stacked branches `feat/ws-action-bus-phase-0-1` → `-phase-2` → `-phase-3` → `-phase-4` (local, unpushed). Phase 4 removed the `VITE_GAME_BUS` flag/direct path, deleted `useAutoNewHand`'s timer (triggers rewired to the logical track — a new-hand deal is a submission), replaced `window.seatJoinNotifications` with `playerJoined` events, and updated CLAUDE.md/hooks README. Phase 5 (animation acks, §2.7) in progress. Remaining post-Phase-5 candidates: WS auto-reconnect (the UI has none; `reconnect.spec.ts` recovers via user-driven re-open).
+**Status:** Phases 0–4 implemented on stacked branches `feat/ws-action-bus-phase-0-1` → `-phase-2` → `-phase-3` → `-phase-4` (local, unpushed). Phase 4 removed the `VITE_GAME_BUS` flag/direct path, deleted `useAutoNewHand`'s timer (triggers rewired to the logical track — a new-hand deal is a submission), replaced `window.seatJoinNotifications` with `playerJoined` events, and updated CLAUDE.md/hooks README. Phase 5 (animation acks, §2.7) implemented on `feat/ws-action-bus-phase-5`. **All phases complete.** Remaining follow-up candidates: WS auto-reconnect (the UI has none; `reconnect.spec.ts` recovers via user-driven re-open); full visual consumption of the card-flip flags in `TableBoard` (Phase 5 mounted `useCardAnimations` as an additive flop-only reveal — per-street turn/river slot mapping is open).
 **Owner:** Sam
 
 ## Goal
