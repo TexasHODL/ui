@@ -80,6 +80,21 @@ export function broadcast(gameId: string): void {
   }
 }
 
+/**
+ * Push an arbitrary, pre-built frame to every subscriber of a game. Used by
+ * per-frame broadcasting (captured intermediate states) and by
+ * POST /__control/inject (arbitrary/duplicate/malformed frames). `frame` is an
+ * already-shaped message object (or string) — sent verbatim.
+ */
+export function broadcastRaw(gameId: string, frame: unknown): void {
+  const set = subscribers.get(gameId);
+  if (!set) return;
+  const payload = typeof frame === "string" ? frame : JSON.stringify(frame);
+  for (const client of set) {
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
+  }
+}
+
 function addSubscriber(gameId: string, client: WebSocket): void {
   let set = subscribers.get(gameId);
   if (!set) {

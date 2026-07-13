@@ -45,6 +45,13 @@ export default defineConfig({
       url: UI_URL,
       reuseExistingServer: true,
       timeout: 60_000,
+      // The banner-dependent specs (smoke, play-hand) assert the gateway
+      // transport banner is visible, which requires VITE_SHOW_BANNER=true.
+      // ui/.env intentionally does not set it (the banner is off by default in
+      // prod), so we inject it here — Vite exposes VITE_-prefixed process.env
+      // vars via import.meta.env — so a fresh checkout passes with no manual
+      // server booting and prod defaults are untouched (plan §5.6).
+      env: { VITE_SHOW_BANNER: "true" },
     },
   ],
 });

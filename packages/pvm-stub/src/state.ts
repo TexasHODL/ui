@@ -8,6 +8,8 @@ export {
   gatewayStateMessage,
   applyAction,
   resetTables,
+  setStubConfig,
+  getFrameDelayMs,
 } from "./holdem.js";
 
 import { getGameStateResponse } from "./holdem.js";

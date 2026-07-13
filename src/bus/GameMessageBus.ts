@@ -54,6 +54,8 @@ export class GameMessageBus {
         committed: 0,
         coalesced: 0,
         queueDepth: 0,
+        lastEventCount: 0,
+        totalEvents: 0,
         commitLog: []
     };
 
@@ -189,7 +191,9 @@ export class GameMessageBus {
 
     private commit(item: GameStreamItem): void {
         this.introspection.committed += 1;
-        this.introspection.commitLog.push({ seq: item.seq, committedAt: this.now() });
+        this.introspection.lastEventCount = item.events.length;
+        this.introspection.totalEvents += item.events.length;
+        this.introspection.commitLog.push({ seq: item.seq, committedAt: this.now(), eventCount: item.events.length });
         if (this.introspection.commitLog.length > COMMIT_LOG_CAP) {
             this.introspection.commitLog.splice(0, this.introspection.commitLog.length - COMMIT_LOG_CAP);
         }

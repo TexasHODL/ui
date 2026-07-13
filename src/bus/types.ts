@@ -89,7 +89,11 @@ export interface BusIntrospection {
     committed: number;
     coalesced: number;
     queueDepth: number;
-    commitLog: Array<{ seq: number; committedAt: number }>;
+    /** Number of derived events on the most recently committed item. */
+    lastEventCount: number;
+    /** Running total of derived events across all commits. */
+    totalEvents: number;
+    commitLog: Array<{ seq: number; committedAt: number; eventCount: number }>;
 }
 
 declare global {
