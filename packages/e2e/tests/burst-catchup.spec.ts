@@ -101,8 +101,21 @@ test("a burst is coalesced, keeping the showdown and converging to the newest fr
   });
 
   await test.step("the burst coalesced and the render track advanced by fewer than the frames sent", async () => {
-    // Wait for the showdown hold to elapse and the queue to fully drain.
-    await expect.poll(async () => (await readBus(page)).coalesced, { timeout: 15_000 }).toBeGreaterThan(before.coalesced);
+    // Wait for the showdown hold to elapse and the queue to fully drain. The
+    // newest frame commits only AFTER the 2s showdown hold opened by the leading
+    // handEnded frame, so we must wait for BOTH coalescing to have happened AND
+    // the render track to have committed the surviving frames — polling on
+    // `coalesced` alone can read mid-hold (coalescing fires the instant the burst
+    // is queued, before the newest frame lands).
+    await expect
+      .poll(
+        async () => {
+          const bus = await readBus(page);
+          return bus.coalesced > before.coalesced && bus.committed - before.committed >= 2;
+        },
+        { timeout: 15_000 }
+      )
+      .toBe(true);
 
     const after = await readBus(page);
     const committedDelta = after.committed - before.committed;
