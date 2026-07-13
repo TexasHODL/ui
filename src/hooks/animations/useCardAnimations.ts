@@ -3,28 +3,21 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { useGameEventsContext } from "../../context/gameState/GameEventsContext";
 import { CardAnimationsReturn } from "../../types/index";
 
-/** Fallback per-card stagger when no decoration hint is present (direct path). */
-const FALLBACK_STAGGER_MS = 100;
 /** Flip flags this hook exposes (flop = 3). */
 const FLIP_SLOTS = 3;
 
 /**
  * Custom hook to handle community-card deal animations.
  *
- * Migrated to the WS Action Bus (Phase 3): it consumes the committed item's
- * `dealCards` animation hint (from the communityCardStagger decorator) and the
- * derived `roundAdvanced`/`handStarted` events, instead of keying off a
- * `communityCards.length >= 3` boolean. This fixes two long-standing bugs:
+ * Driven by the WS Action Bus: it consumes the committed item's `dealCards`
+ * animation hint (from the communityCardStagger decorator) plus the derived
+ * `handStarted` event, instead of keying off a `communityCards.length >= 3`
+ * boolean. This fixes two long-standing bugs:
  *
  *   - it now RE-TRIGGERS on turn and river (the boolean only ever went true once
  *     at the flop and never fired again); and
  *   - it RESETS per hand on `handStarted` (the old flags never cleared, so a new
  *     hand started with the previous hand's cards already "flipped").
- *
- * Direct path (VITE_GAME_BUS=off): decorators don't run, so there is no
- * `dealCards` hint — the hook falls back to the `roundAdvanced` event (derived on
- * both paths) with a default stagger. Reduced only in that the stagger isn't
- * decorator-driven. Documented graceful degradation.
  *
  * @param _tableId The ID of the table (not used - Context manages subscription)
  * @returns Object containing animation state for cards
@@ -65,18 +58,14 @@ export const useCardAnimations = (_tableId?: string): CardAnimationsReturn => {
             setFlipped3(false);
         }
 
-        // Prefer the decoration hint (bus path); fall back to the roundAdvanced
-        // event (both paths).
+        // The communityCardStagger decorator attaches a `dealCards` hint carrying
+        // the newly-dealt cards and the per-card stagger whenever the street
+        // advances with new community cards.
         const dealHint = latestItem.decoration.animations.find(animation => animation.kind === "dealCards");
-        const roundAdvanced = latestItem.events.find(
-            event => event.type === "roundAdvanced" && event.newCommunityCards.length > 0
-        );
-        if (!dealHint && !roundAdvanced) return;
+        if (!dealHint) return;
 
-        const stagger = dealHint?.staggerMs ?? FALLBACK_STAGGER_MS;
-        const newCardCount =
-            dealHint?.cards?.length ??
-            (roundAdvanced && roundAdvanced.type === "roundAdvanced" ? roundAdvanced.newCommunityCards.length : 0);
+        const stagger = dealHint.staggerMs ?? 0;
+        const newCardCount = dealHint.cards?.length ?? 0;
         const slotsToFlip = Math.min(newCardCount, FLIP_SLOTS);
 
         // Reset the flip flags, then stagger them in for the newly-dealt street —

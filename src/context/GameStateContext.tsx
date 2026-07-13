@@ -4,11 +4,9 @@ import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-
 import { createAuthPayload } from "../utils/cosmos/signing";
 import { getGameTransport, getGatewayWsUrl } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
-import { classifyMessage, ClassifiedMessage } from "../bus/ingest";
+import { ClassifiedMessage } from "../bus/ingest";
 import { GameMessageBus } from "../bus/GameMessageBus";
-import { deriveEvents } from "../bus/deriveEvents";
-import { DEFAULT_DECORATION, type GameStreamItem, type GameEvent } from "../bus/types";
-import { isGameBusEnabled } from "../bus/featureFlag";
+import { type GameStreamItem } from "../bus/types";
 import { viteEnv } from "../utils/viteEnv";
 import { toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { hasElements } from "../utils/guards";
@@ -84,26 +82,19 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     const hasReceivedMessageRef = useRef<boolean>(false);
     const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // WS Action Bus (Phase 1). Created eagerly in render so it exists before
-    // any child effect calls subscribeToTable. The logical track
-    // (setLatestGameState) is fed by the bus at ingest time; committed items
-    // drive the RENDER track via applyRenderTrack below.
+    // WS Action Bus. Created eagerly in render so it exists before any child
+    // effect calls subscribeToTable. The logical track (setLatestGameState) is
+    // fed by the bus at ingest time; committed items drive the RENDER track via
+    // applyRenderTrack below.
     const busRef = useRef<GameMessageBus | null>(null);
     if (busRef.current === null) {
         busRef.current = new GameMessageBus({ setLatestGameState });
     }
 
-    // Direct-path (VITE_GAME_BUS=off) event derivation state. The bus owns this
-    // on the bus path; on the direct path we track the previous snapshot and a
-    // local seq so useGameEvents gets identical events without duplicating the
-    // derivation logic (deriveEvents is shared). Reset alongside the bus.
-    const directPrevSnapshotRef = useRef<TexasHoldemStateDTO | undefined>(undefined);
-    const directSeqRef = useRef<number>(0);
-
     // Apply a classified message to the RENDER track (React state). Contains no
-    // setLatestGameState calls — the logical track is updated separately (by the
-    // bus at ingest, or by applyLogicalTrack on the direct path). setState
-    // dispatchers are stable, so this callback never changes identity.
+    // setLatestGameState calls — the logical track is updated by the bus at
+    // ingest. setState dispatchers are stable, so this callback never changes
+    // identity.
     const applyRenderTrack = useCallback((classified: ClassifiedMessage, rawMessage?: { gameId?: string; event?: string }) => {
         switch (classified.kind) {
             case "state": {
@@ -163,16 +154,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         }
     }, []);
 
-    // Apply a classified message to the LOGICAL track. Used only on the direct
-    // (bus-off) path — on the bus path the bus owns the logical track at ingest.
-    const applyLogicalTrack = useCallback((classified: ClassifiedMessage) => {
-        if (classified.kind === "state") {
-            setLatestGameState(classified.snapshot);
-        } else if (classified.kind === "error" && classified.clearGameState) {
-            setLatestGameState(undefined);
-        }
-    }, []);
-
     // Bus lifecycle: subscribe the render track to committed items and expose
     // the dev-only introspection handle (§5.4). Stripped from prod builds.
     useEffect(() => {
@@ -223,9 +204,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             // Reset the bus on (re)subscribe: drop any queued frames from a
             // prior subscription. seq continues monotonically (never reused).
             busRef.current?.reset();
-            // Reset direct-path derivation so the first frame of the new
-            // subscription seeds a fresh baseline (no history replay).
-            directPrevSnapshotRef.current = undefined;
             setLatestStreamItem(null);
 
             // Clear any existing fallback timeout
@@ -312,44 +290,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
 
                 hasReceivedMessageRef.current = true;
 
-                // WS Action Bus (Phase 1). On the bus path the bus classifies,
-                // updates the logical track at ingest, and drives the render
-                // track through committed items (applyRenderTrack, wired via
-                // subscribe). The direct path (VITE_GAME_BUS=off) classifies and
-                // applies both tracks inline — behaviour-identical to Phase 0.
-                if (isGameBusEnabled() && busRef.current) {
-                    busRef.current.ingest(message, tableId);
-                } else {
-                    const classified = classifyMessage(message, tableId);
-                    applyLogicalTrack(classified);
-                    applyRenderTrack(classified, message);
-
-                    // Derive events inline so useGameEvents behaves identically
-                    // on the direct path (shares deriveEvents — no duplication).
-                    if (classified.kind !== "ignore") {
-                        let events: GameEvent[] = [];
-                        if (classified.kind === "state") {
-                            try {
-                                events = deriveEvents(directPrevSnapshotRef.current, classified.snapshot);
-                            } catch (err) {
-                                console.error("[GameStateContext] event derivation failed:", (err as Error).message);
-                            }
-                            directPrevSnapshotRef.current = classified.snapshot;
-                        } else if (classified.kind === "error" && classified.clearGameState) {
-                            directPrevSnapshotRef.current = undefined;
-                        }
-                        directSeqRef.current += 1;
-                        setLatestStreamItem({
-                            seq: directSeqRef.current,
-                            receivedAt: performance.now(),
-                            kind: classified.kind,
-                            classified,
-                            events,
-                            decoration: { ...DEFAULT_DECORATION },
-                            raw: message
-                        });
-                    }
-                }
+                // WS Action Bus. The bus classifies the message, updates the
+                // logical track at ingest, and drives the render track through
+                // committed items (applyRenderTrack, wired via subscribe).
+                busRef.current?.ingest(message, tableId);
             };
 
             ws.onclose = () => {
@@ -364,7 +308,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 setIsLoading(false);
             };
         },
-        [currentNetwork, applyLogicalTrack, applyRenderTrack]
+        [currentNetwork]
     );
 
     const unsubscribeFromTable = useCallback(() => {
@@ -383,7 +327,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         currentTableIdRef.current = null;
         hasReceivedMessageRef.current = false;
         busRef.current?.reset();
-        directPrevSnapshotRef.current = undefined;
         setLatestStreamItem(null);
         setGameState(undefined);
                             setLatestGameState(undefined);
@@ -440,7 +383,6 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             // Replay bypasses the bus entirely; drop any queued live frames and
             // any derived-event state (replay has no pacing/event semantics).
             busRef.current?.reset();
-            directPrevSnapshotRef.current = undefined;
             setLatestStreamItem(null);
 
             setIsLoading(true);

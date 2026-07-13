@@ -76,8 +76,7 @@ export const formatActionAmount = (amount: string | undefined, isTournament: boo
  * `actionKey` string diffed against a ref. The bus derives one `playerActed` per
  * new action with a globally-monotonic index baseline, so a duplicate frame /
  * resubscribe / hand rollover no longer re-fires the badge, and there is no
- * per-hand reset logic to get wrong. `playerActed` events are derived on BOTH the
- * bus and the direct (VITE_GAME_BUS=off) path, so this works either way.
+ * per-hand reset logic to get wrong.
  *
  * Behavior preserved: only the GLOBALLY-newest action shows (a player's badge
  * hides the instant another player acts), filtered actions (join/deal/new-hand)
