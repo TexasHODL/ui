@@ -1,7 +1,7 @@
 # WS Action Bus — Serialized, Decoratable Game-State Ingest
 
 **Date:** 2026-07-13
-**Status:** Phases 0–1 implemented on `feat/ws-action-bus-phase-0-1` (local, unpushed); Phases 2–4 not started
+**Status:** Phases 0–1 implemented on `feat/ws-action-bus-phase-0-1`; Phase 2 (+ stub `__control/config`/`inject`, per-action-frames & duplicate-frame e2e) on `feat/ws-action-bus-phase-2` (local, unpushed). Phases 3–4 not started.
 **Owner:** Sam
 
 ## Goal
