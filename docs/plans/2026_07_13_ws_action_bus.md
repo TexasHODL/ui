@@ -1,7 +1,7 @@
 # WS Action Bus — Serialized, Decoratable Game-State Ingest
 
 **Date:** 2026-07-13
-**Status:** Phases 0–1 implemented on `feat/ws-action-bus-phase-0-1`; Phase 2 (+ stub `__control/config`/`inject`, per-action-frames & duplicate-frame e2e) on `feat/ws-action-bus-phase-2` (local, unpushed). Phases 3–4 not started.
+**Status:** Phases 0–3 implemented on stacked branches `feat/ws-action-bus-phase-0-1` → `-phase-2` → `-phase-3` (local, unpushed). Phase 4 (cleanup: remove flag/direct path, delete `useAutoNewHand` timer after rewiring inputs to logical track, remove `window.seatJoinNotifications`, docs) not started. Notes: `useAutoNewHand` timer kept in Phase 3 — it runs concurrently with `showdownHold` off the same commit (~2s total, no doubling); animation-acks in the drain deferred (documented gap); the UI has no WS auto-reconnect, so `reconnect.spec.ts` recovers via user-driven re-open (adding auto-reconnect is a Phase 4+ candidate).
 **Owner:** Sam
 
 ## Goal
