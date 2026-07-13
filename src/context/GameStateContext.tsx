@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useNetwork } from "./NetworkContext";
 import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { createAuthPayload } from "../utils/cosmos/signing";
-import { getGameTransport, getGatewayWsUrl, normalizeGatewayMessage } from "../utils/gameTransport";
+import { getGameTransport, getGatewayWsUrl } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
-import { validateGameState, extractGameDataFromMessage, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
+import { classifyMessage } from "../bus/ingest";
+import { toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { hasElements } from "../utils/guards";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
@@ -172,52 +173,30 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             };
 
             ws.onmessage = event => {
+                let message;
                 try {
-                    let message = JSON.parse(event.data);
-                    hasReceivedMessageRef.current = true;
+                    message = JSON.parse(event.data);
+                } catch (err) {
+                    console.error("[GameStateContext] Failed to parse WebSocket message:", (err as Error).message);
+                    setError(new Error("Error parsing WebSocket message"));
+                    return;
+                }
 
-                    // Gateway transport: state messages carry the canonical
-                    // GameStateResponseDTO under `state` (poker-vm#2226) —
-                    // normalize into the Cosmos message shape so the handler
-                    // below needs zero new parsing. Non-state gateway
-                    // messages (subscribed/ack) fall through untouched and
-                    // are ignored like any other unhandled type.
-                    const normalized = normalizeGatewayMessage(message);
-                    if (normalized) {
-                        message = normalized;
-                    }
+                hasReceivedMessageRef.current = true;
 
-                    // Handle multiple message formats:
-                    // - Old PVM format: type: "gameStateUpdate"
-                    // - Cosmos initial state: event: "state"
-                    // - Cosmos events: event: "player_joined_game", "action_performed", "game_created"
-                    const cosmosEvents = ["state", "player_joined_game", "action_performed", "game_created"];
-                    const isStateUpdate =
-                        (message.type === "gameStateUpdate" && message.tableAddress === tableId) ||
-                        (cosmosEvents.includes(message.event) && message.gameId === tableId);
+                // The onmessage funnel is a thin switch over the pure ingest
+                // classifier (WS Action Bus, Phase 0). All parsing/normalization/
+                // validation logic lives in classifyMessage; this block only
+                // maps the classified result onto React state. Behaviour is
+                // preserved 1:1 with the previous inline handler.
+                const classified = classifyMessage(message, tableId);
 
-                    if (isStateUpdate) {
-                        // Extract game state, format, and variant from message
-                        const { gameState: gameStateData, format: rawFormat, variant: rawVariant } = extractGameDataFromMessage(message);
-
-
-                        if (!gameStateData) {
-                            setValidationError({
-                                missingFields: ["gameState"],
-                                message: "No game state data received from server",
-                                rawData: message
-                            });
-                            return;
-                        }
-
+                switch (classified.kind) {
+                    case "state": {
                         if (AVATAR_SYNC_DEBUG) {
-                            const playersWithAvatars = gameStateData.players
+                            const playersWithAvatars = classified.snapshot.players
                                 .filter(player => Boolean(player.avatar))
-                                .map(player => ({
-                                    seat: player.seat,
-                                    address: player.address,
-                                    avatar: player.avatar
-                                }));
+                                .map(player => ({ seat: player.seat, address: player.address, avatar: player.avatar }));
 
                             if (hasElements(playersWithAvatars)) {
                                 console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
@@ -228,72 +207,48 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                             }
                         }
 
-                        // Validate the game state data
-                        const validation = validateGameState(
-                            rawFormat as string | undefined,
-                            rawVariant as string | undefined,
-                            (gameStateData as TexasHoldemStateDTO)?.gameOptions
-                        );
-
-                        if (!validation.valid) {
-                            // Per Commandment 7: NO defaults. Surface the validation error.
-                            setValidationError({
-                                missingFields: validation.missingFields,
-                                message: validation.message,
-                                rawData: message
-                            });
-                            // Still update gameState so the table renders what it can
-                            setGameState(gameStateData as TexasHoldemStateDTO);
-                            setLatestGameState(gameStateData as TexasHoldemStateDTO);
-                            setGameFormat(toGameFormat(rawFormat));
-                            setGameVariant(toGameVariant(rawVariant));
-                            setPendingAction(null);
-                            return;
-                        }
-
-                        // Valid data - update state
-                        setGameState(gameStateData as TexasHoldemStateDTO);
-                        setLatestGameState(gameStateData as TexasHoldemStateDTO);
-                        setGameFormat(toGameFormat(rawFormat));
-                        setGameVariant(toGameVariant(rawVariant));
-                        setError(null);
-                        setValidationError(null);
+                        setGameState(classified.snapshot);
+                        setLatestGameState(classified.snapshot);
+                        setGameFormat(classified.format);
+                        setGameVariant(classified.variant);
                         setPendingAction(null);
-                    } else if (message.event === "pending") {
-                        // Handle optimistic update - action accepted by mempool but not yet confirmed
-                        const pendingData = message.data;
-                        if (pendingData) {
-                            setPendingAction({
-                                gameId: pendingData.gameId || message.gameId,
-                                actor: pendingData.actor,
-                                action: pendingData.action,
-                                amount: pendingData.amount,
-                                timestamp: Date.now()
-                            });
-                        }
-                    } else if (message.event === "action_accepted") {
-                        // Acknowledgment that our action was accepted - no action needed
-                    } else if (message.type === "error" || message.event === "error") {
-                        // Handle error messages from the backend
-                        const errorMsg =
-                            message.code === "GAME_NOT_FOUND"
-                                ? `${message.message}${message.details?.suggestion ? "\n\n" + message.details.suggestion : ""}`
-                                : message.message || "An error occurred";
 
-                        setError(new Error(errorMsg));
+                        if (classified.validationError) {
+                            // Per Commandment 7: NO defaults. Surface the
+                            // validation error but still render what we can.
+                            setValidationError(classified.validationError);
+                        } else {
+                            setError(null);
+                            setValidationError(null);
+                        }
+                        break;
+                    }
+                    case "validationErrorNoState": {
+                        setValidationError(classified.validationError);
+                        break;
+                    }
+                    case "pending": {
+                        setPendingAction(classified.pendingAction);
+                        break;
+                    }
+                    case "actionAccepted": {
+                        // Acknowledgment that our action was accepted — no state change.
+                        break;
+                    }
+                    case "error": {
+                        setError(classified.error);
                         setIsLoading(false);
                         setPendingAction(null);
-
-                        // If it's a game not found error, clear the game state
-                        if (message.code === "GAME_NOT_FOUND") {
+                        if (classified.clearGameState) {
                             setGameState(undefined);
                             setLatestGameState(undefined);
                         }
+                        break;
                     }
-                    // Unhandled message types are silently ignored
-                } catch (err) {
-                    console.error("[GameStateContext] Failed to parse WebSocket message:", (err as Error).message);
-                    setError(new Error("Error parsing WebSocket message"));
+                    case "ignore":
+                    default:
+                        // Gateway acks, unknown types, wrong-table frames.
+                        break;
                 }
             };
 
