@@ -20,7 +20,8 @@
  */
 import { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { classifyMessage, ClassifiedMessage, RawWsMessage } from "./ingest";
-import { GameStreamItem, BusIntrospection, DEFAULT_DECORATION } from "./types";
+import { GameStreamItem, BusIntrospection, DEFAULT_DECORATION, GameEvent } from "./types";
+import { deriveEvents } from "./deriveEvents";
 
 /** Cap on the retained commit log so the dev handle never grows unbounded. */
 const COMMIT_LOG_CAP = 200;
@@ -82,12 +83,17 @@ export class GameMessageBus {
         }
 
         this.seq += 1;
+
+        // Derive events against the PREVIOUS ingested snapshot, before the
+        // logical-track update below overwrites lastSnapshot with this frame.
+        const events = this.deriveEventsForItem(classified);
+
         const item: GameStreamItem = {
             seq: this.seq,
             receivedAt: this.now(),
             kind: classified.kind,
             classified,
-            events: [],
+            events,
             decoration: { ...DEFAULT_DECORATION },
             raw
         };
@@ -115,6 +121,24 @@ export class GameMessageBus {
     /** The most recent snapshot seen at ingest (logical track view). */
     public getLastSnapshot(): TexasHoldemStateDTO | undefined {
         return this.lastSnapshot;
+    }
+
+    /**
+     * Derive events for a classified item against the last ingested snapshot.
+     * Only `state` items carry events. Regressed snapshots
+     * ({@link deriveEvents}) are surfaced via console.error and yield no events —
+     * the frame itself is still committed (Commandment 7: surface, never drop).
+     */
+    private deriveEventsForItem(classified: ClassifiedMessage): GameEvent[] {
+        if (classified.kind !== "state") {
+            return [];
+        }
+        try {
+            return deriveEvents(this.lastSnapshot, classified.snapshot);
+        } catch (err) {
+            console.error("[GameMessageBus] event derivation failed:", (err as Error).message);
+            return [];
+        }
     }
 
     private updateLogicalTrack(classified: ClassifiedMessage): void {

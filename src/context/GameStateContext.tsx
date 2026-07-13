@@ -6,6 +6,8 @@ import { getGameTransport, getGatewayWsUrl } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
 import { classifyMessage, ClassifiedMessage } from "../bus/ingest";
 import { GameMessageBus } from "../bus/GameMessageBus";
+import { deriveEvents } from "../bus/deriveEvents";
+import { DEFAULT_DECORATION, type GameStreamItem, type GameEvent } from "../bus/types";
 import { isGameBusEnabled } from "../bus/featureFlag";
 import { viteEnv } from "../utils/viteEnv";
 import { toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
@@ -18,6 +20,7 @@ import { GameMetaProvider, useGameMeta } from "./gameState/GameMetaContext";
 import { GameUIProvider, useGameUI, PendingAction } from "./gameState/GameUIContext";
 import { ReplayProvider, useReplay } from "./gameState/ReplayContext";
 import { GameActionsProvider, useGameActions } from "./gameState/GameActionsContext";
+import { GameEventsProvider } from "./gameState/GameEventsContext";
 
 // Feature toggle for REST fallback (debug only - disabled by default per Commandment 7)
 const ENABLE_REST_FALLBACK = false;
@@ -71,6 +74,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     const [isReplayMode, setIsReplayMode] = useState<boolean>(false);
     const [replayHandNumber, setReplayHandNumber] = useState<number | null>(null);
     const [replayActionIndex, setReplayActionIndex] = useState<number | null>(null);
+    // Latest committed bus item — drives GameEventsContext / useGameEvents.
+    const [latestStreamItem, setLatestStreamItem] = useState<GameStreamItem | null>(null);
     const { currentNetwork } = useNetwork();
 
     // Use ref instead of state for currentTableId to prevent re-renders
@@ -87,6 +92,13 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     if (busRef.current === null) {
         busRef.current = new GameMessageBus({ setLatestGameState });
     }
+
+    // Direct-path (VITE_GAME_BUS=off) event derivation state. The bus owns this
+    // on the bus path; on the direct path we track the previous snapshot and a
+    // local seq so useGameEvents gets identical events without duplicating the
+    // derivation logic (deriveEvents is shared). Reset alongside the bus.
+    const directPrevSnapshotRef = useRef<TexasHoldemStateDTO | undefined>(undefined);
+    const directSeqRef = useRef<number>(0);
 
     // Apply a classified message to the RENDER track (React state). Contains no
     // setLatestGameState calls — the logical track is updated separately (by the
@@ -168,7 +180,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         if (!bus) {
             return;
         }
-        const unsubscribe = bus.subscribe(item => applyRenderTrack(item.classified, item.raw as { gameId?: string; event?: string }));
+        const unsubscribe = bus.subscribe(item => {
+            applyRenderTrack(item.classified, item.raw as { gameId?: string; event?: string });
+            // Expose the committed item (with its derived events) to React.
+            setLatestStreamItem(item);
+        });
         if (!viteEnv.PROD) {
             window.__B52_BUS__ = bus.introspection;
         }
@@ -207,6 +223,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             // Reset the bus on (re)subscribe: drop any queued frames from a
             // prior subscription. seq continues monotonically (never reused).
             busRef.current?.reset();
+            // Reset direct-path derivation so the first frame of the new
+            // subscription seeds a fresh baseline (no history replay).
+            directPrevSnapshotRef.current = undefined;
+            setLatestStreamItem(null);
 
             // Clear any existing fallback timeout
             if (fallbackTimeoutRef.current) {
@@ -303,6 +323,32 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                     const classified = classifyMessage(message, tableId);
                     applyLogicalTrack(classified);
                     applyRenderTrack(classified, message);
+
+                    // Derive events inline so useGameEvents behaves identically
+                    // on the direct path (shares deriveEvents — no duplication).
+                    if (classified.kind !== "ignore") {
+                        let events: GameEvent[] = [];
+                        if (classified.kind === "state") {
+                            try {
+                                events = deriveEvents(directPrevSnapshotRef.current, classified.snapshot);
+                            } catch (err) {
+                                console.error("[GameStateContext] event derivation failed:", (err as Error).message);
+                            }
+                            directPrevSnapshotRef.current = classified.snapshot;
+                        } else if (classified.kind === "error" && classified.clearGameState) {
+                            directPrevSnapshotRef.current = undefined;
+                        }
+                        directSeqRef.current += 1;
+                        setLatestStreamItem({
+                            seq: directSeqRef.current,
+                            receivedAt: performance.now(),
+                            kind: classified.kind,
+                            classified,
+                            events,
+                            decoration: { ...DEFAULT_DECORATION },
+                            raw: message
+                        });
+                    }
                 }
             };
 
@@ -337,6 +383,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
         currentTableIdRef.current = null;
         hasReceivedMessageRef.current = false;
         busRef.current?.reset();
+        directPrevSnapshotRef.current = undefined;
+        setLatestStreamItem(null);
         setGameState(undefined);
                             setLatestGameState(undefined);
         setGameFormat(undefined);
@@ -389,8 +437,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 wsRef.current = null;
             }
 
-            // Replay bypasses the bus entirely; drop any queued live frames.
+            // Replay bypasses the bus entirely; drop any queued live frames and
+            // any derived-event state (replay has no pacing/event semantics).
             busRef.current?.reset();
+            directPrevSnapshotRef.current = undefined;
+            setLatestStreamItem(null);
 
             setIsLoading(true);
             setError(null);
@@ -461,7 +512,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         validationError={validationError}
                         pendingAction={pendingAction}
                     >
-                        <GameDataProvider gameState={gameState}>{children}</GameDataProvider>
+                        <GameEventsProvider latestItem={latestStreamItem}>
+                            <GameDataProvider gameState={gameState}>{children}</GameDataProvider>
+                        </GameEventsProvider>
                     </GameUIProvider>
                 </ReplayProvider>
             </GameMetaProvider>

@@ -3,17 +3,16 @@
  *
  * Snapshot/action/format/variant types come from the SDK (Commandment 1). The
  * types declared here describe only the bus envelope and the decoration
- * pipeline. Event derivation (Phase 2) and decorators/pacing (Phase 3) are NOT
- * implemented yet — `GameEvent`/`Decoration` are declared so the envelope shape
- * is stable, but `events` is always `[]` and `decoration` is always the inert
- * default in this phase.
+ * pipeline. As of Phase 2 `events` carries the real transitions derived by
+ * {@link deriveEvents}; `Decoration`/decorators/pacing remain declared-only
+ * (`decoration` is still the inert default) until Phase 3.
  */
 import type { TexasHoldemStateDTO, ActionDTO, WinnerDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import type { ClassifiedMessage } from "./ingest";
 
 /**
- * Typed transitions derived by diffing prev/next snapshot at ingest.
- * DECLARED for Phase 2 — not produced in Phase 1.
+ * Typed transitions derived by diffing prev/next snapshot at ingest
+ * ({@link deriveEvents}, Phase 2). One frame can carry several events.
  */
 export type GameEvent =
     | { type: "handStarted"; handNumber: number }
@@ -22,7 +21,11 @@ export type GameEvent =
     | { type: "handEnded"; winners: WinnerDTO[] }
     | { type: "playerJoined"; seat: number; address: string }
     | { type: "playerLeft"; seat: number; address: string }
-    | { type: "stackChanged"; seat: number; from: string; to: string };
+    | { type: "stackChanged"; seat: number; from: string; to: string }
+    | { type: "cardsRevealed"; seat: number; cards: string[] };
+
+/** Every discriminant of {@link GameEvent}, for the typed `useGameEvents` filter. */
+export type GameEventType = GameEvent["type"];
 
 /** Animation annotation a decorator may attach. DECLARED for Phase 3. */
 export interface AnimationHint {
@@ -71,7 +74,7 @@ export interface GameStreamItem {
     receivedAt: number;
     kind: ClassifiedMessage["kind"];
     classified: ClassifiedMessage;
-    /** Derived transitions — always [] in Phase 1. */
+    /** Derived transitions for this commit (empty for non-state items). */
     events: GameEvent[];
     /** Accumulated decorations — always the inert default in Phase 1. */
     decoration: Decoration;
