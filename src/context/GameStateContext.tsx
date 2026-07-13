@@ -4,7 +4,10 @@ import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-
 import { createAuthPayload } from "../utils/cosmos/signing";
 import { getGameTransport, getGatewayWsUrl } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
-import { classifyMessage } from "../bus/ingest";
+import { classifyMessage, ClassifiedMessage } from "../bus/ingest";
+import { GameMessageBus } from "../bus/GameMessageBus";
+import { isGameBusEnabled } from "../bus/featureFlag";
+import { viteEnv } from "../utils/viteEnv";
 import { toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { hasElements } from "../utils/guards";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
@@ -76,6 +79,107 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     const hasReceivedMessageRef = useRef<boolean>(false);
     const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // WS Action Bus (Phase 1). Created eagerly in render so it exists before
+    // any child effect calls subscribeToTable. The logical track
+    // (setLatestGameState) is fed by the bus at ingest time; committed items
+    // drive the RENDER track via applyRenderTrack below.
+    const busRef = useRef<GameMessageBus | null>(null);
+    if (busRef.current === null) {
+        busRef.current = new GameMessageBus({ setLatestGameState });
+    }
+
+    // Apply a classified message to the RENDER track (React state). Contains no
+    // setLatestGameState calls — the logical track is updated separately (by the
+    // bus at ingest, or by applyLogicalTrack on the direct path). setState
+    // dispatchers are stable, so this callback never changes identity.
+    const applyRenderTrack = useCallback((classified: ClassifiedMessage, rawMessage?: { gameId?: string; event?: string }) => {
+        switch (classified.kind) {
+            case "state": {
+                if (AVATAR_SYNC_DEBUG) {
+                    const playersWithAvatars = classified.snapshot.players
+                        .filter(player => Boolean(player.avatar))
+                        .map(player => ({ seat: player.seat, address: player.address, avatar: player.avatar }));
+
+                    if (hasElements(playersWithAvatars)) {
+                        console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
+                            gameId: rawMessage?.gameId,
+                            event: rawMessage?.event,
+                            playersWithAvatars
+                        });
+                    }
+                }
+
+                setGameState(classified.snapshot);
+                setGameFormat(classified.format);
+                setGameVariant(classified.variant);
+                setPendingAction(null);
+
+                if (classified.validationError) {
+                    // Per Commandment 7: NO defaults. Surface the validation
+                    // error but still render what we can.
+                    setValidationError(classified.validationError);
+                } else {
+                    setError(null);
+                    setValidationError(null);
+                }
+                break;
+            }
+            case "validationErrorNoState": {
+                setValidationError(classified.validationError);
+                break;
+            }
+            case "pending": {
+                setPendingAction(classified.pendingAction);
+                break;
+            }
+            case "actionAccepted": {
+                // Acknowledgment that our action was accepted — no state change.
+                break;
+            }
+            case "error": {
+                setError(classified.error);
+                setIsLoading(false);
+                setPendingAction(null);
+                if (classified.clearGameState) {
+                    setGameState(undefined);
+                }
+                break;
+            }
+            case "ignore":
+            default:
+                break;
+        }
+    }, []);
+
+    // Apply a classified message to the LOGICAL track. Used only on the direct
+    // (bus-off) path — on the bus path the bus owns the logical track at ingest.
+    const applyLogicalTrack = useCallback((classified: ClassifiedMessage) => {
+        if (classified.kind === "state") {
+            setLatestGameState(classified.snapshot);
+        } else if (classified.kind === "error" && classified.clearGameState) {
+            setLatestGameState(undefined);
+        }
+    }, []);
+
+    // Bus lifecycle: subscribe the render track to committed items and expose
+    // the dev-only introspection handle (§5.4). Stripped from prod builds.
+    useEffect(() => {
+        const bus = busRef.current;
+        if (!bus) {
+            return;
+        }
+        const unsubscribe = bus.subscribe(item => applyRenderTrack(item.classified, item.raw as { gameId?: string; event?: string }));
+        if (!viteEnv.PROD) {
+            window.__B52_BUS__ = bus.introspection;
+        }
+        return () => {
+            unsubscribe();
+            if (!viteEnv.PROD && window.__B52_BUS__ === bus.introspection) {
+                delete window.__B52_BUS__;
+            }
+        };
+    }, [applyRenderTrack]);
+
     const subscribeToTable = useCallback(
         (tableId: string) => {
             // Enhanced duplicate check to prevent re-subscription loops
@@ -99,6 +203,10 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             setValidationError(null);
             currentTableIdRef.current = tableId;
             hasReceivedMessageRef.current = false;
+
+            // Reset the bus on (re)subscribe: drop any queued frames from a
+            // prior subscription. seq continues monotonically (never reused).
+            busRef.current?.reset();
 
             // Clear any existing fallback timeout
             if (fallbackTimeoutRef.current) {
@@ -184,71 +292,17 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
 
                 hasReceivedMessageRef.current = true;
 
-                // The onmessage funnel is a thin switch over the pure ingest
-                // classifier (WS Action Bus, Phase 0). All parsing/normalization/
-                // validation logic lives in classifyMessage; this block only
-                // maps the classified result onto React state. Behaviour is
-                // preserved 1:1 with the previous inline handler.
-                const classified = classifyMessage(message, tableId);
-
-                switch (classified.kind) {
-                    case "state": {
-                        if (AVATAR_SYNC_DEBUG) {
-                            const playersWithAvatars = classified.snapshot.players
-                                .filter(player => Boolean(player.avatar))
-                                .map(player => ({ seat: player.seat, address: player.address, avatar: player.avatar }));
-
-                            if (hasElements(playersWithAvatars)) {
-                                console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
-                                    gameId: message.gameId,
-                                    event: message.event,
-                                    playersWithAvatars
-                                });
-                            }
-                        }
-
-                        setGameState(classified.snapshot);
-                        setLatestGameState(classified.snapshot);
-                        setGameFormat(classified.format);
-                        setGameVariant(classified.variant);
-                        setPendingAction(null);
-
-                        if (classified.validationError) {
-                            // Per Commandment 7: NO defaults. Surface the
-                            // validation error but still render what we can.
-                            setValidationError(classified.validationError);
-                        } else {
-                            setError(null);
-                            setValidationError(null);
-                        }
-                        break;
-                    }
-                    case "validationErrorNoState": {
-                        setValidationError(classified.validationError);
-                        break;
-                    }
-                    case "pending": {
-                        setPendingAction(classified.pendingAction);
-                        break;
-                    }
-                    case "actionAccepted": {
-                        // Acknowledgment that our action was accepted — no state change.
-                        break;
-                    }
-                    case "error": {
-                        setError(classified.error);
-                        setIsLoading(false);
-                        setPendingAction(null);
-                        if (classified.clearGameState) {
-                            setGameState(undefined);
-                            setLatestGameState(undefined);
-                        }
-                        break;
-                    }
-                    case "ignore":
-                    default:
-                        // Gateway acks, unknown types, wrong-table frames.
-                        break;
+                // WS Action Bus (Phase 1). On the bus path the bus classifies,
+                // updates the logical track at ingest, and drives the render
+                // track through committed items (applyRenderTrack, wired via
+                // subscribe). The direct path (VITE_GAME_BUS=off) classifies and
+                // applies both tracks inline — behaviour-identical to Phase 0.
+                if (isGameBusEnabled() && busRef.current) {
+                    busRef.current.ingest(message, tableId);
+                } else {
+                    const classified = classifyMessage(message, tableId);
+                    applyLogicalTrack(classified);
+                    applyRenderTrack(classified, message);
                 }
             };
 
@@ -264,7 +318,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 setIsLoading(false);
             };
         },
-        [currentNetwork]
+        [currentNetwork, applyLogicalTrack, applyRenderTrack]
     );
 
     const unsubscribeFromTable = useCallback(() => {
@@ -282,6 +336,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
 
         currentTableIdRef.current = null;
         hasReceivedMessageRef.current = false;
+        busRef.current?.reset();
         setGameState(undefined);
                             setLatestGameState(undefined);
         setGameFormat(undefined);
@@ -333,6 +388,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 wsRef.current.close();
                 wsRef.current = null;
             }
+
+            // Replay bypasses the bus entirely; drop any queued live frames.
+            busRef.current?.reset();
 
             setIsLoading(true);
             setError(null);
