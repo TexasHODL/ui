@@ -7,6 +7,18 @@ import { isNullish, hasValue } from "../../utils/guards";
 // Hold on the showdown for a beat before auto-dealing so the result is actually
 // visible (gateway transport delivers the next hand in ~150ms otherwise). During
 // this window the panel shows a "Dealing hand #X…" indicator. See ui#443.
+//
+// WS Action Bus Phase 3 note (kept, not removed — plan §5.7 allows deferral):
+// the bus's `showdownHold` decorator now also holds the RENDERED track for
+// SHOWDOWN_HOLD_MS (2000ms) after a `handEnded` commit. That does NOT double the
+// showdown visibility: both this timer and the decoration's minDisplay are
+// anchored to the SAME event (the handEnded commit that makes hasNewHandAction
+// true) and run CONCURRENTLY, so total visibility stays ~2s, not 4s. Removing
+// this timer would require rewiring hasNewHandAction/isUsersTurn off the LOGICAL
+// track (they currently read the paced rendered track via PokerActionPanel's
+// hooks); that heavier change — and the timer's deletion — is deferred to Phase 4.
+// The showdown-hold e2e (banner ≥ ~1.8s) and multi-hand e2e (autonewhand off,
+// no double-delay) are the regression gates.
 const AUTO_NEW_HAND_DELAY_MS = 2000;
 
 /**
