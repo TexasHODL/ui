@@ -27,22 +27,42 @@ export type GameEvent =
 /** Every discriminant of {@link GameEvent}, for the typed `useGameEvents` filter. */
 export type GameEventType = GameEvent["type"];
 
-/** Animation annotation a decorator may attach. DECLARED for Phase 3. */
+/**
+ * Animation annotation a decorator may attach (Phase 3). `kind` names the
+ * animation the render layer should run; the optional fields carry just enough
+ * context for the consuming hook (e.g. which community cards were dealt, or which
+ * seat acted) so it never re-derives that from a snapshot diff.
+ */
 export interface AnimationHint {
     kind: string;
+    /** Per-item stagger between sub-elements (e.g. flop cards), ms. */
     staggerMs?: number;
+    /** Community cards newly dealt this commit (for the `dealCards` hint). */
+    cards?: string[];
+    /** The street this animation belongs to (for the `dealCards` hint). */
+    round?: string;
+    /** The seat this animation belongs to (for the `actionBadge` hint). */
+    seat?: number;
 }
 
-/** Sound annotation a decorator may attach. DECLARED for Phase 3. */
+/**
+ * Sound annotation a decorator may attach (Phase 3). `kind` is the RESOLVED sound
+ * key (see actionSoundUtils.getActionSoundKey — e.g. "check"/"call"/"raise"), so
+ * the consumer calls `playActionSound(hint.kind)` with no further mapping.
+ */
 export interface SoundHint {
     kind: string;
     seat?: number;
 }
 
 /**
- * What decorators may attach to an item. All optional; the inert default
- * ({@link DEFAULT_DECORATION}) commits immediately with no pacing.
- * DECLARED for Phase 3 — decorators are not run in Phase 1.
+ * What decorators may attach to an item (Phase 3). All optional; the inert
+ * default ({@link DEFAULT_DECORATION}) commits immediately with no pacing.
+ *
+ * Pacing fields (`holdPreviousMs`, `minDisplayMs`) are honored by the bus drain;
+ * `animations`/`sounds` are hints for the render layer; `coalescible` grants the
+ * drain permission to drop this item under backpressure (§2.6). See the
+ * DECORATION-MERGE RULE on {@link Decorator} for how decorator outputs combine.
  */
 export interface Decoration {
     minDisplayMs?: number;
@@ -59,7 +79,21 @@ export const DEFAULT_DECORATION: Decoration = {
     coalescible: false
 };
 
-/** Pure decorator function. DECLARED for Phase 3. */
+/**
+ * Pure decorator function (Phase 3). Given a freshly-derived stream item and the
+ * previous ingested snapshot, it returns a PARTIAL decoration to merge in. It
+ * must not mutate its inputs.
+ *
+ * DECORATION-MERGE RULE (applied by GameMessageBus.applyDecorators, in
+ * registration order): each decorator's patch is folded into the item's
+ * accumulating decoration by:
+ *   - `minDisplayMs` / `holdPreviousMs` → MAX of the existing and patch values
+ *     (the longest hold any decorator asks for wins; absent = 0);
+ *   - `animations` / `sounds` → CONCATENATED (every decorator's hints are kept);
+ *   - `coalescible` → logical OR (any decorator marking it coalescible wins).
+ * The order of registration therefore never changes the result — merge is
+ * commutative — so decorators stay independent and unit-testable in isolation.
+ */
 export type Decorator = (item: GameStreamItem, prev: TexasHoldemStateDTO | undefined) => Partial<Decoration>;
 
 /**
