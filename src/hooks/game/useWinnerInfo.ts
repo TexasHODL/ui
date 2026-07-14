@@ -1,5 +1,5 @@
 import { useGameStateContext } from "../../context/GameStateContext";
-import { PlayerDTO, TexasHoldemStateDTO, WinnerDTO } from "@block52/poker-vm-sdk";
+import { TexasHoldemStateDTO, WinnerDTO } from "@block52/poker-vm-sdk";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { WinnerInfo, WinnerInfoReturn } from "../../types/index";
 import { hasElements } from "../../utils/guards";
@@ -15,15 +15,19 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO) {
     // Check for explicit winners array in the game data
     if (hasElements(gameData.winners)) {
         return gameData.winners.map((winner: WinnerDTO) => {
-            // Get the player object for this winner to find their seat
-            const player = gameData.players?.find((p: PlayerDTO) => p.address?.toLowerCase() === winner.address?.toLowerCase());
-
+            // The engine stamps the winner's seat at win time (SDK 1.2.15+), so it
+            // survives the winner leaving the table. Do NOT resolve it from
+            // players[] — that yields seat 0 once the winner is gone (#2378).
+            //
+            // winType is derived from whether cards were revealed: a showdown win
+            // carries the winning hand; an uncontested win (everyone folded) does
+            // not. Fixes the previously-hardcoded "Showdown" label on fold wins.
             return {
-                seat: player?.seat || 0,
+                seat: winner.seat,
                 address: winner.address,
                 amount: winner.amount.toString(),
                 formattedAmount: formatUSDCToSimpleDollars(winner.amount.toString()),
-                winType: "showdown",
+                winType: hasElements(winner.cards) ? "showdown" : "uncontested",
                 description: winner.description,
                 handName: winner.name,
                 cards: winner.cards
