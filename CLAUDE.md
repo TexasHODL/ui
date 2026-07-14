@@ -380,6 +380,30 @@ yarn lint:fix
 yarn lint:warn
 ```
 
+### Reuse `utils/` Helpers
+
+Prefer existing helpers in `src/utils/` over re-implementing common checks
+inline. Before writing a null/empty/length check or a conversion by hand, look
+for a helper — and if one is missing, add a tested helper rather than inlining
+the logic.
+
+Most common: `src/utils/guards.ts` for null/empty checks.
+
+```typescript
+// ❌ WRONG - inline checks scattered everywhere
+if (arr && arr.length > 0) { ... }
+if (value !== null && value !== undefined) { ... }
+
+// ✅ CORRECT - use the tested guards
+import { hasElements, hasValue } from "../utils/guards";
+if (hasElements(arr)) { ... }
+if (hasValue(value)) { ... }
+```
+
+Available guards: `hasValue` / `isNullish` (null-or-undefined), `hasElements` /
+`isEmpty` (array length), `hasContent` / `isBlank` (strings). For type
+conversions, see Commandment 12 (`utils/typeConversions`).
+
 ## Hooks Architecture
 
 The application uses **57 custom React hooks** organized by domain. See [`hooks/README.md`](./src/hooks/README.md) for comprehensive documentation.
