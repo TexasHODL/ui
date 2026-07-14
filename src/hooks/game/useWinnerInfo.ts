@@ -15,15 +15,22 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO) {
     // Check for explicit winners array in the game data
     if (hasElements(gameData.winners)) {
         return gameData.winners.map((winner: WinnerDTO) => {
-            // Get the player object for this winner to find their seat
+            // Prefer the engine-stamped winner.seat (SDK 1.2.15+): it's captured
+            // at win time, so it survives the winner LEAVING the table (players[]
+            // lookup would yield seat 0 — #2378). Fall back to resolving from
+            // players[] for backends that don't stamp it yet, which keeps the
+            // winner banner working while the winner is still seated.
             const player = gameData.players?.find((p: PlayerDTO) => p.address?.toLowerCase() === winner.address?.toLowerCase());
 
+            // winType is derived from whether cards were revealed: a showdown win
+            // carries the winning hand; an uncontested win (everyone folded) does
+            // not. Fixes the previously-hardcoded "Showdown" label on fold wins.
             return {
-                seat: player?.seat || 0,
+                seat: winner.seat ?? player?.seat ?? 0,
                 address: winner.address,
                 amount: winner.amount.toString(),
                 formattedAmount: formatUSDCToSimpleDollars(winner.amount.toString()),
-                winType: "showdown",
+                winType: hasElements(winner.cards) ? "showdown" : "uncontested",
                 description: winner.description,
                 handName: winner.name,
                 cards: winner.cards

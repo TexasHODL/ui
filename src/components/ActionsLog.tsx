@@ -205,7 +205,7 @@ const ActionsLog: React.FC = () => {
                                     {w.description && ` — ${w.description}`}
                                 </span>
                                 <span className={`text-[10px] ${styles.secondaryText}`}>
-                                    Seat {w.seat} · Showdown
+                                    Seat {w.seat} · {w.winType === "showdown" ? "Showdown" : "Uncontested"}
                                 </span>
                             </div>
                         </div>
