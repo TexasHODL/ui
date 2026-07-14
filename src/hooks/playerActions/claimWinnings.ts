@@ -1,5 +1,6 @@
 import { getSigningClient } from "../../utils/cosmos/client";
 import { getLatestGameState } from "./transportAction";
+import { finishingOrderFromState } from "../../utils/cosmos/settlementTx";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 
 export interface ClaimWinningsResult {
@@ -67,6 +68,10 @@ export async function claimWinnings(tableId: string, network: NetworkEndpoints):
     }
 
     // 2. Settle the prize (leaveGameSNG reads results + pays + marks claimed).
-    const hash = await signingClient.leaveGame(tableId);
+    //    Pass the place-1-first finishingOrder (SDK 1.2.16): if step 1's record
+    //    was lossy and the chain's Results are still empty, the chain recomputes
+    //    the payouts from its own prize-pool math using this ordering, rather
+    //    than reverting with ErrSNGNotFinalized. Empty for a non-finished state.
+    const hash = await signingClient.leaveGame(tableId, finishingOrderFromState(state));
     return { hash, gameId: tableId };
 }
