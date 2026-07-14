@@ -2,9 +2,13 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { useNetwork } from "./NetworkContext";
 import { TexasHoldemStateDTO, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { createAuthPayload } from "../utils/cosmos/signing";
-import { getGameTransport, getGatewayWsUrl, normalizeGatewayMessage } from "../utils/gameTransport";
+import { getGameTransport, getGatewayWsUrl } from "../utils/gameTransport";
 import { setLatestGameState } from "../hooks/playerActions/transportAction";
-import { validateGameState, extractGameDataFromMessage, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
+import { ClassifiedMessage } from "../bus/ingest";
+import { GameMessageBus } from "../bus/GameMessageBus";
+import { type GameStreamItem } from "../bus/types";
+import { viteEnv } from "../utils/viteEnv";
+import { toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { hasElements } from "../utils/guards";
 import type { ValidationError } from "../components/playPage/TableErrorPage";
 import { CosmosApi } from "../apis/Api";
@@ -14,6 +18,7 @@ import { GameMetaProvider, useGameMeta } from "./gameState/GameMetaContext";
 import { GameUIProvider, useGameUI, PendingAction } from "./gameState/GameUIContext";
 import { ReplayProvider, useReplay } from "./gameState/ReplayContext";
 import { GameActionsProvider, useGameActions } from "./gameState/GameActionsContext";
+import { GameEventsProvider } from "./gameState/GameEventsContext";
 
 // Feature toggle for REST fallback (debug only - disabled by default per Commandment 7)
 const ENABLE_REST_FALLBACK = false;
@@ -67,6 +72,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     const [isReplayMode, setIsReplayMode] = useState<boolean>(false);
     const [replayHandNumber, setReplayHandNumber] = useState<number | null>(null);
     const [replayActionIndex, setReplayActionIndex] = useState<number | null>(null);
+    // Latest committed bus item — drives GameEventsContext / useGameEvents.
+    const [latestStreamItem, setLatestStreamItem] = useState<GameStreamItem | null>(null);
     const { currentNetwork } = useNetwork();
 
     // Use ref instead of state for currentTableId to prevent re-renders
@@ -74,6 +81,108 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     const wsRef = useRef<WebSocket | null>(null);
     const hasReceivedMessageRef = useRef<boolean>(false);
     const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // WS Action Bus. Created eagerly in render so it exists before any child
+    // effect calls subscribeToTable. The logical track (setLatestGameState) is
+    // fed by the bus at ingest time; committed items drive the RENDER track via
+    // applyRenderTrack below.
+    const busRef = useRef<GameMessageBus | null>(null);
+    if (busRef.current === null) {
+        busRef.current = new GameMessageBus({ setLatestGameState });
+    }
+
+    // Stable bridge from the render layer to the bus's animation-ack API (Phase 5).
+    // Exposed via GameEventsContext so animating hooks can report choreography
+    // completion without reaching into the bus directly.
+    const ackAnimation = useCallback((ackId: string) => {
+        busRef.current?.ackAnimation(ackId);
+    }, []);
+
+    // Apply a classified message to the RENDER track (React state). Contains no
+    // setLatestGameState calls — the logical track is updated by the bus at
+    // ingest. setState dispatchers are stable, so this callback never changes
+    // identity.
+    const applyRenderTrack = useCallback((classified: ClassifiedMessage, rawMessage?: { gameId?: string; event?: string }) => {
+        switch (classified.kind) {
+            case "state": {
+                if (AVATAR_SYNC_DEBUG) {
+                    const playersWithAvatars = classified.snapshot.players
+                        .filter(player => Boolean(player.avatar))
+                        .map(player => ({ seat: player.seat, address: player.address, avatar: player.avatar }));
+
+                    if (hasElements(playersWithAvatars)) {
+                        console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
+                            gameId: rawMessage?.gameId,
+                            event: rawMessage?.event,
+                            playersWithAvatars
+                        });
+                    }
+                }
+
+                setGameState(classified.snapshot);
+                setGameFormat(classified.format);
+                setGameVariant(classified.variant);
+                setPendingAction(null);
+
+                if (classified.validationError) {
+                    // Per Commandment 7: NO defaults. Surface the validation
+                    // error but still render what we can.
+                    setValidationError(classified.validationError);
+                } else {
+                    setError(null);
+                    setValidationError(null);
+                }
+                break;
+            }
+            case "validationErrorNoState": {
+                setValidationError(classified.validationError);
+                break;
+            }
+            case "pending": {
+                setPendingAction(classified.pendingAction);
+                break;
+            }
+            case "actionAccepted": {
+                // Acknowledgment that our action was accepted — no state change.
+                break;
+            }
+            case "error": {
+                setError(classified.error);
+                setIsLoading(false);
+                setPendingAction(null);
+                if (classified.clearGameState) {
+                    setGameState(undefined);
+                }
+                break;
+            }
+            case "ignore":
+            default:
+                break;
+        }
+    }, []);
+
+    // Bus lifecycle: subscribe the render track to committed items and expose
+    // the dev-only introspection handle (§5.4). Stripped from prod builds.
+    useEffect(() => {
+        const bus = busRef.current;
+        if (!bus) {
+            return;
+        }
+        const unsubscribe = bus.subscribe(item => {
+            applyRenderTrack(item.classified, item.raw as { gameId?: string; event?: string });
+            // Expose the committed item (with its derived events) to React.
+            setLatestStreamItem(item);
+        });
+        if (!viteEnv.PROD) {
+            window.__B52_BUS__ = bus.introspection;
+        }
+        return () => {
+            unsubscribe();
+            if (!viteEnv.PROD && window.__B52_BUS__ === bus.introspection) {
+                delete window.__B52_BUS__;
+            }
+        };
+    }, [applyRenderTrack]);
 
     const subscribeToTable = useCallback(
         (tableId: string) => {
@@ -98,6 +207,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             setValidationError(null);
             currentTableIdRef.current = tableId;
             hasReceivedMessageRef.current = false;
+
+            // Reset the bus on (re)subscribe: drop any queued frames from a
+            // prior subscription. seq continues monotonically (never reused).
+            busRef.current?.reset();
+            setLatestStreamItem(null);
 
             // Clear any existing fallback timeout
             if (fallbackTimeoutRef.current) {
@@ -172,129 +286,21 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             };
 
             ws.onmessage = event => {
+                let message;
                 try {
-                    let message = JSON.parse(event.data);
-                    hasReceivedMessageRef.current = true;
-
-                    // Gateway transport: state messages carry the canonical
-                    // GameStateResponseDTO under `state` (poker-vm#2226) —
-                    // normalize into the Cosmos message shape so the handler
-                    // below needs zero new parsing. Non-state gateway
-                    // messages (subscribed/ack) fall through untouched and
-                    // are ignored like any other unhandled type.
-                    const normalized = normalizeGatewayMessage(message);
-                    if (normalized) {
-                        message = normalized;
-                    }
-
-                    // Handle multiple message formats:
-                    // - Old PVM format: type: "gameStateUpdate"
-                    // - Cosmos initial state: event: "state"
-                    // - Cosmos events: event: "player_joined_game", "action_performed", "game_created"
-                    const cosmosEvents = ["state", "player_joined_game", "action_performed", "game_created"];
-                    const isStateUpdate =
-                        (message.type === "gameStateUpdate" && message.tableAddress === tableId) ||
-                        (cosmosEvents.includes(message.event) && message.gameId === tableId);
-
-                    if (isStateUpdate) {
-                        // Extract game state, format, and variant from message
-                        const { gameState: gameStateData, format: rawFormat, variant: rawVariant } = extractGameDataFromMessage(message);
-
-
-                        if (!gameStateData) {
-                            setValidationError({
-                                missingFields: ["gameState"],
-                                message: "No game state data received from server",
-                                rawData: message
-                            });
-                            return;
-                        }
-
-                        if (AVATAR_SYNC_DEBUG) {
-                            const playersWithAvatars = gameStateData.players
-                                .filter(player => Boolean(player.avatar))
-                                .map(player => ({
-                                    seat: player.seat,
-                                    address: player.address,
-                                    avatar: player.avatar
-                                }));
-
-                            if (hasElements(playersWithAvatars)) {
-                                console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
-                                    gameId: message.gameId,
-                                    event: message.event,
-                                    playersWithAvatars
-                                });
-                            }
-                        }
-
-                        // Validate the game state data
-                        const validation = validateGameState(
-                            rawFormat as string | undefined,
-                            rawVariant as string | undefined,
-                            (gameStateData as TexasHoldemStateDTO)?.gameOptions
-                        );
-
-                        if (!validation.valid) {
-                            // Per Commandment 7: NO defaults. Surface the validation error.
-                            setValidationError({
-                                missingFields: validation.missingFields,
-                                message: validation.message,
-                                rawData: message
-                            });
-                            // Still update gameState so the table renders what it can
-                            setGameState(gameStateData as TexasHoldemStateDTO);
-                            setLatestGameState(gameStateData as TexasHoldemStateDTO);
-                            setGameFormat(toGameFormat(rawFormat));
-                            setGameVariant(toGameVariant(rawVariant));
-                            setPendingAction(null);
-                            return;
-                        }
-
-                        // Valid data - update state
-                        setGameState(gameStateData as TexasHoldemStateDTO);
-                        setLatestGameState(gameStateData as TexasHoldemStateDTO);
-                        setGameFormat(toGameFormat(rawFormat));
-                        setGameVariant(toGameVariant(rawVariant));
-                        setError(null);
-                        setValidationError(null);
-                        setPendingAction(null);
-                    } else if (message.event === "pending") {
-                        // Handle optimistic update - action accepted by mempool but not yet confirmed
-                        const pendingData = message.data;
-                        if (pendingData) {
-                            setPendingAction({
-                                gameId: pendingData.gameId || message.gameId,
-                                actor: pendingData.actor,
-                                action: pendingData.action,
-                                amount: pendingData.amount,
-                                timestamp: Date.now()
-                            });
-                        }
-                    } else if (message.event === "action_accepted") {
-                        // Acknowledgment that our action was accepted - no action needed
-                    } else if (message.type === "error" || message.event === "error") {
-                        // Handle error messages from the backend
-                        const errorMsg =
-                            message.code === "GAME_NOT_FOUND"
-                                ? `${message.message}${message.details?.suggestion ? "\n\n" + message.details.suggestion : ""}`
-                                : message.message || "An error occurred";
-
-                        setError(new Error(errorMsg));
-                        setIsLoading(false);
-                        setPendingAction(null);
-
-                        // If it's a game not found error, clear the game state
-                        if (message.code === "GAME_NOT_FOUND") {
-                            setGameState(undefined);
-                            setLatestGameState(undefined);
-                        }
-                    }
-                    // Unhandled message types are silently ignored
+                    message = JSON.parse(event.data);
                 } catch (err) {
                     console.error("[GameStateContext] Failed to parse WebSocket message:", (err as Error).message);
                     setError(new Error("Error parsing WebSocket message"));
+                    return;
                 }
+
+                hasReceivedMessageRef.current = true;
+
+                // WS Action Bus. The bus classifies the message, updates the
+                // logical track at ingest, and drives the render track through
+                // committed items (applyRenderTrack, wired via subscribe).
+                busRef.current?.ingest(message, tableId);
             };
 
             ws.onclose = () => {
@@ -327,6 +333,8 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
 
         currentTableIdRef.current = null;
         hasReceivedMessageRef.current = false;
+        busRef.current?.reset();
+        setLatestStreamItem(null);
         setGameState(undefined);
                             setLatestGameState(undefined);
         setGameFormat(undefined);
@@ -378,6 +386,11 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                 wsRef.current.close();
                 wsRef.current = null;
             }
+
+            // Replay bypasses the bus entirely; drop any queued live frames and
+            // any derived-event state (replay has no pacing/event semantics).
+            busRef.current?.reset();
+            setLatestStreamItem(null);
 
             setIsLoading(true);
             setError(null);
@@ -448,7 +461,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
                         validationError={validationError}
                         pendingAction={pendingAction}
                     >
-                        <GameDataProvider gameState={gameState}>{children}</GameDataProvider>
+                        <GameEventsProvider latestItem={latestStreamItem} ackAnimation={ackAnimation}>
+                            <GameDataProvider gameState={gameState}>{children}</GameDataProvider>
+                        </GameEventsProvider>
                     </GameUIProvider>
                 </ReplayProvider>
             </GameMetaProvider>

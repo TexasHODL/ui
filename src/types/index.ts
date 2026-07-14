@@ -279,9 +279,12 @@ export interface GameProgressReturn extends BaseHookReturn {
 
 // Type for the return value of useCardAnimations hook
 export interface CardAnimationsReturn {
-    flipped1: boolean;
-    flipped2: boolean;
-    flipped3: boolean;
+    /**
+     * Per board-slot revealed state, indexed by absolute community-card position
+     * (0–4 = flop×3, turn, river). `true` = the card has dropped into place.
+     * Newly-dealt slots drop in one at a time; prior-street slots stay on the board.
+     */
+    revealedSlots: boolean[];
     showThreeCards: boolean;
 }
 

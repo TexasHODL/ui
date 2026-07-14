@@ -526,12 +526,17 @@ const {
 ```
 
 #### `useCardAnimations()`
-Handles individual card flip and reveal animations.
+Handles community-card flip/reveal animations. Bus-driven: consumes the
+`dealCards` animation hint (from the `communityCardStagger` decorator) and the
+`handStarted` event, so it re-triggers on flop, turn, AND river and resets per
+hand.
 
 ```typescript
 const {
-  animateCard,
-  isAnimating
+  flipped1,
+  flipped2,
+  flipped3,
+  showThreeCards
 } = useCardAnimations();
 ```
 
@@ -564,14 +569,18 @@ const { showNotification, clearNotification } = useTurnNotification();
 - Browser notification (if permission granted)
 - Toast message with action buttons
 
-#### `useSeatJoinNotification()`
-Notifies when players join/leave the table.
+#### `useSeatJoinNotification(seatNumber)`
+Shows the "YOUR SEAT" banner under the local player's badge when they join.
+Bus-driven: consumes `useGameEvents("playerJoined")` filtered to this seat AND
+the local player's address (only the joining player sees it), replacing the old
+`window` callback registry.
 
 ```typescript
 const {
-  showJoinNotification,
-  showLeaveNotification
-} = useSeatJoinNotification();
+  isVisible,
+  isTextHiding,
+  isAnimatingOut
+} = useSeatJoinNotification(seatNumber);
 ```
 
 ---
@@ -583,15 +592,35 @@ const {
 Most hooks follow this data flow:
 
 ```
-Blockchain/API → Context → Hook → Component
-                   ↓
-              WebSocket
+Blockchain/API → WebSocket → Bus (serialize + decorate) → Context → Hooks → Components
 ```
 
 1. **Data Source**: Blockchain (Cosmos SDK) or Backend API
-2. **Context**: GameStateContext, NetworkContext, WalletContext
-3. **Hook**: Processes, formats, and memoizes data
-4. **Component**: Renders UI
+2. **Bus** (`src/bus/`): serializes inbound WS messages, derives typed
+   transitions (`GameEvent[]`), and decorates them with pacing/animation/sound
+   hints — see below
+3. **Context**: GameStateContext, NetworkContext, WalletContext
+4. **Hook**: Processes, formats, and memoizes data
+5. **Component**: Renders UI
+
+#### WS Action Bus — two tracks
+
+The bus (`src/bus/`) sits between the WebSocket and React so inbound messages are
+processed strictly one at a time and annotated as they arrive, instead of every
+consumer reverse-engineering "what happened" by diffing consecutive snapshots. It
+runs on two tracks:
+
+- **Logical track** — every snapshot updates `setLatestGameState` immediately at
+  ingest (zero added latency). Action submission and submission decisions (e.g.
+  `useAutoNewHand`) read this track so they never act on a stale action index.
+- **Rendered track** — the queue drains into `setGameState` at the pace the
+  decorations dictate (e.g. `showdownHold` holds the winner banner ~2s while the
+  next hand deals behind it). Everything visual reads this track via
+  `GameDataContext`.
+
+Hooks consume the derived transitions of the latest commit through
+`useGameEvents(filter?)` (`hooks/game/useGameEvents.ts`) rather than hand-rolling
+`useRef` snapshot diffing. Design details: `docs/plans/2026_07_13_ws_action_bus.md`.
 
 ### Real-Time Updates
 

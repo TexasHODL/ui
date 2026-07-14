@@ -83,6 +83,29 @@ interface Table {
 
 const store = new Map<string, Table>();
 
+// ---- stub config (per-frame broadcasting, §5.3) --------------------------
+// When frameDelayMs > 0 the server broadcasts one frame per engine step
+// (human action, then each bot action) instead of one collapsed frame. Default
+// 0 keeps the collapsed behaviour so the existing specs are untouched.
+let frameDelayMs = 0;
+
+/** Set stub config from POST /__control/config. */
+export function setStubConfig(cfg: { frameDelayMs?: number }): void {
+  if (typeof cfg.frameDelayMs === "number" && cfg.frameDelayMs >= 0) {
+    frameDelayMs = cfg.frameDelayMs;
+  }
+}
+
+/** Current per-frame broadcast delay (ms); 0 = collapsed (single frame). */
+export function getFrameDelayMs(): number {
+  return frameDelayMs;
+}
+
+/** Reset stub config to defaults (called by /__control/reset). */
+export function resetConfig(): void {
+  frameDelayMs = 0;
+}
+
 function freshTable(gameId: string): Table {
   return {
     gameId,
@@ -110,6 +133,7 @@ function table(gameId: string): Table | undefined {
 export function resetTables(): void {
   store.clear();
   store.set(CASH_GAME_ID, freshTable(CASH_GAME_ID));
+  resetConfig();
 }
 
 // ---- deck ----------------------------------------------------------------
@@ -225,23 +249,34 @@ function postBlind(t: Table, s: Seat, amount: bigint): void {
 
 // ---- actions -------------------------------------------------------------
 
-/** Apply a submitted action, then auto-run the bot until it's the human's turn. */
-export function applyAction(gameId: string, action: Action): void {
+/**
+ * Apply a submitted action, then auto-run the bot until it's the human's turn.
+ *
+ * `onStep` (optional) is invoked synchronously after EACH engine step — the
+ * human action, then each bot action — so the caller can capture the state at
+ * that step for per-frame broadcasting (§5.3). In collapsed mode the caller
+ * omits it and broadcasts once after applyAction returns.
+ */
+export function applyAction(gameId: string, action: Action, onStep?: () => void): void {
   const t = table(gameId);
   if (!t) return;
+  const step = onStep ?? (() => {});
 
   if (action.action === "join") {
     join(t, action);
+    step();
     return;
   }
   if (action.action === "new-hand") {
     // Deal the next hand from the END state (carries stacks forward). The UI
     // reaches here via useAutoNewHand / the manual "START NEW HAND" button.
     if (t.round === "end") startHand(t);
+    step();
     return;
   }
   applyBettingAction(t, action);
-  runBotUntilHuman(t);
+  step();
+  runBotUntilHuman(t, step);
 }
 
 function applyBettingAction(t: Table, action: Action): void {
@@ -372,7 +407,7 @@ function showdown(t: Table): void {
   t.pot = 0n;
 }
 
-function runBotUntilHuman(t: Table): void {
+function runBotUntilHuman(t: Table, step: () => void): void {
   let guard = 0;
   while (t.round !== "showdown" && t.round !== "end" && guard++ < 20) {
     const actor = seatOf(t, t.nextToAct);
@@ -380,6 +415,9 @@ function runBotUntilHuman(t: Table): void {
     // Bot policy: call if facing a bet, else check.
     const facing = t.currentBet > actor.streetBet;
     applyBettingAction(t, { address: actor.address, action: facing ? "call" : "check" });
+    // Emit a frame for each bot step so per-frame mode reproduces the live
+    // gateway's one-frame-per-action stream.
+    step();
   }
 }
 

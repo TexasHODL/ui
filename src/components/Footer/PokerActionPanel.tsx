@@ -155,8 +155,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         hasRaiseAction,
         hasMuckAction,
         hasShowAction,
-        hasDealAction,
-        hasNewHandAction
+        hasDealAction
     } = getActionFlags(legalActions);
 
     // Blind amounts - single source of truth from gameState.gameOptions (per Commandment 7)
@@ -262,12 +261,13 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     );
 
     // Auto-new-hand hook - automatically triggers new hand when conditions are met
-    // Can be disabled via URL query param: ?autonewhand=false or via settings panel
+    // Can be disabled via URL query param: ?autonewhand=false or via settings panel.
+    // Its trigger inputs (hasNewHandAction / isUsersTurn) are derived internally
+    // from the LOGICAL track so the deal is never delayed by the rendered
+    // showdown hold (see useAutoNewHand).
     const { isDealingNewHand } = useAutoNewHand(
         tableId,
         network,
-        hasNewHandAction,
-        isUsersTurn,
         () => setLoadingAction("new-hand"), // onNewHandStarted
         txHash => {
             setLoadingAction(null);

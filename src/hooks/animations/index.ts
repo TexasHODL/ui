@@ -7,4 +7,5 @@
 
 export { useTableAnimations } from "./useTableAnimations";
 export { useCardAnimations } from "./useCardAnimations";
+export { useAnimationAck } from "./useAnimationAck";
 export { useChipPositions } from "./useChipPositions";

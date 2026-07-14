@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useGameProgress } from "../game/useGameProgress";
 import { useGameStateContext } from "../../context/GameStateContext";
+import { useGameEvents } from "../game/useGameEvents";
 import { PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
 import { formatForSitAndGo, formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
-import { isBlank, isEmpty } from "../../utils/guards";
+import { isBlank } from "../../utils/guards";
 
 export interface PlayerActionDisplay {
   action: string;
@@ -14,8 +14,17 @@ export interface PlayerActionDisplay {
   isAnimatingOut: boolean;
 }
 
+const SHOW_DURATION = 2000;
 const TEXT_HIDE_DURATION = 150;
 const EXIT_ANIMATION_DURATION = 500;
+
+const HIDDEN: PlayerActionDisplay = {
+  action: "",
+  amount: "",
+  isVisible: false,
+  isTextHiding: false,
+  isAnimatingOut: false
+};
 
 // Map action types to display text using the actual enum values
 const ACTION_DISPLAY_MAP: Record<string, string> = {
@@ -59,136 +68,88 @@ export const formatActionAmount = (amount: string | undefined, isTournament: boo
   return isTournament ? ` ${formatForSitAndGo(numeric)}` : ` $${formatUSDCToSimpleDollars(amount)}`;
 };
 
+/**
+ * Drives the transient "action badge" under a player's avatar.
+ *
+ * Migrated to the WS Action Bus (Phase 3): new-action detection now reads the
+ * committed item's `playerActed` events (via useGameEvents) instead of the old
+ * `actionKey` string diffed against a ref. The bus derives one `playerActed` per
+ * new action with a globally-monotonic index baseline, so a duplicate frame /
+ * resubscribe / hand rollover no longer re-fires the badge, and there is no
+ * per-hand reset logic to get wrong.
+ *
+ * Behavior preserved: only the GLOBALLY-newest action shows (a player's badge
+ * hides the instant another player acts), filtered actions (join/deal/new-hand)
+ * never show, and the show(2000ms) → text-hide(150ms) → animate-out(500ms)
+ * choreography and return shape are unchanged (the Badge component consumes them
+ * as-is, so it needs no change).
+ */
 export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay => {
-  // Use the same pattern as useGameProgress
-  const { previousActions, handNumber, actionCount: _actionCount } = useGameProgress();
-
   // Tournament/SNG amounts are raw chips; cash amounts are USDC micro-units.
   const { gameFormat } = useGameStateContext();
   const isTournament = isTournamentFormat(gameFormat);
 
-  const [displayState, setDisplayState] = useState<PlayerActionDisplay>({
-    action: "",
-    amount: "",
-    isVisible: false,
-    isTextHiding: false,
-    isAnimatingOut: false
-  });
+  // Newest actions committed this frame (index-ordered; last is globally newest).
+  const playerActedEvents = useGameEvents("playerActed");
 
-  // Track the last action we processed to detect new ones
-  const lastProcessedActionRef = useRef<string | null>(null);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [displayState, setDisplayState] = useState<PlayerActionDisplay>(HIDDEN);
 
-  // Performance optimization: Cache the most recent action index to avoid recalculating
-  const mostRecentActionIndex = useMemo(() => {
-    if (isEmpty(previousActions)) return -1;
+  // All pending choreography timers, cleared on a new action / unmount.
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const clearTimers = () => {
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+  };
 
-    // Find the highest index efficiently
-    return Math.max(...previousActions.map(action => action.index));
-  }, [previousActions]);
-
-  // Get the GLOBALLY most recent action and check if it belongs to this player
+  // The globally-newest, non-filtered action on this commit (or null).
   const latestAction = useMemo(() => {
-    if (isEmpty(previousActions) || mostRecentActionIndex === -1) return null;
+    if (playerActedEvents.length === 0) return null;
+    const newest = playerActedEvents[playerActedEvents.length - 1].action;
+    if (FILTERED_ACTIONS.includes(newest.action.toLowerCase())) return null;
+    return newest;
+  }, [playerActedEvents]);
 
-    // Find the action with the most recent index
-    const globallyMostRecentAction = previousActions.find(action => action.index === mostRecentActionIndex) || null;
-
-    // Check if the most recent action should be filtered (not displayed)
-    const shouldFilter = globallyMostRecentAction && FILTERED_ACTIONS.includes(globallyMostRecentAction.action.toLowerCase());
-
-    // If we should filter this action, don't show anything
-    const actionToShow = shouldFilter ? null : globallyMostRecentAction;
-
-    // Only return the action if it should be shown AND was performed by THIS player
-    const isThisPlayerLatest = actionToShow?.seat === seatIndex;
-    return isThisPlayerLatest ? actionToShow : null;
-  }, [previousActions, mostRecentActionIndex, seatIndex]);
-
-  // Create a unique key for the action to detect changes
-  const actionKey = useMemo(() => {
-    if (!latestAction) return null;
-    return `${latestAction.seat}-${latestAction.action}-${latestAction.amount}-${latestAction.timestamp}-${handNumber}`;
-  }, [latestAction, handNumber]);
-
-  // Memoize display values to prevent recalculation
-  const displayValues = useMemo(() => {
-    if (!latestAction) return null;
-    return {
-      action: ACTION_DISPLAY_MAP[latestAction.action] || latestAction.action.toUpperCase(),
-      amount: formatActionAmount(latestAction.amount, isTournament)
-    };
-  }, [latestAction, isTournament]);
-
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    // Clear any existing timeout
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
+    // No new action this commit (duplicate frame, no-op frame, or filtered): do
+    // not disturb an in-progress badge — it follows its own timeout.
+    if (!latestAction) return;
 
-    // If no action, hide the display
-    if (!latestAction || !actionKey || !displayValues) {
-      setDisplayState({
-        action: "",
-        amount: "",
-        isVisible: false,
-        isTextHiding: false,
-        isAnimatingOut: false
-      });
-      lastProcessedActionRef.current = null;
+    // Someone else is now the newest actor — hide this seat's badge at once.
+    if (latestAction.seat !== seatIndex) {
+      clearTimers();
+      setDisplayState(HIDDEN);
       return;
     }
 
-    // Check if this is a new action we haven't processed yet
-    if (lastProcessedActionRef.current !== actionKey) {
-      lastProcessedActionRef.current = actionKey;
+    // This seat performed the newest action — show it, then run the choreography.
+    clearTimers();
+    setDisplayState({
+      action: ACTION_DISPLAY_MAP[latestAction.action] || latestAction.action.toUpperCase(),
+      amount: formatActionAmount(latestAction.amount, isTournament),
+      isVisible: true,
+      isTextHiding: false,
+      isAnimatingOut: false
+    });
 
-      // Show the action immediately using memoized values
-      setDisplayState({
-        action: displayValues.action,
-        amount: displayValues.amount,
-        isVisible: true,
-        isTextHiding: false,
-        isAnimatingOut: false
-      });
+    timersRef.current.push(
+      setTimeout(() => {
+        setDisplayState(prev => ({ ...prev, isTextHiding: true }));
+        timersRef.current.push(
+          setTimeout(() => {
+            setDisplayState(prev => ({ ...prev, isAnimatingOut: true }));
+            timersRef.current.push(
+              setTimeout(() => setDisplayState(HIDDEN), EXIT_ANIMATION_DURATION)
+            );
+          }, TEXT_HIDE_DURATION)
+        );
+      }, SHOW_DURATION)
+    );
+  }, [latestAction, seatIndex, isTournament]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
-      // Set timeout to hide after 2 seconds
-      hideTimeoutRef.current = setTimeout(() => {
-        setDisplayState(prev => ({
-          ...prev,
-          isTextHiding: true
-        }));
-
-        setTimeout(() => {
-        setDisplayState(prev => ({
-          ...prev,
-          isAnimatingOut: true
-        }));
-
-        // Fully hide after animation completes (500ms animation)
-        setTimeout(() => {
-          setDisplayState({
-            action: "",
-            amount: "",
-            isVisible: false,
-            isTextHiding: false,
-            isAnimatingOut: false
-          });
-        }, EXIT_ANIMATION_DURATION);
-        }, TEXT_HIDE_DURATION);
-      }, 2000);
-    }
-  }, [actionKey, displayValues, latestAction]);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-      }
-    };
-  }, []);
+  // Cleanup timeouts on unmount
+  useEffect(() => () => clearTimers(), []);
 
   return displayState;
-}; 
+};
