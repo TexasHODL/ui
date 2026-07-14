@@ -250,7 +250,7 @@ describe("deriveEvents", () => {
 
     describe("handEnded", () => {
         it("extracts winners when winners transition from empty to populated", () => {
-            const winner: WinnerDTO = { address: ALICE, amount: "100000", cards: ["AH", "KH"], name: "Winner", description: "High Card" };
+            const winner: WinnerDTO = { address: ALICE, seat: 1, amount: "100000", cards: ["AH", "KH"], name: "Winner", description: "High Card" };
             const prev = snapshot({ winners: [] });
             const next = snapshot({ round: TexasHoldemRound.END, winners: [winner] });
 
@@ -260,7 +260,7 @@ describe("deriveEvents", () => {
         });
 
         it("does not re-emit handEnded while winners stay populated", () => {
-            const winner: WinnerDTO = { address: ALICE, amount: "100000", cards: undefined, name: undefined, description: undefined };
+            const winner: WinnerDTO = { address: ALICE, seat: 1, amount: "100000", cards: undefined, name: undefined, description: undefined };
             const prev = snapshot({ round: TexasHoldemRound.END, winners: [winner] });
             const next = snapshot({ round: TexasHoldemRound.END, winners: [winner] });
             expect(ofType(deriveEvents(prev, next), "handEnded")).toHaveLength(0);

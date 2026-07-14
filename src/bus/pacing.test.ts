@@ -76,7 +76,7 @@ function actionAt(index: number): ActionDTO {
     };
 }
 
-const winner: WinnerDTO = { address: "b521w", amount: "100", cards: [], name: "W", description: "High Card" };
+const winner: WinnerDTO = { address: "b521w", seat: 1, amount: "100", cards: [], name: "W", description: "High Card" };
 
 function makeBus() {
     const committed: GameStreamItem[] = [];
