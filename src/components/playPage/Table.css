@@ -45,7 +45,11 @@
     border-top: 1px solid var(--ui-border-color);
 }
 
-/* Animation for card falling */
+/*
+ * Community-card entrance: each card drops into place. useCardAnimations (WS
+ * Action Bus) reveals the slots one at a time, so the flop's three cards drop
+ * in sequence rather than together.
+ */
 @keyframes fall {
     0% {
         transform: translateY(-100px);

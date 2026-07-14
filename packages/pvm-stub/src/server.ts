@@ -2,13 +2,16 @@ import type { Server } from "node:http";
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { attachGatewayWs, broadcast } from "./gateway-ws.js";
+import { attachGatewayWs, broadcast, broadcastRaw, disconnectGame } from "./gateway-ws.js";
 import {
   applyAction,
   CASH_GAME_ID,
+  getFrameDelayMs,
   getGameState,
+  gatewayStateMessage,
   listGamesResponse,
   resetTables,
+  setStubConfig,
 } from "./state.js";
 
 /**
@@ -79,16 +82,34 @@ app.post("/gateway/actions", async (c) => {
   if (!getGameState(gameId)) {
     return c.json({ type: "error", error: `unknown gameId ${gameId}` }, 422);
   }
-  // Mutate via the engine (join/fold/check/call/bet/raise), auto-run the bot,
-  // then broadcast the resulting state to subscribers and ack the submitter.
-  applyAction(gameId, {
+  const action = {
     action: body.action ?? "",
     amount: body.amount,
     address: body.address,
     data: body.data,
     index: body.index,
-  });
-  broadcast(gameId);
+  };
+
+  const frameDelayMs = getFrameDelayMs();
+  if (frameDelayMs > 0) {
+    // Per-frame mode: capture the state after each engine step (human, then
+    // each bot action) and broadcast them one at a time with frameDelayMs
+    // between, reproducing the live gateway's one-frame-per-action stream.
+    const frames: unknown[] = [];
+    applyAction(gameId, action, () => {
+      const frame = gatewayStateMessage(gameId);
+      if (frame) frames.push(structuredClone(frame));
+    });
+    frames.forEach((frame, i) => {
+      if (i === 0) broadcastRaw(gameId, frame);
+      else setTimeout(() => broadcastRaw(gameId, frame), i * frameDelayMs);
+    });
+  } else {
+    // Collapsed mode (default): mutate, auto-run the bot, broadcast once.
+    applyAction(gameId, action);
+    broadcast(gameId);
+  }
+
   const state = getGameState(gameId)!;
   return c.json({
     type: "ack",
@@ -106,10 +127,64 @@ app.get("/cosmos/tx/v1beta1/txs", (c) => c.json({ txs: [], tx_responses: [], tot
 app.get("/pokerchain/poker/nft_avatar/:address", (c) => c.json({ avatar: "" }));
 
 // ---- control surface (test isolation) -----------------------------------
+// In-flight scripted-sequence timers (POST /__control/script), cleared on reset
+// or when a new script starts so a run never leaks frames into the next test.
+let scriptTimers: ReturnType<typeof setTimeout>[] = [];
+function clearScript(): void {
+  scriptTimers.forEach(clearTimeout);
+  scriptTimers = [];
+}
+
 // Reset all game state to fresh/empty between test runs (api-stub's /__control
 // pattern). No auth — the stub only runs in dev/test.
 app.post("/__control/reset", (c) => {
-  resetTables();
+  clearScript();
+  resetTables(); // also clears stub config (frameDelayMs)
+  return c.json({ ok: true });
+});
+
+// Configure per-frame broadcasting. { frameDelayMs: 150 } reproduces the live
+// gateway (one frame per action); { frameDelayMs: 0 } (or unset) stays collapsed.
+app.post("/__control/config", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { frameDelayMs?: number };
+  setStubConfig(body);
+  return c.json({ ok: true, frameDelayMs: getFrameDelayMs() });
+});
+
+// Inject an arbitrary JSON frame to a game's subscribers (duplicate/pending/
+// error/malformed frames the engine never produces). { gameId, frame }.
+app.post("/__control/inject", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { gameId?: string; frame?: unknown };
+  const gameId = body.gameId ?? CASH_GAME_ID;
+  broadcastRaw(gameId, body.frame);
+  return c.json({ ok: true });
+});
+
+// Replay a recorded frame sequence with timing (plan §5.3). Each entry's
+// `delayMs` is the absolute offset from the call, so `delayMs: 0` for all entries
+// reproduces a catch-up BURST (frames arrive back-to-back), while spaced offsets
+// reproduce a paced stream. Any previously-running script is cancelled first.
+// { gameId, frames: [{ frame, delayMs }] }.
+app.post("/__control/script", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as {
+    gameId?: string;
+    frames?: Array<{ frame: unknown; delayMs?: number }>;
+  };
+  const gameId = body.gameId ?? CASH_GAME_ID;
+  const frames = body.frames ?? [];
+  clearScript();
+  for (const entry of frames) {
+    const delay = Math.max(0, entry.delayMs ?? 0);
+    scriptTimers.push(setTimeout(() => broadcastRaw(gameId, entry.frame), delay));
+  }
+  return c.json({ ok: true, scheduled: frames.length });
+});
+
+// Forcibly drop a game's WS subscribers (simulate an unexpected mid-hand drop).
+// The UI has no auto-reconnect, so a resubscribe is user-driven. { gameId }.
+app.post("/__control/disconnect", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { gameId?: string };
+  disconnectGame(body.gameId ?? CASH_GAME_ID);
   return c.json({ ok: true });
 });
 

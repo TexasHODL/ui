@@ -21,7 +21,9 @@ test("funded USDC balance from the stub shows on the dashboard", async ({ page }
   // WalletPanel renders "USDC Balance" + "$<amount>" from the stub's balance
   // endpoint (1000 USDC). Proves wallet seeding + Stub network + funding.
   await expect(page.getByText("USDC Balance")).toBeVisible();
-  await expect(page.getByText("$1000.00")).toBeVisible();
+  // The funded amount can render in more than one place (wallet panel + a
+  // caught-up header), so assert at least one shows it rather than strict-matching.
+  await expect(page.getByText("$1000.00").first()).toBeVisible();
 });
 
 test("seeded table page renders without crashing", async ({ page }) => {

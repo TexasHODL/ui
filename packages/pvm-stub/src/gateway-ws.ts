@@ -80,6 +80,40 @@ export function broadcast(gameId: string): void {
   }
 }
 
+/**
+ * Push an arbitrary, pre-built frame to every subscriber of a game. Used by
+ * per-frame broadcasting (captured intermediate states) and by
+ * POST /__control/inject (arbitrary/duplicate/malformed frames). `frame` is an
+ * already-shaped message object (or string) — sent verbatim.
+ */
+export function broadcastRaw(gameId: string, frame: unknown): void {
+  const set = subscribers.get(gameId);
+  if (!set) return;
+  const payload = typeof frame === "string" ? frame : JSON.stringify(frame);
+  for (const client of set) {
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
+  }
+}
+
+/**
+ * Forcibly close every socket subscribed to a game (POST /__control/disconnect).
+ * Simulates an unexpected mid-hand WS drop so the reconnect path can be driven.
+ * The client's `onclose` fires; the UI does not auto-resubscribe (no reconnect
+ * logic today — see reconnect.spec.ts), so a resubscribe must be user-driven.
+ */
+export function disconnectGame(gameId: string): void {
+  const set = subscribers.get(gameId);
+  if (!set) return;
+  for (const client of set) {
+    try {
+      client.close();
+    } catch {
+      // already closing/closed — ignore
+    }
+  }
+  set.clear();
+}
+
 function addSubscriber(gameId: string, client: WebSocket): void {
   let set = subscribers.get(gameId);
   if (!set) {
