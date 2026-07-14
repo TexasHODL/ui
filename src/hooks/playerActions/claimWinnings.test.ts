@@ -39,7 +39,8 @@ describe("claimWinnings", () => {
         const result = await claimWinnings("game-1", fakeNetwork);
 
         expect(recordHandEnd).toHaveBeenCalledWith("game-1", JSON.stringify(fakeState));
-        expect(leaveGame).toHaveBeenCalledWith("game-1");
+        // Settles with the place-1-first finishingOrder derived from results[].
+        expect(leaveGame).toHaveBeenCalledWith("game-1", ["b52win"]);
         expect(result).toEqual({ hash: "0xleave", gameId: "game-1" });
     });
 
@@ -52,7 +53,8 @@ describe("claimWinnings", () => {
         const result = await claimWinnings("game-1", fakeNetwork);
 
         expect(recordHandEnd).not.toHaveBeenCalled();
-        expect(leaveGame).toHaveBeenCalledWith("game-1");
+        // No local state → empty finishingOrder (chain settles from its own state).
+        expect(leaveGame).toHaveBeenCalledWith("game-1", []);
         expect(result.hash).toBe("0xleave");
     });
 
@@ -68,7 +70,7 @@ describe("claimWinnings", () => {
 
         const result = await claimWinnings("game-1", fakeNetwork);
 
-        expect(leaveGame).toHaveBeenCalledWith("game-1");
+        expect(leaveGame).toHaveBeenCalledWith("game-1", ["b52win"]);
         expect(result.hash).toBe("0xleave");
     });
 
