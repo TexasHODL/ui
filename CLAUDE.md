@@ -434,8 +434,67 @@ The UI uses WebSocket connections for real-time game state updates:
 
 1. **GameStateContext** manages WebSocket connections
 2. Components call `subscribeToTable(tableId)` to connect
-3. Hooks like `useTableData()` and `usePlayerData()` read from context
-4. Updates are pushed in real-time from the backend
+3. Every inbound message passes through the **WS Action Bus** (see below) before it reaches React
+4. Hooks like `useTableData()` and `usePlayerData()` read from context
+5. Updates are pushed in real-time from the backend
+
+### WS Action Bus
+
+All inbound WebSocket messages flow through the **WS Action Bus** (`src/bus/`)
+before they reach React. It exists so the UI reacts to *typed transitions*
+("a player acted", "the hand ended") and can *pace* rendering (hold the
+showdown, stagger the flop) — instead of every hook reverse-engineering "what
+changed" by diffing consecutive snapshots.
+
+**Pipeline:** `ws.onmessage` → `classifyMessage` (`ingest.ts`) →
+`GameMessageBus.ingest` assigns a monotonic `seq` → `deriveEvents(prev, next)`
+emits typed `GameEvent`s → registered **decorators** annotate the item with
+pacing/animation/sound hints → a serialized FIFO **drain** commits items one at
+a time, honoring the decorations.
+
+**Two tracks (do NOT break this invariant):**
+
+- **Logical track** — every snapshot updates `setLatestGameState` *immediately*
+  at ingest (zero added latency). Anything that makes a *submission* decision
+  (sending an action, auto-new-hand) must read this track, or it will act on
+  stale action indices and the chain will reject it.
+- **Rendered track** — the drain commits to `setGameState` at the pace the
+  decorations dictate (e.g. `showdownHold` holds the winner banner ~2s). All
+  *visual* code reads this track via `GameDataContext`.
+
+**File map (`src/bus/`):** `ingest.ts` (pure message classifier),
+`deriveEvents.ts` (pure prev→next transition diff), `GameMessageBus.ts` (seq,
+drain, coalescing, animation acks), `decorators/*` (one pure decorator per
+file), `types.ts` (`GameStreamItem`, `GameEvent`, `Decoration`, hints).
+
+**Extension points:**
+
+- **React the UI to an event:** `useGameEvents("playerActed")`
+  (`src/hooks/game/useGameEvents.ts`) — do NOT add new snapshot ref-diffing.
+- **Add a visual/audio behavior:** write a pure decorator in
+  `src/bus/decorators/`, unit-test it in isolation, register it in
+  `decorators/index.ts`. Decorators attach hints; consumers read them.
+- **Gate the drain on a real animation (Phase 5 acks):** a decorator sets
+  `ackTimeoutMs` on an `AnimationHint`; the render consumer calls
+  `bus.ackAnimation(ackId)` when the animation finishes (see
+  `useCardAnimations` + `useAnimationAck`). The drain waits
+  `max(minDisplayMs, acks resolved-or-timed-out)` — the timeout guarantees a
+  missing ack can never stall the stream.
+
+**Conventions:** the bus is **framework-free plain TS** (no React imports —
+React coupling lives only in the context/hooks layer); array checks use
+`hasElements`/`isEmpty` from `utils/guards`; env is read via the `viteEnv`
+indirection (never `import.meta.env` directly — it breaks under Jest); all
+snapshot types come from the SDK (Commandment 1).
+
+**Testing:** in dev builds the bus exposes `window.__B52_BUS__`
+(`committed`, `coalesced`, `pendingAcks`, `ackTimeouts`, `queueDepth`,
+`commitLog`) so e2e can assert serialization/pacing numerically instead of by
+screenshot timing. Stub controls (`__control/config` frame pacing,
+`__control/inject`, `__control/script`, `__control/disconnect`) drive the
+bus's paths in Playwright.
+
+> Full design, rationale, and phase history: `docs/plans/2026_07_13_ws_action_bus.md`.
 
 ### Wallet Integration
 
@@ -636,4 +695,4 @@ When making changes:
 
 ---
 
-Last Updated: 2026-02-04
+Last Updated: 2026-07-14
