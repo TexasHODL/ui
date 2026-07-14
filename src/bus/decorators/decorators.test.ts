@@ -40,7 +40,7 @@ function action(overrides: Partial<ActionDTO>): ActionDTO {
     };
 }
 
-const winner: WinnerDTO = { address: "b521winner", amount: "100", cards: [], name: "W", description: "High Card" };
+const winner: WinnerDTO = { address: "b521winner", seat: 1, amount: "100", cards: [], name: "W", description: "High Card" };
 
 describe("showdownHold", () => {
     it("sets minDisplayMs on a handEnded commit", () => {
