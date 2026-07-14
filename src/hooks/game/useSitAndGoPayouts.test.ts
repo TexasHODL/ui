@@ -48,7 +48,7 @@ const setContext = (
     mockUseGameStateContext.mockReturnValue({ gameState, gameFormat });
 };
 
-describe("useSitAndGoPayouts", () => {
+describe("useSitAndGoPayouts — reads PVM-authored payouts[] (block52/ui#513)", () => {
     beforeEach(() => jest.clearAllMocks());
 
     it("returns empty struct when format is cash", () => {
@@ -67,7 +67,7 @@ describe("useSitAndGoPayouts", () => {
         expect(result.current.prizePool).toBeNull();
     });
 
-    it("returns empty places when the state carries no payouts yet", () => {
+    it("returns empty places when payouts[] is absent (not yet resolved)", () => {
         setContext(buildState(undefined));
         const { result } = renderHook(() => useSitAndGoPayouts());
         expect(result.current.isSitAndGo).toBe(true);
@@ -108,5 +108,31 @@ describe("useSitAndGoPayouts", () => {
         expect(result.current.prizePool).toBe("60000000");
         expect(result.current.places.map(p => p.place)).toEqual([1, 2, 3]);
         expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([6000, 3000, 1000]);
+    });
+
+    it("9 players: passes through 50/30/20 amounts and derives the % for display", () => {
+        setContext(buildState([
+            { place: 1, amount: "45000000" },
+            { place: 2, amount: "27000000" },
+            { place: 3, amount: "18000000" }
+        ]));
+        const { result } = renderHook(() => useSitAndGoPayouts());
+
+        expect(result.current.prizePool).toBe("90000000");
+        expect(result.current.places.map(p => p.payout)).toEqual(["45000000", "27000000", "18000000"]);
+        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([5000, 3000, 2000]);
+    });
+
+    it("does not recompute a curve — it shows exactly what the PVM emitted (drift-to-first)", () => {
+        // A pool that doesn't divide evenly: the PVM already credited the drift to
+        // 1st place. The hook must surface those exact amounts, not re-split.
+        setContext(buildState([
+            { place: 1, amount: "4" }, // 3 base + 1 drift
+            { place: 2, amount: "2" }
+        ]));
+        const { result } = renderHook(() => useSitAndGoPayouts());
+
+        expect(result.current.prizePool).toBe("6");
+        expect(result.current.places.map(p => p.payout)).toEqual(["4", "2"]);
     });
 });
