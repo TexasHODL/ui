@@ -19,6 +19,7 @@
  * Pure function; unit-tested in isolation.
  */
 import type { Decorator, Decoration, AnimationHint } from "../types";
+import { hasElements } from "../../utils/guards";
 
 /**
  * Per-card reveal stagger (ms) for a newly-dealt street. Wide enough that the
@@ -49,7 +50,7 @@ export const DEAL_CARDS_ACK_TIMEOUT_MS = CARD_STAGGER_MS * MAX_STREET_CARDS + CA
 export const communityCardStagger: Decorator = (item): Partial<Decoration> => {
     const animations: AnimationHint[] = [];
     for (const event of item.events) {
-        if (event.type === "roundAdvanced" && event.newCommunityCards.length > 0) {
+        if (event.type === "roundAdvanced" && hasElements(event.newCommunityCards)) {
             animations.push({
                 kind: "dealCards",
                 staggerMs: CARD_STAGGER_MS,
@@ -60,5 +61,5 @@ export const communityCardStagger: Decorator = (item): Partial<Decoration> => {
             });
         }
     }
-    return animations.length > 0 ? { animations } : {};
+    return hasElements(animations) ? { animations } : {};
 };

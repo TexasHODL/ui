@@ -14,6 +14,7 @@
  * Pure function; unit-tested in isolation.
  */
 import type { Decorator, Decoration, AnimationHint } from "../types";
+import { hasElements } from "../../utils/guards";
 
 export const actionBadge: Decorator = (item): Partial<Decoration> => {
     const animations: AnimationHint[] = [];
@@ -22,5 +23,5 @@ export const actionBadge: Decorator = (item): Partial<Decoration> => {
             animations.push({ kind: "actionBadge", seat: event.action.seat });
         }
     }
-    return animations.length > 0 ? { animations } : {};
+    return hasElements(animations) ? { animations } : {};
 };

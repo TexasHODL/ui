@@ -18,6 +18,7 @@
  */
 import type { Decorator, Decoration, SoundHint } from "../types";
 import { getActionSoundKey } from "../../utils/actionSoundUtils";
+import { hasElements } from "../../utils/guards";
 
 export function makeRemoteActionSound(getLocalAddress: () => string | null): Decorator {
     return (item): Partial<Decoration> => {
@@ -37,6 +38,6 @@ export function makeRemoteActionSound(getLocalAddress: () => string | null): Dec
                 sounds.push({ kind: soundKey, seat: action.seat });
             }
         }
-        return sounds.length > 0 ? { sounds } : {};
+        return hasElements(sounds) ? { sounds } : {};
     };
 }

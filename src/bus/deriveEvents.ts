@@ -38,6 +38,7 @@
 import type { TexasHoldemStateDTO, ActionDTO, PlayerDTO } from "@block52/poker-vm-sdk";
 import { TexasHoldemRound } from "@block52/poker-vm-sdk";
 import type { GameEvent } from "./types";
+import { hasElements, isEmpty } from "../utils/guards";
 
 /**
  * Thrown by {@link deriveEvents} when a same-hand snapshot's action indices
@@ -96,12 +97,12 @@ function isMaskedCard(card: string): boolean {
 
 /** A hand that has cards, every one of them masked (e.g. ["X","X"]). */
 function isMaskedHand(cards: string[] | undefined): boolean {
-    return Array.isArray(cards) && cards.length > 0 && cards.every(isMaskedCard);
+    return hasElements(cards) && cards.every(isMaskedCard);
 }
 
 /** A hand that has cards, none of them masked (real, viewable cards). */
 function isRevealedHand(cards: string[] | undefined): boolean {
-    return Array.isArray(cards) && cards.length > 0 && cards.every(card => !isMaskedCard(card));
+    return hasElements(cards) && cards.every(card => !isMaskedCard(card));
 }
 
 function playersBySeat(players: readonly PlayerDTO[]): Map<number, PlayerDTO> {
@@ -199,7 +200,7 @@ export function deriveEvents(prev: TexasHoldemStateDTO | undefined, next: TexasH
     }
 
     // --- handEnded: winners transition from empty to populated --------------
-    if (next.winners.length > 0 && prev.winners.length === 0) {
+    if (hasElements(next.winners) && isEmpty(prev.winners)) {
         events.push({ type: "handEnded", winners: next.winners });
     }
 

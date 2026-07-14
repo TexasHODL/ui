@@ -64,6 +64,7 @@ import { GameStreamItem, BusIntrospection, DEFAULT_DECORATION, Decoration, GameE
 import { deriveEvents } from "./deriveEvents";
 import { buildDefaultDecorators } from "./decorators";
 import { getCosmosAddressSync } from "../utils/cosmosAccountUtils";
+import { isEmpty } from "../utils/guards";
 
 /** Cap on the retained commit log so the dev handle never grows unbounded. */
 const COMMIT_LOG_CAP = 200;
@@ -311,7 +312,7 @@ export class GameMessageBus {
 
     private scheduleDrain(): void {
         // A drain cycle already owns the loop; it will pick up newly-queued items.
-        if (this.draining || this.queue.length === 0) {
+        if (this.draining || isEmpty(this.queue)) {
             return;
         }
         this.draining = true;
@@ -327,7 +328,7 @@ export class GameMessageBus {
     private pump(): void {
         this.coalesce();
 
-        if (this.queue.length === 0) {
+        if (isEmpty(this.queue)) {
             if (this.carryDelayMs > 0) {
                 // The queue drained but the last commit still owes a minDisplay
                 // hold (e.g. a showdown with nothing yet behind it). Wait it out
@@ -386,7 +387,7 @@ export class GameMessageBus {
 
         const ackHints = underPressure ? [] : item.decoration.animations.filter(h => h.ackId !== undefined);
 
-        if (ackHints.length === 0) {
+        if (isEmpty(ackHints)) {
             this.carryDelayMs = minDisplayMs;
             this.pump();
             return;
