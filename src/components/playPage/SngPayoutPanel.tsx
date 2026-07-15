@@ -46,15 +46,14 @@ const SngPayoutPanel: React.FC = () => {
                 </div>
 
                 <ul className="space-y-2 mb-2">
-                    {places.map(({ place, payout, percentBasisPoints }) => (
+                    {places.map(({ place, payout }) => (
                         <li
                             key={place}
                             className="flex items-baseline justify-between gap-4 rounded-lg bg-black/20 px-3 py-2 border border-white/5"
                             data-testid={`sng-payout-place-${place}`}
                         >
                             <span className="text-white font-semibold">
-                                {ordinal(place)}{" "}
-                                <span className="text-gray-400 text-sm font-normal">({percentBasisPoints / 100}%)</span>
+                                {ordinal(place)}
                             </span>
                             <span className="font-mono tabular-nums text-white">
                                 {formatForCashGame(convertUSDCToNumber(payout))}
