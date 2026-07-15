@@ -81,11 +81,11 @@ describe("useSitAndGoPayouts — reads PVM-authored payouts[] (block52/ui#513)",
 
         expect(result.current.prizePool).toBe("20000000");
         expect(result.current.places).toEqual([
-            { place: 1, percentBasisPoints: 10000, payout: "20000000" }
+            { place: 1, payout: "20000000" }
         ]);
     });
 
-    it("top-2 structure — derives prize pool and percentages from amounts", () => {
+    it("top-2 structure — passes through absolute amounts, derives the prize pool", () => {
         setContext(buildState([
             { place: 1, amount: "39000000" },
             { place: 2, amount: "21000000" }
@@ -94,7 +94,6 @@ describe("useSitAndGoPayouts — reads PVM-authored payouts[] (block52/ui#513)",
 
         expect(result.current.prizePool).toBe("60000000");
         expect(result.current.places.map(p => p.payout)).toEqual(["39000000", "21000000"]);
-        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([6500, 3500]);
     });
 
     it("top-3 structure — the reported 6-max bug now shows all three places", () => {
@@ -107,10 +106,10 @@ describe("useSitAndGoPayouts — reads PVM-authored payouts[] (block52/ui#513)",
 
         expect(result.current.prizePool).toBe("60000000");
         expect(result.current.places.map(p => p.place)).toEqual([1, 2, 3]);
-        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([6000, 3000, 1000]);
+        expect(result.current.places.map(p => p.payout)).toEqual(["36000000", "18000000", "6000000"]);
     });
 
-    it("9 players: passes through 50/30/20 amounts and derives the % for display", () => {
+    it("9 players: passes through the absolute amounts from the PVM", () => {
         setContext(buildState([
             { place: 1, amount: "45000000" },
             { place: 2, amount: "27000000" },
@@ -120,7 +119,6 @@ describe("useSitAndGoPayouts — reads PVM-authored payouts[] (block52/ui#513)",
 
         expect(result.current.prizePool).toBe("90000000");
         expect(result.current.places.map(p => p.payout)).toEqual(["45000000", "27000000", "18000000"]);
-        expect(result.current.places.map(p => p.percentBasisPoints)).toEqual([5000, 3000, 2000]);
     });
 
     it("does not recompute a curve — it shows exactly what the PVM emitted (drift-to-first)", () => {

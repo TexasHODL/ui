@@ -22,8 +22,8 @@ describe("SngPayoutPanel", () => {
             isSitAndGo: true,
             prizePool: "400000",
             places: [
-                { place: 1, payout: "280000", percentBasisPoints: 7000 },
-                { place: 2, payout: "120000", percentBasisPoints: 3000 }
+                { place: 1, payout: "280000" },
+                { place: 2, payout: "120000" }
             ]
         });
 
@@ -34,5 +34,7 @@ describe("SngPayoutPanel", () => {
         expect(screen.getByTestId("sng-payout-place-1")).toHaveTextContent("$0.28");
         expect(screen.getByTestId("sng-payout-place-2")).toHaveTextContent("$0.12");
         expect(screen.queryByText(/Payout structure is fixed/i)).not.toBeInTheDocument();
+        // Absolute amounts only — no derived percentage label. (block52/ui#513)
+        expect(screen.queryByText(/%/)).not.toBeInTheDocument();
     });
 });

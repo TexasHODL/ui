@@ -5,7 +5,6 @@ import { hasElements } from "../../utils/guards";
 
 export interface SitAndGoPayoutPlace {
     place: number;
-    percentBasisPoints: number;
     payout: string;
 }
 
@@ -25,8 +24,8 @@ const EMPTY: SitAndGoPayoutsReturn = { isSitAndGo: false, prizePool: null, place
  * amounts (correct curve + frozen entrant count + rounding drift). The UI must
  * NOT recompute the split from its own curve table; that third source of truth
  * drifted from what actually pays (poker-vm#2405, ui#497 — a 6-max paid top 3
- * while the panel showed top 2). `percentBasisPoints` is derived from the
- * authoritative amounts for display only.
+ * while the panel showed top 2). The PVM sends only absolute amounts, so the
+ * panel shows those verbatim — no percentage is derived or displayed.
  */
 export const useSitAndGoPayouts = (): SitAndGoPayoutsReturn => {
     const { gameState, gameFormat } = useGameStateContext();
@@ -46,8 +45,6 @@ export const useSitAndGoPayouts = (): SitAndGoPayoutsReturn => {
 
         const places: SitAndGoPayoutPlace[] = payouts.map(p => ({
             place: p.place,
-            // Display-only: share of the resolved pool, in basis points.
-            percentBasisPoints: Number((BigInt(p.amount) * 10000n) / prizePool),
             payout: p.amount
         }));
 
