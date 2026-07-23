@@ -139,6 +139,14 @@ export async function executeGatewayAction(
         console.error("[settlement] tx signing skipped:", err);
     }
 
+    // NOTE (#2433): the unfunded-buy-in gate is a BALANCE check on the join
+    // button (VacantPlayer/BuyInModal disable it when buy-in > wallet balance),
+    // plus the AUTHORITATIVE server-side guard in the gateway which rejects a
+    // money-mover relayed with no settlement tx. We deliberately DON'T block
+    // here on `!tx`: a missing tx also means "no on-chain account yet" (dev /
+    // stub / fresh-but-funded account), which is a legitimate optimistic join —
+    // the balance gate already caught the truly-unfunded case.
+
     const response = await getGatewayApi().submitAction({
         gameId: tableId,
         action,
