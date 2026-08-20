@@ -107,7 +107,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
         <>
             {/* Club Logo */}
             <div className={`table-logo ${tableTheme === "nouns" ? "table-logo-nouns" : ""}`}>
-                {tableTheme === "nouns" ? <NounsGlasses width={300} className="nouns-glasses-logo" /> : <img src={clubLogo} alt="Club Logo" />}
+                {tableTheme === "nouns" ? <NounsGlasses width={300} className="nouns-glasses-logo" /> : <img src={clubLogo} alt="Texas HODL" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/texas-hodl-logo.png"; }} />}
             </div>
 
             {/* Central Display Area */}

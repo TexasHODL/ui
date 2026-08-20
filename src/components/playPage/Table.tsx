@@ -63,11 +63,10 @@ import {
     LayoutDebugInfo
 } from "./Table/components";
 
-import defaultLogo from "../../assets/YOUR_CLUB.png";
 import { HexagonPattern } from "../common/Modal";
 
 // Use environment variable for club logo with fallback to default
-const clubLogo = import.meta.env.VITE_CLUB_LOGO || defaultLogo;
+const clubLogo = import.meta.env.VITE_CLUB_LOGO || "/texas-hodl-logo.png";
 
 import { useParams } from "react-router-dom";
 import React from "react";
