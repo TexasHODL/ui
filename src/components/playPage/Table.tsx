@@ -126,7 +126,6 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { useBlindLevel } from "../../hooks/game/useBlindLevel";
 import {
     getViewportMode,
     COMPONENT_SCALE,
@@ -808,11 +807,6 @@ const Table = React.memo(() => {
     // Add the useGameOptions hook
     const { gameOptions } = useGameOptions();
 
-    // Blind level info for SNG/Tournament games. The hook reads levelStartTime
-    // directly off gameState.gameOptions; when the chain doesn't supply it,
-    // hasTimer stays false and the countdown is hidden.
-    const blindLevel = useBlindLevel();
-
     // Add the useGameResults hook
     const { results } = useGameResults();
 
@@ -1277,7 +1271,6 @@ const Table = React.memo(() => {
                 isBalanceLoading={isBalanceLoading}
                 balanceFormatted={balanceFormatted}
                 formattedValues={formattedValues}
-                blindLevel={blindLevel}
                 handNumber={handNumber}
                 actionCount={actionCount}
                 nextToAct={nextToAct}
