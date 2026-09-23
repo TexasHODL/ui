@@ -1,13 +1,17 @@
 /**
- * ActionSubmitController tests — serialization, dedupe, the gated transport
- * retry, and confirmation (signal + 8s timeout). Driven with DI (injected run
- * thunks + getState) and jest fake timers, mirroring src/bus/*.test.ts.
+ * ActionSubmitController tests — serialization, dedupe, the evidence-gated
+ * transport retry, and honest confirmation (identity on the logical track, the
+ * tx-by-hash verdict, `unknown` on timeout). Driven with DI (injected run
+ * thunks, getState, lookupTx) and jest fake timers, mirroring src/bus/*.test.ts.
  */
 import { ActionSubmitController } from "./ActionSubmitController";
-import type { SubmitError } from "./types";
+import type { SubmitError, SubmitNotice, TxVerdict } from "./types";
 import { STALE_INDEX_MESSAGE } from "../hooks/playerActions/transportAction";
-import { TexasHoldemStateDTO, GameOptionsDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { ActionDTO, TexasHoldemStateDTO, GameOptionsDTO, PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import type { PlayerActionResult } from "../types";
+
+const ME = "b521me";
+const OTHER = "b521other";
 
 const options: GameOptionsDTO = {
     minBuyIn: "1000000",
@@ -19,7 +23,11 @@ const options: GameOptionsDTO = {
     timeout: 30000
 };
 
-function snap(overrides: { actionCount?: number; handNumber?: number } = {}): TexasHoldemStateDTO {
+function action(index: number, over: Partial<ActionDTO> = {}): ActionDTO {
+    return { playerId: ME, seat: 1, action: PlayerActionType.CALL, amount: "0", round: TexasHoldemRound.PREFLOP, index, timestamp: index, ...over };
+}
+
+function snap(overrides: { actionCount?: number; handNumber?: number; previousActions?: ActionDTO[] } = {}): TexasHoldemStateDTO {
     return {
         gameOptions: options,
         players: [],
@@ -28,7 +36,7 @@ function snap(overrides: { actionCount?: number; handNumber?: number } = {}): Te
         pots: [],
         totalPot: "0",
         nextToAct: 0,
-        previousActions: [],
+        previousActions: overrides.previousActions ?? [],
         actionCount: overrides.actionCount ?? 5,
         handNumber: overrides.handNumber ?? 1,
         round: TexasHoldemRound.PREFLOP,
@@ -39,6 +47,13 @@ function snap(overrides: { actionCount?: number; handNumber?: number } = {}): Te
         signature: ""
     };
 }
+
+/** The base state every test starts from: actionCount 5, no actions → our next index is 6. */
+const BASE = snap();
+/** A frame in which OUR action landed at index 6 (the baseline). */
+const mine = (name: PlayerActionType = PlayerActionType.CALL, index = 6) => snap({ actionCount: 6, previousActions: [action(index, { action: name })] });
+/** A frame in which somebody ELSE acted at index 6. */
+const theirs = () => snap({ actionCount: 6, previousActions: [action(6, { playerId: OTHER })] });
 
 function ok(hash = "0xhash"): PlayerActionResult {
     return { hash, gameId: "0xtable", action: "fold", amount: "0" };
@@ -52,34 +67,56 @@ async function flush(): Promise<void> {
 }
 
 function makeController(configOverride: Record<string, number> = {}) {
-    let state: TexasHoldemStateDTO | undefined = snap({ actionCount: 5, handNumber: 1 });
+    let state: TexasHoldemStateDTO | undefined = BASE;
     let nowMs = 1000;
     const onError = jest.fn<void, [SubmitError]>();
+    const onNotice = jest.fn<void, [SubmitNotice]>();
     const clearSigningCache = jest.fn();
+    const lookupTx = jest.fn<Promise<TxVerdict | null>, [string]>().mockResolvedValue(null);
     const controller = new ActionSubmitController({
         getState: () => state,
+        getLocalAddress: () => ME,
         onError,
+        onNotice,
         clearSigningCache,
+        lookupTx,
         now: () => nowMs,
         config: { gateSettleMs: 0, backoffMs: 0, ...configOverride }
     });
+    const setState = (s: TexasHoldemStateDTO | undefined) => {
+        state = s;
+    };
     return {
         controller,
         onError,
+        onNotice,
         clearSigningCache,
-        setState: (s: TexasHoldemStateDTO | undefined) => {
-            state = s;
+        lookupTx,
+        setState,
+        /** A committed frame reaches the controller through the logical track. */
+        authoritative: (s: TexasHoldemStateDTO) => {
+            setState(s);
+            controller.onGameState(s, { optimistic: false });
         },
-        advanceNow: (d: number) => {
-            nowMs += d;
+        /** The relay's mempool projection. */
+        projected: (s: TexasHoldemStateDTO) => {
+            setState(s);
+            controller.onGameState(s, { optimistic: true });
+        },
+        /** Advance fake timers AND the injected clock together. */
+        tick: async (ms: number) => {
+            nowMs += ms;
+            jest.advanceTimersByTime(ms);
+            await flush();
         }
     };
 }
 
 describe("ActionSubmitController", () => {
-    beforeEach(() => jest.useFakeTimers());
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
     afterEach(() => {
-        jest.clearAllTimers();
         jest.useRealTimers();
     });
 
@@ -92,48 +129,106 @@ describe("ActionSubmitController", () => {
         await flush();
 
         expect(run).toHaveBeenCalledTimes(1);
-        expect(controller.getSnapshot()).toMatchObject({ status: "busy", loadingAction: "fold" });
+        expect(controller.getSnapshot()).toMatchObject({ status: "busy", loadingAction: "fold", queueDepth: 0 });
     });
 
-    it("serializes distinct actions — the second waits until the first confirms", async () => {
-        const { controller, setState } = makeController();
-        const foldRun = jest.fn().mockResolvedValue(ok("0xfold"));
-        const callRun = jest.fn().mockResolvedValue(ok("0xcall"));
+    it("serializes progression actions — the second waits until the first is settled by evidence", async () => {
+        const { controller, authoritative } = makeController();
+        const newHandRun = jest.fn().mockResolvedValue(ok("0xnew-hand"));
+        const blindRun = jest.fn().mockResolvedValue(ok("0xblind"));
 
-        controller.submit({ actionName: "fold", run: foldRun });
-        controller.submit({ actionName: "call", run: callRun });
+        controller.submit({ actionName: "new-hand", run: newHandRun });
+        controller.submit({ actionName: "small-blind", run: blindRun });
         await flush();
 
-        // Fold is confirming; call is queued and has NOT run yet.
-        expect(foldRun).toHaveBeenCalledTimes(1);
-        expect(callRun).not.toHaveBeenCalled();
-        expect(controller.getSnapshot()).toMatchObject({ loadingAction: "fold", queueDepth: 1 });
+        // New hand is submitted; small blind is queued and has NOT run yet.
+        expect(newHandRun).toHaveBeenCalledTimes(1);
+        expect(blindRun).not.toHaveBeenCalled();
+        expect(controller.getSnapshot()).toMatchObject({ loadingAction: "new-hand", queueDepth: 1 });
 
-        // Fold confirms → call dequeues and runs.
-        setState(snap({ actionCount: 6 }));
-        controller.onGameState(snap({ actionCount: 6 }));
+        // The chain records the new hand → blind dequeues and runs.
+        authoritative(snap({ actionCount: 0, handNumber: 2 }));
+        await flush();
+
+        expect(blindRun).toHaveBeenCalledTimes(1);
+        expect(controller.getSnapshot()).toMatchObject({ loadingAction: "small-blind" });
+    });
+
+    it("drops a queued decision when our preceding action advances the table", async () => {
+        const { controller, authoritative, onError } = makeController();
+        const callRun = jest.fn().mockResolvedValue(ok("0xcall"));
+        const foldRun = jest.fn().mockResolvedValue(ok("0xfold"));
+
+        controller.submit({ actionName: "call", run: callRun });
+        controller.submit({ actionName: "fold", run: foldRun });
+        await flush();
+
+        authoritative(mine(PlayerActionType.CALL));
         await flush();
 
         expect(callRun).toHaveBeenCalledTimes(1);
-        expect(controller.getSnapshot()).toMatchObject({ loadingAction: "call" });
+        expect(foldRun).not.toHaveBeenCalled();
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+            kind: "superseded",
+            actionName: "fold",
+            message: expect.stringContaining("was not sent")
+        }));
+        expect(controller.getSnapshot()).toMatchObject({ status: "idle", queueDepth: 0 });
     });
 
-    it("clears busy when a confirmation signal advances", async () => {
-        const { controller } = makeController();
+    it("runs a queued decision when its predecessor fails without advancing the table", async () => {
+        const { controller, onError } = makeController();
+        const failedRun = jest.fn().mockRejectedValue(new Error("insufficient funds"));
+        const foldRun = jest.fn().mockResolvedValue(ok("0xfold"));
+
+        controller.submit({ actionName: "call", run: failedRun });
+        controller.submit({ actionName: "fold", run: foldRun });
+        await flush();
+
+        expect(failedRun).toHaveBeenCalledTimes(1);
+        expect(foldRun).toHaveBeenCalledTimes(1);
+        expect(onError).toHaveBeenCalledTimes(1);
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "terminal", actionName: "call" }));
+    });
+
+    it("confirms only OUR recorded action — another player's action at the table does not confirm ours (ui#609)", async () => {
+        const { controller, authoritative, onError } = makeController();
         controller.submit({ actionName: "bet", run: jest.fn().mockResolvedValue(ok()) });
         await flush();
         expect(controller.getSnapshot()).toMatchObject({ status: "busy", loadingAction: "bet" });
 
-        controller.onGameState(snap({ actionCount: 6 }));
+        // Table progress by somebody else: the old counter gate called this confirmed.
+        authoritative(theirs());
+        await flush();
+        expect(controller.getSnapshot()).toMatchObject({ status: "busy", loadingAction: "bet" });
+
+        // Our bet, recorded after theirs → committed.
+        authoritative(snap({ actionCount: 7, previousActions: [action(6, { playerId: OTHER }), action(7, { action: PlayerActionType.BET })] }));
         await flush();
         expect(controller.getSnapshot()).toMatchObject({ status: "idle", loadingAction: null });
+        expect(onError).not.toHaveBeenCalled();
     });
 
-    it("clears busy when confirmation arrives while the broadcast is still in flight", async () => {
-        // Regression: a confirmation on the logical track can land before run()
-        // resolves. If we only watched once "confirming", busy would strand
-        // until the 8s timeout and block the next action (the E2E stall).
-        const { controller, setState } = makeController();
+    it("releases busy on the relay's projection of our action but does not call it confirmed", async () => {
+        const { controller, projected, lookupTx, onError, tick } = makeController();
+        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok("0xcall")) });
+        await flush();
+
+        projected(mine());
+        await flush();
+        expect(controller.getSnapshot().status).toBe("idle"); // accepted: the next action may go
+
+        // The chain then rejects the tx at execution: still surfaced, because
+        // "accepted" was never "committed".
+        lookupTx.mockResolvedValueOnce({ hash: "0xcall", code: 5, rawLog: "insufficient funds", height: 10 });
+        await tick(2000);
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "rejected", actionName: "call", hash: "0xcall", message: expect.stringContaining("insufficient funds") }));
+    });
+
+    it("settles when evidence arrives while the broadcast is still in flight", async () => {
+        // Regression: evidence on the logical track can land before run() resolves.
+        // If we only watched once "submitted", busy would strand until the timer.
+        const { controller, authoritative } = makeController();
         let resolveRun: (v: PlayerActionResult) => void = () => {};
         const run = jest.fn(() => new Promise<PlayerActionResult>(resolve => (resolveRun = resolve)));
 
@@ -141,9 +236,7 @@ describe("ActionSubmitController", () => {
         await flush();
         expect(controller.getSnapshot().status).toBe("busy"); // awaiting run()
 
-        // Confirmation arrives BEFORE run() resolves.
-        setState(snap({ actionCount: 6 }));
-        controller.onGameState(snap({ actionCount: 6 }));
+        authoritative(mine());
         await flush();
         expect(controller.getSnapshot().status).toBe("idle");
 
@@ -153,22 +246,76 @@ describe("ActionSubmitController", () => {
         expect(controller.getSnapshot().status).toBe("idle");
     });
 
-    it("clears busy via the 8s escape-hatch timeout when no confirmation arrives", async () => {
-        const { controller } = makeController();
-        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok()) });
+    it("on the confirm timeout releases busy as UNKNOWN, tells the user, and never calls it confirmed", async () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const { controller, onNotice, onError, lookupTx, tick } = makeController();
+        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok("0xcall")) });
         await flush();
         expect(controller.getSnapshot().status).toBe("busy");
 
-        jest.advanceTimersByTime(8000);
+        await tick(8000);
+        expect(controller.getSnapshot().status).toBe("idle");
+        expect(onNotice).toHaveBeenCalledWith(expect.objectContaining({ kind: "unknown", actionName: "call", hash: "0xcall" }));
+        expect(onError).not.toHaveBeenCalled();
+
+        // A late verdict is NOT discarded as moot: the user hears their call failed.
+        lookupTx.mockResolvedValueOnce({ hash: "0xcall", code: 32, rawLog: "not your turn", height: 11 });
+        await tick(2000);
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "rejected", message: expect.stringContaining("not your turn") }));
+        warn.mockRestore();
+    });
+
+    it("commits on a tx verdict of code 0 without any frame, and stops polling", async () => {
+        const { controller, lookupTx, tick } = makeController();
+        controller.submit({ actionName: "check", run: jest.fn().mockResolvedValue(ok("0xcheck")) });
+        await flush();
+
+        lookupTx.mockResolvedValueOnce({ hash: "0xcheck", code: 0, rawLog: "", height: 12 });
+        await tick(2000);
+        expect(controller.getSnapshot().status).toBe("idle");
+        expect(lookupTx).toHaveBeenCalledTimes(1);
+
+        await tick(10_000);
+        expect(lookupTx).toHaveBeenCalledTimes(1); // final: no more polling
+    });
+
+    it("fails as SUPERSEDED when the chain recorded a different action of ours at our turn", async () => {
+        // The action clock folded us before our call landed: our call can never execute.
+        const { controller, authoritative, onError } = makeController();
+        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok()) });
+        await flush();
+
+        authoritative(mine(PlayerActionType.FOLD));
+        await flush();
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "superseded", actionName: "call", message: expect.stringContaining('"fold"') }));
+        expect(controller.getSnapshot().status).toBe("idle");
+    });
+
+    it("does not supersede on a mempool projection — only committed state can", async () => {
+        const { controller, projected, onError } = makeController();
+        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok()) });
+        await flush();
+
+        projected(mine(PlayerActionType.FOLD));
+        await flush();
+        expect(onError).not.toHaveBeenCalled();
+        expect(controller.getSnapshot().status).toBe("busy");
+    });
+
+    it("confirms a new-hand structurally when the hand number advances", async () => {
+        const { controller, authoritative } = makeController();
+        controller.submit({ actionName: "new-hand", run: jest.fn().mockResolvedValue(ok()) });
+        await flush();
+        authoritative(snap({ actionCount: 0, handNumber: 2 }));
         await flush();
         expect(controller.getSnapshot().status).toBe("idle");
     });
 
-    it("does NOT re-broadcast a transport error when the gate shows it already landed", async () => {
+    it("does NOT re-broadcast a transport error when the evidence shows it already landed", async () => {
         const { controller, clearSigningCache, setState, onError } = makeController();
         const run = jest.fn().mockImplementationOnce(async () => {
             // The action actually landed; the socket died reading the response.
-            setState(snap({ actionCount: 6 }));
+            setState(mine(PlayerActionType.RAISE));
             throw new Error("socket hang up");
         });
 
@@ -207,7 +354,7 @@ describe("ActionSubmitController", () => {
         expect(run).toHaveBeenCalledTimes(2);
         expect(clearSigningCache).toHaveBeenCalledTimes(1);
         expect(onError).not.toHaveBeenCalled();
-        // Second attempt succeeded → confirming (busy) until a signal advances.
+        // Second attempt succeeded → submitted (busy) until evidence arrives.
         expect(controller.getSnapshot()).toMatchObject({ status: "busy", loadingAction: "check" });
     });
 
@@ -220,9 +367,7 @@ describe("ActionSubmitController", () => {
 
         expect(run).toHaveBeenCalledTimes(1);
         expect(clearSigningCache).not.toHaveBeenCalled();
-        expect(onError).toHaveBeenCalledWith(
-            expect.objectContaining({ kind: "stale", message: STALE_INDEX_MESSAGE, actionName: "call" })
-        );
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "stale", message: STALE_INDEX_MESSAGE, actionName: "call" }));
         expect(controller.getSnapshot().status).toBe("idle");
     });
 
@@ -265,5 +410,137 @@ describe("ActionSubmitController", () => {
         controller.submit({ actionName: "fold", run });
         await flush();
         expect(run).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops polling for a verdict after the verdict window", async () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const { controller, lookupTx, tick } = makeController({ verdictPollMs: 2000, verdictTimeoutMs: 6000 });
+        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok("0xcall")) });
+        await flush();
+
+        await tick(2000);
+        await tick(2000);
+        await tick(2000); // 6 s elapsed → the window closes after this poll
+        await tick(10_000);
+        expect(lookupTx).toHaveBeenCalledTimes(3);
+        warn.mockRestore();
+    });
+
+    it("reset abandons every job and cancels every timer — no late toasts", async () => {
+        const warn = jest.spyOn(console, "warn").mockImplementation(() => {});
+        const { controller, onNotice, onError, lookupTx, tick } = makeController();
+        controller.submit({ actionName: "call", run: jest.fn().mockResolvedValue(ok("0xcall")) });
+        await flush();
+        controller.reset();
+        lookupTx.mockResolvedValue({ hash: "0xcall", code: 5, rawLog: "late", height: 1 });
+        await tick(20_000);
+        expect(onNotice).not.toHaveBeenCalled();
+        expect(onError).not.toHaveBeenCalled();
+        expect(controller.getSnapshot().status).toBe("idle");
+        warn.mockRestore();
+    });
+});
+
+describe("ActionSubmitController connection gate (ui#613)", () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    function makeGated(live: () => boolean) {
+        const onError = jest.fn<void, [SubmitError]>();
+        const run = jest.fn().mockResolvedValue(ok());
+        const controller = new ActionSubmitController({
+            getState: () => snap(),
+            getLocalAddress: () => ME,
+            onError,
+            clearSigningCache: jest.fn(),
+            isConnected: live,
+            now: () => 1000
+        });
+        return { controller, onError, run };
+    }
+
+    it("refuses to broadcast while the game-state socket is not live, and says so", async () => {
+        const { controller, onError, run } = makeGated(() => false);
+        controller.submit({ actionName: "call", run });
+        await flush();
+        expect(run).not.toHaveBeenCalled();
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "offline", actionName: "call" }));
+        expect(controller.getSnapshot()).toMatchObject({ status: "idle", queueDepth: 0 });
+        expect(controller.getSnapshot().lastError?.kind).toBe("offline");
+    });
+
+    it("broadcasts normally once the socket is live again", async () => {
+        let live = false;
+        const { controller, onError, run } = makeGated(() => live);
+        controller.submit({ actionName: "call", run });
+        await flush();
+        expect(run).not.toHaveBeenCalled();
+
+        live = true;
+        controller.submit({ actionName: "call", run });
+        await flush();
+        expect(run).toHaveBeenCalledTimes(1);
+        expect(onError).toHaveBeenCalledTimes(1); // only the refused one
+    });
+});
+
+// ui#655/#661: the auto hooks hold a once-per-opportunity latch. Without a
+// per-request failure signal they can never know their own attempt is over,
+// so a rejected auto-post leaves the manual button as the only way forward.
+describe("ActionSubmitController per-request failure signal (ui#655)", () => {
+    beforeEach(() => {
+        jest.useFakeTimers();
+    });
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
+    it("tells the submitter when its own job failed before broadcast", async () => {
+        const { controller, onError } = makeController();
+        const onFailure = jest.fn<void, [SubmitError]>();
+
+        controller.submit({
+            actionName: "small-blind",
+            run: () => Promise.reject(new Error("account sequence mismatch, expected 120, got 119")),
+            onFailure
+        });
+        await flush();
+
+        expect(onError).toHaveBeenCalledTimes(1);
+        expect(onFailure).toHaveBeenCalledTimes(1);
+        expect(onFailure.mock.calls[0][0]).toMatchObject({ actionName: "small-blind" });
+        // the submitter is told the SAME error the player was
+        expect(onFailure.mock.calls[0][0]).toBe(onError.mock.calls[0][0]);
+    });
+
+    it("does not tell the submitter its job failed when it succeeded", async () => {
+        const { controller, authoritative } = makeController();
+        const onFailure = jest.fn<void, [SubmitError]>();
+        const onSuccess = jest.fn<void, [string]>();
+
+        controller.submit({
+            actionName: "deal",
+            run: () => Promise.resolve({ hash: "0xdeal" } as never),
+            onSuccess,
+            onFailure
+        });
+        await flush();
+
+        expect(onSuccess).toHaveBeenCalledWith("0xdeal");
+        expect(onFailure).not.toHaveBeenCalled();
+        void authoritative;
+    });
+
+    it("is optional — a request without onFailure still fails cleanly", async () => {
+        const { controller, onError } = makeController();
+
+        controller.submit({ actionName: "deal", run: () => Promise.reject(new Error("nope")) });
+        await flush();
+
+        expect(onError).toHaveBeenCalledTimes(1);
     });
 });

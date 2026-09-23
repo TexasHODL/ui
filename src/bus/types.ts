@@ -157,6 +157,16 @@ export interface GameStreamItem {
     synthetic: boolean;
 }
 
+/**
+ * Provenance of a logical-track snapshot (ui#609): the relay's `optimistic`
+ * event is a projection of pending mempool actions, not committed state. The
+ * submission controller may mark a job *accepted* on a projection but
+ * *committed* only on committed state.
+ */
+export interface TrackMeta {
+    optimistic: boolean;
+}
+
 /** Dev-only introspection snapshot exposed on window.__B52_BUS__ (§5.4). */
 export interface BusIntrospection {
     lastSeq: number;
@@ -174,6 +184,11 @@ export interface BusIntrospection {
     pendingAcks: number;
     /** Cumulative count of acks that fell back to their `ackTimeoutMs` (Phase 5). */
     ackTimeouts: number;
+    /**
+     * Cumulative count of inbound WebSocket documents that were not JSON and were
+     * dropped (ui#623). Never surfaces as a page error — see `parseFrame`.
+     */
+    parseFailures: number;
     commitLog: Array<{ seq: number; committedAt: number; eventCount: number }>;
 }
 

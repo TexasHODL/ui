@@ -12,22 +12,32 @@
  * resolution, SNG finishing order).
  */
 import { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import type { TrackMeta } from "../../bus/types";
 
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import type { PlayerActionResult } from "../../types";
-import { getSigningClient, isSequenceMismatchError, clearSigningClientCache, SEQUENCE_RETRY_DELAY_MS } from "../../utils/cosmos/client";
+import { getSigningClient } from "../../utils/cosmos/client";
 import { hasElements } from "../../utils/guards";
 
 let latestGameState: TexasHoldemStateDTO | undefined;
 
+/**
+ * Provenance of a logical-track snapshot (ui#609): the relay's `optimistic`
+ * event is a projection of pending mempool actions, not committed state. Index
+ * computation may use either (that is the point of the logical track); a
+ * submission may be *accepted* on a projection but *confirmed* only on
+ * committed state.
+ */
+export type LatestGameStateMeta = TrackMeta;
+
 /** Logical-track observers, notified on every snapshot published below. */
-type LatestGameStateListener = (gameState: TexasHoldemStateDTO | undefined) => void;
+type LatestGameStateListener = (gameState: TexasHoldemStateDTO | undefined, meta: LatestGameStateMeta) => void;
 const latestGameStateListeners = new Set<LatestGameStateListener>();
 
-/** Published by GameStateContext on every state update. */
-export function setLatestGameState(gameState: TexasHoldemStateDTO | undefined): void {
+/** Published by the bus at ingest on every state update (and by the provider on reset). */
+export function setLatestGameState(gameState: TexasHoldemStateDTO | undefined, meta: LatestGameStateMeta): void {
     latestGameState = gameState;
-    latestGameStateListeners.forEach(listener => listener(gameState));
+    latestGameStateListeners.forEach(listener => listener(gameState, meta));
 }
 
 /**
@@ -118,26 +128,12 @@ export async function executeTransportAction(
     try {
         return await broadcastAction(tableId, action, amount, network, data);
     } catch (err) {
-        // Account sequence mismatch (Cosmos code 32): a prior tx from this account
-        // is still pending in the mempool, so getSequence returned a stale
-        // (already-consumed) value and this action signed a colliding sequence.
-        // code-32 is a CheckTx rejection — the action was NOT applied — so clear
-        // the cached client, wait a beat for the pending tx to commit and bump the
-        // on-chain sequence, then retry once. Every gameplay / non-player action
-        // (e.g. sit-out) can hit this when it races a still-pending tx. See ui#530
-        // follow-up / withMoneyMoverRetry, which recovers the same way for joins.
-        if (isSequenceMismatchError(err)) {
-            clearSigningClientCache();
-            await new Promise(resolve => setTimeout(resolve, SEQUENCE_RETRY_DELAY_MS));
-            try {
-                return await broadcastAction(tableId, action, amount, network, data);
-            } catch (retryErr) {
-                if (isStaleIndexError(retryErr)) {
-                    throw new Error(STALE_INDEX_MESSAGE);
-                }
-                throw retryErr;
-            }
-        }
+        // No account-sequence recovery here, deliberately. From SDK 1.4.1
+        // performActionSync signs UNORDERED (poker-vm#2619): gameplay txs carry
+        // no sequence, so a code-32 mismatch cannot come from racing another of
+        // our own txs — the 1.5 s wait-and-retry that used to live here only
+        // ever re-read the same stale sequence anyway (ui#635). If one shows up
+        // it means an ordered SDK build is in play; let it surface.
         // Rewrite the raw "Invalid action index" into a clear, retryable prompt
         // (ui#530). A rejected action was NOT applied, so re-submitting is safe.
         // Every other error propagates unchanged.

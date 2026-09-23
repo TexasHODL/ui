@@ -466,6 +466,19 @@ The UI uses WebSocket connections for real-time game state updates:
 4. Hooks like `useTableData()` and `usePlayerData()` read from context
 5. Updates are pushed in real-time from the backend
 
+**Connection freshness (ui#613):** `useGameUI().connection` is
+`{ status: idle | connecting | live | reconnecting | offline, attempt }`. A
+dropped socket reconnects on its own with exponential backoff and jitter
+(`utils/reconnectBackoff.ts`, 8 attempts, 30 s cap), re-subscribes and takes
+the relay's fresh snapshot as a new baseline (the bus is reset, so the
+catch-up frame derives no events). A superseded socket's late frames are
+ignored by generation. Tab-visible and browser-online events reconnect at
+once; while offline the provider waits for `online` instead of burning
+attempts. Only `live` means the table is current: `ActionSubmitController`
+refuses to broadcast otherwise (kind `offline`), and `ConnectionBanner` says
+so on the table. Never treat the last snapshot as current while the status is
+anything else.
+
 ### WS Action Bus
 
 All inbound WebSocket messages flow through the **WS Action Bus** (`src/bus/`)
@@ -489,6 +502,16 @@ a time, honoring the decorations.
 - **Rendered track** — the drain commits to `setGameState` at the pace the
   decorations dictate (e.g. `showdownHold` holds the winner banner ~2s). All
   *visual* code reads this track via `GameDataContext`.
+
+**Provenance (ui#609):** the logical track carries `TrackMeta { optimistic }`
+— `true` for the relay's `optimistic` event, a projection of pending mempool
+actions. The outbound `ActionSubmitController` (`src/submit/`) confirms a
+submission only by IDENTITY (our address + the recorded action name at/after
+the job's baseline index, or the tx-by-hash verdict): a projection moves a job
+to `accepted` (busy releases), only committed state or `tx_response.code === 0`
+moves it to `committed`, the confirm timer expiring yields `unknown` (the user
+is told — never a silent "confirmed"), and a chain rejection found later is
+still surfaced. Never confirm a submission from table counters advancing.
 
 **File map (`src/bus/`):** `ingest.ts` (pure message classifier),
 `deriveEvents.ts` (pure prev→next transition diff), `expandFrames.ts` (pure
@@ -528,8 +551,14 @@ snapshot types come from the SDK (Commandment 1).
 
 **Testing:** in dev builds the bus exposes `window.__B52_BUS__`
 (`committed`, `coalesced`, `expanded`, `pendingAcks`, `ackTimeouts`,
-`queueDepth`, `commitLog`) so e2e can assert serialization/pacing numerically instead of by
-screenshot timing. Stub controls (`__control/config` frame pacing,
+`parseFailures`, `queueDepth`, `commitLog`) so e2e can assert serialization/pacing numerically instead of by
+screenshot timing.
+
+**Framing:** the relay sends ONE JSON document per WebSocket frame
+(block52/pokerchain#364). The provider parses frames through `parseFrame`
+(`src/bus/frame.ts`), which also tolerates a newline-batched frame and counts
+unparseable documents in `parseFailures` — a bad frame is logged and counted,
+never turned into a page-level error (ui#623). Stub controls (`__control/config` frame pacing,
 `__control/inject`, `__control/script`, `__control/disconnect`) drive the
 bus's paths in Playwright.
 

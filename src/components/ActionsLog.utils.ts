@@ -1,7 +1,40 @@
-import { ActionDTO, TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { ActionDTO, NonPlayerActionType, TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { formatPlayerId, formatAmount } from "../utils/accountUtils";
 import { WinnerInfo } from "../types/index";
 import { hasElements } from "../utils/guards";
+
+/**
+ * Actions whose amounts are MONETARY (USDC micro-units) even in tournaments:
+ * join carries the buy-in paid, leave the stack/prize taken out, top-up the
+ * chips purchased. Everything ELSE in an SNG/tournament (blinds, bets, raises,
+ * calls) is tournament chips. Formatting these by game format alone labelled an
+ * SNG's 100,000 µUSDC ($0.10) buy-in as "100,000 chips" next to a 1,500-chip
+ * starting stack (ui#660).
+ */
+const MONETARY_ACTIONS = new Set<string>([NonPlayerActionType.JOIN, NonPlayerActionType.LEAVE, NonPlayerActionType.TOP_UP]);
+
+/**
+ * The amount suffix for one action row — " $0.10", " 1,500 chips", or "" when
+ * there is nothing worth printing.
+ *
+ * Shared by BOTH the rendered History rows and the copy-to-clipboard log. They
+ * used to format independently, and the ui#660 fix only reached the clipboard:
+ * the panel itself kept labelling an SNG's 100,000 µUSDC buy-in as
+ * "Join 100,000 chips" next to a 1,500-chip stack. One helper, one behaviour.
+ *
+ * A zero amount prints nothing: "Check 0 chips" / "Check $0.00" is noise, and a
+ * check is zero by definition. Note `action.amount` is a STRING, so the old
+ * `action.amount && …` guard let "0" through — only "" is falsy.
+ */
+export const formatActionAmount = (action: ActionDTO, isTournament: boolean): string => {
+    if (!action.amount || Number(action.amount) === 0) {
+        return "";
+    }
+    // Monetary actions format as USDC regardless of game format: join carries
+    // the buy-in paid, leave the stack/prize taken out, top-up the chips bought.
+    const asChips = isTournament && !MONETARY_ACTIONS.has(action.action);
+    return ` ${formatAmount(action.amount, undefined, asChips)}`;
+};
 
 export const formatActionName = (action: string): string => {
     switch (action.toLowerCase()) {
@@ -66,7 +99,7 @@ export const formatRoundName = (round: string): string => {
 export const getActionLine = (action: ActionDTO, isTournament: boolean): string => {
     const player = formatPlayerId(action.playerId);
     const actionName = formatActionName(action.action);
-    const amount = action.amount ? ` ${formatAmount(action.amount, undefined, isTournament)}` : "";
+    const amount = formatActionAmount(action, isTournament);
     const round = formatRoundName(action.round);
     return `${player} (Seat ${action.seat}): ${actionName}${amount} - ${round}`;
 };

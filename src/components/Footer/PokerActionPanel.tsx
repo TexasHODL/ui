@@ -21,6 +21,7 @@ import { useTableState, useNextToActInfo } from "../../hooks";
 import { useActionSounds } from "../../hooks/notifications/useActionSounds";
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { useGameStateContext } from "../../context/GameStateContext";
+import { isConnectionLive } from "../../context/gameState/connection";
 import { useActionSubmit } from "../../context/ActionSubmitContext";
 import { useGameSettings } from "../../context/GameSettingsContext";
 import { dealCardsWithEntropy } from "../../hooks/playerActions/dealCards";
@@ -65,23 +66,27 @@ import { isCheckFreeForPlayer } from "../../utils/chipUtils";
 
 // Import types
 import type { PokerActionPanelProps } from "./types";
+import { hasFoldedOrMucked } from "../../utils/playerStatus";
 
 export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, network, onTransactionSubmitted }) => {
-    // Manual button submission goes through the ActionSubmitController, which
-    // owns dedupe, serialization, the safe transport retry, the confirmation
-    // gate (busy stays until the chain advances a signal — ui#364/#440), the
-    // 8s escape-hatch, and centralized error toasts. `submitLoadingAction` is
-    // the in-flight manual action's label.
-    const { submit, loadingAction: submitLoadingAction } = useActionSubmit();
+    // The ActionSubmitController owns dedupe, serialization, the safe transport
+    // retry, the confirmation gate (busy stays until the chain advances a signal
+    // — ui#364/#440), the 8s escape-hatch, and centralized error toasts.
+    // Every submission from this panel — manual buttons AND the automatic hooks
+    // (new-hand / blinds / deal / fold / pre-check / show / muck) — goes through
+    // the one ActionSubmitController (ui#635), so its loadingAction is the single
+    // source for every spinner.
+    const { submit, loadingAction, isBusy: isSubmitBusy, lastError: submitLastError } = useActionSubmit();
+    // Hide stale controls immediately after a manual click, until the next
+    // game-state snapshot confirms the new legal actions.
+    const [optimisticActionName, setOptimisticActionName] = useState<string | null>(null);
+    const [optimisticActionTurnIndex, setOptimisticActionTurnIndex] = useState<number | null>(null);
+    const lastSeenSubmitError = React.useRef(submitLastError);
 
-    // Auto-action hooks (auto-fold/deal/blinds/new-hand/show/muck) still manage
-    // their own submission + self-clear via their callbacks; we merge their
-    // loading label with the controller's so buttons show a single spinner.
-    const [autoLoadingAction, setAutoLoadingAction] = useState<string | null>(null);
-    const loadingAction = submitLoadingAction ?? autoLoadingAction;
-
-    // Action sounds
-    const { playActionSound } = useActionSounds();
+    // Action sounds. Preloading is owned by the Table (useGameStateSounds, which
+    // knows the playerActionSounds setting); the player is shared, so this panel
+    // plays from the same warmed buffers without fetching when sounds are off.
+    const { playActionSound } = useActionSounds({ preload: false });
 
     // Detect mobile landscape orientation
     const [isMobileLandscape, setIsMobileLandscape] = useState(getViewportMode() === "mobile-landscape");
@@ -101,10 +106,10 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     }, []);
 
     // Get game state and player data
-    const { gameState, gameFormat } = useGameStateContext();
+    const { gameState, gameFormat, connection } = useGameStateContext();
     const isTournament = isTournamentFormat(gameFormat);
     const players = gameState?.players || null;
-    const { legalActions, isPlayerTurn, playerStatus } = usePlayerLegalActions();
+    const { legalActions, isPlayerTurn, playerStatus, actionTurnIndex } = usePlayerLegalActions();
     const { totalPot } = useTableState();
     const totalPotMicro = useMemo(() => getTotalPotMicro(totalPot), [totalPot]);
 
@@ -125,8 +130,36 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // Get user player
     const userPlayer = useMemo(() => getUserPlayer(players, userAddress), [players, userAddress]);
 
+    useEffect(() => {
+        if (submitLastError !== lastSeenSubmitError.current) {
+            lastSeenSubmitError.current = submitLastError;
+            if (submitLastError?.actionName === optimisticActionName) {
+                setOptimisticActionName(null);
+                setOptimisticActionTurnIndex(null);
+            }
+        }
+    }, [submitLastError, optimisticActionName]);
+
+    useEffect(() => {
+        if (optimisticActionName && !legalActions.some(action => action.action === optimisticActionName)) {
+            setOptimisticActionName(null);
+            setOptimisticActionTurnIndex(null);
+        }
+    }, [legalActions, optimisticActionName]);
+
+    useEffect(() => {
+        if (optimisticActionName && optimisticActionTurnIndex !== null && actionTurnIndex !== optimisticActionTurnIndex) {
+            setOptimisticActionName(null);
+            setOptimisticActionTurnIndex(null);
+        }
+    }, [actionTurnIndex, optimisticActionName, optimisticActionTurnIndex]);
+
     // Determine if it's user's turn
-    const isUsersTurn = isPlayerTurn;
+    // It is only "our turn" on a view we can trust: while the game-state socket
+    // is not live (ui#613) the last snapshot may be stale, so every action
+    // control hides or disables exactly as when it is not our turn, and the
+    // controller refuses anything that slips through. The table banner explains.
+    const isUsersTurn = isPlayerTurn && isConnectionLive(connection);
 
     // Check available actions
     const {
@@ -148,26 +181,22 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     const bigBlindMicro = useMemo(() => parseMicroToBigInt(gameState?.gameOptions?.bigBlind), [gameState?.gameOptions?.bigBlind]);
 
+    // Auto-deal / auto-post-blinds / auto-new-hand submit through the same
+    // ActionSubmitController as the manual buttons (ui#635), so this account has
+    // ONE outbound queue: they dedupe + serialize with a click instead of racing
+    // it, the controller's loadingAction drives their spinners, and a rejection
+    // is toasted rather than logged.
+
     // Auto-deal hook - automatically triggers deal when conditions are met
     // Can be disabled via URL query param: ?autodeal=false or via settings panel
-    useAutoDeal(
-        tableId,
-        network,
-        hasDealAction,
-        isUsersTurn,
-        () => setAutoLoadingAction("deal"), // onDealStarted
-        txHash => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onDealComplete
-        () => setAutoLoadingAction(null), // onDealError
-        autoDealEnabled
-    );
+    useAutoDeal(tableId, network, hasDealAction, isUsersTurn, submit, onTransactionSubmitted, autoDealEnabled);
 
     // Auto-post blinds hook - automatically posts small/big blind when conditions are met
     // Can be disabled via URL query param: ?autoblinds=false or via settings panel
+    const handleAutoBlindSubmitted = useCallback(
+        (_blindType: "small" | "big", txHash: string) => onTransactionSubmitted?.(txHash),
+        [onTransactionSubmitted]
+    );
     useAutoPostBlinds(
         tableId,
         network,
@@ -176,14 +205,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         smallBlindMicro,
         bigBlindMicro,
         isUsersTurn,
-        blindType => setAutoLoadingAction(blindType === "small" ? "small-blind" : "big-blind"), // onBlindStarted
-        (blindType, txHash) => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onBlindComplete
-        () => setAutoLoadingAction(null), // onBlindError
+        submit,
+        handleAutoBlindSubmitted,
         autoPostBlindsEnabled
     );
 
@@ -192,6 +215,10 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Auto-fold hook - automatically folds (or checks) when the action timer expires
     // Can be disabled via URL query param: ?autofold=false or via settings panel
+    const handleAutoActionSubmitted = useCallback(
+        (_action: PlayerActionType.FOLD | PlayerActionType.CHECK, txHash: string) => onTransactionSubmitted?.(txHash),
+        [onTransactionSubmitted]
+    );
     useAutoFold(
         tableId,
         network,
@@ -199,14 +226,9 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         hasCheckAction,
         isUsersTurn,
         timeRemaining,
-        action => setAutoLoadingAction(action), // onAutoActionStarted
-        (action, txHash) => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onAutoActionComplete
-        () => setAutoLoadingAction(null), // onAutoActionError
+        submit,
+        isSubmitBusy,
+        handleAutoActionSubmitted,
         autoFoldEnabled
     );
 
@@ -240,78 +262,25 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         setPreCheckQueued(false);
     }, [gameState?.round]);
 
-    usePreCheck(
-        tableId,
-        network,
-        preCheckQueued,
-        hasCheckAction,
-        isUsersTurn,
-        () => setAutoLoadingAction("check"), // onStarted
-        txHash => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onComplete
-        () => setAutoLoadingAction(null), // onError
-        () => setPreCheckQueued(false) // onResolved
-    );
+    const clearPreCheck = useCallback(() => setPreCheckQueued(false), []);
+    usePreCheck(tableId, network, preCheckQueued, hasCheckAction, isUsersTurn, submit, isSubmitBusy, onTransactionSubmitted, clearPreCheck);
 
     // Auto-show-cards hook - automatically shows cards when the action timer expires
-    useAutoShowCards(
-        tableId,
-        network,
-        hasShowAction,
-        isUsersTurn,
-        timeRemaining,
-        () => setAutoLoadingAction("show"), // onAutoShowStarted
-        txHash => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onAutoShowComplete
-        () => setAutoLoadingAction(null) // onAutoShowError
-    );
+    useAutoShowCards(tableId, network, hasShowAction, isUsersTurn, timeRemaining, submit, isSubmitBusy, onTransactionSubmitted);
 
     // Auto-muck hook - automatically mucks cards at showdown when enabled in settings
-    useAutoMuck(
-        tableId,
-        network,
-        hasMuckAction,
-        isUsersTurn,
-        () => setAutoLoadingAction("muck"), // onAutoMuckStarted
-        txHash => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onAutoMuckComplete
-        () => setAutoLoadingAction(null), // onAutoMuckError
-        autoMuckEnabled
-    );
+    useAutoMuck(tableId, network, hasMuckAction, isUsersTurn, submit, isSubmitBusy, onTransactionSubmitted, autoMuckEnabled);
 
     // Auto-new-hand hook - automatically triggers new hand when conditions are met
     // Can be disabled via URL query param: ?autonewhand=false or via settings panel.
     // Its trigger inputs (hasNewHandAction / isUsersTurn) are derived internally
     // from the LOGICAL track so the deal is never delayed by the rendered
     // showdown hold (see useAutoNewHand).
-    const { isDealingNewHand } = useAutoNewHand(
-        tableId,
-        network,
-        () => setAutoLoadingAction("new-hand"), // onNewHandStarted
-        txHash => {
-            setAutoLoadingAction(null);
-            if (onTransactionSubmitted) {
-                onTransactionSubmitted(txHash);
-            }
-        }, // onNewHandComplete
-        () => setAutoLoadingAction(null), // onNewHandError
-        autoNewHandEnabled
-    );
+    const { isDealingNewHand } = useAutoNewHand(tableId, network, submit, submitLastError, onTransactionSubmitted, autoNewHandEnabled);
 
     // Show deal button if player has the deal action
-    const shouldShowDealButton = hasDealAction && isUsersTurn;
+    const controlsPending = optimisticActionName !== null;
+    const shouldShowDealButton = hasDealAction && isUsersTurn && !controlsPending;
     const hideOtherButtons = shouldShowDealButton;
 
     // Get action details
@@ -383,12 +352,14 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // on failure, so the controller can classify it).
     const submitAction = useCallback(
         (actionName: string, run: () => Promise<PlayerActionResult>, playSound = true) => {
+            setOptimisticActionName(actionName);
+            setOptimisticActionTurnIndex(actionTurnIndex);
             if (playSound && playerActionSounds) {
                 playActionSound(actionName);
             }
             submit({ actionName, run, onSuccess: onTransactionSubmitted });
         },
-        [submit, onTransactionSubmitted, playActionSound, playerActionSounds]
+        [actionTurnIndex, submit, onTransactionSubmitted, playActionSound, playerActionSounds]
     );
 
     // Handler for dealing cards with entropy. Async to satisfy DealButtonGroup's
@@ -435,12 +406,12 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         const shouldShowBigBlindButton = hasBigBlindAction && isUsersTurn;
 
         return {
-            canFoldAnytime: hasFoldAction && playerStatus !== PlayerStatus.FOLDED && showButtons,
-            showActionButtons: isUsersTurn && hasElements(legalActions) && showButtons,
-            showSmallBlindButton: shouldShowSmallBlindButton && showButtons,
-            showBigBlindButton: shouldShowBigBlindButton && showButtons
+            canFoldAnytime: hasFoldAction && !hasFoldedOrMucked(playerStatus) && showButtons,
+            showActionButtons: isUsersTurn && hasElements(legalActions) && showButtons && !controlsPending,
+            showSmallBlindButton: shouldShowSmallBlindButton && showButtons && !controlsPending,
+            showBigBlindButton: shouldShowBigBlindButton && showButtons && !controlsPending
         };
-    }, [hasSmallBlindAction, hasBigBlindAction, isUsersTurn, userPlayer, hasFoldAction, playerStatus, legalActions]);
+    }, [hasSmallBlindAction, hasBigBlindAction, isUsersTurn, userPlayer, hasFoldAction, playerStatus, legalActions, controlsPending]);
 
     // Increment/decrement handlers - always step by big blind amount
     const getStep = (): number => {
@@ -523,7 +494,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 )}
 
                 {/* New Hand Button - hidden when auto-new-hand is enabled */}
-                {gameState?.round === TexasHoldemRound.END && !autoNewHandEnabled && (
+                {gameState?.round === TexasHoldemRound.END && !autoNewHandEnabled && !controlsPending && (
                     <div className="flex justify-center mb-2 lg:mb-3">
                         <ActionButton
                             action="new-hand"
@@ -538,7 +509,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
                 {/* Auto-new-hand: hold on the showdown for a beat, showing a
                     "Dealing hand #X…" indicator before the next hand deals (ui#443) */}
-                {autoNewHandEnabled && isDealingNewHand && (
+                {autoNewHandEnabled && isDealingNewHand && !controlsPending && (
                     <div className="flex justify-center mb-2 lg:mb-3">
                         <ActionButton
                             action="new-hand"
@@ -556,7 +527,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 {!hideOtherButtons && (
                     <>
                         {/* Showdown Buttons */}
-                        {(hasMuckAction || hasShowAction) && (
+                        {(hasMuckAction || hasShowAction) && !controlsPending && (
                             <ShowdownButtons
                                 canMuck={hasMuckAction}
                                 canShow={hasShowAction}
@@ -567,7 +538,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                         )}
 
                         {/* Blind Buttons */}
-                        {(showSmallBlindButton || showBigBlindButton) && (
+                        {(showSmallBlindButton || showBigBlindButton) && !controlsPending && (
                             <BlindButtonGroup
                                 showSmallBlind={showSmallBlindButton}
                                 showBigBlind={showBigBlindButton}

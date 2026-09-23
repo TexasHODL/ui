@@ -1,8 +1,10 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
 import { dealCardsWithEntropy } from "./dealCards";
 import { getAutoDealEnabled } from "../../utils/urlParams";
 import { isNullish } from "../../utils/guards";
+import type { SubmitActionRequest, SubmitError } from "../../submit/types";
+import { MAX_AUTO_REARMS, shouldRearmAfterFailure } from "./autoActionRearm";
 
 /**
  * Hook to automatically trigger deal action when conditions are met.
@@ -19,13 +21,17 @@ import { isNullish } from "../../utils/guards";
  * 2. It is the user's turn
  * 3. Auto-deal has not already been triggered for this deal opportunity
  *
+ * The deal is SUBMITTED through the shared ActionSubmitController (ui#635), not
+ * broadcast from here: every tx this account sends — manual or automatic —
+ * goes through one queue, so they dedupe and serialize instead of racing, and
+ * a rejection is toasted to the player instead of dying in the console.
+ *
  * @param tableId - The table/game ID
  * @param network - The network configuration
  * @param hasDealAction - Whether the DEAL action is available in legal actions
  * @param isUsersTurn - Whether it is currently the user's turn
- * @param onDealStarted - Optional callback when auto-deal starts
- * @param onDealComplete - Optional callback when auto-deal completes
- * @param onDealError - Optional callback when auto-deal fails
+ * @param submit - The ActionSubmitController's submit (from useActionSubmit)
+ * @param onDealSubmitted - Optional callback with the tx hash once broadcast
  * @param enabled - Optional override for the URL param setting (reactive)
  */
 export function useAutoDeal(
@@ -33,15 +39,16 @@ export function useAutoDeal(
     network: NetworkEndpoints,
     hasDealAction: boolean,
     isUsersTurn: boolean,
-    onDealStarted?: () => void,
-    onDealComplete?: (txHash: string) => void,
-    onDealError?: (error: Error) => void,
+    submit: (request: SubmitActionRequest) => void,
+    onDealSubmitted?: (txHash: string) => void,
     enabled?: boolean
 ): void {
     // Track if we've already triggered deal for this opportunity
     const hasTriggeredRef = useRef<boolean>(false);
-    // Track if deal is currently in progress to prevent duplicate calls
-    const isProcessingRef = useRef<boolean>(false);
+    // ui#655: re-arms spent on the current opportunity, and the tick that makes
+    // a re-arm re-run the gate below (a ref alone would not).
+    const rearmCountRef = useRef<number>(0);
+    const [rearmToken, setRearmToken] = useState<number>(0);
     // Check if auto-deal is enabled — prefer the reactive `enabled` prop, fall back to URL param
     const autoDealEnabledRef = useRef<boolean>(enabled ?? getAutoDealEnabled());
 
@@ -52,24 +59,30 @@ export function useAutoDeal(
         }
     }, [enabled]);
 
-    const triggerAutoDeal = useCallback(async () => {
-        if (!tableId || isProcessingRef.current) {
+    // ui#655: a failed deal must not hold the latch for the rest of the
+    // opportunity. Clearing it re-runs the effect, which revalidates the turn
+    // and the legal action before anything is submitted again.
+    const rearmAfterFailure = useCallback((error: SubmitError) => {
+        if (!shouldRearmAfterFailure(error) || rearmCountRef.current >= MAX_AUTO_REARMS) {
             return;
         }
+        rearmCountRef.current += 1;
+        hasTriggeredRef.current = false;
+        setRearmToken(token => token + 1);
+    }, []);
 
-        isProcessingRef.current = true;
-        onDealStarted?.();
-
-        try {
-            const result = await dealCardsWithEntropy(tableId, network, "");
-            onDealComplete?.(result.hash);
-        } catch (error) {
-            console.error("❌ Auto-deal failed:", error);
-            onDealError?.(error instanceof Error ? error : new Error(String(error)));
-        } finally {
-            isProcessingRef.current = false;
+    const triggerAutoDeal = useCallback((): boolean => {
+        if (!tableId) {
+            return false;
         }
-    }, [tableId, network, onDealStarted, onDealComplete, onDealError]);
+        submit({
+            actionName: "deal",
+            run: () => dealCardsWithEntropy(tableId, network, ""),
+            onSuccess: onDealSubmitted,
+            onFailure: rearmAfterFailure
+        });
+        return true;
+    }, [tableId, network, submit, onDealSubmitted, rearmAfterFailure]);
 
     useEffect(() => {
         // Check all conditions for auto-deal
@@ -77,18 +90,21 @@ export function useAutoDeal(
             autoDealEnabledRef.current &&
             hasDealAction &&
             isUsersTurn &&
-            !hasTriggeredRef.current &&
-            !isProcessingRef.current;
+            !hasTriggeredRef.current;
 
         if (shouldAutoDeal) {
-            hasTriggeredRef.current = true;
-            triggerAutoDeal();
+            // ui#662: latch on the SUBMISSION, not the intent — a render with no
+            // table id yet used to burn the one shot for the whole opportunity.
+            if (triggerAutoDeal()) {
+                hasTriggeredRef.current = true;
+            }
         }
 
         // Reset the trigger flag when deal action is no longer available
         // This allows auto-deal to trigger again on the next hand
         if (!hasDealAction) {
             hasTriggeredRef.current = false;
+            rearmCountRef.current = 0;
         }
-    }, [hasDealAction, isUsersTurn, triggerAutoDeal]);
+    }, [hasDealAction, isUsersTurn, triggerAutoDeal, rearmToken]);
 }
