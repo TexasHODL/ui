@@ -3,21 +3,25 @@ name: Sync Fork
 on:
   schedule:
     - cron: "*/15 * * * *"
-
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: sync-fork-main
+  cancel-in-progress: false
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-
     steps:
       - name: Sync TexasHODL with Block52
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.FORK_SYNC_TOKEN }}
         run: |
-          gh repo sync TexasHODL/ui \
-            --source block52/ui \
-            --branch main
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::error::Missing FORK_SYNC_TOKEN Actions secret. Configure Contents and Workflows write permissions for TexasHODL/ui."
+            exit 1
+          fi
+          gh repo sync TexasHODL/ui --source block52/ui --branch main
