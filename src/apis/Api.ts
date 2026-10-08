@@ -4,8 +4,10 @@ import type {
     PlayerSearchParams,
     PlayersListResponse,
     PlayerProfile,
-    PlayerSessionsResponse
+    PlayerSessionsResponse,
+    PlayerHandsResponse
 } from "../types/players";
+import type { WithdrawalSignatureResponse } from "../utils/withdrawalSignature";
 
 export class PaymentApi extends HTTPClient {
     public createCryptoPayment = (data: { amount: number; currency: string; cosmosAddress: string }) => this.post("/api/nowpayments/create", data);
@@ -45,6 +47,9 @@ export class CosmosApi extends HTTPClient {
             headers: { "x-cosmos-block-height": String(blockHeight) }
         });
     public getWithdrawalRequests = () => this.get("/pokerchain/poker/withdrawal_requests");
+    // A validator's signature for a pending withdrawal (read-only; pokerchain#392).
+    public getWithdrawalSignature = (nonce: string) =>
+        this.get<WithdrawalSignatureResponse>(`/block52/pokerchain/poker/v1/withdrawal_signature/${encodeURIComponent(nonce)}`);
     public getIsTxProcessed = (txHash: string) => this.get(`/block52/pokerchain/poker/v1/is_tx_processed/${txHash}`);
     public getNftAvatar = (cosmosAddress: string) => this.get(`/pokerchain/poker/nft_avatar/${cosmosAddress}`);
     // Tendermint base endpoints (used for node status / block-height probes across arbitrary node URLs)
@@ -88,6 +93,9 @@ export class IndexerApi extends HTTPClient {
     public getPlayerProfile = (address: string) => this.get<PlayerProfile>(`/api/v1/players/${encodeURIComponent(address)}/stats`);
     public getPlayerSessions = (address: string, limit = 20, offset = 0) =>
         this.get<PlayerSessionsResponse>(`/api/v1/players/${encodeURIComponent(address)}/sessions?limit=${limit}&offset=${offset}`);
+    // Hands a wallet played, newest first (ui#721).
+    public getPlayerHands = (address: string, limit: number, offset: number) =>
+        this.get<PlayerHandsResponse>(`/api/v1/players/${encodeURIComponent(address)}/hands?limit=${limit}&offset=${offset}`);
 }
 
 // Serialize player-directory query params, omitting empty values.
