@@ -58,6 +58,7 @@ import {
     MobileTableHeader,
     TableBoard,
     TablePanel,
+    TablePanelExpandTab,
     type TablePanelTab,
     TableModals,
     PlayerSeating,
@@ -81,6 +82,8 @@ import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
 
 import "./Table.css"; // Import the Table CSS file
+
+const DESKTOP_PANEL_COLLAPSED_KEY = "b52.tablePanelCollapsed";
 
 //// TODO get these hooks to subscribe to the wss connection
 
@@ -799,6 +802,24 @@ const Table = React.memo(() => {
     // Settings) — replaces the two former fly-out overlays (ui#752). The panel
     // is never closed; the header gear/panel controls just switch the tab.
     const [panelTab, setPanelTab] = useState<TablePanelTab>("history");
+    // Phones: the panel covers the felt, so it is closed until opened from the hamburger menu.
+    const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
+    // Desktop: the panel can be collapsed to a slim edge tab; the choice is remembered.
+    const [desktopPanelCollapsed, setDesktopPanelCollapsed] = useState<boolean>(() => {
+        try {
+            return localStorage.getItem(DESKTOP_PANEL_COLLAPSED_KEY) === "1";
+        } catch {
+            return false;
+        }
+    });
+    const setDesktopPanelCollapsedPersisted = useCallback((collapsed: boolean) => {
+        setDesktopPanelCollapsed(collapsed);
+        try {
+            localStorage.setItem(DESKTOP_PANEL_COLLAPSED_KEY, collapsed ? "1" : "0");
+        } catch {
+            // storage unavailable (private mode) — keep in-memory state only
+        }
+    }, []);
 
     // Leave table modal state
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -1377,6 +1398,10 @@ const Table = React.memo(() => {
                     walletBalance={accountBalance}
                     tableStyle={tableStyle}
                     onCycleTableStyle={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
+                    onOpenPanel={tab => {
+                        setPanelTab(tab);
+                        setMobilePanelOpen(true);
+                    }}
                     handleLobbyClick={handleLobbyClick}
                     handleCopyTableLink={handleCopyTableLink}
                     fetchAccountBalance={fetchAccountBalance}
@@ -1582,8 +1607,15 @@ const Table = React.memo(() => {
                     </div>
                 ))}
 
-            {/*//! FLOATING PANEL — always visible, History + Settings tabs (ui#752) */}
-            <TablePanel activeTab={panelTab} onSelectTab={setPanelTab} />
+            {/*//! FLOATING PANEL — History + Settings tabs (ui#752). Always visible on
+                desktop; on phones it opens from the hamburger menu and closes itself. */}
+            {isCompactMobile ? (
+                mobilePanelOpen && <TablePanel activeTab={panelTab} onSelectTab={setPanelTab} onClose={() => setMobilePanelOpen(false)} />
+            ) : desktopPanelCollapsed ? (
+                <TablePanelExpandTab onExpand={() => setDesktopPanelCollapsedPersisted(false)} />
+            ) : (
+                <TablePanel activeTab={panelTab} onSelectTab={setPanelTab} onCollapse={() => setDesktopPanelCollapsedPersisted(true)} />
+            )}
 
             {/* Layout Debug Panel */}
             <LayoutDebugInfo viewportMode={viewportMode} startIndex={startIndex} tableSize={tableSize} results={results} setStartIndex={setStartIndex} />
