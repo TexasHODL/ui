@@ -111,7 +111,11 @@ export const TableBoard: React.FC<TableBoardProps> = ({
         <>
             {/* Club Logo */}
             <div className={`table-logo ${tableTheme === "nouns" ? "table-logo-nouns" : ""}`}>
-                {tableTheme === "nouns" ? <NounsGlasses width={300} className="nouns-glasses-logo" /> : <img src={clubLogo} alt="Texas HODL" onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = "/texas-hodl-logo.png"; }} />}
+                {tableTheme === "nouns" ? <NounsGlasses width={300} className="nouns-glasses-logo" /> : <img src={clubLogo} alt="Texas HODL" onError={(event) => {
+                    if (event.currentTarget.getAttribute("src") !== "/texas-hodl-logo-sharp.svg") {
+                        event.currentTarget.src = "/texas-hodl-logo-sharp.svg";
+                    }
+                }} />}
             </div>
 
             {/* Central Display Area */}

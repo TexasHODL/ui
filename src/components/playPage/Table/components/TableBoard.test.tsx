@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { TableBoard } from "./TableBoard";
 import type { PotDisplayValues } from "../../../../utils/potDisplayUtils";
 import type { CardBackStyle } from "../../../../utils/cardImages";
@@ -17,6 +17,27 @@ const props = {
     cardBackStyle: "classic" as CardBackStyle,
     winnerCards: new Set(["QD", "QC"])
 };
+
+test.each(["modern", "classic"] as const)("%s table displays the approved SVG", tableTheme => {
+    render(<TableBoard {...props} clubLogo="/texas-hodl-logo-sharp.svg" tableTheme={tableTheme} />);
+    expect(screen.getByAltText("Texas HODL")).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
+});
+
+test("a failed custom table logo falls back to the approved SVG without retrying it", () => {
+    render(<TableBoard {...props} />);
+    const logo = screen.getByAltText("Texas HODL");
+    fireEvent.error(logo);
+    expect(logo).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
+    const setSource = jest.spyOn(HTMLImageElement.prototype, "src", "set");
+    fireEvent.error(logo);
+    expect(setSource).not.toHaveBeenCalled();
+    setSource.mockRestore();
+});
+
+test("the nouns theme retains its own artwork", () => {
+    render(<TableBoard {...props} tableTheme="nouns" />);
+    expect(screen.queryByAltText("Texas HODL")).not.toBeInTheDocument();
+});
 test("four-seat portrait uses the clear upper board without changing cards or pot content", () => {
     const { container } = render(<TableBoard {...props} isPortrait tableSize={4} />);
     expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'true');

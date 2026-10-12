@@ -15,7 +15,7 @@
 .table-container[data-table-theme="modern"] .table-logo img {
     width: 100%;
     max-width: 440px;
-    opacity: 0.24;
+    opacity: 0.4;
     filter: none;
 }
 .table-container .vacant-seat {
@@ -426,7 +426,7 @@
 
 .table-logo img {
     width: 300px;
-    opacity: 0.3;
+    opacity: 0.4;
     object-fit: contain;
 }
 
@@ -1010,8 +1010,8 @@
 }
 
 .table-logo img {
-    opacity: 0.19;
-    filter: drop-shadow(0 0 28px rgba(177, 76, 255, 0.36));
+    opacity: 0.4;
+    filter: none;
 }
 
 /* Table UX surfaces: keep the header readable and make action/status chrome

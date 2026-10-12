@@ -62,8 +62,8 @@ import { TableHeader, MobileTableHeader, TableBoard, TableSidebar, TableSettings
 
 import { HexagonPattern } from "../common/Modal";
 
-// Use environment variable for club logo with fallback to default
-const clubLogo = import.meta.env.VITE_CLUB_LOGO || "/texas-hodl-logo.png";
+// The table uses the approved vector artwork independently of header branding.
+const clubLogo = "/texas-hodl-logo-sharp.svg";
 
 import { useParams, useSearchParams } from "react-router-dom";
 import React from "react";
