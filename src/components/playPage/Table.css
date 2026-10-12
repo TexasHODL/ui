@@ -123,6 +123,8 @@
 }
 .poker-action-dock .btn-raise {
     color: #200c1c;
+    background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+    border-color: #ff9fdc;
 }
 .poker-action-dock .btn-fold,
 .poker-action-dock .btn-check,
@@ -346,8 +348,9 @@
     flex-direction: column;
 }
 
-/* The stage fills the play row. Portrait actions overlay the felt. Landscape
-   actions are a side column and only consume width while a turn is open. */
+/* The stage fills the play row. Portrait keeps a bottom dock and landscape
+   keeps a side column whether or not it is your turn, so the felt never
+   shifts. Only the portrait pill slider may draw over the felt. */
 .table-stage { flex: 1 1 0; min-height: 0; }
 .table-banner-wrap { flex-shrink: 0; }
 .table-play-row {
@@ -379,53 +382,38 @@
     z-index: 10;
 }
 .table-play-row.is-portrait .mobile-action-slot {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    height: 0;
-    min-height: 0;
-    padding: 0;
+    position: relative;
+    flex: 0 0 calc(110px + env(safe-area-inset-bottom, 0px));
+    width: 100%;
+    height: calc(110px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(110px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(110px + env(safe-area-inset-bottom, 0px));
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
     overflow: visible;
-    z-index: 30;
-    pointer-events: none;
-    display: block;
+    z-index: 20;
+    display: flex;
+    align-items: stretch;
 }
 .table-play-row.is-portrait .mobile-action-content {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
-    pointer-events: none;
-    transform: translateY(110%);
-    transition: transform 180ms ease-out;
-}
-.table-play-row.is-portrait .mobile-action-slot[data-open="true"] .mobile-action-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    padding: 0;
     transform: none;
 }
-.table-play-row.is-portrait .mobile-action-slot[data-open="true"] .poker-action-dock {
-    pointer-events: auto;
-}
 .table-play-row.is-landscape .mobile-action-slot {
-    flex: 0 0 0px;
-    width: 0;
+    flex: 0 0 calc(124px + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
+    width: calc(124px + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
     min-height: 0;
     padding: 0;
     overflow: visible;
     align-self: stretch;
-    z-index: 30;
-}
-.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] {
-    flex-basis: calc(124px + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
-    width: calc(124px + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
+    z-index: 20;
     display: flex;
     flex-direction: column;
     align-items: stretch;
 }
-.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] .mobile-action-content {
+.table-play-row.is-landscape .mobile-action-content {
     flex: 1 1 auto;
     width: 100%;
     height: 100%;
@@ -434,19 +422,6 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
-}
-.table-play-row.is-landscape .mobile-action-slot[data-has-actions="false"] {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    height: auto;
-    flex: none;
-    pointer-events: none;
-}
-.table-play-row.is-landscape .mobile-action-slot[data-has-actions="false"] .poker-action-dock {
-    pointer-events: auto;
 }
 .mobile-dock-root {
     width: 100%;
@@ -458,8 +433,8 @@
     width: 100%;
     min-height: 0;
 }
-.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] .mobile-dock-root,
-.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] .mobile-dock-inner {
+.table-play-row.is-landscape .mobile-dock-root,
+.table-play-row.is-landscape .mobile-dock-inner {
     height: 100%;
 }
 .mobile-action-content {

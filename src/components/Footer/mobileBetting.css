@@ -1,5 +1,6 @@
 /* Mobile betting cluster and the frosted pill slider.
-   Desktop and tablet never receive these classes. */
+   Desktop and tablet never receive these classes. The portrait slider is the
+   only control allowed to draw over the felt. */
 
 .mobile-bet {
     width: 100%;
@@ -119,6 +120,13 @@
     font-weight: 700;
     letter-spacing: 0.01em;
     padding: 8px 4px;
+}
+
+.mobile-actions-row .btn-raise,
+.mobile-actions-stack .btn-raise,
+.mobile-raise-anchor .btn-raise {
+    background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+    border-color: #ff9fdc;
 }
 
 .mobile-raise-anchor {
@@ -244,8 +252,3 @@
     z-index: 5;
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .table-play-row.is-portrait .mobile-action-content {
-        transition: none;
-    }
-}

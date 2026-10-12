@@ -1538,7 +1538,7 @@ const Table = React.memo(() => {
                 </div>
 
                 {/* Mobile controls stay mounted for automatic gameplay hooks.
-                    Portrait overlays the felt. Landscape is a side column. */}
+                    The portrait dock and landscape column always reserve space. */}
                 {!isReplayMode && isCompactMobile && (
                     <MobileActionDock mode={isMobilePortrait ? "overlay" : "column"}>
                         <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />

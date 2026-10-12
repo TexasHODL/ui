@@ -5,6 +5,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { TexasHoldemRound, PlayerStatus } from "@block52/poker-vm-sdk";
 import "../index.css";
+import "../components/Footer.css";
 import "../components/playPage/Table.css";
 import { useTableLayout } from "../hooks/game/useTableLayout";
 import { STAGE_DIMS, COMPONENT_SCALE, type TableSize } from "../config/stageGeometry";

@@ -16,9 +16,10 @@ export interface MobileBettingClusterProps {
     sizing?: RaiseBetControlsProps;
 }
 
-/** Mobile Fold / Check-Call / Raise cluster. Portrait overlays the bottom of the
- * table. Landscape is one flush column: presets on the screen edge, the pill
- * slider inboard, actions stacked underneath. */
+/** Mobile Fold / Check-Call / Raise cluster. Portrait sits in the reserved
+ * bottom dock; only its pill slider draws over the felt. Landscape is one
+ * flush column: presets on the screen edge, the pill slider inboard, actions
+ * stacked underneath. */
 export const MobileBettingCluster: React.FC<MobileBettingClusterProps> = ({ presentation, leftHand, showSizing, actions, sizing }) => {
     const slider = showSizing && sizing ? (
         <VerticalPillSlider

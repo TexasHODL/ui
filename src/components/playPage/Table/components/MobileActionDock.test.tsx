@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { useEffect } from "react";
 import { MobileActionDock } from "./MobileActionDock";
 
-it("overlays portrait actions without reserving table height", () => {
+it("keeps portrait actions mounted in the reserved dock", () => {
     render(<MobileActionDock mode="overlay"><div>Fold</div></MobileActionDock>);
     const slot = screen.getByTestId("mobile-action-slot");
     expect(slot).toHaveAttribute("data-mode", "overlay");
