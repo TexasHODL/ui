@@ -1,15 +1,19 @@
 .containerCard {
-    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    background-color: #100c17;
+    border: 1px solid #ffffff16;
 }
 
 .headerCard {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 20%, transparent) 0%, color-mix(in srgb, var(--brand-secondary) 20%, transparent) 100%);
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--brand-primary) 20%, transparent) 0%,
+        color-mix(in srgb, var(--brand-secondary) 20%, transparent) 100%
+    );
     border-bottom: 2px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 
 .brandText {
-    color: var(--brand-primary);
+    color: #c296e6;
 }
 
 .brandTextHover:hover {

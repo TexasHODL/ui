@@ -1,3 +1,4 @@
+import { formatMicroUsd } from "../../../../utils/moneyDisplay";
 /**
  * useTableHeader Hook
  *
@@ -11,16 +12,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { useNetwork } from "../../../../context/NetworkContext";
 import { getCosmosBalance, getCosmosAddressSync, getFormattedCosmosAddress } from "../../../../utils/cosmosAccountUtils";
-import { formatUSDCToSimpleDollars } from "../../../../utils/numberUtils";
-import {
-    copyToClipboard,
-    navigateToLobby,
-    getHeaderStyle,
-    getSubHeaderStyle,
-    getWalletInfoStyle,
-    getBalanceIconStyle,
-    getDepositButtonStyle
-} from "../utils";
+
+import { copyToClipboard, navigateToLobby, getHeaderStyle, getSubHeaderStyle, getWalletInfoStyle, getBalanceIconStyle, getDepositButtonStyle } from "../utils";
 import { UseTableHeaderReturn } from "../types";
 
 export const useTableHeader = (tableId: string): UseTableHeaderReturn => {
@@ -90,7 +83,7 @@ export const useTableHeader = (tableId: string): UseTableHeaderReturn => {
 
     // Computed values
     const formattedAddress = getFormattedCosmosAddress();
-    const balanceFormatted = formatUSDCToSimpleDollars(accountBalance);
+    const balanceFormatted = formatMicroUsd(accountBalance ?? 0);
 
     // Styles
     const headerStyle = getHeaderStyle();

@@ -1,6 +1,8 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { ModalHeader } from "../common/ModalHeader";
 import React from "react";
 import { useCosmosWallet } from "../../hooks";
-import { microToUsdc } from "../../constants/currency";
+
 import DepositCore from "./DepositCore";
 import type { USDCDepositModalProps } from "./types";
 import styles from "./USDCDepositModal.module.css";
@@ -12,7 +14,7 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
     const b52Balance = React.useMemo(() => {
         const usdcBalance = cosmosWallet.balance.find(b => b.denom === "usdc");
         if (!usdcBalance) return "0.00";
-        return microToUsdc(usdcBalance.amount).toFixed(2);
+        return formatMicroUsd(usdcBalance.amount);
     }, [cosmosWallet.balance]);
 
     const handleSuccess = () => {
@@ -28,15 +30,13 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
             onClick={onClose}
         >
             <div
-                className={`rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
+                role="dialog" aria-modal="true" aria-label="Deposit funds"
+                className={`hodl-modal modal-inset-content relative rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="px-6 pt-6 pb-4 flex-shrink-0">
-                    <div>
-                        <h2 className="text-xl font-bold text-white">Deposit Funds</h2>
-                        <p className="text-sm text-gray-400 mt-1">Add USDC to your game wallet</p>
-                    </div>
+                    <ModalHeader title="Deposit Funds" subtitle="Add USDC to your game wallet" onClose={onClose} closeLabel="Close deposit" />
                 </div>
 
                 {/* Content - Scrollable */}
@@ -53,7 +53,7 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
                     {/* Cancel Button */}
                     <button
                         onClick={onClose}
-                        className={`w-full mt-4 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.cancelButton}`}
+                        className={`w-full mt-4 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 hodl-secondary ${styles.cancelButton}`}
                     >
                         Cancel
                     </button>

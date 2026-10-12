@@ -127,7 +127,10 @@ export const useTableLayout = (
     const { width: cw, height: ch } = containerSize;
 
     const zoom = useMemo(() => calculateZoom(tableSize, cw, ch), [tableSize, cw, ch, viewportMode]);
-    const tableTransform = useMemo(() => getTableTransform(zoom, tableSize, cw, ch), [zoom, tableSize, cw, ch, viewportMode]);
+    const tableTransform = useMemo(
+        () => getTableTransform(zoom, tableSize, cw, ch, viewportMode.startsWith("mobile") ? 0 : -48),
+        [zoom, tableSize, cw, ch, viewportMode]
+    );
 
     // Memoized so the returned object keeps a stable identity: PlayerSeating puts
     // it in a useCallback dep array, and a fresh object per render invalidated

@@ -57,3 +57,240 @@
 .leaveTableButton:hover {
     color: #ffffff;
 }
+
+.roomHeader {
+    flex-shrink: 0;
+    position: relative;
+    z-index: 100;
+    background: #0c0811ed;
+    border-bottom: 1px solid #ffffff12;
+}
+.roomMain {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    min-height: 70px;
+    padding: 10px 26px;
+}
+.backButton {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 14px;
+    border: 1px solid #ffffff18;
+    border-radius: 9px;
+    color: #c0afce;
+    font-size: 12px;
+}
+.roomIdentity {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.roomIdentity strong {
+    font-size: 16px;
+    color: #f3eafa;
+    font-weight: 500;
+    max-width: 35vw;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.roomIdentity > span {
+    font-size: 10px;
+    color: #a295ac;
+}
+.roomTools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+.toolButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 12px;
+    border: 1px solid #ffffff16;
+    border-radius: 9px;
+    color: #b8a7c4;
+    font-size: 12px;
+}
+.roomHeader button:hover {
+    color: #f4e5ff;
+    background-color: #b14cff12;
+}
+.roomHeader :is(button, summary, a):focus-visible {
+    outline: 2px solid #d5a4ff;
+    outline-offset: 3px;
+}
+.walletMenu,
+.moreMenu {
+    position: relative;
+}
+.walletMenu summary,
+.moreMenu summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+    color: #eadcf5;
+}
+.walletMenu summary::-webkit-details-marker,
+.moreMenu summary::-webkit-details-marker {
+    display: none;
+}
+.walletMenu summary span {
+    font-size: 9px;
+    color: #a595b0;
+    margin-left: 6px;
+}
+.popover {
+    position: absolute;
+    z-index: 2;
+    top: calc(100% + 16px);
+    right: 0;
+    width: 260px;
+    padding: 12px;
+    background: #181020;
+    border: 1px solid #ffffff20;
+    border-radius: 14px;
+    box-shadow: 0 16px 50px #000b;
+}
+.popover p {
+    color: #95819f;
+    font-size: 9px;
+    letter-spacing: 0.13em;
+    padding: 7px;
+}
+.popover > button,
+.popover > a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 11px 9px;
+    font-size: 12px;
+    color: #d4c3df;
+    text-align: left;
+    border-radius: 7px;
+}
+.popover .leaveTableButton {
+    margin-top: 10px;
+    border-top: 1px solid #ffffff18;
+    color: #ff8cac;
+}
+.address,
+.diagnostics {
+    display: block;
+    padding: 10px 8px;
+    font:
+        10px/1.8 "DM Mono",
+        monospace;
+    color: #a18eaf;
+    overflow-wrap: anywhere;
+}
+.networkSection {
+    padding-top: 8px;
+    margin-top: 5px;
+    border-top: 1px solid #ffffff12;
+}
+.avatarRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 8px 2px;
+    font-size: 12px;
+    color: #bbaac7;
+}
+.roomStatus {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 26px;
+    border-top: 1px solid #ffffff09;
+    background: #130c1d65;
+}
+.stakes {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.stakes > span:first-child {
+    font:
+        9px "DM Mono",
+        monospace;
+    letter-spacing: 0.15em;
+    color: #a28aad;
+}
+.stakes strong {
+    font-size: 13px;
+    color: #ece1f5;
+    font-weight: 500;
+}
+.stakes small {
+    font-size: 10px;
+    color: #b897d0;
+}
+.stakes .handNumber {
+    border-left: 1px solid #ffffff17;
+    padding-left: 14px;
+    font-size: 11px;
+    color: #93809f;
+}
+.panelTabs {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+.panelTabs button {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 1px solid #b995cf66;
+    border-radius: 10px;
+    background: transparent;
+    color: #c9b2d9;
+    font-size: 11px;
+    transition:
+        border-color 150ms ease,
+        color 150ms ease,
+        background-color 150ms ease;
+}
+.panelTabs button:hover {
+    border-color: #d3a6ed;
+}
+.panelTabs .activeTool {
+    color: #efdfff;
+    border-color: #c58ce9;
+    background: #b14cff12;
+}
+.fullscreenError {
+    color: #d9b8e8;
+    font-size: 11px;
+    padding: 8px 26px;
+}
+@media (max-width: 900px) {
+    .roomMain {
+        gap: 12px;
+        padding: 10px 16px;
+    }
+    .roomStatus {
+        padding: 6px 16px;
+    }
+    .toolButton > span {
+        display: none;
+    }
+    .roomTools {
+        gap: 4px;
+    }
+}

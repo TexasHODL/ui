@@ -12,7 +12,7 @@ jest.mock("../common", () => ({
     LoadingSpinner: () => <span data-testid="loading-spinner" />
 }));
 
-jest.mock("../../context/GameStateContext");
+jest.mock("../../context/GameStateContext", () => ({ useGameStateContext: jest.fn() }));
 
 // eslint-disable-next-line import/first
 import TopUpModal from "./TopUpModal";
@@ -50,6 +50,17 @@ const mockGameState = (round: TexasHoldemRound) => {
 describe("TopUpModal — confirmation copy (issue #2141 AC-4)", () => {
     beforeEach(() => {
         jest.clearAllMocks();
+    });
+
+    it("rounds labels upward without feeding the rounded balance into a top-up", async () => {
+        mockGameState(TexasHoldemRound.END);
+        const onTopUp = jest.fn().mockResolvedValue(undefined);
+        render(<TopUpModal {...baseProps} walletBalance="50000001" onTopUp={onTopUp} />);
+
+        expect(screen.getAllByText("$50.01").length).toBeGreaterThan(0);
+        expect(screen.getByRole("spinbutton")).toHaveValue(50);
+        await userEvent.click(screen.getByRole("button", { name: /^BUY$/ }));
+        expect(onTopUp).toHaveBeenCalledWith("50000000");
     });
 
     it("shows the deferred-credit message after submit when the hand is in progress", async () => {

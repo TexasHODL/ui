@@ -1,8 +1,9 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useGameEvents } from "../game/useGameEvents";
 import { ActionDTO, PlayerActionType, NonPlayerActionType } from "@block52/poker-vm-sdk";
-import { formatDisplayAmount, formatForSitAndGo, formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+import { formatDisplayAmount, formatForSitAndGo } from "../../utils/numberUtils";
 import { getStreetCommitTotalForAction } from "../../utils/raiseUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { isBlank } from "../../utils/guards";
@@ -66,7 +67,7 @@ export const formatActionAmount = (amount: string | undefined, isTournament: boo
   const numeric = Number(amount);
   if (numeric === 0 || Number.isNaN(numeric)) return "";
 
-  return isTournament ? ` ${formatForSitAndGo(numeric)}` : ` $${formatUSDCToSimpleDollars(amount)}`;
+  return isTournament ? ` ${formatForSitAndGo(numeric)}` : ` $${formatMicroUsd(amount ?? 0)}`;
 };
 
 // Committing actions whose badge shows the STREET TOTAL, not the stack delta.

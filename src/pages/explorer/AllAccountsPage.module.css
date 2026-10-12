@@ -1,10 +1,10 @@
 .containerCard {
-    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    background-color: #100c17;
+    border: 1px solid #ffffff16;
 }
 
 .brandText {
-    color: var(--brand-primary);
+    color: #c296e6;
 }
 
 .searchInput {

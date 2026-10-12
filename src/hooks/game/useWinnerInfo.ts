@@ -1,7 +1,8 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useMemo } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { PlayerDTO, TexasHoldemStateDTO, WinnerDTO } from "@block52/poker-vm-sdk";
-import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+
 import { formatAmount } from "../../utils/accountUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { WinnerInfo, WinnerInfoReturn } from "../../types/index";
@@ -13,7 +14,7 @@ import { hasElements } from "../../utils/guards";
  * Converting chips as micro-USDC turned a 120-chip win into "0.00".
  */
 export function formatWinAmount(amount: string, isTournament: boolean): string {
-    return isTournament ? formatAmount(amount, undefined, true) : formatUSDCToSimpleDollars(amount);
+    return isTournament ? formatAmount(amount, undefined, true) : formatMicroUsd(amount ?? 0);
 }
 
 /**

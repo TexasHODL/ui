@@ -1,3 +1,4 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { useParams, useSearchParams, useNavigate, Link } from "react-router-dom";
@@ -6,7 +7,7 @@ import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { getCardImageUrl, getCardBackUrl, getDealerImageUrl } from "../../utils/cardImages";
-import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+
 import { isEmpty, hasElements, hasContent } from "../../utils/guards";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../utils/handReplay";
 import styles from "./HandPage.module.css";
@@ -36,22 +37,29 @@ function truncateAddress(addr: string): string {
 }
 
 function formatStack(stack: string): string {
-    return `$${formatUSDCToSimpleDollars(stack)}`;
+    return `$${formatMicroUsd(stack ?? 0)}`;
 }
 
 function formatPot(pot: string): string {
-    return `$${formatUSDCToSimpleDollars(pot)}`;
+    return `$${formatMicroUsd(pot ?? 0)}`;
 }
 
 function statusLabel(status: string): string {
     switch (status) {
-        case "active": return "";
-        case "folded": return "FOLDED";
-        case "mucked": return "MUCKED";
-        case "all-in": return "ALL IN";
-        case "busted": return "BUSTED";
-        case "sitting-out": return "SITTING OUT";
-        default: return status.toUpperCase();
+        case "active":
+            return "";
+        case "folded":
+            return "FOLDED";
+        case "mucked":
+            return "MUCKED";
+        case "all-in":
+            return "ALL IN";
+        case "busted":
+            return "BUSTED";
+        case "sitting-out":
+            return "SITTING OUT";
+        default:
+            return status.toUpperCase();
     }
 }
 
@@ -66,7 +74,7 @@ const SEAT_POSITIONS: Record<number, { top: string; left: string }> = {
     6: { top: "10%", left: "82%" },
     7: { top: "38%", left: "95%" },
     8: { top: "68%", left: "85%" },
-    9: { top: "78%", left: "50%" }, // fallback, will offset if seat 1 also present
+    9: { top: "78%", left: "50%" } // fallback, will offset if seat 1 also present
 };
 
 function getSeatPosition(seat: number, totalSeats: number, allSeats: number[]): { top: string; left: string } {
@@ -82,7 +90,7 @@ function getSeatPosition(seat: number, totalSeats: number, allSeats: number[]): 
             { top: "75%", left: "50%" },
             { top: "35%", left: "8%" },
             { top: "5%", left: "50%" },
-            { top: "35%", left: "92%" },
+            { top: "35%", left: "92%" }
         ];
         const idx = allSeats.indexOf(seat);
         return positions4[idx] || SEAT_POSITIONS[seat] || { top: "50%", left: "50%" };
@@ -125,16 +133,12 @@ function PlayerCard({ player, isDealer }: { player: PlayerDTO; isDealer: boolean
             <div className={styles.playerInfo}>
                 <span className={styles.playerAddress}>{truncateAddress(player.address)}</span>
                 <span className={styles.playerStack}>{formatStack(player.stack)}</span>
-                {player.sumOfBets && player.sumOfBets !== "0" && (
-                    <span className={styles.playerBet}>Bet: {formatStack(player.sumOfBets)}</span>
-                )}
+                {player.sumOfBets && player.sumOfBets !== "0" && <span className={styles.playerBet}>Bet: {formatStack(player.sumOfBets)}</span>}
             </div>
 
             {/* Status badge */}
             {statusLabel(player.status) && (
-                <div className={`${styles.statusBadge} ${styles[`status_${player.status.replace("-", "_")}`] || ""}`}>
-                    {statusLabel(player.status)}
-                </div>
+                <div className={`${styles.statusBadge} ${styles[`status_${player.status.replace("-", "_")}`] || ""}`}>{statusLabel(player.status)}</div>
             )}
         </div>
     );
@@ -171,11 +175,7 @@ function ReadOnlyTable({ gameState, handData }: { gameState: TexasHoldemStateDTO
                         <div className={styles.potLabel}>
                             Pot: <span className={styles.potValue}>{formatPot(totalPot)}</span>
                         </div>
-                        {mainPot !== totalPot && mainPot !== "0" && (
-                            <div className={styles.mainPotLabel}>
-                                Main: {formatPot(mainPot)}
-                            </div>
-                        )}
+                        {mainPot !== totalPot && mainPot !== "0" && <div className={styles.mainPotLabel}>Main: {formatPot(mainPot)}</div>}
                     </div>
                 )}
 
@@ -184,23 +184,14 @@ function ReadOnlyTable({ gameState, handData }: { gameState: TexasHoldemStateDTO
                     {Array.from({ length: 5 }).map((_, idx) => {
                         if (idx < communityCards.length) {
                             const card = communityCards[idx];
-                            return (
-                                <img
-                                    key={idx}
-                                    src={getCardImageUrl(card)}
-                                    alt={card}
-                                    className={styles.communityCard}
-                                />
-                            );
+                            return <img key={idx} src={getCardImageUrl(card)} alt={card} className={styles.communityCard} />;
                         }
-                        return (
-                            <div key={idx} className={styles.communityCardPlaceholder} />
-                        );
+                        return <div key={idx} className={styles.communityCardPlaceholder} />;
                     })}
                 </div>
 
                 {/* Players around the table */}
-                {activePlayers.map((player) => {
+                {activePlayers.map(player => {
                     const pos = getSeatPosition(player.seat, totalSeats, allSeats);
                     const isDealer = player.isDealer;
                     return (
@@ -224,9 +215,7 @@ function ReadOnlyTable({ gameState, handData }: { gameState: TexasHoldemStateDTO
                         Seed: {handData.deck_seed.slice(0, 12)}...
                     </div>
                 )}
-
             </div>
-
         </div>
     );
 }
@@ -268,7 +257,7 @@ export default function HandPage() {
             return;
         }
         try {
-            const data = await indexerApi.getHands(gameId) as HandsResponse;
+            const data = (await indexerApi.getHands(gameId)) as HandsResponse;
             setHands(data.data);
         } catch (err: unknown) {
             console.error("Error fetching hands from indexer:", err);
@@ -279,24 +268,27 @@ export default function HandPage() {
     }, [gameId, indexerApi]);
 
     // Fetch historical game state at a specific block height
-    const fetchGameState = useCallback(async (blockHeight: number) => {
-        if (!gameId) return;
-        try {
-            setLoading(true);
-            setError(null);
+    const fetchGameState = useCallback(
+        async (blockHeight: number) => {
+            if (!gameId) return;
+            try {
+                setLoading(true);
+                setError(null);
 
-            const data = await cosmosApi.getPublicGameStateAtBlock(gameId, blockHeight) as { game_state?: string };
-            if (!data.game_state) throw new Error("No game_state in response");
+                const data = (await cosmosApi.getPublicGameStateAtBlock(gameId, blockHeight)) as { game_state?: string };
+                if (!data.game_state) throw new Error("No game_state in response");
 
-            const parsed: TexasHoldemStateDTO = JSON.parse(data.game_state);
-            setGameState(parsed);
-        } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : "Failed to fetch game state");
-            console.error("Error fetching game state:", err);
-        } finally {
-            setLoading(false);
-        }
-    }, [gameId, cosmosApi]);
+                const parsed: TexasHoldemStateDTO = JSON.parse(data.game_state);
+                setGameState(parsed);
+            } catch (err: unknown) {
+                setError(err instanceof Error ? err.message : "Failed to fetch game state");
+                console.error("Error fetching game state:", err);
+            } finally {
+                setLoading(false);
+            }
+        },
+        [gameId, cosmosApi]
+    );
 
     // Fetch current game state (fallback when no block height)
     const fetchCurrentGameState = useCallback(async () => {
@@ -305,7 +297,7 @@ export default function HandPage() {
             setLoading(true);
             setError(null);
 
-            const data = await cosmosApi.getPublicGameState(gameId) as { game_state?: string };
+            const data = (await cosmosApi.getPublicGameState(gameId)) as { game_state?: string };
             if (!data.game_state) throw new Error("No game_state in response");
 
             const parsed: TexasHoldemStateDTO = JSON.parse(data.game_state);
@@ -344,19 +336,25 @@ export default function HandPage() {
     useEffect(() => {
         const shortId = gameId ? gameId.substring(0, 10) : "";
         const handLabel = selectedHand ? ` Hand #${selectedHand.hand_number}` : "";
-        document.title = `${shortId}...${handLabel} - Block52 Explorer`;
-        return () => { document.title = "Block52 Chain"; };
+        document.title = `${shortId}...${handLabel} - Texas HODL Explorer`;
+        return () => {
+            document.title = "Texas HODL";
+        };
     }, [gameId, selectedHand]);
 
     if ((loading || !handsLoaded) && !gameState) {
         return (
-            <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
+            <div className="site-page">
                 <AnimatedBackground />
                 <div className={`backdrop-blur-md p-8 rounded-xl shadow-2xl text-center relative z-10 ${styles.containerCard}`}>
                     <div className="flex justify-center mb-4">
                         <svg className={`animate-spin h-10 w-10 ${styles.brandText}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                            <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            />
                         </svg>
                     </div>
                     <h2 className="text-2xl font-bold text-white">Loading hand...</h2>
@@ -368,7 +366,7 @@ export default function HandPage() {
     if (!gameState) {
         // Show error or "not found" when we have no game state to render
         return (
-            <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
+            <div className="site-page">
                 <AnimatedBackground />
                 <div className={`backdrop-blur-md p-8 rounded-xl shadow-2xl text-center max-w-lg relative z-10 ${styles.containerCard}`}>
                     <svg className={`h-16 w-16 mx-auto mb-4 ${styles.dangerText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -376,7 +374,10 @@ export default function HandPage() {
                     </svg>
                     <h2 className="text-2xl font-bold text-white mb-4">{error || "Hand not found"}</h2>
                     <p className="text-gray-400 text-sm mb-4">Could not load game state for this hand.</p>
-                    <button onClick={() => navigate("/explorer")} className={`px-6 py-2 rounded-lg font-bold transition-colors duration-200 ${styles.subtleBrandButton}`}>
+                    <button
+                        onClick={() => navigate("/explorer")}
+                        className={`px-6 py-2 rounded-lg font-bold transition-colors duration-200 ${styles.subtleBrandButton}`}
+                    >
                         Back to Explorer
                     </button>
                 </div>
@@ -385,9 +386,9 @@ export default function HandPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col items-center relative overflow-hidden p-4 md:p-6">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="w-full max-w-7xl relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
                 <div className="mb-4">
                     <button
@@ -415,15 +416,10 @@ export default function HandPage() {
                                     {selectedHand && (
                                         <div className="text-right text-sm">
                                             <span className="text-gray-400">Block </span>
-                                            <Link
-                                                to={`/explorer/block/${selectedHand.block_height}`}
-                                                className={`font-mono ${styles.brandText}`}
-                                            >
+                                            <Link to={`/explorer/block/${selectedHand.block_height}`} className={`font-mono ${styles.brandText}`}>
                                                 #{selectedHand.block_height}
                                             </Link>
-                                            <p className="text-gray-500 text-xs">
-                                                {new Date(selectedHand.created_at).toLocaleString()}
-                                            </p>
+                                            <p className="text-gray-500 text-xs">{new Date(selectedHand.created_at).toLocaleString()}</p>
                                         </div>
                                     )}
                                     <a
@@ -446,9 +442,7 @@ export default function HandPage() {
                         </div>
 
                         {/* Table visualization */}
-                        {gameState && (
-                            <ReadOnlyTable gameState={gameState} handData={selectedHand || undefined} />
-                        )}
+                        {gameState && <ReadOnlyTable gameState={gameState} handData={selectedHand || undefined} />}
 
                         {/* Previous actions log */}
                         {gameState && hasElements(gameState.previousActions) && (
@@ -463,9 +457,7 @@ export default function HandPage() {
                                             {hasContent(action.amount) && action.amount !== "0" && (
                                                 <span className="text-white">{formatStack(action.amount)}</span>
                                             )}
-                                            {action.round && (
-                                                <span className="text-gray-600 text-xs">({action.round})</span>
-                                            )}
+                                            {action.round && <span className="text-gray-600 text-xs">({action.round})</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -502,13 +494,13 @@ export default function HandPage() {
                                     <h3 className="text-sm font-bold text-white">Hands ({hands.length})</h3>
                                 </div>
                                 <div className="max-h-[600px] overflow-y-auto">
-                                    {hands.map((hand) => {
+                                    {hands.map(hand => {
                                         const isSelected = selectedHand?.hand_number === hand.hand_number;
                                         return (
                                             <button
                                                 key={hand.hand_number}
                                                 onClick={() => selectHand(hand)}
-                                                className={`w-full text-left px-4 py-3 border-b border-gray-700/30 transition-colors duration-150 ${
+                                                className={`w-full text-left px-4 py-3 border-b border-white/10/30 transition-colors duration-150 ${
                                                     isSelected ? styles.handListSelected : styles.handListItem
                                                 }`}
                                             >
@@ -516,13 +508,9 @@ export default function HandPage() {
                                                     <span className={`font-bold text-sm ${isSelected ? "text-white" : "text-gray-300"}`}>
                                                         Hand #{hand.hand_number}
                                                     </span>
-                                                    <span className="text-gray-500 text-xs">
-                                                        #{hand.block_height}
-                                                    </span>
+                                                    <span className="text-gray-500 text-xs">#{hand.block_height}</span>
                                                 </div>
-                                                <div className="text-gray-500 text-xs mt-1">
-                                                    {new Date(hand.created_at).toLocaleTimeString()}
-                                                </div>
+                                                <div className="text-gray-500 text-xs mt-1">{new Date(hand.created_at).toLocaleTimeString()}</div>
                                             </button>
                                         );
                                     })}

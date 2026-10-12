@@ -1,10 +1,13 @@
 .panel {
-    background-color: color-mix(in srgb, var(--ui-bg-dark) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    background: #0e0a13d9;
+    border: 1px solid #ffffff16;
+    border-radius: 14px;
 }
 
 .panelHeader {
-    border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 15%, transparent);
+    border-bottom: 1px solid #ffffff12;
+    padding: 12px 20px;
+    min-height: 54px;
 }
 
 .spinner {
@@ -12,10 +15,11 @@
 }
 
 .searchInput {
-    background-color: color-mix(in srgb, var(--ui-bg-medium) 80%, transparent);
-    border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+    background: #100b18;
+    border: 1px solid #ffffff20;
 }
 
 .searchButton {
-    background: linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 80%, transparent) 100%);
+    background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+    color: #200c1c;
 }

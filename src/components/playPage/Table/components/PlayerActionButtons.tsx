@@ -78,8 +78,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     // Sit-out intent is shared with the phone's hamburger drawer, which offers
     // the same two boxes (#684) — one owner, or the two copies drift and the
     // next-BB auto-submit fires twice.
-    const { nextHandChecked: isChecked, toggleNextHand: handleToggleSitOutNextHand, nextBbQueued: sitOutNextBbQueued, toggleNextBb } =
-        useSitOutIntent();
+    const { nextHandChecked: isChecked, toggleNextHand: handleToggleSitOutNextHand, nextBbQueued: sitOutNextBbQueued, toggleNextBb } = useSitOutIntent();
 
     // Sit-in/out submission runs through the shared ActionSubmitController: it
     // dedupes double-clicks, serializes, retries transport errors safely, holds
@@ -177,9 +176,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     onChange={toggleSeatAtBottom}
                     className="form-checkbox h-4 w-4 text-amber-500 border-gray-500 rounded focus:ring-0"
                 />
-                <span className={`ml-2 ${seatAtBottom ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>
-                    Seat me at 6 o'clock
-                </span>
+                <span className={`ml-2 ${seatAtBottom ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>Seat me at 6 o'clock</span>
             </label>
         </div>
     );
@@ -226,19 +223,9 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
             <>
                 {buyChipsElement}
                 <div className="fixed z-30 bottom-8 left-1/2 -translate-x-1/2">
-                    <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
-                        <div className="flex items-center gap-2">
-                            <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
-                            <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>You are spectating this table</span>
-                        </div>
-                        {!isTableFull && (
-                            <div className="flex items-center gap-2">
-                                <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
-                                <span className={`text-blue-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>
-                                    To join the table, click on an available seat.
-                                </span>
-                            </div>
-                        )}
+                    <div className="table-spectator-hint">
+                        <span className="table-spectator-dot" aria-hidden="true" />
+                        <span>{isTableFull ? "You’re watching · All seats are taken" : "You’re watching · Choose an open seat to play"}</span>
                     </div>
                 </div>
             </>
@@ -266,13 +253,13 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     disabled={sittingIn}
                     className={`flex items-center justify-center gap-2 rounded-lg shadow-lg border-2 font-bold tracking-wide uppercase transition-all duration-150 ${
                         sittingIn
-                            ? "bg-green-700 border-green-600 text-green-200 cursor-wait"
-                            : "bg-green-600 border-green-400 text-white hover:bg-green-500 hover:border-green-300 hover:scale-105 active:scale-95"
+                            ? "bg-[#6d32a8] border-[#b14cff] text-white cursor-wait"
+                            : "bg-[#b14cff] border-[#e3b8ff] text-white hover:bg-[#c16cff] hover:border-[#f1d8ff] hover:scale-105 active:scale-95"
                     } ${isCompact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"}`}
                 >
                     {sittingIn ? (
                         <>
-                            <div className="w-3 h-3 border-2 border-green-200 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Sitting in...
                         </>
                     ) : (
@@ -292,13 +279,13 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     disabled={sittingIn}
                     className={`flex items-center gap-2 rounded-lg shadow-lg border-2 font-bold tracking-wide uppercase transition-all duration-150 ${
                         sittingIn
-                            ? "bg-green-700 border-green-600 text-green-200 cursor-wait"
-                            : "bg-green-600 border-green-400 text-white hover:bg-green-500 hover:border-green-300 hover:scale-105 active:scale-95 animate-pulse"
+                            ? "bg-[#6d32a8] border-[#b14cff] text-white cursor-wait"
+                            : "bg-[#b14cff] border-[#e3b8ff] text-white hover:bg-[#c16cff] hover:border-[#f1d8ff] hover:scale-105 active:scale-95 animate-pulse"
                     } ${isCompact ? "px-3 py-2 text-xs" : "px-5 py-3 text-sm"}`}
                 >
                     {sittingIn ? (
                         <>
-                            <div className="w-3 h-3 border-2 border-green-200 border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             Sitting in...
                         </>
                     ) : (
@@ -313,8 +300,8 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
             return seatedFrame(
                 <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
                     <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 border-2 border-green-300 border-t-transparent rounded-full animate-spin" />
-                        <span className={`text-green-300 font-medium ${isCompact ? "text-xs" : "text-sm"}`}>Sitting in...</span>
+                        <div className="w-3 h-3 border-2 border-[#d9a8ff] border-t-transparent rounded-full animate-spin" />
+                        <span className={`text-[#d9a8ff] font-medium ${isCompact ? "text-xs" : "text-sm"}`}>Sitting in...</span>
                     </div>
                 </div>
             );
@@ -339,9 +326,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                             onChange={handleToggleSitOutNextHand}
                             className="form-checkbox h-4 w-4 text-amber-500 border-gray-500 rounded focus:ring-0"
                         />
-                        <span className={`ml-2 ${isChecked ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>
-                            Sit Out Next Hand
-                        </span>
+                        <span className={`ml-2 ${isChecked ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>Sit Out Next Hand</span>
                     </label>
                     <label className="flex items-center cursor-pointer">
                         <input
@@ -368,8 +353,8 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     }`}
                 >
                     <div className="flex items-center gap-2">
-                        <div className="animate-pulse w-2 h-2 rounded-full bg-blue-400" />
-                        <span className={`text-blue-300 font-medium whitespace-nowrap ${isCompactMobile ? "text-[11px]" : isCompact ? "text-xs" : "text-sm"}`}>
+                        <div className="animate-pulse w-2 h-2 rounded-full bg-[#b14cff]" />
+                        <span className={`text-[#d9a8ff] font-medium whitespace-nowrap ${isCompactMobile ? "text-[11px]" : isCompact ? "text-xs" : "text-sm"}`}>
                             Waiting for players to join...
                         </span>
                     </div>

@@ -98,11 +98,12 @@ export default function HandReplayPage() {
             setDeckHash(null);
             return;
         }
-        crypto.subtle.digest("SHA-256", new TextEncoder().encode(hand.deck))
-            .then(buf => {
-                const hex = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-                setDeckHash(hex);
-            });
+        crypto.subtle.digest("SHA-256", new TextEncoder().encode(hand.deck)).then(buf => {
+            const hex = Array.from(new Uint8Array(buf))
+                .map(b => b.toString(16).padStart(2, "0"))
+                .join("");
+            setDeckHash(hex);
+        });
     }, [hand?.deck]);
 
     // Sorted hand list for navigation
@@ -126,9 +127,9 @@ export default function HandReplayPage() {
     };
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 <ExplorerHeader title="Hand Replay" />
 
                 {loading ? (
@@ -144,7 +145,7 @@ export default function HandReplayPage() {
                             {gameId && handNumber && (
                                 <p className="mt-3 text-sm text-gray-300">
                                     The table replay reads the hand from the chain instead:{" "}
-                                    <Link to={`/table/${gameId}?hand=${handNumber}`} className="text-blue-300 hover:underline">
+                                    <Link to={`/table/${gameId}?hand=${handNumber}`} className="text-purple-200 hover:underline">
                                         open hand #{handNumber} on the table
                                     </Link>
                                 </p>
@@ -156,7 +157,7 @@ export default function HandReplayPage() {
                     </div>
                 ) : !handNumber && hasElements(hands) ? (
                     /* Hands list mode — no hand number in URL */
-                    <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                    <div className="bg-[#100c17] rounded-lg p-6 border border-white/10">
                         <h2 className="text-2xl font-bold text-white mb-2">Hands for Game</h2>
                         <p className="text-gray-400 font-mono text-sm mb-6">{gameId}</p>
                         <p className="text-gray-300 mb-4">
@@ -169,7 +170,7 @@ export default function HandReplayPage() {
                                     <Link
                                         key={h.hand_number}
                                         to={`/explorer/hand/${h.game_id}/${h.hand_number}`}
-                                        className="px-3 py-1.5 rounded text-sm transition-colors bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                        className="px-3 py-1.5 rounded text-sm transition-colors bg-[#21172b] text-gray-300 hover:bg-gray-600"
                                     >
                                         Hand #{h.hand_number}
                                     </Link>
@@ -187,7 +188,7 @@ export default function HandReplayPage() {
                         </div>
 
                         {/* Hand Info Card */}
-                        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+                        <div className="bg-[#100c17] rounded-lg p-6 border border-white/10 mb-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <p className="text-sm text-gray-400">Game ID</p>
@@ -195,7 +196,7 @@ export default function HandReplayPage() {
                                 </div>
                                 <div>
                                     <p className="text-sm text-gray-400">Block Height</p>
-                                    <Link to={`/explorer/block/${hand.block_height}`} className="text-blue-400 hover:text-blue-300">
+                                    <Link to={`/explorer/block/${hand.block_height}`} className="text-purple-300 hover:text-purple-200">
                                         #{hand.block_height.toLocaleString()}
                                     </Link>
                                 </div>
@@ -207,7 +208,7 @@ export default function HandReplayPage() {
                         </div>
 
                         {/* Community Cards */}
-                        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+                        <div className="bg-[#100c17] rounded-lg p-6 border border-white/10 mb-6">
                             <h3 className="text-lg font-semibold text-white mb-4">Community Cards</h3>
                             {hasElements(communityCards) ? (
                                 <div className="flex gap-3">
@@ -222,7 +223,7 @@ export default function HandReplayPage() {
 
                         {/* Revealed Hole Cards */}
                         {hasElements(holeCards) && (
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+                            <div className="bg-[#100c17] rounded-lg p-6 border border-white/10 mb-6">
                                 <h3 className="text-lg font-semibold text-white mb-4">Revealed Hole Cards</h3>
                                 <div className="flex gap-3">
                                     {holeCards.map((card, idx) => (
@@ -234,7 +235,7 @@ export default function HandReplayPage() {
 
                         {/* Hand Result */}
                         {hand.result && (
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+                            <div className="bg-[#100c17] rounded-lg p-6 border border-white/10 mb-6">
                                 <h3 className="text-lg font-semibold text-white mb-4">Result</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -253,7 +254,7 @@ export default function HandReplayPage() {
 
                         {/* Full Deck (Provably Fair) */}
                         {hasElements(deckCards) && (
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-6">
+                            <div className="bg-[#100c17] rounded-lg p-6 border border-white/10 mb-6">
                                 <h3 className="text-lg font-semibold text-white mb-4">Full Deck (Provably Fair)</h3>
                                 <p className="text-sm text-gray-400 mb-4">
                                     The complete shuffled deck derived from the on-chain seed. Verify this against the block hash.
@@ -277,7 +278,7 @@ export default function HandReplayPage() {
                                                 {copiedField === "deck" ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
                                             </button>
                                         </div>
-                                        <p className="text-white font-mono text-xs break-all bg-gray-900 rounded p-3 border border-gray-700">{hand.deck}</p>
+                                        <p className="text-white font-mono text-xs break-all bg-[#0c0911] rounded p-3 border border-white/10">{hand.deck}</p>
                                     </div>
                                 )}
 
@@ -294,7 +295,9 @@ export default function HandReplayPage() {
                                                 {copiedField === "seed" ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
                                             </button>
                                         </div>
-                                        <p className="text-white font-mono text-xs break-all bg-gray-900 rounded p-3 border border-gray-700">{hand.deck_seed}</p>
+                                        <p className="text-white font-mono text-xs break-all bg-[#0c0911] rounded p-3 border border-white/10">
+                                            {hand.deck_seed}
+                                        </p>
                                     </div>
                                 )}
 
@@ -311,7 +314,7 @@ export default function HandReplayPage() {
                                                 {copiedField === "hash" ? <FaCheck size={12} className="text-green-400" /> : <FaCopy size={12} />}
                                             </button>
                                         </div>
-                                        <p className="text-white font-mono text-xs break-all bg-gray-900 rounded p-3 border border-gray-700">{deckHash}</p>
+                                        <p className="text-white font-mono text-xs break-all bg-[#0c0911] rounded p-3 border border-white/10">{deckHash}</p>
                                     </div>
                                 )}
                             </div>
@@ -319,7 +322,7 @@ export default function HandReplayPage() {
 
                         {/* Hand Navigation */}
                         {sortedHands.length > 1 && (
-                            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            <div className="bg-[#100c17] rounded-lg p-6 border border-white/10">
                                 <h3 className="text-lg font-semibold text-white mb-4">All Hands in This Game ({sortedHands.length})</h3>
                                 <div className="flex flex-wrap gap-2">
                                     {sortedHands.map(h => (
@@ -327,7 +330,7 @@ export default function HandReplayPage() {
                                             key={h.hand_number}
                                             to={`/explorer/hand/${h.game_id}/${h.hand_number}`}
                                             className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                                                h.hand_number === currentHandNum ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                                                h.hand_number === currentHandNum ? "bg-[#7135a4] text-white" : "bg-[#21172b] text-gray-300 hover:bg-gray-600"
                                             }`}
                                         >
                                             Hand #{h.hand_number}

@@ -1,223 +1,189 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SitAndGoResultModal } from "./SitAndGoResultModal";
+import type { PlayerResultData } from "../../hooks/game/useSitAndGoPlayerResults";
 
-// Mock the data hook — the modal's trigger logic depends entirely on
-// what getPlayerResult returns. By varying the mock per test we can
-// drive all four states (not-finished, paid, unpaid, winner) without
-// standing up a real GameStateContext.
-const mockGetPlayerResult = jest.fn();
-const mockIsSitAndGo = jest.fn();
+const mockNavigate = jest.fn();
+let mockPayoutStatus = "unclaimed";
+const mockCheck = jest.fn();
+jest.mock("../../context/CosmosApiContext", () => ({ useCosmosApi: jest.fn() }));
+jest.mock("../../hooks/game/useSngPayoutStatus", () => ({
+    ...jest.requireActual("../../hooks/game/useSngPayoutStatus"),
+    useSngPayoutStatus: () => ({ status: mockPayoutStatus, check: mockCheck, retry: jest.fn() })
+}));
+jest.mock("react-router-dom", () => ({ useNavigate: () => mockNavigate }));
+let mockResult: PlayerResultData | null;
+let mockIsSitAndGo = true;
+let mockResults: { place: number }[] = [];
+const mockGetPlayerResult = () => mockResult;
 jest.mock("../../hooks/game/useSitAndGoPlayerResults", () => ({
     useSitAndGoPlayerResults: () => ({
-        getPlayerResult: mockGetPlayerResult,
-        isSitAndGo: mockIsSitAndGo(),
-        getSeatResult: jest.fn(),
-        allResults: [],
-        hasResults: false,
-    }),
+        getPlayerResult: () => mockGetPlayerResult(),
+        isSitAndGo: mockIsSitAndGo,
+        allResults: mockResults
+    })
 }));
-
-// USDC formatter — fixed for this test suite. We don't care about
-// exact formatting precision; we just need the payout to be a string
-// that doesn't collide with "$0.00" when present.
-jest.mock("../../utils/numberUtils", () => ({
-    formatUSDCToSimpleDollars: (raw: string) => raw,
-}));
-
-// Stub the Claim NFT flow's hooks. The render-level assertions in
-// this suite cover the "Leave Table" path + content variants; the
-// Claim flow has its own dedicated tests elsewhere. Mocks here are
-// inert so the modal mounts cleanly.
-const mockFetchSignature = jest.fn();
-jest.mock("../../hooks/game/useFetchSngClaimSignature", () => ({
-    useFetchSngClaimSignature: () => ({ fetchSignature: mockFetchSignature }),
-}));
-const mockClaim = jest.fn();
-jest.mock("../../hooks/wallet/useClaimSngWinNFT", () => ({
-    useClaimSngWinNFT: () => ({
-        claim: mockClaim,
-        hash: undefined,
-        isClaimPending: false,
-        isClaimConfirmed: false,
-        claimError: null,
-    }),
-}));
-jest.mock("../../hooks/wallet/useUserWalletConnect", () => ({
-    __esModule: true,
-    default: () => ({
-        address: "0xUSER",
-        isConnected: true,
-        open: jest.fn(),
-    }),
-}));
-
 const TABLE_ID = "0xabc";
 const USER_ADDRESS = "b521user";
-
-const setStoredAddress = (addr: string | null) => {
-    if (addr === null) localStorage.removeItem("user_cosmos_address");
-    else localStorage.setItem("user_cosmos_address", addr);
-};
+const dismissalKey = `viewed_sng_result_${TABLE_ID}_${USER_ADDRESS}`;
+const result = (place: number, payout = "400000") => ({ place, payout, isWinner: place === 1 });
+const show = (onClaim = jest.fn().mockResolvedValue(undefined)) =>
+    render(<SitAndGoResultModal tableId={TABLE_ID} onClaim={onClaim} />);
 
 beforeEach(() => {
+    mockNavigate.mockReset();
+    mockPayoutStatus = "unclaimed";
+    mockCheck.mockReset().mockResolvedValue(false);
     localStorage.clear();
-    mockGetPlayerResult.mockReset();
-    mockIsSitAndGo.mockReset();
-    mockFetchSignature.mockReset();
-    mockClaim.mockReset();
-    mockIsSitAndGo.mockReturnValue(true);
-    setStoredAddress(USER_ADDRESS);
+    localStorage.setItem("user_cosmos_address", USER_ADDRESS);
+    mockIsSitAndGo = true;
+    mockResult = result(3);
+    mockResults = [];
 });
 
-describe("SitAndGoResultModal", () => {
-    it("renders nothing when user has no tournament result yet", () => {
-        mockGetPlayerResult.mockReturnValue(null);
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
+test("opens the centred finishing-hand review immediately without review or NFT buttons", () => {
+    show();
+    expect(screen.getByRole("dialog", { name: "Tournament result" })).toHaveClass("sng-result-expanded");
+    expect(screen.getByRole("img", { name: "Texas HODL" })).toBeInTheDocument();
+    expect(screen.getByText(/finishing hand wasn’t captured/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Review/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /NFT/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Collect $0.40" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: /Spectate|Return to lobby/ })).toBeNull();
+});
 
-        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
-    });
+test.each([1, 2, 3, 4])("all paid positions offer Collect, including place %i", place => {
+    mockResult = result(place);
+    show();
+    expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$0.40");
+    expect(screen.getByRole("button", { name: "Collect $0.40" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /NFT/ })).toBeNull();
+});
 
-    it("renders nothing when not a Sit & Go", () => {
-        mockIsSitAndGo.mockReturnValue(false);
-        mockGetPlayerResult.mockReturnValue({ place: 1, payout: "1000000", isWinner: true });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
+test("collects once, waits for success, then offers navigation without auto-redirecting", async () => {
+    let complete!: () => void;
+    const claim = jest.fn(() => new Promise<void>(resolve => { complete = resolve; }));
+    show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    const busy = screen.getByRole("button", { name: "Collecting…" });
+    expect(busy).toBeDisabled();
+    fireEvent.click(busy);
+    await waitFor(() => expect(claim).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("button", { name: /Spectate|Return to lobby/ })).toBeNull();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    await act(async () => { complete(); });
+    expect(screen.getByRole("status")).toHaveTextContent("Your winnings have been collected.");
+    expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+    expect(screen.getByRole("button", { name: "Spectate table" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeEnabled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(localStorage.getItem(dismissalKey)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Spectate table" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(claim).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(localStorage.getItem(dismissalKey)).toBe("true");
+});
 
-        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
-    });
+test.each([1, 2])("place %i only offers Return to lobby after collection", async place => {
+    mockResult = result(place);
+    const claim = jest.fn().mockResolvedValue(undefined);
+    show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    await screen.findByRole("button", { name: "Return to lobby" });
+    expect(screen.queryByRole("button", { name: "Spectate table" })).toBeNull();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Return to lobby" }));
+    expect(mockNavigate).toHaveBeenCalledWith("/");
+    expect(claim).toHaveBeenCalledTimes(1);
+});
 
-    it("renders winner copy + payout for the tournament winner", () => {
-        mockGetPlayerResult.mockReturnValue({ place: 1, payout: "1000000", isWinner: true });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
+test("collection errors retain the review and allow retry, without exposing navigation", async () => {
+    const claim = jest.fn().mockRejectedValueOnce(new Error("Collection failed")).mockResolvedValueOnce(undefined);
+    show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Collection failed");
+    expect(screen.queryByRole("button", { name: /Spectate|Return to lobby/ })).toBeNull();
+    expect(localStorage.getItem(dismissalKey)).toBeNull();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    await screen.findByRole("button", { name: "Return to lobby" });
+    expect(claim).toHaveBeenCalledTimes(2);
+});
 
-        expect(screen.getByTestId("sng-result-modal")).toBeInTheDocument();
-        expect(screen.getByTestId("sng-result-heading")).toHaveTextContent(/won the tournament/i);
-        expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$1000000");
-    });
+test("retains the receipt when settlement removes the live player result", async () => {
+    const claim = jest.fn().mockResolvedValue(undefined);
+    const { rerender } = show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    await screen.findByRole("status");
+    mockResult = null;
+    rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} />);
+    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
+    expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$0.40");
+});
 
-    it("renders paid finish (2nd) with payout, no 'thanks for playing'", () => {
-        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
+test("keeps spectating available below second place even when a winner is recorded", async () => {
+    const claim = jest.fn().mockResolvedValue(undefined);
+    const { rerender } = show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    await screen.findByRole("button", { name: "Spectate table" });
+    mockResults = [{ place: 1 }];
+    rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} />);
+    expect(screen.getByRole("button", { name: "Spectate table" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
+});
 
-        expect(screen.getByTestId("sng-result-heading")).toHaveTextContent("You finished 2nd!");
-        expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$400000");
-        expect(screen.queryByText(/thanks for playing/i)).toBeNull();
-    });
+test("a previously collected prize skips Collect and offers navigation", () => {
+    mockPayoutStatus = "claimed";
+    const claim = jest.fn();
+    show(claim);
+    expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+    expect(screen.getByRole("button", { name: "Spectate table" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
+    expect(claim).not.toHaveBeenCalled();
+});
 
-    it("renders unpaid finish (4th of 4 in paid-3) with 'thanks for playing', no payout line", () => {
-        mockGetPlayerResult.mockReturnValue({ place: 4, payout: "0", isWinner: false });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
+test.each(["checking", "error"])("does not offer Collect when payout status is %s", status => {
+    mockPayoutStatus = status;
+    show();
+    expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+});
 
-        expect(screen.getByTestId("sng-result-heading")).toHaveTextContent("You busted out — finished 4th.");
-        expect(screen.getByText(/thanks for playing/i)).toBeInTheDocument();
-        expect(screen.queryByTestId("sng-result-payout")).toBeNull();
-    });
+test("a claim from another tab found at preflight never submits again", async () => {
+    mockCheck.mockResolvedValue(true);
+    const claim = jest.fn();
+    show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    await screen.findByRole("button", { name: "Return to lobby" });
+    expect(claim).not.toHaveBeenCalled();
+});
 
-    it("unpaid finisher: Spectate Table button fires onLeave and persists dismissal", async () => {
-        const onLeave = jest.fn();
-        mockGetPlayerResult.mockReturnValue({ place: 4, payout: "0", isWinner: false });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={onLeave} onClaim={jest.fn()} />);
+test("the chain's precise already-claimed error becomes a collected receipt", async () => {
+    show(jest.fn().mockRejectedValue(new Error("transaction failed: sit-and-go payout already claimed")));
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    await screen.findByRole("button", { name: "Return to lobby" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+});
 
-        fireEvent.click(screen.getByTestId("sng-result-leave-btn"));
+test.each(["Spectate table", "Return to lobby"])("unpaid finishers can choose %s without any transaction", action => {
+    mockResult = result(3, "0");
+    const claim = jest.fn();
+    show(claim);
+    expect(screen.getByText("Thanks for playing.")).toBeInTheDocument();
+    expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: action }));
+    expect(claim).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    if (action === "Return to lobby") expect(mockNavigate).toHaveBeenCalledWith("/");
+    else expect(mockNavigate).not.toHaveBeenCalled();
+});
 
-        expect(onLeave).toHaveBeenCalledTimes(1);
-        // Persisted dismissal flag is now set so a remount won't re-pop the modal.
-        expect(localStorage.getItem(`viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`)).toBe("true");
-    });
-
-    it("paid finisher: shows Claim (not Leave); claim calls onClaim then the button dismisses", async () => {
-        const onClaim = jest.fn().mockResolvedValue(undefined);
-        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={onClaim} />);
-
-        // A paid finisher claims — no Leave button is offered.
-        expect(screen.queryByTestId("sng-result-leave-btn")).toBeNull();
-        const claimBtn = screen.getByTestId("sng-result-claim-winnings-btn");
-
-        fireEvent.click(claimBtn);
-        await waitFor(() => expect(onClaim).toHaveBeenCalledTimes(1));
-        await waitFor(() => expect(claimBtn).toHaveTextContent(/paid!/i));
-
-        // The "Paid!" button now dismisses the modal (no chain leave).
-        fireEvent.click(screen.getByTestId("sng-result-claim-winnings-btn"));
-        expect(localStorage.getItem(`viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`)).toBe("true");
-    });
-
-    it("does NOT re-render on a remount once dismissed (refresh-after-close)", () => {
-        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-
-        // Simulate a previous session having dismissed the modal.
-        localStorage.setItem(
-            `viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`,
-            "true",
-        );
-
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
-
-        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
-    });
-
-    it("does NOT render if no user address is stored (spectator)", () => {
-        setStoredAddress(null);
-        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
-
-        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
-    });
-
-    describe("Claim NFT button (block52/poker-vm#2119)", () => {
-        // The button is conditionally rendered: only on paid finishes.
-
-        it("shows the Claim NFT button for a paid finish", () => {
-            mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-            render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
-            expect(screen.getByTestId("sng-result-claim-btn")).toBeInTheDocument();
-        });
-
-        it("does NOT show the Claim NFT button for an unpaid finish", () => {
-            mockGetPlayerResult.mockReturnValue({ place: 4, payout: "0", isWinner: false });
-            render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
-            expect(screen.queryByTestId("sng-result-claim-btn")).toBeNull();
-        });
-
-        it("Claim flow: signature fetched → contract claim called", async () => {
-            const payload = {
-                recipient: "0xUSER" as const,
-                gameId: "0xabc" as const,
-                place: 2,
-                payout: "400000",
-                timestamp: 1747300000,
-                format: "0xff" as const,
-                signature: "0xsig" as const,
-            };
-            mockFetchSignature.mockResolvedValue(payload);
-            mockClaim.mockResolvedValue(undefined);
-            mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-
-            render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
-            fireEvent.click(screen.getByTestId("sng-result-claim-btn"));
-
-            // Both calls should fire in order.
-            await new Promise(r => setTimeout(r, 0)); // flush microtasks
-            expect(mockFetchSignature).toHaveBeenCalledWith(TABLE_ID, USER_ADDRESS.toLowerCase());
-            expect(mockClaim).toHaveBeenCalledWith(payload);
-        });
-
-        it("surfaces the structured 'feature not yet live' error when fetchSignature throws", async () => {
-            mockFetchSignature.mockRejectedValue(
-                new Error("SNG win-NFT claim endpoint not yet deployed on the chain"),
-            );
-            mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
-
-            render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={jest.fn()} />);
-            fireEvent.click(screen.getByTestId("sng-result-claim-btn"));
-
-            // Error renders into the dedicated error slot.
-            await screen.findByTestId("sng-result-claim-error");
-            expect(screen.getByTestId("sng-result-claim-error")).toHaveTextContent(
-                /not yet deployed/i,
-            );
-            expect(mockClaim).not.toHaveBeenCalled();
-        });
-    });
+test.each(["unfinished", "cash", "spectator", "dismissed"])("does not open for %s", state => {
+    if (state === "unfinished") mockResult = null;
+    if (state === "cash") mockIsSitAndGo = false;
+    if (state === "spectator") localStorage.removeItem("user_cosmos_address");
+    if (state === "dismissed") localStorage.setItem(dismissalKey, "true");
+    show();
+    expect(screen.queryByRole("dialog")).toBeNull();
 });

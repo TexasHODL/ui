@@ -33,8 +33,7 @@ export const useWeb3Transfer = (web3Address: string | undefined): UseWeb3Transfe
             const usdcContract = new ethers.Contract(ETH_USDC_ADDRESS, USDC_ABI, provider);
             const balance = await usdcContract.balanceOf(web3Address);
             const formattedBalance = ethers.formatUnits(balance, 6);
-            const roundedBalance = parseFloat(formattedBalance).toFixed(2);
-            setWeb3Balance(roundedBalance);
+            setWeb3Balance(formattedBalance);
         } catch (error) {
             console.error("Error fetching USDC balance:", error);
             setWeb3Balance("0.00");

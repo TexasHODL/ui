@@ -1,0 +1,35 @@
+/* Preserve the existing 80px cards + 11px bottom clearance and seat anchors.
+   Two 60px cards overlap by 14px; centres are 23px either side of the seat. */
+.hole-card-fan {
+    display: flex;
+    justify-content: center;
+    width: 106px;
+    height: 91px;
+    flex: 0 0 106px;
+    isolation: isolate;
+    overflow: visible;
+}
+.hole-card-fan-slot {
+    display: block;
+    width: 60px;
+    height: 80px;
+    flex: 0 0 60px;
+    position: relative;
+    transform-origin: center;
+    transform: rotate(-8deg);
+    z-index: 1;
+}
+.hole-card-fan-slot + .hole-card-fan-slot {
+    margin-left: -14px;
+    transform: rotate(8deg);
+    z-index: 2;
+}
+.hole-card-fan-slot > img {
+    display: block;
+    width: 60px;
+    height: 80px;
+    max-width: none;
+    margin: 0;
+    border-radius: 5px;
+    box-shadow: 0 3px 7px #0005;
+}

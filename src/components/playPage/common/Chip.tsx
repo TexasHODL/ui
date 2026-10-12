@@ -1,5 +1,6 @@
+import { formatMicroUsd } from "../../../utils/moneyDisplay";
 import React from "react";
-import { formatUSDCToSimpleDollars, formatForSitAndGo, convertUSDCToNumber } from "../../../utils/numberUtils";
+import { formatForSitAndGo, convertUSDCToNumber } from "../../../utils/numberUtils";
 import { decomposeAmount } from "../../../utils/chipBreakdown";
 import { getChipImageUrl } from "../../../utils/cardImages";
 
@@ -84,7 +85,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     // Format based on game type: raw chips for tournaments, USDC conversion for cash
     const formattedAmount = isTournament
         ? formatForSitAndGo(Number(amountStr))
-        : formatUSDCToSimpleDollars(amountStr);
+        : formatMicroUsd(amountStr ?? 0);
 
     // For chip decomposition, always use dollar value
     const dollarAmount = isTournament

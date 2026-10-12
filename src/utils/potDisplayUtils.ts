@@ -1,5 +1,6 @@
+import { formatMicroUsd } from "./moneyDisplay";
 import { isTournamentFormat, isSitAndGoFormat, GameFormat, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { formatUSDCToSimpleDollars } from "./numberUtils";
+
 import { hasElements } from "./guards";
 
 export interface PotDisplayValues {
@@ -47,8 +48,8 @@ export function formatPotDisplay(
         totalPotFormatted = totalPotRaw === 0n ? "0" : formatChipCount(Number(totalPotRaw));
         mainPotFormatted = mainPotRaw === 0n ? "0" : formatChipCount(Number(mainPotRaw));
     } else {
-        totalPotFormatted = totalPotRaw === 0n ? "0.00" : formatUSDCToSimpleDollars(totalPotRaw.toString());
-        mainPotFormatted = mainPotRaw === 0n ? "0.00" : formatUSDCToSimpleDollars(mainPotRaw.toString());
+        totalPotFormatted = totalPotRaw === 0n ? "0.00" : formatMicroUsd(totalPotRaw);
+        mainPotFormatted = mainPotRaw === 0n ? "0.00" : formatMicroUsd(mainPotRaw);
     }
 
     return {

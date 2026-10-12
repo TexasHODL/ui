@@ -1,3 +1,8 @@
 .amountAccent {
   color: var(--brand-primary);
 }
+
+.primaryAmount {
+  color: inherit;
+  font-weight: 700;
+}

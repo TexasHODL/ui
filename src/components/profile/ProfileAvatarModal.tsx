@@ -264,7 +264,7 @@ export const ProfileAvatarModal: React.FC = () => {
                 )}
 
                 <div className={styles.footerActions}>
-                    <button className={styles.footerPrimaryButton} onClick={handleRefresh} disabled={isRefreshing || !viewAddress}>
+                    <button className={`hodl-primary ${styles.footerPrimaryButton}`} onClick={handleRefresh} disabled={isRefreshing || !viewAddress}>
                         {isRefreshing ? (
                             <span className={styles.buttonLoadingContent}>
                                 <span className={styles.buttonSpinner} />
@@ -291,7 +291,7 @@ export const ProfileAvatarModal: React.FC = () => {
                         </button>
                     )}
                     <button
-                        className={isRegistering ? styles.footerSecondaryButton : justRegistered ? styles.footerSuccessButton : styles.footerDangerButton}
+                        className={`hodl-secondary ${styles.footerSecondaryButton}`}
                         onClick={closeDrawer}
                         disabled={isRegistering}
                     >

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { colors } from "../../utils/colorConfig";
 import { Modal, LoadingSpinner } from "../common";
@@ -25,6 +25,7 @@ const ForceCloseTableModal: React.FC<ForceCloseTableModalProps> = React.memo(
     ({ isOpen, onClose, onConfirm, gameId, seatedPlayerCount }) => {
         const [isClosing, setIsClosing] = useState(false);
         const [error, setError] = useState<string | null>(null);
+        useEffect(() => { if (isOpen) { setIsClosing(false); setError(null); } }, [isOpen, gameId]);
 
         const handleConfirm = useCallback(async () => {
             setIsClosing(true);
@@ -110,7 +111,7 @@ const ForceCloseTableModal: React.FC<ForceCloseTableModalProps> = React.memo(
                     <button
                         onClick={onClose}
                         disabled={isClosing}
-                        className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 ${styles.buttonSecondary}`}
+                        className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 hodl-secondary ${styles.buttonSecondary}`}
                     >
                         Cancel
                     </button>

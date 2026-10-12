@@ -1,8 +1,8 @@
 name: Sync Fork
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"
+  # Texas HODL's customised production UI must not automatically follow upstream.
+  # Review upstream changes before explicitly running this manual workflow.
   workflow_dispatch:
 
 permissions:

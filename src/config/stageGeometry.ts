@@ -303,8 +303,8 @@ const DEALER_DISTANCE = 0.34;
 const TURN_ANIM_Y_OFFSET = 30;
 
 /** Horizontal distance from the seat centre to each hole card's centre: the two
- *  60px cards sit side by side with a 4px gap, so each is 32px off centre. */
-const HOLE_CARD_DX = 32;
+ *  60px cards overlap by 14px in HoleCardFan, so each is 23px off centre. */
+const HOLE_CARD_DX = 23;
 
 /** Vertical offset from the seat centre to the hole cards' centre. The 140px seat
  *  box is centred on the seat coordinate and the 80px card row is its first
@@ -736,8 +736,8 @@ export function getViewportMode(): ViewportMode {
  * paddingH:      horizontal breathing room within the container (total, split left/right)
  * paddingV:      vertical breathing room within the container (total, split top/bottom)
  * footerOverlay: px height of any FIXED overlay footer that sits ON TOP of the container.
- *                Only mobile-landscape has this (80px fixed footer). All other viewports
- *                have the footer in normal flex flow, so the container already excludes it.
+ *                Desktop/tablet retain a fixed footer. Mobile actions use measured
+ *                normal flow, so the stage already excludes their full height.
  *
  * Container dimensions are MEASURED from the actual parent div (via ref),
  * not guessed from window.innerHeight. This eliminates all header/footer guesswork.
@@ -760,13 +760,12 @@ export const VIEWPORT_PARAMS: Record<ViewportMode, {
     "mobile-landscape": {
         paddingH: 10,
         paddingV: 15,
-        footerOverlay: 80       // mobile landscape footer is 80px
+        footerOverlay: 0        // measured normal-flow action dock
     },
     "mobile-portrait": {
         paddingH: 12,
         paddingV: 10,
-        footerOverlay: 90       // no persistent footer bar — just clearance for the
-                                // on-demand action overlay + safe area at the bottom
+        footerOverlay: 0        // measured normal-flow action dock, including safe area
     }
 };
 
@@ -788,7 +787,7 @@ const MAX_GLOBAL_SCALE = 2.0;
 export const PLAYER_UI_PADDING: Record<ViewportMode, { x: number; top: number; bottom: number }> = {
     "desktop":          { x: 80, top: 90, bottom: 90 },    // symmetric → perfectly centered between header and footer
     "tablet":           { x: 80, top: 120, bottom: 90 },
-    "mobile-landscape": { x: 40, top: 80, bottom: 60 },    // extra top for browser chrome
+    "mobile-landscape": { x: 40, top: 90, bottom: 90 },    // complete 140px seat at COMPONENT_SCALE, including timer
     "mobile-portrait":  { x: 70, top: 90, bottom: 90 },    // symmetric — vertical stadium, hero at the bottom
 };
 
@@ -827,7 +826,7 @@ export function getContentBounds(tableSize: TableSize): ContentBounds {
 /**
  * Calculate zoom level to fit all content within the container.
  * containerWidth/Height come from the ACTUAL measured parent div (via ref).
- * footerOverlay is subtracted for mobile-landscape where the footer overlays the container.
+ * Fixed desktop/tablet footer space is subtracted; mobile stage is already clear.
  */
 export function calculateZoom(
     tableSize: TableSize,
@@ -848,7 +847,10 @@ export function calculateZoom(
     const scaleByHeight = usableHeight / bounds.height;
     const fitScale = Math.min(scaleByWidth, scaleByHeight);
 
-    const result = Math.max(MIN_SCALE, Math.min(fitScale, MAX_GLOBAL_SCALE));
+    // Short landscape screens (including browser chrome / keyboard) must still
+    // fit the complete seat ring. A 0.3 floor previously forced it into controls.
+    const minimum = mode.startsWith("mobile") ? 0.01 : MIN_SCALE;
+    const result = Math.max(minimum, Math.min(fitScale, MAX_GLOBAL_SCALE));
 
     return result;
 }
@@ -862,7 +864,8 @@ export function getTableTransform(
     zoom: number,
     tableSize: TableSize,
     containerWidth: number,
-    containerHeight: number
+    containerHeight: number,
+    horizontalOffset: number = 0
 ): string {
     const mode = getViewportMode();
     const params = VIEWPORT_PARAMS[mode];
@@ -878,7 +881,10 @@ export function getTableTransform(
     const scaledCenterX = bounds.centerX * zoom;
     const scaledCenterY = bounds.centerY * zoom;
 
-    const tx = usableCenterX - scaledCenterX;
+    // A fixed room-layout bias must not clip the seats or change the table scale.
+    const spareSideSpace = Math.max(0, (containerWidth - bounds.width * zoom) / 2 - 12);
+    const safeOffset = Math.max(-spareSideSpace, Math.min(spareSideSpace, horizontalOffset));
+    const tx = usableCenterX - scaledCenterX + safeOffset;
     const ty = usableCenterY - scaledCenterY;
 
     return `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${zoom})`;

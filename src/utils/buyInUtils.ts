@@ -1,3 +1,4 @@
+import { formatUsd } from "./moneyDisplay";
 /**
  * Buy-in calculation utilities for poker games.
  *
@@ -148,5 +149,5 @@ export const BUY_IN_PRESETS = {
  * @returns Formatted string like "$20.00 - $100.00"
  */
 export function formatBuyInRange(minBuyIn: number, maxBuyIn: number): string {
-    return `$${minBuyIn.toFixed(2)} - $${maxBuyIn.toFixed(2)}`;
+    return `$${formatUsd(minBuyIn)} - $${formatUsd(maxBuyIn)}`;
 }

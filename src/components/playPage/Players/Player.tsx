@@ -1,6 +1,7 @@
 import * as React from "react";
 import { memo, useMemo, useCallback, useState, useEffect } from "react";
 import Badge from "../common/Badge";
+import { HoleCardFan } from "../Card/HoleCardFan";
 import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
@@ -122,9 +123,10 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
             const muteCard1 = isWinner && hasWinningCards && !winnerCards.has(holeCards[1]);
 
             return (
-                <>
+                <HoleCardFan>
                     <img
                         src={getCardImageUrl(holeCards[0])}
+                        alt="Your first card"
                         width={60}
                         height={80}
                         className={`mb-[11px]${liftCard0 ? " animate-win-card" : ""}${muteCard0 ? " opacity-40" : ""}`}
@@ -132,12 +134,13 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                     />
                     <img
                         src={getCardImageUrl(holeCards[1])}
+                        alt="Your second card"
                         width={60}
                         height={80}
                         className={`mb-[11px]${liftCard1 ? " animate-win-card" : ""}${muteCard1 ? " opacity-40" : ""}`}
                         onError={_e => console.error(`❌ Player ${index} card2 failed to load:`, getCardImageUrl(holeCards[1]))}
                     />
-                </>
+                </HoleCardFan>
             );
         }, [holeCards, index, isWinner, winnerCards]);
 
@@ -161,7 +164,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         return (
             <div
                 key={index}
-                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${styles.secondaryText} ${styles.positionTransition}`}
+                className={`player-seat ${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${styles.secondaryText} ${styles.positionTransition}`}
                 style={containerStyle}
             >
                 {/* Development Mode Debug Info */}

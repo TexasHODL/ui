@@ -1,3 +1,4 @@
+import { formatUsd } from "./moneyDisplay";
 /**
  * Game Format Utilities
  *
@@ -318,7 +319,7 @@ export const getBlindsForDisplay = (
         return {
             smallBlind,
             bigBlind,
-            stakeLabel: `$${smallBlind.toFixed(2)} / $${bigBlind.toFixed(2)}`
+            stakeLabel: `$${formatUsd(smallBlind)} / $${formatUsd(bigBlind)}`
         };
     }
 };

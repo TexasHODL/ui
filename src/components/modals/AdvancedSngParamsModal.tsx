@@ -1,3 +1,4 @@
+import { formatUsd } from "../../utils/moneyDisplay";
 import React, { useMemo, useState } from "react";
 import { Modal } from "../common";
 import { hasContent } from "../../utils/guards";
@@ -122,7 +123,7 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
                         <p className="text-gray-500 text-[10px] uppercase">Buy-In</p>
-                        <p className="text-green-400 text-sm font-medium">${preview.buyIn.toFixed(2)}</p>
+                        <p className="text-green-400 text-sm font-medium">${formatUsd(preview.buyIn)}</p>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
                         <p className="text-gray-500 text-[10px] uppercase">Chips In Play</p>

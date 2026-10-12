@@ -1,3 +1,6 @@
+import { ModalHeader } from "../components/common/ModalHeader";
+import { formatMicroUsd } from "../utils/moneyDisplay";
+import { PageHeading } from "../components/common/PageHeading";
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { SigningCosmosClient, GameFormat } from "@block52/poker-vm-sdk";
@@ -526,32 +529,22 @@ export default function TestSigningPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center relative overflow-hidden p-6">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="w-full max-w-5xl relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-4xl font-extrabold text-white mb-2 text-center">Signing Cosmos Client Test Page</h1>
-                    <p className="text-gray-300 text-center">Test all SDK functions from Lucas's Signing Cosmos Client</p>
-                </div>
+                <PageHeading title="Test signing" description="Developer tools for testing SDK signing functions." eyebrow="PLATFORM TOOLS" />
 
                 {/* Token Info Section */}
-                <div
-                    className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 bg-blue-900/20 border border-blue-700"
-                >
-                    <h2 className="text-xl font-bold text-white mb-3">
-                        💡 Where Do Test Tokens Come From?
-                    </h2>
+                <div className="backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 bg-purple-900/20 border border-purple-700">
+                    <h2 className="text-xl font-bold text-white mb-3">💡 Where Do Test Tokens Come From?</h2>
                     <div className="space-y-3 text-gray-300 text-sm">
                         <div>
                             <span className="font-semibold">You need TWO types of tokens:</span>
                         </div>
                         <div className="ml-4 space-y-2">
                             <div>
-                                <span className="font-semibold text-white">
-                                    1. stake
-                                </span>{" "}
-                                - For gas fees
+                                <span className="font-semibold text-white">1. stake</span> - For gas fees
                                 <div className="text-xs text-gray-400 ml-4 mt-1">
                                     • Used to pay for ALL blockchain transactions
                                     <br />
@@ -562,10 +555,7 @@ export default function TestSigningPage() {
                                 </div>
                             </div>
                             <div>
-                                <span className="font-semibold text-white">
-                                    2. usdc
-                                </span>{" "}
-                                - For poker games
+                                <span className="font-semibold text-white">2. usdc</span> - For poker games
                                 <div className="text-xs text-gray-400 ml-4 mt-1">
                                     • Used for game buy-ins and bets
                                     <br />
@@ -590,12 +580,8 @@ export default function TestSigningPage() {
 
                 {/* Validator Funding Section - Primary Method for Fresh Testnet */}
                 {walletAddress && (
-                    <div
-                        className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.warningPanel}`}
-                    >
-                        <h2 className={`text-2xl font-bold mb-4 ${styles.warningTitle}`}>
-                            ⚡ Fund from Validator (Recommended for Fresh Testnet)
-                        </h2>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.warningPanel}`}>
+                        <h2 className={`text-2xl font-bold mb-4 ${styles.warningTitle}`}>⚡ Fund from Validator (Recommended for Fresh Testnet)</h2>
                         <div className="space-y-4">
                             <div className="text-sm text-gray-300">
                                 <p className="mb-2">
@@ -619,9 +605,7 @@ export default function TestSigningPage() {
                                 </ul>
                             </div>
 
-                            <div
-                                className={`p-4 rounded-lg ${styles.warningCommandBox}`}
-                            >
+                            <div className={`p-4 rounded-lg ${styles.warningCommandBox}`}>
                                 <div className="font-semibold text-white mb-2">📋 Copy this command:</div>
                                 <div className="text-xs font-mono text-gray-400 mb-3 break-all">
                                     pokerchaind tx bank send validator {walletAddress} 100000000stake --chain-id pokerchain --keyring-backend test --home
@@ -640,9 +624,7 @@ export default function TestSigningPage() {
                             </div>
 
                             {/* Stake only command (for bridge testing) */}
-                            <div
-                                className={`p-4 rounded-lg mt-4 ${styles.successCommandBox}`}
-                            >
+                            <div className={`p-4 rounded-lg mt-4 ${styles.successCommandBox}`}>
                                 <div className="font-semibold text-white mb-2">⛽ Fund with Stake (Gas Fees Only - For Bridge Testing!):</div>
                                 <div className="text-xs font-mono text-gray-400 mb-3 break-all">
                                     pokerchaind tx bank send validator {walletAddress} 100000000stake --chain-id pokerchain --keyring-backend test --home
@@ -652,20 +634,18 @@ export default function TestSigningPage() {
                                     onClick={() => {
                                         const command = `pokerchaind tx bank send validator ${walletAddress} 100000000stake --chain-id pokerchain --keyring-backend test --home ~/.pokerchain-testnet/node1 --fees 2000stake -y`;
                                         navigator.clipboard.writeText(command);
-                                        alert(`Stake funding command copied!\n\nThis will send:\n• 100 stake (for gas fees)\n\nUse bridge to deposit USDC from Ethereum!\n\n${command}`);
+                                        alert(
+                                            `Stake funding command copied!\n\nThis will send:\n• 100 stake (for gas fees)\n\nUse bridge to deposit USDC from Ethereum!\n\n${command}`
+                                        );
                                     }}
                                     className={`w-full py-3 px-4 text-sm font-semibold rounded-lg transition duration-200 hover:opacity-90 active:scale-95 ${styles.successActionButton}`}
                                 >
                                     📋 Copy Stake Funding Command (100 stake for gas)
                                 </button>
-                                <div className="text-xs text-gray-400 mt-2">
-                                    ⛽ Sends ONLY gas tokens - deposit USDC via bridge for real testing!
-                                </div>
+                                <div className="text-xs text-gray-400 mt-2">⛽ Sends ONLY gas tokens - deposit USDC via bridge for real testing!</div>
                             </div>
 
-                            <div
-                                className={`p-3 rounded text-xs mt-4 ${styles.keyDiffBox}`}
-                            >
+                            <div className={`p-3 rounded text-xs mt-4 ${styles.keyDiffBox}`}>
                                 <div className="font-semibold text-white mb-2">🔑 Key Differences from Test Accounts Below:</div>
                                 <div className="space-y-1 text-gray-400">
                                     <div>
@@ -686,20 +666,14 @@ export default function TestSigningPage() {
 
                 {/* Test Accounts Section */}
                 {walletAddress && (
-                    <div
-                        className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.successPanel}`}
-                    >
-                        <h2 className={`text-xl font-bold mb-4 ${styles.successTitle}`}>
-                            🏦 Test Accounts - Send Tokens (Only for Ignite Serve)
-                        </h2>
+                    <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.successPanel}`}>
+                        <h2 className={`text-xl font-bold mb-4 ${styles.successTitle}`}>🏦 Test Accounts - Send Tokens (Only for Ignite Serve)</h2>
                         <div className="text-sm text-gray-300 mb-4">
                             Click "Copy Command" to copy the CLI command, then run it in your terminal where pokerchaind is running.
                         </div>
 
                         {/* Command Explanation */}
-                        <div
-                            className={`mb-4 p-3 rounded text-xs ${styles.commandBreakdownBox}`}
-                        >
+                        <div className={`mb-4 p-3 rounded text-xs ${styles.commandBreakdownBox}`}>
                             <div className="font-semibold text-white mb-2">📚 Command Breakdown:</div>
                             <div className="space-y-1 text-gray-400 font-mono">
                                 <div>
@@ -727,10 +701,7 @@ export default function TestSigningPage() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {TEST_ACCOUNTS.map(account => (
-                                <div
-                                    key={account.address}
-                                    className={`p-4 rounded-lg ${styles.accountCard}`}
-                                >
+                                <div key={account.address} className={`p-4 rounded-lg ${styles.accountCard}`}>
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="font-bold text-white capitalize">{account.name}</span>
                                         <span className="text-xs text-gray-400 font-mono">
@@ -793,12 +764,8 @@ export default function TestSigningPage() {
                             <div className="text-green-400 font-semibold mb-4">✅ Client Initialized</div>
 
                             {/* Configuration Display */}
-                            <div
-                                className={`mb-4 p-4 rounded-lg ${styles.networkConfigBox}`}
-                            >
-                                <div className={`text-sm font-semibold mb-2 ${styles.brandPrimaryText}`}>
-                                    📡 Connected to: {currentNetwork.name}
-                                </div>
+                            <div className={`mb-4 p-4 rounded-lg ${styles.networkConfigBox}`}>
+                                <div className={`text-sm font-semibold mb-2 ${styles.brandPrimaryText}`}>📡 Connected to: {currentNetwork.name}</div>
                                 <div className="space-y-1 text-xs font-mono">
                                     <div className="flex justify-between text-gray-300">
                                         <span className="text-gray-400">RPC:</span>
@@ -826,9 +793,7 @@ export default function TestSigningPage() {
                             <div className="space-y-2">
                                 <div className="text-gray-300">
                                     <span className="font-semibold">Address:</span>{" "}
-                                    <span className={`font-mono text-sm ${styles.brandPrimaryText}`}>
-                                        {walletAddress}
-                                    </span>
+                                    <span className={`font-mono text-sm ${styles.brandPrimaryText}`}>{walletAddress}</span>
                                 </div>
                                 <div className="text-gray-300">
                                     <span className="font-semibold">Balances:</span>
@@ -843,7 +808,7 @@ export default function TestSigningPage() {
                                             const isMicroDenom = balance.denom === "usdc" || balance.denom === "stake";
                                             const numericAmount = isMicroDenom ? microToUsdc(balance.amount) : Number(balance.amount);
 
-                                            const displayAmount = numericAmount.toLocaleString("en-US", {
+                                            const displayAmount = balance.denom === "usdc" ? formatMicroUsd(balance.amount, true) : numericAmount.toLocaleString("en-US", {
                                                 minimumFractionDigits: 2,
                                                 maximumFractionDigits: 6
                                             });
@@ -851,20 +816,13 @@ export default function TestSigningPage() {
                                             // For usdc, show USD equivalent
                                             const isUSDC = balance.denom === "usdc";
                                             const usdValue = isUSDC
-                                                ? numericAmount.toLocaleString("en-US", {
-                                                      style: "currency",
-                                                      currency: "USD",
-                                                      minimumFractionDigits: 2,
-                                                      maximumFractionDigits: 2
-                                                  })
+                                                ? `${formatMicroUsd(balance.amount, true)}`
                                                 : null;
 
                                             return (
                                                 <div key={idx} className="text-sm">
                                                     <div className="flex items-baseline gap-2">
-                                                        <span className={`font-bold text-lg ${styles.successText}`}>
-                                                            {displayAmount}
-                                                        </span>
+                                                        <span className={`font-bold text-lg ${styles.successText}`}>{displayAmount}</span>
                                                         <span className="text-white font-medium">{balance.denom}</span>
                                                         {usdValue && <span className="text-gray-400 text-sm">≈ {usdValue}</span>}
                                                     </div>
@@ -890,10 +848,7 @@ export default function TestSigningPage() {
                             {/* getWalletAddress() */}
                             <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl ${styles.containerPanel}`}>
                                 <h3 className="text-xl font-bold text-white mb-4">2. getWalletAddress()</h3>
-                                <button
-                                    onClick={testGetWalletAddress}
-                                    className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
-                                >
+                                <button onClick={testGetWalletAddress} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}>
                                     Test Get Wallet Address
                                 </button>
                             </div>
@@ -965,10 +920,7 @@ export default function TestSigningPage() {
                                         </select>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={testSendTokens}
-                                    className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionSuccess}`}
-                                >
+                                <button onClick={testSendTokens} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionSuccess}`}>
                                     Test Send Tokens
                                 </button>
                             </div>
@@ -1072,10 +1024,7 @@ export default function TestSigningPage() {
                                     <p className="text-xs text-gray-500 mt-1">200,000 = 0.2 usdc</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={testCreateGame}
-                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
-                            >
+                            <button onClick={testCreateGame} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}>
                                 Test Create Game
                             </button>
                         </div>
@@ -1118,10 +1067,7 @@ export default function TestSigningPage() {
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                onClick={testJoinGame}
-                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionSuccess}`}
-                            >
+                            <button onClick={testJoinGame} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionSuccess}`}>
                                 Test Join Game
                             </button>
                         </div>
@@ -1167,10 +1113,7 @@ export default function TestSigningPage() {
                                     </div>
                                 </div>
                             </div>
-                            <button
-                                onClick={testPerformAction}
-                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionWithdraw}`}
-                            >
+                            <button onClick={testPerformAction} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionWithdraw}`}>
                                 Test Perform Action
                             </button>
                         </div>
@@ -1179,10 +1122,7 @@ export default function TestSigningPage() {
                         <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerPanel}`}>
                             <h3 className="text-xl font-bold text-white mb-4">7. queryGames()</h3>
                             <p className="text-gray-400 text-sm mb-4">Query all games from the blockchain</p>
-                            <button
-                                onClick={testQueryGames}
-                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
-                            >
+                            <button onClick={testQueryGames} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}>
                                 Test Query Games
                             </button>
                         </div>
@@ -1203,10 +1143,7 @@ export default function TestSigningPage() {
                                     <p className="text-xs text-gray-500 mt-1">Same Game ID used above</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={testQueryGameState}
-                                className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}
-                            >
+                            <button onClick={testQueryGameState} className={`w-full py-2 px-4 text-white font-bold rounded-lg ${styles.actionPrimary}`}>
                                 Test Query Game State
                             </button>
                         </div>
@@ -1227,14 +1164,12 @@ export default function TestSigningPage() {
                                         result.status === "success"
                                             ? styles.testResultSuccess
                                             : result.status === "error"
-                                            ? styles.testResultError
-                                            : styles.testResultPending
+                                              ? styles.testResultError
+                                              : styles.testResultPending
                                     }`}
                                 >
                                     <div className="flex items-start justify-between mb-2">
-                                        <span className={`font-mono text-sm ${styles.brandPrimaryText}`}>
-                                            {result.functionName}
-                                        </span>
+                                        <span className={`font-mono text-sm ${styles.brandPrimaryText}`}>{result.functionName}</span>
                                         <span
                                             className={`text-xs font-bold ${
                                                 result.status === "success" ? "text-green-400" : result.status === "error" ? "text-red-400" : "text-yellow-400"
@@ -1255,20 +1190,12 @@ export default function TestSigningPage() {
                 {/* Success Modal */}
                 {showSuccessModal && successTxHash && (
                     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-                        <div className="bg-gray-800 border border-green-500 rounded-xl p-8 max-w-lg w-full mx-4 shadow-2xl">
-                            <div className="flex items-center justify-center mb-6">
-                                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                                    <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <h2 className="text-2xl font-bold text-white text-center mb-4">Transaction Successful!</h2>
+                        <div className="hodl-modal border border-green-500 rounded-xl p-8 max-w-lg w-full mx-4 shadow-2xl">
+                            <ModalHeader title="Transaction Successful!" />
 
                             <p className="text-gray-300 text-center mb-6">{successMessage}</p>
 
-                            <div className="bg-gray-900 rounded-lg p-4 mb-6">
+                            <div className="bg-[#0c0911] rounded-lg p-4 mb-6">
                                 <p className="text-gray-400 text-sm mb-2">Transaction Hash:</p>
                                 <div className="flex items-center justify-between gap-2">
                                     <code className="text-green-400 text-xs font-mono break-all">{successTxHash}</code>
@@ -1295,7 +1222,7 @@ export default function TestSigningPage() {
                             <div className="flex gap-3">
                                 <Link
                                     to={`/explorer/tx/${successTxHash}`}
-                                    className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-center"
+                                    className="flex-1 px-6 py-3 bg-[#7135a4] hover:bg-[#8645ba] text-white font-semibold rounded-lg transition-colors text-center"
                                 >
                                     View on Explorer
                                 </Link>
@@ -1304,7 +1231,7 @@ export default function TestSigningPage() {
                                         setShowSuccessModal(false);
                                         setSuccessTxHash(null);
                                     }}
-                                    className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
+                                    className="flex-1 px-6 py-3 bg-[#21172b] hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors"
                                 >
                                     Close
                                 </button>
@@ -1315,7 +1242,7 @@ export default function TestSigningPage() {
             </div>
 
             {/* Powered by Block52 */}
-            <div className="fixed bottom-4 left-4 flex items-center z-10 opacity-30">
+            <div className="page-footer">
                 <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                     <div className="text-left mb-1">
                         <span className="text-xs text-white font-medium tracking-wide  ">POWERED BY</span>

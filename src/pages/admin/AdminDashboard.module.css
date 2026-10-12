@@ -1,6 +1,10 @@
 .menuCard {
-    background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
-    border-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+    background: #100c17d9;
+    border-color: #ffffff16;
+}
+.menuCard:hover {
+    border-color: #b68bd250;
+    background: #17101f;
 }
 
 .menuIconContainer {

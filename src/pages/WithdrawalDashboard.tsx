@@ -1,3 +1,6 @@
+import { formatMicroUsd } from "../utils/moneyDisplay";
+import { ModalHeader } from "../components/common/ModalHeader";
+import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
 import { isEmpty } from "../utils/guards";
@@ -6,7 +9,7 @@ import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
 import { copyToClipboard } from "../utils/clipboard";
 import { ethers } from "ethers";
-import { formatMicroAsUsdc, usdcToMicroBigInt, parseUsdcToMicro } from "../constants/currency";
+import { usdcToMicroBigInt, parseUsdcToMicro } from "../constants/currency";
 import { getSigningClient } from "../utils/cosmos/client";
 import { base64ToHex } from "../utils/encodingUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
@@ -94,7 +97,7 @@ export default function WithdrawalDashboard() {
                 cosmosAddress: wr.cosmos_address,
                 baseAddress: wr.base_address,
                 amount: wr.amount,
-                amountFormatted: formatMicroAsUsdc(wr.amount, 6),
+                amountFormatted: formatMicroUsd(wr.amount),
                 status: wr.status as "pending" | "signed" | "completed",
                 signature: wr.signature || undefined
             }));
@@ -186,12 +189,7 @@ export default function WithdrawalDashboard() {
             });
 
             // Use the useWithdraw hook which properly uses wagmi/reown wallet
-            await withdraw(
-                withdrawal.nonce,
-                withdrawal.baseAddress,
-                BigInt(withdrawal.amount),
-                hexSignature
-            );
+            await withdraw(withdrawal.nonce, withdrawal.baseAddress, BigInt(withdrawal.amount), hexSignature);
 
             toast.info(
                 <div>
@@ -217,11 +215,7 @@ export default function WithdrawalDashboard() {
             );
 
             // Update withdrawal status to completed
-            setWithdrawals(prev =>
-                prev.map(w =>
-                    w.nonce === processingNonce ? { ...w, status: "completed" as const, txHash: hash } : w
-                )
-            );
+            setWithdrawals(prev => prev.map(w => (w.nonce === processingNonce ? { ...w, status: "completed" as const, txHash: hash } : w)));
 
             setProcessingNonce(null);
 
@@ -305,26 +299,21 @@ export default function WithdrawalDashboard() {
     }, [selectedWithdrawal?.signature]);
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">USDC Withdrawals</h1>
-                    <p className="text-gray-400">
-                        Withdraw USDC from Block52 to Ethereum
-                        <span className="ml-2 font-mono text-sm text-gray-500">({bridgeContractAddress})</span>
-                    </p>
-                </div>
+                <PageHeading title="Withdrawals" description="Track USDC withdrawals from Block52 to Ethereum." eyebrow="YOUR ACCOUNT" />
+                <p className="mb-6 text-xs text-gray-500 break-all">
+                    Bridge contract: <span className="font-mono">{bridgeContractAddress}</span>
+                </p>
 
                 {/* Wallet Status */}
-                <div className="mb-6 bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div className="mb-6 bg-[#100c17] rounded-lg p-4 border border-white/10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p className="text-gray-400 text-sm mb-1">Block52 Wallet</p>
-                            <p className="text-white font-mono text-sm">
-                                {cosmosWallet.address ? cosmosWallet.address : "Not connected"}
-                            </p>
+                            <p className="text-white font-mono text-sm">{cosmosWallet.address ? cosmosWallet.address : "Not connected"}</p>
                         </div>
                         <div>
                             <p className="text-gray-400 text-sm mb-1">Ethereum Wallet</p>
@@ -335,7 +324,7 @@ export default function WithdrawalDashboard() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div className="bg-[#100c17] rounded-lg p-4 border border-white/10">
                         <p className="text-gray-400 text-sm mb-1">Total Withdrawals</p>
                         <p className="text-2xl font-bold text-white">{totalWithdrawals}</p>
                     </div>
@@ -343,9 +332,9 @@ export default function WithdrawalDashboard() {
                         <p className="text-yellow-400 text-sm mb-1">Pending</p>
                         <p className="text-2xl font-bold text-yellow-300">{pendingCount}</p>
                     </div>
-                    <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-700">
-                        <p className="text-blue-400 text-sm mb-1">Signed (Ready)</p>
-                        <p className="text-2xl font-bold text-blue-300">{signedCount}</p>
+                    <div className="bg-purple-900/20 rounded-lg p-4 border border-purple-700">
+                        <p className="text-purple-300 text-sm mb-1">Signed (Ready)</p>
+                        <p className="text-2xl font-bold text-purple-200">{signedCount}</p>
                     </div>
                     <div className="bg-green-900/30 rounded-lg p-4 border border-green-700">
                         <p className="text-green-400 text-sm mb-1">Completed</p>
@@ -354,13 +343,13 @@ export default function WithdrawalDashboard() {
                 </div>
 
                 {/* Controls */}
-                <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+                <div className="bg-[#100c17] rounded-lg p-6 mb-6 border border-white/10">
                     <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                         <div className="flex items-center gap-4">
                             <button
                                 onClick={() => setShowInitiateModal(true)}
                                 disabled={!cosmosWallet.address}
-                                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                                className="px-6 py-3 bg-[#7135a4] hover:bg-[#8645ba] disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
                             >
                                 + New Withdrawal
                             </button>
@@ -372,7 +361,7 @@ export default function WithdrawalDashboard() {
                                 <select
                                     value={filter}
                                     onChange={e => setFilter(e.target.value as any)}
-                                    className="px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                                    className="px-4 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white"
                                 >
                                     <option value="all">All</option>
                                     <option value="pending">Pending</option>
@@ -384,7 +373,7 @@ export default function WithdrawalDashboard() {
                             <button
                                 onClick={loadWithdrawals}
                                 disabled={isLoading}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600"
+                                className="px-6 py-2 bg-[#7135a4] hover:bg-[#8645ba] text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600"
                             >
                                 {isLoading ? "Loading..." : "Refresh"}
                             </button>
@@ -393,23 +382,19 @@ export default function WithdrawalDashboard() {
                 </div>
 
                 {/* Withdrawals Table */}
-                <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div className="bg-[#100c17] rounded-lg border border-white/10 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-900">
+                            <thead className="bg-[#0c0911]">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Nonce</th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">
-                                        Ethereum Address
-                                    </th>
-                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 tracking-wider">
-                                        Amount (USDC)
-                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Ethereum Address</th>
+                                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 tracking-wider">Amount (USDC)</th>
                                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-400 tracking-wider">Status</th>
                                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-400 tracking-wider">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-700">
+                            <tbody className="divide-y divide-white/10">
                                 {isEmpty(filteredWithdrawals) ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
@@ -422,7 +407,7 @@ export default function WithdrawalDashboard() {
                                     </tr>
                                 ) : (
                                     filteredWithdrawals.map(withdrawal => (
-                                        <tr key={withdrawal.nonce} className="hover:bg-gray-700/50 transition-colors">
+                                        <tr key={withdrawal.nonce} className="hover:bg-[#21172b] transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-white font-mono text-sm" title={withdrawal.nonce}>
                                                     #{truncateMiddle(withdrawal.nonce, 10, 4)}
@@ -430,9 +415,7 @@ export default function WithdrawalDashboard() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="text-white font-mono text-sm">
-                                                        {withdrawal.baseAddress}
-                                                    </span>
+                                                    <span className="text-white font-mono text-sm">{withdrawal.baseAddress}</span>
                                                     <button
                                                         onClick={() => copyToClipboard(withdrawal.baseAddress, "Address copied!")}
                                                         className="text-gray-400 hover:text-white transition-colors flex-shrink-0"
@@ -452,15 +435,9 @@ export default function WithdrawalDashboard() {
                                                 <span className="text-white font-semibold">{withdrawal.amountFormatted} USDC</span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                {withdrawal.status === "pending" && (
-                                                    <span className="text-sm text-yellow-400">Pending</span>
-                                                )}
-                                                {withdrawal.status === "signed" && (
-                                                    <span className="text-sm text-blue-400">Signed</span>
-                                                )}
-                                                {withdrawal.status === "completed" && (
-                                                    <span className="text-sm text-green-400">Completed</span>
-                                                )}
+                                                {withdrawal.status === "pending" && <span className="text-sm text-yellow-400">Pending</span>}
+                                                {withdrawal.status === "signed" && <span className="text-sm text-purple-300">Signed</span>}
+                                                {withdrawal.status === "completed" && <span className="text-sm text-green-400">Completed</span>}
                                                 {withdrawal.status === "error" && (
                                                     <span className="text-sm text-red-400 cursor-help" title={withdrawal.errorMessage}>
                                                         Error
@@ -473,18 +450,14 @@ export default function WithdrawalDashboard() {
                                                         <>
                                                             <button
                                                                 onClick={() => handleCompleteWithdrawal(withdrawal)}
-                                                                disabled={
-                                                                    processingNonce === withdrawal.nonce || !isConnected || !baseAddress
-                                                                }
+                                                                disabled={processingNonce === withdrawal.nonce || !isConnected || !baseAddress}
                                                                 className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors"
                                                             >
-                                                                {processingNonce === withdrawal.nonce
-                                                                    ? "Completing..."
-                                                                    : "Complete on Ethereum"}
+                                                                {processingNonce === withdrawal.nonce ? "Completing..." : "Complete on Ethereum"}
                                                             </button>
                                                             <button
                                                                 onClick={() => handleViewSignature(withdrawal)}
-                                                                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-colors"
+                                                                className="px-3 py-2 bg-[#21172b] hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-colors"
                                                                 title="View signature details"
                                                             >
                                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -516,7 +489,7 @@ export default function WithdrawalDashboard() {
                                                     ) : withdrawal.status === "completed" && withdrawal.signature ? (
                                                         <button
                                                             onClick={() => handleViewSignature(withdrawal)}
-                                                            className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
+                                                            className="px-3 py-2 bg-[#21172b] hover:bg-gray-600 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1"
                                                             title="View signature details"
                                                         >
                                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,17 +522,16 @@ export default function WithdrawalDashboard() {
                 </div>
 
                 {/* Info Box */}
-                <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                    <h3 className="text-blue-200 font-semibold mb-2">How Withdrawals Work</h3>
-                    <ul className="text-blue-300 text-sm space-y-1 list-disc list-inside">
+                <div className="mt-6 bg-purple-900/20 border border-purple-700 rounded-lg p-4">
+                    <h3 className="text-purple-200 font-semibold mb-2">How Withdrawals Work</h3>
+                    <ul className="text-purple-200 text-sm space-y-1 list-disc list-inside">
                         <li>
-                            <strong>Step 1 (Block52):</strong> Send a withdrawal request signed by your cosmos address
-                            with your Ethereum address in the message. The validator then signs the withdrawal payload
-                            for the deposit contract.
+                            <strong>Step 1 (Block52):</strong> Send a withdrawal request signed by your cosmos address with your Ethereum address in the
+                            message. The validator then signs the withdrawal payload for the deposit contract.
                         </li>
                         <li>
-                            <strong>Step 2 (Ethereum):</strong> Once the validator has signed, call the deposit
-                            contract withdraw function on Ethereum using MetaMask.
+                            <strong>Step 2 (Ethereum):</strong> Once the validator has signed, call the deposit contract withdraw function on Ethereum using
+                            MetaMask.
                         </li>
                         <li>Pending withdrawals auto-refresh every 5 seconds until the validator signs.</li>
                         <li>Make sure your Ethereum wallet is connected before completing withdrawals.</li>
@@ -568,7 +540,7 @@ export default function WithdrawalDashboard() {
             </div>
 
             {/* Powered by Block52 */}
-            <div className="fixed bottom-4 left-4 flex items-center z-10 opacity-30">
+            <div className="page-footer">
                 <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                     <div className="text-left mb-1">
                         <span className="text-xs text-white font-medium tracking-wide  ">POWERED BY</span>
@@ -580,8 +552,8 @@ export default function WithdrawalDashboard() {
             {/* Initiate Withdrawal Modal */}
             {showInitiateModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full border border-gray-700">
-                        <h2 className="text-2xl font-bold text-white mb-4">Initiate Withdrawal</h2>
+                    <div className="hodl-modal rounded-lg p-6 max-w-md w-full border border-white/10">
+                        <ModalHeader title="Initiate Withdrawal" />
 
                         <div className="space-y-4">
                             <div>
@@ -591,11 +563,9 @@ export default function WithdrawalDashboard() {
                                     value={withdrawalBaseAddress}
                                     onChange={e => setWithdrawalBaseAddress(e.target.value)}
                                     placeholder="0x..."
-                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white font-mono text-sm"
+                                    className="w-full px-4 py-3 bg-[#0c0911] border border-white/20 rounded-lg text-white font-mono text-sm"
                                 />
-                                <p className="text-gray-400 text-xs mt-1">
-                                    USDC will be sent to this address on Ethereum
-                                </p>
+                                <p className="text-gray-400 text-xs mt-1">USDC will be sent to this address on Ethereum</p>
                             </div>
 
                             <div>
@@ -607,7 +577,7 @@ export default function WithdrawalDashboard() {
                                     value={withdrawalAmount}
                                     onChange={e => setWithdrawalAmount(e.target.value)}
                                     placeholder="0.00"
-                                    className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white text-lg font-semibold"
+                                    className="w-full px-4 py-3 bg-[#0c0911] border border-white/20 rounded-lg text-white text-lg font-semibold"
                                 />
                                 <p className="text-gray-400 text-xs mt-1">Amount of USDC to withdraw from Block52</p>
                             </div>
@@ -620,14 +590,14 @@ export default function WithdrawalDashboard() {
                                     setWithdrawalAmount("");
                                 }}
                                 disabled={isInitiating}
-                                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                                className="flex-1 px-4 py-3 bg-[#21172b] hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleInitiateWithdrawal}
                                 disabled={isInitiating || !withdrawalBaseAddress || !withdrawalAmount}
-                                className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                                className="flex-1 px-4 py-3 bg-[#7135a4] hover:bg-[#8645ba] disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
                             >
                                 {isInitiating ? "Initiating..." : "Initiate Withdrawal"}
                             </button>

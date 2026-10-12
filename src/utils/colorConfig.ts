@@ -9,43 +9,43 @@
 export const colors = {
   // Primary and Secondary Brand Colors
   brand: {
-    primary: import.meta.env.VITE_BRAND_COLOR_PRIMARY || "#3b82f6",
-    secondary: import.meta.env.VITE_BRAND_COLOR_SECONDARY || "#1a2639",
+    primary: import.meta.env.VITE_BRAND_COLOR_PRIMARY || "#b14cff",
+    secondary: import.meta.env.VITE_BRAND_COLOR_SECONDARY || "#0c0a12",
   },
 
   // Table Background Colors
   table: {
-    bgGradientStart: import.meta.env.VITE_TABLE_BG_GRADIENT_START || "#1a2639",
-    bgGradientMid: import.meta.env.VITE_TABLE_BG_GRADIENT_MID || "#2a3f5f",
-    bgGradientEnd: import.meta.env.VITE_TABLE_BG_GRADIENT_END || "#1a2639",
-    bgBase: import.meta.env.VITE_TABLE_BG_BASE || "#111827",
-    borderColor: import.meta.env.VITE_TABLE_BORDER_COLOR || "#3a546d",
+    bgGradientStart: import.meta.env.VITE_TABLE_BG_GRADIENT_START || "#08080c",
+    bgGradientMid: import.meta.env.VITE_TABLE_BG_GRADIENT_MID || "#1b1029",
+    bgGradientEnd: import.meta.env.VITE_TABLE_BG_GRADIENT_END || "#08080c",
+    bgBase: import.meta.env.VITE_TABLE_BG_BASE || "#070709",
+    borderColor: import.meta.env.VITE_TABLE_BORDER_COLOR || "#30223f",
   },
 
   // Animation Colors (for gradient backgrounds)
   animation: {
-    color1: import.meta.env.VITE_ANIM_COLOR_1 || "#3d59a1",
-    color2: import.meta.env.VITE_ANIM_COLOR_2 || "#2a488f",
-    color3: import.meta.env.VITE_ANIM_COLOR_3 || "#4263af",
-    color4: import.meta.env.VITE_ANIM_COLOR_4 || "#1e346b",
-    color5: import.meta.env.VITE_ANIM_COLOR_5 || "#324f97",
+    color1: import.meta.env.VITE_ANIM_COLOR_1 || "#8b2cff",
+    color2: import.meta.env.VITE_ANIM_COLOR_2 || "#28103d",
+    color3: import.meta.env.VITE_ANIM_COLOR_3 || "#ff2fc8",
+    color4: import.meta.env.VITE_ANIM_COLOR_4 || "#140b24",
+    color5: import.meta.env.VITE_ANIM_COLOR_5 || "#ff8b1f",
   },
 
   // Accent Colors
   accent: {
-    glow: import.meta.env.VITE_ACCENT_COLOR_GLOW || "#64ffda",
-    success: import.meta.env.VITE_ACCENT_COLOR_SUCCESS || "#10b981",
-    danger: import.meta.env.VITE_ACCENT_COLOR_DANGER || "#ef4444",
-    warning: import.meta.env.VITE_ACCENT_COLOR_WARNING || "#f59e0b",
-    withdraw: import.meta.env.VITE_ACCENT_COLOR_WITHDRAW || (import.meta.env.VITE_BRAND_COLOR_SECONDARY || "#1a2639"),
+    glow: import.meta.env.VITE_ACCENT_COLOR_GLOW || "#f02bc6",
+    success: import.meta.env.VITE_ACCENT_COLOR_SUCCESS || "#55dda2",
+    danger: import.meta.env.VITE_ACCENT_COLOR_DANGER || "#ff557c",
+    warning: import.meta.env.VITE_ACCENT_COLOR_WARNING || "#ff9b2f",
+    withdraw: import.meta.env.VITE_ACCENT_COLOR_WITHDRAW || "#ff3eaa",
   },
 
   // UI Element Colors
   ui: {
-    bgDark: import.meta.env.VITE_UI_BG_DARK || "#1f2937",
-    bgMedium: import.meta.env.VITE_UI_BG_MEDIUM || "#374151",
-    borderColor: import.meta.env.VITE_UI_BORDER_COLOR || "rgba(59,130,246,0.2)",
-    textSecondary: import.meta.env.VITE_UI_TEXT_SECONDARY || "#9ca3af", // gray-400 equivalent
+    bgDark: import.meta.env.VITE_UI_BG_DARK || "#0b0b10",
+    bgMedium: import.meta.env.VITE_UI_BG_MEDIUM || "#15151d",
+    borderColor: import.meta.env.VITE_UI_BORDER_COLOR || "rgba(255,255,255,0.1)",
+    textSecondary: import.meta.env.VITE_UI_TEXT_SECONDARY || "#8b8995",
   },
 };
 

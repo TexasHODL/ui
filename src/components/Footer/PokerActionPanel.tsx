@@ -194,10 +194,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Auto-post blinds hook - automatically posts small/big blind when conditions are met
     // Can be disabled via URL query param: ?autoblinds=false or via settings panel
-    const handleAutoBlindSubmitted = useCallback(
-        (_blindType: "small" | "big", txHash: string) => onTransactionSubmitted?.(txHash),
-        [onTransactionSubmitted]
-    );
+    const handleAutoBlindSubmitted = useCallback((_blindType: "small" | "big", txHash: string) => onTransactionSubmitted?.(txHash), [onTransactionSubmitted]);
     useAutoPostBlinds(
         tableId,
         network,
@@ -220,18 +217,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         (_action: PlayerActionType.FOLD | PlayerActionType.CHECK, txHash: string) => onTransactionSubmitted?.(txHash),
         [onTransactionSubmitted]
     );
-    useAutoFold(
-        tableId,
-        network,
-        hasFoldAction,
-        hasCheckAction,
-        isUsersTurn,
-        timeRemaining,
-        submit,
-        isSubmitBusy,
-        handleAutoActionSubmitted,
-        autoFoldEnabled
-    );
+    useAutoFold(tableId, network, hasFoldAction, hasCheckAction, isUsersTurn, timeRemaining, submit, isSubmitBusy, handleAutoActionSubmitted, autoFoldEnabled);
 
     // Pre-select "Check" (ui#388): before it's the player's turn, if checking
     // would be free, offer a box that auto-checks the instant action reaches them.
@@ -463,7 +449,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     return (
         <div
-            className={`fixed left-0 right-0 text-white flex justify-center items-center relative ${
+            className={`poker-action-dock fixed left-0 right-0 text-white flex justify-center items-center relative ${
                 isMobileLandscape ? "bottom-0 p-0.5" : "bottom-12 lg:bottom-1 p-2 lg:p-1 pb-4 lg:pb-1"
             }`}
         >
@@ -475,13 +461,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 {/* Pre-select "Check" (ui#388) — offered when it's not your turn
                     and checking is currently free; auto-checks on your turn, and
                     clears itself the moment a bet lands. */}
-                {showPreCheck && (
-                    <PreCheckControl
-                        checked={preCheckQueued}
-                        onChange={setPreCheckQueued}
-                        isMobileLandscape={isMobileLandscape}
-                    />
-                )}
+                {showPreCheck && <PreCheckControl checked={preCheckQueued} onChange={setPreCheckQueued} isMobileLandscape={isMobileLandscape} />}
 
                 {/* Deal Button Group */}
                 {shouldShowDealButton && (

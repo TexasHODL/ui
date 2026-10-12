@@ -1,4 +1,4 @@
-import { getSeatPositions, getViewportMode, type TableSize } from "./stageGeometry";
+import { calculateZoom, VIEWPORT_PARAMS, getSeatPositions, getViewportMode, getTableTransform, getContentBounds, type TableSize } from "./stageGeometry";
 
 describe("getViewportMode", () => {
     const originalMatchMedia = window.matchMedia;
@@ -20,6 +20,22 @@ describe("getViewportMode", () => {
 
     afterEach(() => {
         window.matchMedia = originalMatchMedia;
+    });
+
+    it("moves the desktop table left without changing scale or vertical position", () => {
+        setViewport(1280, 800, false);
+        const normal = getTableTransform(0.6, 9, 1280, 680);
+        const shifted = getTableTransform(0.6, 9, 1280, 680, -48);
+        expect(parseFloat(shifted.slice(10))).toBeCloseTo(parseFloat(normal.slice(10)) - 48, 1);
+        expect(shifted.split(",")[1]).toBe(normal.split(",")[1]);
+    });
+
+    it("limits the left offset to the spare space so seats remain on screen", () => {
+        setViewport(900, 800, false);
+        const width = getContentBounds(9).width * 0.6 + 30;
+        const normal = getTableTransform(0.6, 9, width, 680);
+        const shifted = getTableTransform(0.6, 9, width, 680, -48);
+        expect(parseFloat(normal.slice(10)) - parseFloat(shifted.slice(10))).toBeCloseTo(3, 1);
     });
 
     it("returns mobile-landscape for standard mobile landscape widths", () => {
@@ -96,5 +112,24 @@ describe("getViewportMode", () => {
                 expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...ys) - Math.min(...ys));
             }
         });
+    });
+
+    it.each([
+        [390, 780, 72, 160], [360, 640, 72, 202], [966, 1100, 72, 180],
+        [844, 390, 72, 96], [667, 320, 72, 120], [1280, 740, 72, 96]
+    ])("fits every seat above the mobile action slot at %dx%d", (width, height, header, dock) => {
+        setViewport(width, height, true);
+        const stageHeight = height - header - dock;
+        expect(VIEWPORT_PARAMS[getViewportMode()].footerOverlay).toBe(0);
+        for (const size of [2, 4, 6, 9] as TableSize[]) {
+            const bounds = getContentBounds(size);
+            const scale = calculateZoom(size, width, stageHeight);
+            const transform = getTableTransform(scale, size, width, stageHeight);
+            const y = Number(transform.match(/translate\([^,]+, ([^)]+)px\)/)?.[1]);
+            const bottom = y + (bounds.centerY + bounds.height / 2) * scale;
+            const top = y + (bounds.centerY - bounds.height / 2) * scale;
+            expect(top).toBeGreaterThanOrEqual(0);
+            expect(bottom).toBeLessThanOrEqual(stageHeight);
+        }
     });
 });

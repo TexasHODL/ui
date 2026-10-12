@@ -190,8 +190,7 @@ describe("PlayerActionButtons", () => {
                 isTableFull={false}
             />
         );
-        expect(screen.getByText("You are spectating this table")).toBeInTheDocument();
-        expect(screen.getByText("To join the table, click on an available seat.")).toBeInTheDocument();
+        expect(screen.getByText("You’re watching · Choose an open seat to play")).toBeInTheDocument();
     });
 
     it("hides BuyChipsButton in SNG games even when TOP_UP is in legalActions", () => {

@@ -9,18 +9,18 @@ const CodeBlock: FC<{ title: string; code: string }> = ({ title, code }) => (
     <div className="mb-5">
         <div className="flex items-center justify-between mb-1">
             <span className="text-sm text-gray-300">{title}</span>
-            <button onClick={() => copyToClipboard(code, `${title} copied`)} className="text-xs text-blue-400 hover:text-blue-300">
+            <button onClick={() => copyToClipboard(code, `${title} copied`)} className="text-xs text-purple-300 hover:text-purple-200">
                 copy
             </button>
         </div>
-        <pre className="bg-gray-900 border border-gray-700 rounded-lg p-3 text-xs text-gray-200 overflow-x-auto whitespace-pre">{code}</pre>
+        <pre className="bg-[#0c0911] border border-white/10 rounded-lg p-3 text-xs text-gray-200 overflow-x-auto whitespace-pre">{code}</pre>
     </div>
 );
 
 const Step: FC<{ n: number; title: string; children: React.ReactNode }> = ({ n, title, children }) => (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-5 mb-4">
+    <div className="bg-[#100c17] border border-white/10 rounded-lg p-5 mb-4">
         <h3 className="text-white font-semibold mb-3">
-            <span className="text-blue-400 mr-2">{n}.</span>
+            <span className="text-purple-300 mr-2">{n}.</span>
             {title}
         </h3>
         {children}

@@ -1,3 +1,4 @@
+import { PageHeading } from "../../components/common/PageHeading";
 import { useState, useEffect, useCallback } from "react";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { LoadingSpinner } from "../../components/common/LoadingSpinner";
@@ -46,7 +47,7 @@ function NoteCard({ note }: { note: TechNote }) {
     const isStructured = !!(note.highlights || note.features || note.bugFixes || note.improvements || note.tests);
 
     return (
-        <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-6 hover:border-gray-500 transition-colors">
+        <div className="bg-[#100c17] border border-white/10 rounded-xl p-6 hover:border-gray-500 transition-colors">
             <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex items-center gap-3 flex-wrap">
                     {note.tags.map(tag => (
@@ -55,7 +56,7 @@ function NoteCard({ note }: { note: TechNote }) {
                         </span>
                     ))}
                     {note.version && (
-                        <span className="text-xs font-mono bg-gray-700 text-gray-300 border border-gray-600 px-2.5 py-0.5 rounded-full">{note.version}</span>
+                        <span className="text-xs font-mono bg-[#21172b] text-gray-300 border border-white/20 px-2.5 py-0.5 rounded-full">{note.version}</span>
                     )}
                     <h2 className="text-white font-semibold text-lg">{note.title}</h2>
                 </div>
@@ -69,7 +70,7 @@ function NoteCard({ note }: { note: TechNote }) {
                         <>
                             <Section title="Features" items={note.features ?? []} color="text-green-400" />
                             <Section title="Bug Fixes" items={note.bugFixes ?? []} color="text-red-400" />
-                            <Section title="Improvements" items={note.improvements ?? []} color="text-blue-400" />
+                            <Section title="Improvements" items={note.improvements ?? []} color="text-purple-300" />
                             <Section title="Tests" items={note.tests ?? []} color="text-teal-400" />
                         </>
                     )}
@@ -114,12 +115,10 @@ export default function TechNotesPage() {
     }, [fetchNotes]);
 
     return (
-        <div className="min-h-screen relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">Tech Notes</h1>
-                </div>
+            <div className="site-page-content">
+                <PageHeading title="Tech notes" description="What’s changed, what’s improved, and what’s new." eyebrow="THE PLATFORM" />
 
                 {loading && (
                     <div className="flex justify-center py-20">

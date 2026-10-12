@@ -1,9 +1,10 @@
+import { formatMicroUsd } from "../utils/moneyDisplay";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useNetwork } from "../context/NetworkContext";
 import { formatTimestampRelative } from "../utils/formatUtils";
-import { microToUsdc } from "../constants/currency";
+
 import styles from "./TransactionPanel.module.css";
 import {
     formatTransactionLabel,
@@ -302,7 +303,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                                             </span>
                                         )}
                                         <span className={`text-sm font-medium ${styles.primaryText}`}>
-                                            {microToUsdc(tx.amount || tx.transferAmount || "0")} USDC
+                                            {formatMicroUsd(tx.amount || tx.transferAmount || "0")} USDC
                                         </span>
                                         {tx.gameId && <span className="text-xs text-gray-500">Game: {formatGameId(tx.gameId)}</span>}
                                     </div>

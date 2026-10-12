@@ -1,3 +1,4 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useState, useEffect, useCallback } from "react";
 import { isNetworkError } from "../../apis/HTTPClient";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -139,13 +140,13 @@ export default function AddressPage() {
     useEffect(() => {
         if (urlAddress) {
             const shortAddress = `${urlAddress.substring(0, 10)}...${urlAddress.substring(urlAddress.length - 6)}`;
-            document.title = `Address ${shortAddress} - Block52 Explorer`;
+            document.title = `Address ${shortAddress} - Texas HODL Explorer`;
         } else {
-            document.title = "Address Search - Block52 Explorer";
+            document.title = "Address Search - Texas HODL Explorer";
         }
 
         return () => {
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, [urlAddress]);
 
@@ -157,6 +158,7 @@ export default function AddressPage() {
 
     const formatAmount = (amount: string, denom: string) => {
         // Assuming micro-denominations (6 decimals)
+        if (["usdc", "uusdc"].includes(denom.toLowerCase())) return `${formatMicroUsd(amount, true)} USDC`;
         const value = microToUsdc(amount);
         return `${value.toFixed(6)} ${formatDenom(denom)}`;
     };
@@ -168,10 +170,10 @@ export default function AddressPage() {
         `px-3 py-2 text-sm font-semibold border-b-2 transition-colors ${activeTab === tab ? styles.tabActive : styles.tabInactive}`;
 
     return (
-        <div className="min-h-screen p-4 sm:p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
 
-            <div className="max-w-5xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Explorer Navigation Header */}
                 <ExplorerHeader title="Block Explorer" />
 

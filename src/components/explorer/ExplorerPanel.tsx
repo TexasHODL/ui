@@ -25,11 +25,11 @@ export const ExplorerPanel: FC<{ header?: ReactNode; action?: ReactNode; childre
 );
 
 /** The one empty-state message style. */
-export const ExplorerEmpty: FC<{ children: ReactNode }> = ({ children }) => <p className="py-8 px-4 text-center text-sm text-gray-400">{children}</p>;
+export const ExplorerEmpty: FC<{ children: ReactNode }> = ({ children }) => <div className="page-empty text-sm text-gray-400">{children}</div>;
 
 /** The one loading style. */
 export const ExplorerLoading: FC<{ label: string }> = ({ label }) => (
-    <div className="py-8 text-center">
+    <div className="py-8 text-center" role="status">
         <div className={`animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-3 ${styles.spinner}`} />
         <p className="text-gray-400 text-sm">{label}</p>
     </div>
@@ -89,7 +89,11 @@ export const ExplorerSearchInput: FC<ExplorerSearchInputProps> = ({ value, onCha
 };
 
 /** The one error style (inside a panel, like the empty and loading states). */
-export const ExplorerError: FC<{ children: ReactNode }> = ({ children }) => <p className="py-6 px-4 text-center text-sm text-red-400">{children}</p>;
+export const ExplorerError: FC<{ children: ReactNode }> = ({ children }) => (
+    <p role="alert" className="py-6 px-4 text-center text-sm text-red-400">
+        {children}
+    </p>
+);
 
 /** A small icon button for a panel header action, e.g. reloading a list. */
 export const ExplorerReloadButton: FC<{ onClick: () => void; busy?: boolean; label?: string }> = ({ onClick, busy = false, label = "Reload list" }) => (

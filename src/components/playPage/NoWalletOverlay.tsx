@@ -1,7 +1,7 @@
+import { ModalHeader } from "../common/ModalHeader";
 import React, { useState, useCallback } from "react";
 import { generateWallet as generateWalletSDK, createWalletFromMnemonic as createWalletSDK } from "@block52/poker-vm-sdk";
 import { setCosmosMnemonic, setCosmosAddress, isValidSeedPhrase } from "../../utils/cosmos";
-import { HexagonPattern } from "../common/Modal";
 import styles from "./NoWalletOverlay.module.css";
 
 type Step = "choose" | "seed-phrase" | "importing";
@@ -84,40 +84,25 @@ const NoWalletOverlay: React.FC<NoWalletOverlayProps> = ({ onWalletReady }) => {
     return (
         /* Blurred table backdrop */
         <div className="fixed inset-0 z-[2000] backdrop-blur-md bg-black/60 flex items-center justify-center px-4">
-            <div className={`relative w-full max-w-md rounded-xl shadow-2xl p-6 space-y-5 overflow-hidden ${styles.modalContainer}`}>
-
-                {/* Hexagon pattern background */}
-                <HexagonPattern patternId="hexagons-nowallet" />
-
-                {/* Decorative card suits */}
-                <div className="absolute -right-8 -top-8 text-6xl opacity-10 rotate-12">♠</div>
-                <div className="absolute -left-8 -bottom-8 text-6xl opacity-10 -rotate-12">♥</div>
+            <div className={`hodl-modal relative w-full max-w-md rounded-xl shadow-2xl p-6 space-y-5 overflow-hidden ${styles.modalContainer}`}>
 
                 {/* ── Step: Choose ── */}
                 {step === "choose" && (
                     <>
-                        <div className="relative text-center space-y-1">
-                            <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                                <span className={styles.suitPrimary}>♣</span>
-                                Game Wallet Required
-                                <span className={styles.suitDanger}>♦</span>
-                            </h2>
-                            <div className={`w-full h-0.5 my-3 opacity-50 ${styles.dividerPrimary}`}></div>
-                            <p className={`text-sm ${styles.textSecondary}`}>
+                        <ModalHeader title="Game Wallet Required" subtitle={<>
                                 You need a Block52 game wallet to play. Create one now or import an existing one.
-                            </p>
-                        </div>
+                            </>} />
                         <div className="relative space-y-3">
                             <button
                                 onClick={handleCreate}
                                 disabled={isBusy}
-                                className={`w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 transition-all ${styles.primaryButton}`}
+                                className={`w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 transition-all hodl-primary ${styles.primaryButton}`}
                             >
                                 {isBusy ? "Generating..." : "Create New Wallet"}
                             </button>
                             <button
                                 onClick={() => setStep("importing")}
-                                className={`w-full py-3 rounded-xl font-semibold text-white transition-all ${styles.secondaryButton}`}
+                                className={`w-full py-3 rounded-xl font-semibold text-white transition-all hodl-secondary ${styles.secondaryButton}`}
                             >
                                 Import Existing Wallet
                             </button>
@@ -129,17 +114,9 @@ const NoWalletOverlay: React.FC<NoWalletOverlayProps> = ({ onWalletReady }) => {
                 {/* ── Step: Show seed phrase ── */}
                 {step === "seed-phrase" && (
                     <>
-                        <div className="relative text-center space-y-1">
-                            <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                                <span className={styles.suitPrimary}>♣</span>
-                                Save Your Seed Phrase
-                                <span className={styles.suitDanger}>♦</span>
-                            </h2>
-                            <div className={`w-full h-0.5 my-3 opacity-50 ${styles.dividerPrimary}`}></div>
-                            <p className={`text-sm ${styles.textSecondary}`}>
+                        <ModalHeader title="Save Your Seed Phrase" subtitle={<>
                                 Write these 24 words down in order and keep them safe. You cannot recover your wallet without them.
-                            </p>
-                        </div>
+                            </>} />
 
                         {/* Seed word grid */}
                         <div className="relative grid grid-cols-3 gap-2">
@@ -162,7 +139,7 @@ const NoWalletOverlay: React.FC<NoWalletOverlayProps> = ({ onWalletReady }) => {
                             <button
                                 onClick={handleConfirmSeedPhrase}
                                 disabled={isBusy}
-                                className={`w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 transition-all ${styles.primaryButton}`}
+                                className={`w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 transition-all hodl-primary ${styles.primaryButton}`}
                             >
                                 {isBusy ? "Saving..." : "I've Saved My Seed Phrase — Continue"}
                             </button>
@@ -180,17 +157,9 @@ const NoWalletOverlay: React.FC<NoWalletOverlayProps> = ({ onWalletReady }) => {
                 {/* ── Step: Import ── */}
                 {step === "importing" && (
                     <>
-                        <div className="relative text-center space-y-1">
-                            <h2 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                                <span className={styles.suitPrimary}>♣</span>
-                                Import Wallet
-                                <span className={styles.suitDanger}>♦</span>
-                            </h2>
-                            <div className={`w-full h-0.5 my-3 opacity-50 ${styles.dividerPrimary}`}></div>
-                            <p className={`text-sm ${styles.textSecondary}`}>
+                        <ModalHeader title="Import Wallet" subtitle={<>
                                 Enter your 12 or 24-word seed phrase to restore your wallet.
-                            </p>
-                        </div>
+                            </>} />
 
                         <textarea
                             value={importPhrase}
@@ -206,7 +175,7 @@ const NoWalletOverlay: React.FC<NoWalletOverlayProps> = ({ onWalletReady }) => {
                             <button
                                 onClick={handleImport}
                                 disabled={isBusy || !importPhrase.trim()}
-                                className={`w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 transition-all ${styles.primaryButton}`}
+                                className={`w-full py-3 rounded-xl font-semibold text-white disabled:opacity-50 transition-all hodl-primary ${styles.primaryButton}`}
                             >
                                 {isBusy ? "Importing..." : "Import Wallet"}
                             </button>

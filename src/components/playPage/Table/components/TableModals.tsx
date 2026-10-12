@@ -18,6 +18,9 @@ import TransactionPopup from "../../common/TransactionPopup";
 import { LeaveTableModal } from "../../../modals";
 
 export interface TableModalsProps {
+    /** Watch links never open an unsolicited entry prompt, even after refresh. */
+    isWatchMode: boolean;
+    hasOpenSeats: boolean;
     // Game Start Countdown
     showCountdown: boolean;
     gameStartTime: string | null;
@@ -49,6 +52,8 @@ export interface TableModalsProps {
 }
 
 export const TableModals: React.FC<TableModalsProps> = ({
+    isWatchMode,
+    hasOpenSeats,
     showCountdown,
     gameStartTime,
     handleCountdownComplete,
@@ -71,12 +76,13 @@ export const TableModals: React.FC<TableModalsProps> = ({
     return (
         <>
             {/* Game Start Countdown Modal */}
-            {showCountdown && gameStartTime && (
+            {showCountdown && gameStartTime && (!isWatchMode || isUserAlreadyPlaying) && (
                 <GameStartCountdown gameStartTime={gameStartTime} onCountdownComplete={handleCountdownComplete} onSkip={handleSkipCountdown} />
             )}
 
-            {/* Sit & Go Auto-Join Modal - Shows for Sit & Go games when user is not playing */}
-            {gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && (
+            {/* Watch is an explicit choice to view the live game, not to buy in.
+                Also protect direct links to full tables from an unusable prompt. */}
+            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && (
                 <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} />
             )}
 
@@ -88,14 +94,10 @@ export const TableModals: React.FC<TableModalsProps> = ({
                 />
             )}
 
-            {/* Sit & Go Result Modal - Self-gates on the user having a tournament
-                result in gameState.results[]. Skips the LeaveTableModal confirm
-                step and goes straight to the chain leave: the user has already
-                acknowledged the result by clicking "Leave Table", and the
-                table is finished — no balance-still-on-table concern.
-                block52/ui#371. */}
+            {/* Only collection sends a settlement transaction. Spectating and
+                returning to the lobby are viewing/navigation actions. */}
             {gameFormat && isSitAndGoFormat(gameFormat) && (
-                <SitAndGoResultModal tableId={tableId} onLeave={handleLeaveTableConfirm} onClaim={handleClaimWinnings} />
+                <SitAndGoResultModal key={tableId} tableId={tableId} onClaim={handleClaimWinnings} />
             )}
 
             {/* Transaction Popup - Bottom Right */}

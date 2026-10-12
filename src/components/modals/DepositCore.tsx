@@ -1,3 +1,4 @@
+import { formatUsd, formatMicroUsd } from "../../utils/moneyDisplay";
 import { useState, useEffect, useCallback } from "react";
 import { hasValue } from "../../utils/guards";
 import * as React from "react";
@@ -301,7 +302,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                                     <div className="mt-3 p-2 rounded bg-gray-800/50 text-xs">
                                         <div className="flex justify-between text-gray-300 font-medium">
                                             <span>You receive</span>
-                                            <span className="text-green-400">${(+amount).toFixed(2)} USDC</span>
+                                            <span className="text-green-400">${formatUsd(amount)} USDC</span>
                                         </div>
                                     </div>
                                 )}
@@ -326,7 +327,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                             {/* Deposit Button */}
                             <button
                                 onClick={handleCreateCryptoPayment}
-                                className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${styles.primaryGradientButton} ${
+                                className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 hodl-primary ${styles.primaryGradientButton} ${
                                     +amount < 10 || creatingPayment ? "opacity-50 cursor-not-allowed" : ""
                                 }`}
                                 disabled={+amount < 10 || creatingPayment}
@@ -340,7 +341,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                             {/* USDC Direct Deposit Flow */}
                             {!isConnected && (
                                 <button
-                                    className={`w-full py-3 rounded-lg text-white font-semibold mb-4 transition-all hover:opacity-90 ${styles.primaryGradientButton}`}
+                                    className={`w-full py-3 rounded-lg text-white font-semibold mb-4 transition-all hover:opacity-90 hodl-primary ${styles.primaryGradientButton}`}
                                     onClick={open}
                                 >
                                     Connect Your Web3 Wallet
@@ -397,7 +398,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                                 <div className="mb-4 p-3 rounded-lg bg-gray-900 border border-gray-700 flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Web3 Wallet Balance</span>
                                     <span className="text-white font-semibold">
-                                        ${formatUSDCToSimpleDollars(balance)} {selectedToken}
+                                        ${formatMicroUsd(balance ?? 0)} {selectedToken}
                                     </span>
                                 </div>
                             )}
@@ -447,7 +448,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                             {allowed ? (
                                 <button
                                     onClick={handleDeposit}
-                                    className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${styles.successGradientButton} ${
+                                    className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 hodl-primary ${styles.successGradientButton} ${
                                         +amount === 0 ? "opacity-50 cursor-not-allowed" : ""
                                     }`}
                                     disabled={+amount === 0 || isDepositPending || isPending || isCountingDown}
@@ -458,7 +459,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                             ) : (
                                 <button
                                     onClick={handleApprove}
-                                    className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 ${styles.primaryGradientButton} ${
+                                    className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 flex items-center justify-center gap-3 hodl-primary ${styles.primaryGradientButton} ${
                                         +amount === 0 ? "opacity-50 cursor-not-allowed" : ""
                                     }`}
                                     disabled={+amount === 0 || isApprovePending || isLoading}
@@ -498,7 +499,7 @@ const DepositCore: React.FC<DepositCoreProps> = ({ onSuccess, showMethodSelector
                     {["finished", "failed", "expired", "refunded"].includes(paymentStatus) && (
                         <button
                             onClick={handleNewPayment}
-                            className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryGradientButton}`}
+                            className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 hodl-primary ${styles.primaryGradientButton}`}
                         >
                             Create New Payment
                         </button>

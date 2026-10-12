@@ -1,5 +1,6 @@
+import { formatMicroUsd } from "./moneyDisplay";
 import { ethers } from "ethers";
-import { formatMicroAsUsdc } from "../constants/currency";
+
 import { truncateMiddle } from "./stringUtils";
 
 /**
@@ -28,7 +29,7 @@ export const formatPlayerId = (playerId: string): string => {
 
 /**
  * Format amount from micro-units to display format
- * Delegates to the centralized formatMicroAsUsdc helper for consistent formatting.
+ * Delegates to the display-only upward-cent formatter; tournament chips stay whole.
  * @param amount The amount in micro-units (6 decimals)
  * @param denom Optional denomination (e.g., "usdc"). If provided, appends uppercase denom instead of $ prefix.
  * @returns Formatted string (e.g., "$1.50" or "1.50 USDC")
@@ -38,7 +39,7 @@ export const formatAmount = (amount: string, denom?: string, isTournament?: bool
         // Tournament/SNG: raw chip values, no USDC conversion
         return `${Number(amount).toLocaleString()} chips`;
     }
-    const formatted = formatMicroAsUsdc(amount, 2);
+    const formatted = formatMicroUsd(amount);
     if (denom) {
         // Remove "u" prefix for Cosmos micro-denominations (e.g., "uusdc" -> "USDC")
         const displayDenom = denom.startsWith("u") ? denom.slice(1) : denom;

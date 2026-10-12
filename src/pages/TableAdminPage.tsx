@@ -1,3 +1,6 @@
+import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
+import "../components/common/TableCreation.css";
+import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { GameFormat, CosmosClient, getDefaultCosmosConfig, PlayerDTO, computeGameNameFee } from "@block52/poker-vm-sdk";
 import { Link, useNavigate } from "react-router-dom";
@@ -7,8 +10,8 @@ import { isEmpty } from "../utils/guards";
 import { useNewTable } from "../hooks/game/useNewTable";
 import { useFindGames } from "../hooks/game/useFindGames";
 import { toast } from "react-toastify";
-import { copyToClipboard } from "../utils/clipboard";
-import { formatMicroAsUsdc, USDC_DECIMALS, microToUsdc } from "../constants/currency";
+import TableCreatedModal from "../components/modals/TableCreatedModal";
+import { microToUsdc } from "../constants/currency";
 import { validateTableName, normalizeTableName, tableNameCharCount } from "../utils/tableName";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import TableList from "../components/TableList";
@@ -56,7 +59,7 @@ export default function TableAdminPage() {
     const [tableName, setTableName] = useState(""); // Optional paid table name (poker-vm#337)
     const [minPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(9);
-    
+
     // Selected blind level (index in BLIND_LEVELS array) — cash games only
     const [selectedBlindLevel, setSelectedBlindLevel] = useState(DEFAULT_BLIND_LEVEL_INDEX);
 
@@ -86,9 +89,7 @@ export default function TableAdminPage() {
         if (isTournamentFormat(newType)) {
             const validSngCounts = [2, 4, 6, 9];
             if (!validSngCounts.includes(maxPlayers)) {
-                const next = validSngCounts.reduce((a, b) =>
-                    Math.abs(b - maxPlayers) < Math.abs(a - maxPlayers) ? b : a
-                );
+                const next = validSngCounts.reduce((a, b) => (Math.abs(b - maxPlayers) < Math.abs(a - maxPlayers) ? b : a));
                 setMaxPlayers(next);
             }
         }
@@ -148,7 +149,7 @@ export default function TableAdminPage() {
         return balance ? parseInt(balance.amount) : 0;
     }, [cosmosWallet.balance]);
 
-    const usdcBalanceFormatted = (usdcBalance / Math.pow(10, USDC_DECIMALS)).toFixed(6);
+    const usdcBalanceFormatted = formatMicroUsd(usdcBalance);
 
     // Paid table name (poker-vm#337): normalize to the chain's canonical form so the
     // preview, fee, validation and submitted value all match the chain.
@@ -169,16 +170,16 @@ export default function TableAdminPage() {
             ),
         [gameFormat, smallBlind, bigBlind, tournamentBuyIn, calculatedMinBuyIn, startingStack]
     );
-    const creationFeeFormatted = creationFeeMicro === null ? "—" : formatMicroAsUsdc(creationFeeMicro.toString(), 6);
+    const creationFeeFormatted = creationFeeMicro === null ? "—" : formatMicroUsd(creationFeeMicro.toString());
     const totalCostMicro = creationFeeMicro === null ? null : creationFeeMicro + computeGameNameFee(normalizedTableName);
-    const totalCostFormatted = totalCostMicro === null ? "—" : formatMicroAsUsdc(totalCostMicro.toString(), 6);
+    const totalCostFormatted = totalCostMicro === null ? "—" : formatMicroUsd(totalCostMicro.toString());
     // Enough for the creation fee AND any name fee — the chain debits both.
     const hasEnoughUsdc = totalCostMicro !== null && BigInt(usdcBalance) >= totalCostMicro;
     const insufficientForName = totalCostMicro !== null && normalizedTableName.length > 0 && BigInt(usdcBalance) < totalCostMicro;
 
     // Transform fetched games to TableData format - memoized to prevent infinite loops
     const tables: TableData[] = useMemo(() => {
-        const mappedTables = fetchedGames.map((game) => ({
+        const mappedTables = fetchedGames.map(game => ({
             gameId: game.gameId,
             gameFormat: getGameFormat(game.gameFormat),
             minPlayers: game.minPlayers,
@@ -200,19 +201,20 @@ export default function TableAdminPage() {
 
     // Create a new table using the useNewTable hook
     const handleCreateTable = async () => {
-
         if (!cosmosWallet.address) {
             toast.error("No Block52 wallet found. Please create or import a wallet first.");
             return;
         }
 
         // Build rake config if enabled
-        const rakeConfig = enableRake ? {
-            rakeFreeThreshold: parseFloat(rakeFreeThreshold),
-            rakePercentage: parseFloat(rakePercentage),
-            rakeCap: parseFloat(rakeCap),
-            owner: rakeOwner || cosmosWallet.address || ""
-        } : undefined;
+        const rakeConfig = enableRake
+            ? {
+                  rakeFreeThreshold: parseFloat(rakeFreeThreshold),
+                  rakePercentage: parseFloat(rakePercentage),
+                  rakeCap: parseFloat(rakeCap),
+                  owner: rakeOwner || cosmosWallet.address || ""
+              }
+            : undefined;
 
         // For tournaments, use fixed buy-in; for cash games, use BB-calculated values
         const isTournament = isTournamentFormat(gameFormat);
@@ -220,15 +222,17 @@ export default function TableAdminPage() {
         const finalMaxBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMaxBuyIn;
 
         // Build SNG config if this is a tournament/SNG
-        const sngConfig = isTournament ? {
-            startingStack,
-            blindLevelDuration,
-            entryFee: parseFloat(entryFee) || 0
-        } : undefined;
+        const sngConfig = isTournament
+            ? {
+                  startingStack,
+                  blindLevelDuration,
+                  entryFee: parseFloat(entryFee) || 0
+              }
+            : undefined;
 
         // Store the table count before creating to verify a new table was added
         setTableCountBeforeCreation(tables.length);
-        
+
         try {
             // SNG requires fixed entrant count (min_players == max_players).
             const finalMinPlayers = isTournament ? maxPlayers : minPlayers;
@@ -245,7 +249,6 @@ export default function TableAdminPage() {
                 ...(rakeConfig && { rake: rakeConfig }),
                 ...(sngConfig && { sng: sngConfig })
             });
-
 
             if (result) {
                 // Show success modal with transaction link
@@ -301,9 +304,7 @@ export default function TableAdminPage() {
                         const gameState = JSON.parse(gameStateResponse.game_state);
                         // Count players with valid addresses (seated players)
                         // Filter out empty seats using the utility function
-                        const seatedPlayers = gameState.players?.filter((p: PlayerDTO | null) =>
-                            p !== null && isValidPlayerAddress(p.address)
-                        ).length || 0;
+                        const seatedPlayers = gameState.players?.filter((p: PlayerDTO | null) => p !== null && isValidPlayerAddress(p.address)).length || 0;
                         counts[table.gameId] = seatedPlayers;
                     }
                 } catch (err) {
@@ -338,615 +339,597 @@ export default function TableAdminPage() {
     const sitAndGoTables = tables.filter(t => t.maxPlayers <= 6).length;
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">Table Admin Dashboard</h1>
-                    <p className="text-gray-400">Create and manage poker tables</p>
-                </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                        <p className="text-gray-400 text-sm mb-1">Total Tables</p>
-                        <p className="text-2xl font-bold text-white">{totalTables}</p>
-                    </div>
-                    <div className="bg-green-900/30 rounded-lg p-4 border border-green-700">
-                        <p className="text-green-400 text-sm mb-1">Active Tables</p>
-                        <p className="text-2xl font-bold text-green-300">{activeTables}</p>
-                    </div>
-                    <div className="bg-blue-900/30 rounded-lg p-4 border border-blue-700">
-                        <p className="text-blue-400 text-sm mb-1">Sit & Go Tables</p>
-                        <p className="text-2xl font-bold text-blue-300">{sitAndGoTables}</p>
-                    </div>
-                </div>
+                <PageHeading title="Tables" description="Find a game, open a table, or create a place for your next hand." eyebrow="FIND YOUR GAME" />
 
                 {/* Create Table Form */}
-                <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
-                    <div className="flex justify-between items-start mb-4">
-                        <h2 className="text-xl font-bold text-white">Create New Table</h2>
-                        {cosmosWallet.address && (
-                            <div className="text-right">
-                                <p className="text-gray-400 text-xs">Your USDC Balance</p>
-                                <p className={`text-lg font-bold ${hasEnoughUsdc ? "text-green-400" : "text-red-400"}`}>
-                                    ${usdcBalanceFormatted} USDC
-                                </p>
+                <details className="page-panel page-create-table">
+                    <summary>
+                        Create a new table <span>Buy-in, blinds and advanced options</span>
+                    </summary>
+                    <div className="table-creation creation-layout">
+                        <section className="creation-fields" aria-label="Table settings">
+                            <div className="creation-section-heading">
+                                <span>01 / SET UP</span>
+                                <h2>Make it your table.</h2>
+                                <p>Choose the game, seats and stakes.</p>
                             </div>
-                        )}
-                    </div>
-
-                    {/* Creation Fee Info */}
-                    <div className="bg-gray-900 rounded-lg p-3 mb-4 border border-gray-700">
-                        <div className="flex items-center justify-between">
-                            <span className="text-gray-400 text-sm">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds):</span>
-                            <span className="text-white font-mono text-sm">{creationFeeFormatted} USDC</span>
-                        </div>
-                    </div>
-
-                    {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
-                    <div className="mb-4">
-                        <label className="text-gray-300 text-xs mb-1 block">
-                            Table Name <span className="text-gray-500">(optional)</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={tableName}
-                            onChange={e => setTableName(e.target.value)}
-                            placeholder="e.g. friday-degens"
-                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                        />
-                        {tableNameError ? (
-                            <p className="text-xs text-red-400 mt-1">{tableNameError}</p>
-                        ) : normalizedTableName.length > 0 ? (
-                            <p className="text-xs text-gray-400 mt-1">
-                                {tableNameCharCount(normalizedTableName)} characters × $0.10 ={" "}
-                                <span className="text-white font-semibold">${tableNameFeeUsd.toFixed(2)}</span>
-                                {normalizedTableName !== tableName && (
-                                    <span className="text-gray-500"> — saved as “{normalizedTableName}”</span>
-                                )}
-                                {insufficientForName && (
-                                    <span className="text-red-400"> — exceeds your ${usdcBalanceFormatted} balance</span>
-                                )}
-                            </p>
-                        ) : (
-                            <p className="text-xs text-gray-500 mt-1">Free if left blank. Lowercase a–z, 0–9 and hyphens; $0.10 per character.</p>
-                        )}
-                    </div>
-
-                    {/* Insufficient USDC Warning */}
-                    {cosmosWallet.address && !hasEnoughUsdc && (
-                        <div className="bg-red-900/30 border border-red-700 rounded-lg p-4 mb-4">
-                            <div className="flex items-start gap-3">
-                                <svg className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                <div>
-                                    <p className="text-red-300 font-semibold mb-1">Insufficient USDC Balance</p>
-                                    <p className="text-red-400/80 text-sm mb-3">
-                                        You need {totalCostFormatted} USDC to create this table ({CREATION_FEE_BIG_BLINDS.toString()} big blinds
-                                        {normalizedTableName.length > 0 ? " plus the name fee" : ""}).
-                                        Your current balance is ${usdcBalanceFormatted} USDC.
-                                    </p>
-                                    <Link
-                                        to="/"
-                                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors"
-                                    >
-                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m0-16l-4 4m4-4l4 4" />
-                                        </svg>
-                                        Deposit USDC from Ethereum
-                                    </Link>
-                                    <p className="text-gray-500 text-xs mt-2">
-                                        Go to Dashboard → Bridge Deposit to transfer USDC from Ethereum to your poker account
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                        <div>
-                            <label className="text-gray-300 text-xs mb-1 block">Game Type</label>
-                            <select
-                                value={gameFormat}
-                                onChange={e => {
-                                    const format = toGameFormat(e.target.value);
-                                    if (format) handleGameFormatChange(format);
-                                }}
-                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                            >
-                                <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
-                                <option value={GameFormat.TOURNAMENT}>Tournament</option>
-                                <option value={GameFormat.CASH}>Cash Game</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-gray-300 text-xs mb-1 block">Max Players</label>
-                            <select
-                                value={maxPlayers}
-                                onChange={e => setMaxPlayers(parseInt(e.target.value))}
-                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                            >
-                                <option value={2}>2 (Heads-Up)</option>
-                                <option value={4}>4 (Sit & Go)</option>
-                                <option value={6}>6 (Sit & Go)</option>
-                                <option value={9}>9 (Full Ring)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Blinds Dropdown - Cash games only */}
-                    {gameFormat === GameFormat.CASH && (
-                        <div className="mb-3">
-                            <label className="text-gray-300 text-xs mb-1 block">
-                                Game Size (Small Blind / Big Blind)
-                            </label>
-                            <select
-                                value={selectedBlindLevel}
-                                onChange={e => setSelectedBlindLevel(Number(e.target.value))}
-                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                            >
-                                {BLIND_LEVELS.map((level, index) => (
-                                    <option key={index} value={index}>
-                                        {level.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-
-                    {/* Buy-In Section */}
-                    <div className="mb-4">
-                        {isTournamentFormat(gameFormat) ? (
-                            <div className="space-y-4">
-                                {/* Buy In */}
-                                <div>
-                                    <label className="text-gray-300 text-xs mb-1 block">Buy In ($)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={tournamentBuyIn}
-                                        onChange={e => setTournamentBuyIn(e.target.value)}
-                                        className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                        placeholder="e.g., 10.00"
-                                    />
-                                    <p className="text-gray-500 text-xs mt-1">All players pay the same buy in</p>
-                                </div>
-
-                                {/* Entry Fee */}
-                                <div>
-                                    <label className="text-gray-300 text-xs mb-1 block">Entry Fee ($)</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={entryFee}
-                                        onChange={e => setEntryFee(e.target.value)}
-                                        className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                        placeholder="e.g., 0.50"
-                                    />
-                                    <p className="text-gray-500 text-xs mt-1">Flat fee to the creator on top of the buy in — 0 for none</p>
-                                </div>
-
-                                {/* Starting Stack */}
-                                <div>
-                                    <label className="text-gray-300 text-xs mb-2 block">Starting Stack (chips)</label>
-                                    <div className="flex gap-2 flex-wrap mb-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setStartingStack(1000)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                startingStack === 1000
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Turbo (1000)
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setStartingStack(1500)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                startingStack === 1500
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Standard (1500)
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setStartingStack(3000)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                startingStack === 3000
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Deep Stack (3000)
-                                        </button>
-                                    </div>
-                                    <input
-                                        type="number"
-                                        min="100"
-                                        step="100"
-                                        value={startingStack}
-                                        onChange={e => setStartingStack(Number(e.target.value))}
-                                        className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                    />
-                                </div>
-
-                                {/* Starting Blinds (chips) */}
-                                <div>
-                                    <label className="text-gray-300 text-xs mb-2 block">Starting Blinds (chips)</label>
-                                    <div className="flex gap-2 flex-wrap mb-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => { setSngSmallBlind(10); setSngBigBlind(20); }}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                sngSmallBlind === 10 && sngBigBlind === 20
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            10 / 20
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => { setSngSmallBlind(25); setSngBigBlind(50); }}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                sngSmallBlind === 25 && sngBigBlind === 50
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            25 / 50
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => { setSngSmallBlind(50); setSngBigBlind(100); }}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                sngSmallBlind === 50 && sngBigBlind === 100
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            50 / 100
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Blind Level Duration */}
-                                <div>
-                                    <label className="text-gray-300 text-xs mb-2 block">Blind Level Duration</label>
-                                    <div className="flex gap-2 flex-wrap mb-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setBlindLevelDuration(3)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                blindLevelDuration === 3
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Hyper (3 min)
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setBlindLevelDuration(5)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                blindLevelDuration === 5
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Turbo (5 min)
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setBlindLevelDuration(10)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                blindLevelDuration === 10
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Standard (10 min)
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setBlindLevelDuration(15)}
-                                            className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                                blindLevelDuration === 15
-                                                    ? "bg-blue-600 text-white"
-                                                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                            }`}
-                                        >
-                                            Deep (15 min)
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* SNG Settings Summary */}
-                                <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-                                    <p className="text-gray-400 text-xs mb-1">SNG Settings:</p>
-                                    <p className="text-green-400 text-sm font-medium">
-                                        {startingStack} chips • Blinds increase every {blindLevelDuration} min
-                                    </p>
-                                    <p className="text-gray-500 text-xs mt-1">
-                                        Starting blinds: {sngSmallBlind} / {sngBigBlind} chips
-                                    </p>
-                                </div>
-
-                                {/* Advanced Options — custom params via JSON */}
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAdvancedModal(true)}
-                                    className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-200 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <span>⚙</span>
-                                    Advanced Options (Custom Params)
-                                </button>
-                            </div>
-                        ) : (
-                            <>
-                                {/* Buy-In Presets */}
-                                <label className="text-gray-300 text-xs mb-2 block">Buy-In Presets</label>
-                                <div className="flex gap-2 flex-wrap mb-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => { setMinBuyInBB(BUY_IN_PRESETS.STANDARD.minBuyInBB); setMaxBuyInBB(BUY_IN_PRESETS.STANDARD.maxBuyInBB); }}
-                                        className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                            minBuyInBB === 20 && maxBuyInBB === 100
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                        }`}
-                                    >
-                                        Standard (20-100 BB)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setMinBuyInBB(BUY_IN_PRESETS.DEEP.minBuyInBB); setMaxBuyInBB(BUY_IN_PRESETS.DEEP.maxBuyInBB); }}
-                                        className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                            minBuyInBB === 40 && maxBuyInBB === 200
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                        }`}
-                                    >
-                                        Deep (40-200 BB)
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => { setMinBuyInBB(BUY_IN_PRESETS.DEEP_STACK.minBuyInBB); setMaxBuyInBB(BUY_IN_PRESETS.DEEP_STACK.maxBuyInBB); }}
-                                        className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
-                                            minBuyInBB === 100 && maxBuyInBB === 300
-                                                ? "bg-blue-600 text-white"
-                                                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                        }`}
-                                    >
-                                        Deep Stack (100-300 BB)
-                                    </button>
-                                </div>
-
-                                {/* Buy-In BB Inputs */}
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <div>
-                                        <label className="text-gray-300 text-xs mb-1 block">Min Buy-In (BB)</label>
-                                        <input
-                                            type="number"
-                                            min="20"
-                                            max="500"
-                                            value={minBuyInBB}
-                                            onChange={e => setMinBuyInBB(Number(e.target.value))}
-                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-gray-300 text-xs mb-1 block">Max Buy-In (BB)</label>
-                                        <input
-                                            type="number"
-                                            min="20"
-                                            max="500"
-                                            value={maxBuyInBB}
-                                            onChange={e => setMaxBuyInBB(Number(e.target.value))}
-                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Calculated Preview */}
-                                {parseFloat(bigBlind) > 0 && (
-                                    <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-700">
-                                        <p className="text-gray-400 text-xs mb-1">Calculated Buy-In Range:</p>
-                                        <p className="text-green-400 text-sm font-medium">
-                                            ${calculatedMinBuyIn.toFixed(2)} - ${calculatedMaxBuyIn.toFixed(2)}
-                                        </p>
-                                        <p className="text-gray-500 text-xs mt-1">
-                                            Based on ${parseFloat(bigBlind).toFixed(2)} BB
-                                        </p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-
-                    {/* Show Structure Section - Only for SNG/Tournament */}
-                    {isTournamentFormat(gameFormat) && (
-                        <div className="mb-4">
-                            <div className="flex items-center gap-2 mb-3">
-                                <input
-                                    type="checkbox"
-                                    id="showStructure"
-                                    checked={showStructure}
-                                    onChange={e => setShowStructure(e.target.checked)}
-                                    className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                                />
-                                <label htmlFor="showStructure" className="text-gray-300 text-sm font-medium">
-                                    Show Blind Structure
+                            {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
+                            <div className="mb-4">
+                                <label className="text-gray-300 text-xs mb-1 block">
+                                    Table Name <span className="text-gray-500">(optional)</span>
                                 </label>
+                                <input
+                                    type="text"
+                                    aria-label="Table name"
+                                    value={tableName}
+                                    onChange={e => setTableName(e.target.value)}
+                                    placeholder="e.g. friday-degens"
+                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                />
+                                {tableNameError ? (
+                                    <p className="text-xs text-red-400 mt-1">{tableNameError}</p>
+                                ) : normalizedTableName.length > 0 ? (
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        {tableNameCharCount(normalizedTableName)} characters × $0.10 ={" "}
+                                        <span className="text-white font-semibold">${formatUsd(tableNameFeeUsd)}</span>
+                                        {normalizedTableName !== tableName && <span className="text-gray-500"> — saved as “{normalizedTableName}”</span>}
+                                        {insufficientForName && <span className="text-red-400"> — exceeds your ${usdcBalanceFormatted} balance</span>}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-gray-500 mt-1">Free if left blank. Lowercase a–z, 0–9 and hyphens; $0.10 per character.</p>
+                                )}
                             </div>
 
-                            {showStructure && (
-                                <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="text-gray-400 border-b border-gray-700">
-                                                <th className="text-left py-2 px-2">Level</th>
-                                                <th className="text-left py-2 px-2">Small Blind</th>
-                                                <th className="text-left py-2 px-2">Big Blind</th>
-                                                <th className="text-left py-2 px-2">Duration</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="text-gray-300">
-                                            {Array.from({ length: 10 }, (_, i) => {
-                                                const sb = parseInt(smallBlind) || 25;
-                                                const bb = parseInt(bigBlind) || 50;
-                                                const levelSB = sb * Math.pow(2, i);
-                                                const levelBB = bb * Math.pow(2, i);
-                                                return (
-                                                    <tr key={i} className={i === 0 ? "bg-green-900/20" : ""}>
-                                                        <td className="py-2 px-2">{i + 1}</td>
-                                                        <td className="py-2 px-2">{levelSB.toLocaleString()}</td>
-                                                        <td className="py-2 px-2">{levelBB.toLocaleString()}</td>
-                                                        <td className="py-2 px-2">{blindLevelDuration} min</td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                    <p className="text-gray-500 text-xs mt-3">
-                                        * Blinds double each level. Level 1 is highlighted.
-                                    </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="text-gray-300 text-xs mb-1 block">Game Type</label>
+                                    <select
+                                        aria-label="Game type"
+                                        value={gameFormat}
+                                        onChange={e => {
+                                            const format = toGameFormat(e.target.value);
+                                            if (format) handleGameFormatChange(format);
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    >
+                                        <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
+                                        <option value={GameFormat.TOURNAMENT}>Tournament</option>
+                                        <option value={GameFormat.CASH}>Cash Game</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-gray-300 text-xs mb-1 block">Max Players</label>
+                                    <select
+                                        aria-label="Number of players"
+                                        value={maxPlayers}
+                                        onChange={e => setMaxPlayers(parseInt(e.target.value))}
+                                        className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    >
+                                        <option value={2}>2 (Heads-Up)</option>
+                                        <option value={4}>4 (Sit & Go)</option>
+                                        <option value={6}>6 (Sit & Go)</option>
+                                        <option value={9}>9 (Full Ring)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Blinds Dropdown - Cash games only */}
+                            {gameFormat === GameFormat.CASH && (
+                                <div className="mb-3">
+                                    <label className="text-gray-300 text-xs mb-1 block">Game Size (Small Blind / Big Blind)</label>
+                                    <select
+                                        aria-label="Starting blinds"
+                                        value={selectedBlindLevel}
+                                        onChange={e => setSelectedBlindLevel(Number(e.target.value))}
+                                        className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    >
+                                        {BLIND_LEVELS.map((level, index) => (
+                                            <option key={index} value={index}>
+                                                {level.label}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                             )}
-                        </div>
-                    )}
 
-                    {/* Rake Configuration Section - Only for Cash Games */}
-                    <div className="mb-4">
-                        <div className="flex items-center gap-2 mb-3">
-                            <input
-                                type="checkbox"
-                                id="enableRake"
-                                checked={enableRake && gameFormat === GameFormat.CASH}
-                                onChange={e => setEnableRake(e.target.checked)}
-                                disabled={gameFormat !== GameFormat.CASH}
-                                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                            />
-                            <label htmlFor="enableRake" className={`text-sm font-medium ${gameFormat === GameFormat.CASH ? "text-gray-300" : "text-gray-500"}`}>
-                                Enable Rake Collection {gameFormat !== GameFormat.CASH && "(Cash games only)"}
-                            </label>
-                        </div>
+                            {/* Buy-In Section */}
+                            <div className="mb-4">
+                                {isTournamentFormat(gameFormat) ? (
+                                    <div className="space-y-4">
+                                        {/* Buy In */}
+                                        <div>
+                                            <label className="text-gray-300 text-xs mb-1 block">Buy In ($)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                aria-label="Tournament buy-in"
+                                                value={tournamentBuyIn}
+                                                onChange={e => setTournamentBuyIn(e.target.value)}
+                                                className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                placeholder="e.g., 10.00"
+                                            />
+                                            <p className="text-gray-500 text-xs mt-1">All players pay the same buy in</p>
+                                        </div>
 
-                        {enableRake && gameFormat === GameFormat.CASH && (
-                            <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <div>
-                                        <label className="text-gray-300 text-xs mb-1 block">Rake-Free Threshold (USDC)</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={rakeFreeThreshold}
-                                            onChange={e => setRakeFreeThreshold(e.target.value)}
-                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                            placeholder="0 = rake all pots"
-                                        />
-                                        <p className="text-gray-500 text-xs mt-1">Pots below this amount are rake-free</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-gray-300 text-xs mb-1 block">Rake Percentage (%)</label>
-                                        <select
-                                            value={rakePercentage}
-                                            onChange={e => setRakePercentage(e.target.value)}
-                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
+                                        {/* Entry Fee */}
+                                        <div>
+                                            <label className="text-gray-300 text-xs mb-1 block">Entry Fee ($)</label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                aria-label="Entry fee"
+                                                value={entryFee}
+                                                onChange={e => setEntryFee(e.target.value)}
+                                                className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                placeholder="e.g., 0.50"
+                                            />
+                                            <p className="text-gray-500 text-xs mt-1">Flat fee to the creator on top of the buy in — 0 for none</p>
+                                        </div>
+
+                                        {/* Starting Stack */}
+                                        <div>
+                                            <label className="text-gray-300 text-xs mb-2 block">Starting Stack (chips)</label>
+                                            <div className="flex gap-2 flex-wrap mb-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setStartingStack(1000)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        startingStack === 1000 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Turbo (1000)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setStartingStack(1500)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        startingStack === 1500 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Standard (1500)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setStartingStack(3000)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        startingStack === 3000 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Deep Stack (3000)
+                                                </button>
+                                            </div>
+                                            <input
+                                                type="number"
+                                                min="100"
+                                                step="100"
+                                                aria-label="Starting stack"
+                                                value={startingStack}
+                                                onChange={e => setStartingStack(Number(e.target.value))}
+                                                className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                            />
+                                        </div>
+
+                                        {/* Starting Blinds (chips) */}
+                                        <div>
+                                            <label className="text-gray-300 text-xs mb-2 block">Starting Blinds (chips)</label>
+                                            <div className="flex gap-2 flex-wrap mb-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSngSmallBlind(10);
+                                                        setSngBigBlind(20);
+                                                    }}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        sngSmallBlind === 10 && sngBigBlind === 20 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    10 / 20
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSngSmallBlind(25);
+                                                        setSngBigBlind(50);
+                                                    }}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        sngSmallBlind === 25 && sngBigBlind === 50 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    25 / 50
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setSngSmallBlind(50);
+                                                        setSngBigBlind(100);
+                                                    }}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        sngSmallBlind === 50 && sngBigBlind === 100 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    50 / 100
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Blind Level Duration */}
+                                        <div>
+                                            <label className="text-gray-300 text-xs mb-2 block">Blind Level Duration</label>
+                                            <div className="flex gap-2 flex-wrap mb-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBlindLevelDuration(3)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        blindLevelDuration === 3 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Hyper (3 min)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBlindLevelDuration(5)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        blindLevelDuration === 5 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Turbo (5 min)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBlindLevelDuration(10)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        blindLevelDuration === 10 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Standard (10 min)
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setBlindLevelDuration(15)}
+                                                    className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                        blindLevelDuration === 15 ? "creation-preset-active" : "creation-preset"
+                                                    }`}
+                                                >
+                                                    Deep (15 min)
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* SNG Settings Summary */}
+                                        <div className="bg-[#0c0911] rounded-lg p-3 border border-white/10">
+                                            <p className="text-gray-400 text-xs mb-1">SNG Settings:</p>
+                                            <p className="text-green-400 text-sm font-medium">
+                                                {startingStack} chips • Blinds increase every {blindLevelDuration} min
+                                            </p>
+                                            <p className="text-gray-500 text-xs mt-1">
+                                                Starting blinds: {sngSmallBlind} / {sngBigBlind} chips
+                                            </p>
+                                        </div>
+
+                                        {/* Advanced Options — custom params via JSON */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAdvancedModal(true)}
+                                            className="w-full px-3 py-2 bg-[#21172b] hover:bg-gray-600 text-gray-200 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                                         >
-                                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                                                <option key={n} value={String(n)}>{n}%</option>
-                                            ))}
-                                        </select>
-                                        <p className="text-gray-500 text-xs mt-1">Typically 2% - 5%</p>
+                                            <span>⚙</span>
+                                            Advanced Options (Custom Params)
+                                        </button>
                                     </div>
+                                ) : (
+                                    <>
+                                        {/* Buy-In Presets */}
+                                        <label className="text-gray-300 text-xs mb-2 block">Buy-In Presets</label>
+                                        <div className="flex gap-2 flex-wrap mb-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setMinBuyInBB(BUY_IN_PRESETS.STANDARD.minBuyInBB);
+                                                    setMaxBuyInBB(BUY_IN_PRESETS.STANDARD.maxBuyInBB);
+                                                }}
+                                                className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                    minBuyInBB === 20 && maxBuyInBB === 100 ? "creation-preset-active" : "creation-preset"
+                                                }`}
+                                            >
+                                                Standard (20-100 BB)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setMinBuyInBB(BUY_IN_PRESETS.DEEP.minBuyInBB);
+                                                    setMaxBuyInBB(BUY_IN_PRESETS.DEEP.maxBuyInBB);
+                                                }}
+                                                className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                    minBuyInBB === 40 && maxBuyInBB === 200 ? "creation-preset-active" : "creation-preset"
+                                                }`}
+                                            >
+                                                Deep (40-200 BB)
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setMinBuyInBB(BUY_IN_PRESETS.DEEP_STACK.minBuyInBB);
+                                                    setMaxBuyInBB(BUY_IN_PRESETS.DEEP_STACK.maxBuyInBB);
+                                                }}
+                                                className={`px-3 py-1.5 text-xs rounded transition-all duration-200 ${
+                                                    minBuyInBB === 100 && maxBuyInBB === 300 ? "creation-preset-active" : "creation-preset"
+                                                }`}
+                                            >
+                                                Deep Stack (100-300 BB)
+                                            </button>
+                                        </div>
+
+                                        {/* Buy-In BB Inputs */}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Min Buy-In (BB)</label>
+                                                <input
+                                                    type="number"
+                                                    min="20"
+                                                    max="500"
+                                                    aria-label="Minimum buy-in"
+                                                    value={minBuyInBB}
+                                                    onChange={e => setMinBuyInBB(Number(e.target.value))}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Max Buy-In (BB)</label>
+                                                <input
+                                                    type="number"
+                                                    min="20"
+                                                    max="500"
+                                                    aria-label="Maximum buy-in"
+                                                    value={maxBuyInBB}
+                                                    onChange={e => setMaxBuyInBB(Number(e.target.value))}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Calculated Preview */}
+                                        {parseFloat(bigBlind) > 0 && (
+                                            <div className="bg-[#0c0911] rounded-lg p-3 border border-white/10">
+                                                <p className="text-gray-400 text-xs mb-1">Calculated Buy-In Range:</p>
+                                                <p className="text-green-400 text-sm font-medium">
+                                                    ${formatUsd(calculatedMinBuyIn)} - ${formatUsd(calculatedMaxBuyIn)}
+                                                </p>
+                                                <p className="text-gray-500 text-xs mt-1">Based on ${formatUsd(bigBlind)} BB</p>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Show Structure Section - Only for SNG/Tournament */}
+                            {isTournamentFormat(gameFormat) && (
+                                <div className="mb-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <input
+                                            type="checkbox"
+                                            id="showStructure"
+                                            checked={showStructure}
+                                            onChange={e => setShowStructure(e.target.checked)}
+                                            className="w-4 h-4 text-blue-600 bg-[#21172b] border-white/20 rounded focus:ring-blue-500"
+                                        />
+                                        <label htmlFor="showStructure" className="text-gray-300 text-sm font-medium">
+                                            Show Blind Structure
+                                        </label>
+                                    </div>
+
+                                    {showStructure && (
+                                        <div className="bg-[#0c0911] rounded-lg p-4 border border-white/10">
+                                            <table className="w-full text-sm">
+                                                <thead>
+                                                    <tr className="text-gray-400 border-b border-white/10">
+                                                        <th className="text-left py-2 px-2">Level</th>
+                                                        <th className="text-left py-2 px-2">Small Blind</th>
+                                                        <th className="text-left py-2 px-2">Big Blind</th>
+                                                        <th className="text-left py-2 px-2">Duration</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="text-gray-300">
+                                                    {Array.from({ length: 10 }, (_, i) => {
+                                                        const sb = parseInt(smallBlind) || 25;
+                                                        const bb = parseInt(bigBlind) || 50;
+                                                        const levelSB = sb * Math.pow(2, i);
+                                                        const levelBB = bb * Math.pow(2, i);
+                                                        return (
+                                                            <tr key={i} className={i === 0 ? "bg-green-900/20" : ""}>
+                                                                <td className="py-2 px-2">{i + 1}</td>
+                                                                <td className="py-2 px-2">{levelSB.toLocaleString()}</td>
+                                                                <td className="py-2 px-2">{levelBB.toLocaleString()}</td>
+                                                                <td className="py-2 px-2">{blindLevelDuration} min</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                            <p className="text-gray-500 text-xs mt-3">* Blinds double each level. Level 1 is highlighted.</p>
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="text-gray-300 text-xs mb-1 block">Rake Cap (USDC)</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={rakeCap}
-                                            onChange={e => setRakeCap(e.target.value)}
-                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm"
-                                            placeholder="e.g., 0.10"
-                                        />
-                                        <p className="text-gray-500 text-xs mt-1">Maximum rake per hand</p>
+                            )}
+
+                            {/* Rake Configuration Section - Only for Cash Games */}
+                            <div className="mb-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <input
+                                        type="checkbox"
+                                        id="enableRake"
+                                        checked={enableRake && gameFormat === GameFormat.CASH}
+                                        onChange={e => setEnableRake(e.target.checked)}
+                                        disabled={gameFormat !== GameFormat.CASH}
+                                        className="w-4 h-4 text-blue-600 bg-[#21172b] border-white/20 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    />
+                                    <label
+                                        htmlFor="enableRake"
+                                        className={`text-sm font-medium ${gameFormat === GameFormat.CASH ? "text-gray-300" : "text-gray-500"}`}
+                                    >
+                                        Enable Rake Collection {gameFormat !== GameFormat.CASH && "(Cash games only)"}
+                                    </label>
+                                </div>
+
+                                {enableRake && gameFormat === GameFormat.CASH && (
+                                    <div className="bg-[#0c0911] rounded-lg p-4 border border-white/10">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Rake-Free Threshold (USDC)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    aria-label="Rake-free threshold"
+                                                    value={rakeFreeThreshold}
+                                                    onChange={e => setRakeFreeThreshold(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                    placeholder="0 = rake all pots"
+                                                />
+                                                <p className="text-gray-500 text-xs mt-1">Pots below this amount are rake-free</p>
+                                            </div>
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Rake Percentage (%)</label>
+                                                <select
+                                                    value={rakePercentage}
+                                                    onChange={e => setRakePercentage(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                >
+                                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                                                        <option key={n} value={String(n)}>
+                                                            {n}%
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-gray-500 text-xs mt-1">Typically 2% - 5%</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Rake Cap (USDC)</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    aria-label="Rake cap"
+                                                    value={rakeCap}
+                                                    onChange={e => setRakeCap(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                    placeholder="e.g., 0.10"
+                                                />
+                                                <p className="text-gray-500 text-xs mt-1">Maximum rake per hand</p>
+                                            </div>
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Rake Owner Address</label>
+                                                <input
+                                                    type="text"
+                                                    aria-label="Rake owner"
+                                                    value={rakeOwner}
+                                                    readOnly
+                                                    placeholder={cosmosWallet.address || "b52..."}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm font-mono cursor-not-allowed opacity-70"
+                                                />
+                                                <p className="text-gray-500 text-xs mt-1">Defaults to your address</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-gray-300 text-xs mb-1 block">Rake Owner Address</label>
-                                        <input
-                                            type="text"
-                                            value={rakeOwner}
-                                            readOnly
-                                            placeholder={cosmosWallet.address || "b52..."}
-                                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm font-mono cursor-not-allowed opacity-70"
-                                        />
-                                        <p className="text-gray-500 text-xs mt-1">Defaults to your address</p>
-                                    </div>
+                                )}
+                            </div>
+                        </section>
+                        <aside className="creation-review" aria-label="Creation cost">
+                            <div className="creation-section-heading">
+                                <span>02 / REVIEW</span>
+                                <h2>Ready when you are.</h2>
+                                <p>Check the cost before creating your table.</p>
+                            </div>
+                            <div className="creation-balance">
+                                <span>Available balance</span>
+                                <strong>{cosmosWallet.address ? `$${usdcBalanceFormatted} USDC` : "No game wallet"}</strong>
+                            </div>
+                            {/* Creation Fee Info */}
+                            <div className="creation-fee">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-gray-400 text-sm">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds):</span>
+                                    <span className="text-white font-mono text-sm">{creationFeeFormatted} USDC</span>
                                 </div>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="flex gap-3">
-                        <button
-                            onClick={handleCreateTable}
-                            disabled={isCreating || !cosmosWallet.address || !hasEnoughUsdc || !!tableNameError || insufficientForName}
-                            className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors text-sm"
-                        >
-                            {isCreating ? "Creating..." : !hasEnoughUsdc ? "Insufficient USDC" : tableNameError ? "Invalid table name" : "Create Table"}
-                        </button>
-                        <button
-                            onClick={refetch}
-                            disabled={isLoading}
-                            className="px-3 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-600 text-white rounded-lg transition-colors"
-                            title="Refresh tables"
-                        >
-                            <svg className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                />
-                            </svg>
-                        </button>
-                    </div>
+                            <div className="creation-total">
+                                <span>Total to create</span>
+                                <strong>{totalCostFormatted} USDC</strong>
+                            </div>
+                            {/* Insufficient USDC Warning */}
+                            {cosmosWallet.address && !hasEnoughUsdc && (
+                                <div className="creation-notice" role="status">
+                                    <div className="flex items-start gap-3">
+                                        <svg className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                            />
+                                        </svg>
+                                        <div>
+                                            <p className="text-red-300 font-semibold mb-1">Add funds to create this table</p>
+                                            <p className="text-red-400/80 text-sm mb-3">
+                                                You need {totalCostFormatted} USDC to create this table ({CREATION_FEE_BIG_BLINDS.toString()} big blinds
+                                                {normalizedTableName.length > 0 ? " plus the name fee" : ""}). Your current balance is ${usdcBalanceFormatted}{" "}
+                                                USDC.
+                                            </p>
+                                            <Link
+                                                to="/"
+                                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#7135a4] hover:bg-[#8645ba] text-white text-sm font-semibold rounded-lg transition-colors"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m0-16l-4 4m4-4l4 4" />
+                                                </svg>
+                                                Go to wallet in lobby
+                                            </Link>
+                                            <p className="text-gray-500 text-xs mt-2">Use the deposit option in your lobby wallet.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
-                    {!cosmosWallet.address && <p className="mt-2 text-yellow-400 text-xs">Connect your Block52 wallet to create tables</p>}
-                    {cosmosWallet.address && hasEnoughUsdc && (
-                        <p className="mt-2 text-green-400 text-xs">
-                            ✓ You have enough USDC to create a table
-                        </p>
-                    )}
-                </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCreateTable}
+                                    disabled={isCreating || !cosmosWallet.address || !hasEnoughUsdc || !!tableNameError || insufficientForName}
+                                    className="creation-primary flex-1"
+                                >
+                                    {isCreating ? "Creating..." : !hasEnoughUsdc ? "Insufficient USDC" : tableNameError ? "Invalid table name" : "Create Table"}
+                                </button>
+                                <button onClick={refetch} disabled={isLoading} className="creation-secondary" title="Refresh tables">
+                                    <svg className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {!cosmosWallet.address && <p className="mt-2 text-yellow-400 text-xs">Set up your game wallet to create tables</p>}
+                            {cosmosWallet.address && hasEnoughUsdc && <p className="mt-2 text-green-400 text-xs">✓ You have enough USDC to create a table</p>}
+
+                            <p className="creation-footnote">Creating a table uses the connected network and incurs the fee shown above.</p>
+                        </aside>
+                    </div>
+                </details>
 
                 {/* Tables List */}
-                <TableList />
+                <TableList compact refreshKey={successTxHash || 0} />
 
-                {/* Info Box */}
-                <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                    <h3 className="text-blue-200 font-semibold mb-2">ℹ️ How This Works</h3>
-                    <ul className="text-blue-300 text-sm space-y-1 list-disc list-inside">
-                        <li>Create new poker tables with custom settings (buy-in, blinds, player count)</li>
-                        <li>All tables are stored on the blockchain and queryable via REST API</li>
-                        <li>Click "Join Table" to enter any available table</li>
-                        <li>Tables show real-time player counts and game settings</li>
-                        <li>Default setup: Sit & Go, 4 players, Texas Hold'em</li>
-                    </ul>
-                </div>
+                <p className="creation-footnote">
+                    Choose a table to watch, then take a seat when you’re ready. Want your own game? Open “Create a new table” above.
+                </p>
             </div>
 
             {/* Advanced SNG Options Modal */}
@@ -964,63 +947,13 @@ export default function TableAdminPage() {
                 onApply={handleApplyAdvancedParams}
             />
 
-            {/* Success Modal */}
-            {showSuccessModal && successTxHash && (
-                <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-                    <div className="bg-gray-800 border border-blue-500 rounded-xl p-8 max-w-lg w-full mx-4 shadow-2xl">
-                        <h2 className="text-2xl font-bold text-white text-center mb-4">Table Created Successfully!</h2>
-
-                        <p className="text-gray-300 text-center mb-6">Your poker table has been created on the blockchain.</p>
-
-                        <div className="bg-gray-900 rounded-lg p-4 mb-6">
-                            <p className="text-gray-400 text-sm mb-2">Transaction Hash:</p>
-                            <div className="flex items-center justify-between gap-2">
-                                <code className="text-blue-400 text-xs font-mono break-all">{successTxHash}</code>
-                                <button
-                                    onClick={() => copyToClipboard(successTxHash, "Transaction hash copied!")}
-                                    className="p-2 text-gray-400 hover:text-white transition-colors flex-shrink-0"
-                                    title="Copy transaction hash"
-                                >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-3">
-                            {createdGameAddress && (
-                                <a
-                                    href={`/table/${createdGameAddress}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-lg transition-colors text-center"
-                                >
-                                    Join Table
-                                </a>
-                            )}
-                            <button
-                                onClick={() => {
-                                    setShowSuccessModal(false);
-                                    setSuccessTxHash(null);
-                                    setCreatedGameAddress(null);
-                                }}
-                                className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <TableCreatedModal
+                receipt={showSuccessModal && successTxHash ? { txHash: successTxHash, gameId: createdGameAddress } : null}
+                onClose={() => { setShowSuccessModal(false); setSuccessTxHash(null); setCreatedGameAddress(null); }}
+            />
 
             {/* Powered by Block52 */}
-            <div className="fixed bottom-4 left-4 flex items-center z-50 opacity-30">
+            <div className="page-footer">
                 <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                     <div className="text-left mb-1">
                         <span className="text-xs text-white font-medium tracking-wide  ">POWERED BY</span>

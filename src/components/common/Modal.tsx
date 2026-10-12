@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from "react";
 import { colors, getHexagonStroke } from "../../utils/colorConfig";
 import styles from "./Modal.module.css";
+import { ModalHeader } from "./ModalHeader";
 
 /**
  * Shared hexagon pattern background for modals
@@ -46,6 +47,10 @@ export interface BaseModalProps {
     children: React.ReactNode;
     /** Optional title displayed at top of modal */
     title?: string;
+    /** Accessible name when content supplies its own heading. */
+    ariaLabel?: string;
+    /** Content supplies a ModalHeader instead of the default header. */
+    customHeader?: boolean;
     /** Optional icon/emoji to display before title */
     titleIcon?: React.ReactNode;
     /** Color for the title divider line (defaults to brand.primary) */
@@ -58,9 +63,9 @@ export interface BaseModalProps {
     widthClass?: string;
     /** Additional className for the modal container */
     className?: string;
-    /** Whether to show the hexagon pattern background (default: true) */
+    /** Whether to show the hexagon pattern background (default: false) */
     showHexagonPattern?: boolean;
-    /** Whether to show decorative card suits (default: true) */
+    /** Whether to show decorative card suits (default: false) */
     showCardSuits?: boolean;
     /** Unique pattern ID for hexagon SVG (to avoid conflicts with multiple modals) */
     patternId?: string;
@@ -104,14 +109,16 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
         onClose,
         children,
         title,
+        ariaLabel,
+        customHeader = false,
         titleIcon,
         titleDividerColor = colors.brand.primary,
         error,
         isProcessing = false,
         widthClass = "w-96",
         className = "",
-        showHexagonPattern = true,
-        showCardSuits = true,
+        showHexagonPattern = false,
+        showCardSuits = false,
         patternId,
         closeOnEscape = true,
         closeOnBackdropClick = true,
@@ -151,7 +158,10 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
 
                 {/* Modal Container */}
                 <div
-                    className={`relative p-6 rounded-xl shadow-2xl overflow-x-hidden ${scrollable ? "overflow-y-auto max-h-[90vh]" : "overflow-y-hidden"} ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={ariaLabel || title}
+                    className={`hodl-modal relative p-6 rounded-xl shadow-2xl overflow-x-hidden ${scrollable ? "overflow-y-auto max-h-[90vh]" : "overflow-y-hidden"} ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
                 >
                     {/* Hexagon pattern background */}
                     {showHexagonPattern && <HexagonPattern patternId={patternId} />}
@@ -159,25 +169,11 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
                     {/* Decorative card suits */}
                     {showCardSuits && <CardSuits />}
 
-                    {/* Title */}
-                    {title && (
-                        <>
-                            <h2 className="text-xl font-bold mb-3 text-white flex items-center">
-                                {titleIcon && (
-                                    <span style={{ color: titleDividerColor }} className="mr-2">
-                                        {titleIcon}
-                                    </span>
-                                )}
-                                {title}
-                            </h2>
-                            <div
-                                className="w-full h-0.5 mb-4 opacity-50"
-                                style={{
-                                    background: `linear-gradient(to right, transparent, ${titleDividerColor}, transparent)`
-                                }}
-                            />
-                        </>
-                    )}
+                    {!customHeader && <ModalHeader
+                        title={title && <>{titleIcon && <span style={{ color: titleDividerColor }} className="mr-2">{titleIcon}</span>}{title}</>}
+                        onClose={closeOnEscape && closeOnBackdropClick ? onClose : undefined}
+                        closeDisabled={isProcessing}
+                    />}
 
                     {/* Error Display */}
                     {error && (

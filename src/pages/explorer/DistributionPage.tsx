@@ -91,8 +91,8 @@ export default function DistributionPage() {
             {
                 label: "Card Frequency",
                 data: sortedCardStats.map(c => c.total_appearances),
-                backgroundColor: "rgba(75, 192, 192, 0.6)",
-                borderColor: "rgba(75, 192, 192, 1)",
+                backgroundColor: "rgba(177, 112, 219, 0.55)",
+                borderColor: "rgba(197, 145, 239, 1)",
                 borderWidth: 1
             }
         ]
@@ -107,7 +107,7 @@ export default function DistributionPage() {
             },
             title: {
                 display: true,
-                text: "Card Distribution Across All Hands (Proves Randomness)",
+                text: "Card distribution across recorded hands",
                 color: "#ffffff"
             },
             tooltip: {
@@ -159,9 +159,9 @@ export default function DistributionPage() {
     };
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 <ExplorerHeader title="Block Explorer" />
 
                 {loading ? (
@@ -181,19 +181,19 @@ export default function DistributionPage() {
                     <>
                         {/* Indexer Sync Progress */}
                         {indexerStatus && (
-                            <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700 mb-8">
+                            <div className="bg-[#100c17] rounded-lg shadow p-6 border border-white/10 mb-8">
                                 <div className="flex items-center justify-between mb-3">
                                     <h3 className="text-sm font-medium text-white">Indexer Sync Progress</h3>
                                     <span className="text-sm text-gray-400">
                                         {indexerStatus.blocks_indexed.toLocaleString()} / {indexerStatus.total_blocks.toLocaleString()} blocks
                                     </span>
                                 </div>
-                                <div className="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+                                <div className="w-full bg-[#21172b] rounded-full h-4 overflow-hidden">
                                     <div
                                         className="h-4 rounded-full transition-all duration-500"
                                         style={{
                                             width: `${Math.min(indexerStatus.percent_complete, 100)}%`,
-                                            backgroundColor: indexerStatus.percent_complete >= 100 ? "#10b981" : "#3b82f6"
+                                            backgroundColor: indexerStatus.percent_complete >= 100 ? "#10b981" : "#b17bdc"
                                         }}
                                     />
                                 </div>
@@ -210,26 +210,22 @@ export default function DistributionPage() {
 
                         {/* Stats Cards */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                            <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
-                                <h3 className="text-sm font-medium text-gray-400">
-                                    {summary ? "Unique Hands" : "Total Cards in Deck"}
-                                </h3>
-                                <p className="text-3xl font-bold mt-2 text-white">
-                                    {summary ? summary.total_hands.toLocaleString() : "52"}
-                                </p>
+                            <div className="bg-[#100c17] rounded-lg shadow p-6 border border-white/10">
+                                <h3 className="text-sm font-medium text-gray-400">{summary ? "Unique Hands" : "Total Cards in Deck"}</h3>
+                                <p className="text-3xl font-bold mt-2 text-white">{summary ? summary.total_hands.toLocaleString() : "52"}</p>
                             </div>
-                            <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
+                            <div className="bg-[#100c17] rounded-lg shadow p-6 border border-white/10">
                                 <h3 className="text-sm font-medium text-gray-400">Total Cards Dealt</h3>
                                 <p className="text-3xl font-bold mt-2 text-white">{totalCardsDealt.toLocaleString()}</p>
                             </div>
-                            <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
+                            <div className="bg-[#100c17] rounded-lg shadow p-6 border border-white/10">
                                 <h3 className="text-sm font-medium text-gray-400">Expected Per Card</h3>
                                 <p className="text-3xl font-bold mt-2 text-white">{totalCardsDealt > 0 ? (totalCardsDealt / 52).toFixed(1) : "0"}</p>
                             </div>
                         </div>
 
                         {/* Chart */}
-                        <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
+                        <div className="bg-[#100c17] rounded-lg shadow p-6 border border-white/10">
                             <div className={styles.chartContainer}>
                                 <Bar data={chartData} options={chartOptions} />
                             </div>
@@ -237,10 +233,10 @@ export default function DistributionPage() {
 
                         {/* Chi-Squared Randomness Result */}
                         {randomness && (
-                            <div className="mt-8 bg-gray-800 rounded-lg p-6 border border-gray-700">
+                            <div className="mt-8 bg-[#100c17] rounded-lg p-6 border border-white/10">
                                 <h2 className="text-xl font-bold mb-4 text-white">Randomness Analysis (Chi-Squared Test)</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <div className="bg-[#0c0911] rounded-lg p-4 border border-white/20">
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className="text-sm font-medium text-gray-400">Card Distribution</h3>
                                             {getResultBadge(randomness.card_chi_squared.result)}
@@ -248,7 +244,7 @@ export default function DistributionPage() {
                                         <p className="text-sm text-gray-300 mt-2">{randomness.card_chi_squared.interpretation}</p>
                                         <p className="text-xs text-gray-500 mt-1">p-value: {randomness.card_chi_squared.p_value.toFixed(4)}</p>
                                     </div>
-                                    <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <div className="bg-[#0c0911] rounded-lg p-4 border border-white/20">
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className="text-sm font-medium text-gray-400">Suit Distribution</h3>
                                             {getResultBadge(randomness.suit_chi_squared.result)}
@@ -256,7 +252,7 @@ export default function DistributionPage() {
                                         <p className="text-sm text-gray-300 mt-2">{randomness.suit_chi_squared.interpretation}</p>
                                         <p className="text-xs text-gray-500 mt-1">p-value: {randomness.suit_chi_squared.p_value.toFixed(4)}</p>
                                     </div>
-                                    <div className="bg-gray-900 rounded-lg p-4 border border-gray-600">
+                                    <div className="bg-[#0c0911] rounded-lg p-4 border border-white/20">
                                         <div className="flex items-center justify-between mb-2">
                                             <h3 className="text-sm font-medium text-gray-400">Rank Distribution</h3>
                                             {getResultBadge(randomness.rank_chi_squared.result)}
@@ -269,7 +265,7 @@ export default function DistributionPage() {
                         )}
 
                         {/* Explanation */}
-                        <div className="mt-8 bg-blue-900/20 rounded-lg p-6 border border-blue-800">
+                        <div className="mt-8 bg-purple-900/20 rounded-lg p-6 border border-blue-800">
                             <h2 className="text-xl font-bold mb-3 text-white">How to Read This Chart</h2>
                             <ul className="space-y-2 text-sm text-gray-300">
                                 <li>

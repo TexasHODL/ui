@@ -1,3 +1,5 @@
+import { formatUsd } from "../utils/moneyDisplay";
+import { ModalHeader } from "./common/ModalHeader";
 import React, { useState, useCallback } from "react";
 import Chip from "./playPage/common/Chip";
 import { decomposeAmount, ChipStackEntry, parseCustomAmounts, chipColorClass } from "../utils/chipBreakdown";
@@ -101,18 +103,12 @@ const ChipDebugModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             onClick={onClose}
         >
             <div
-                className="bg-[#1a1f2e] rounded-2xl shadow-2xl border border-gray-700 w-[800px] max-h-[90vh] overflow-y-auto"
+                className="hodl-modal modal-inset-content rounded-2xl shadow-2xl border border-gray-700 w-[800px] max-h-[90vh] overflow-y-auto"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-                    <h2 className="text-xl font-bold text-white">Chip Debug Panel</h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-white text-2xl leading-none"
-                    >
-                        ×
-                    </button>
+                <div className="px-6 py-4 border-b border-gray-700">
+                    <ModalHeader title="Chip Debug Panel" onClose={onClose} />
                 </div>
 
                 <div className="p-6 space-y-6">
@@ -123,7 +119,7 @@ const ChipDebugModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             <Chip amount={totalUsdc} />
                         </div>
                         <div className="text-gray-500 text-xs">
-                            Total: ${totalDollars.toFixed(2)} | Actions: {liveAmounts.length} | USDC: {totalUsdc}
+                            Total: ${formatUsd(totalDollars)} | Actions: {liveAmounts.length} | USDC: {totalUsdc}
                         </div>
                     </div>
 
@@ -172,7 +168,7 @@ const ChipDebugModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                             {breakdownPerAction.map((action, ai) => (
                                 <div key={ai} className="border-b border-gray-800 pb-2 last:border-0 last:pb-0">
                                     <div className="text-xs text-gray-400 mb-1">
-                                        Action {ai + 1}: ${action.dollars.toFixed(2)}
+                                        Action {ai + 1}: ${formatUsd(action.dollars)}
                                         {action.dollars < 1 && " → floors to $0 → fallback white chip"}
                                     </div>
                                     <div className="flex gap-3 flex-wrap">

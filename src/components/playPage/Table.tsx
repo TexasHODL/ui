@@ -1,3 +1,7 @@
+import { resolveDebugOverlayAction } from "../../utils/debugOverlayKeys";
+import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { useTablePanels } from "../../hooks/game/useTablePanels";
+import { useHistoryDock } from "../../hooks/game/useHistoryDock";
 /**
  * Table Component
  *
@@ -51,29 +55,19 @@ import { formatPotDisplay, formatChipCount } from "../../utils/potDisplayUtils";
 // // Position arrays now come from useTableLayout hook
 // import { playerPosition, dealerPosition, vacantPlayerPosition } from "../../utils/PositionArray";
 import PokerActionPanel from "../Footer";
+import { MobileActionDock } from "./Table/components/MobileActionDock";
 
 // Extracted Table components
-import {
-    TableHeader,
-    MobileTableHeader,
-    TableBoard,
-    TablePanel,
-    TablePanelExpandTab,
-    type TablePanelTab,
-    TableModals,
-    PlayerSeating,
-    PlayerActionButtons,
-    LayoutDebugInfo
-} from "./Table/components";
+import { TableHeader, MobileTableHeader, TableBoard, TableSidebar, TableSettingsSidebar, TableModals, PlayerSeating, PlayerActionButtons, LayoutDebugInfo } from "./Table/components";
 
 import { HexagonPattern } from "../common/Modal";
 
 // Use environment variable for club logo with fallback to default
 const clubLogo = import.meta.env.VITE_CLUB_LOGO || "/texas-hodl-logo.png";
 
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import React from "react";
-import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+
 import { toast } from "react-toastify";
 
 import { isValidPlayerAddress } from "../../utils/addressUtils";
@@ -82,8 +76,6 @@ import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
 
 import "./Table.css"; // Import the Table CSS file
-
-const DESKTOP_PANEL_COLLAPSED_KEY = "b52.tablePanelCollapsed";
 
 //// TODO get these hooks to subscribe to the wss connection
 
@@ -134,18 +126,7 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import {
-    getViewportMode,
-    COMPONENT_SCALE,
-    type PositionArrays,
-    getSeatCoords,
-    getStageDims,
-    STAGE_DIMS,
-    getContentBounds,
-    VIEWPORT_PARAMS,
-    PLAYER_UI_PADDING,
-    type TableSize
-} from "../../config/stageGeometry";
+import { getViewportMode, COMPONENT_SCALE, type PositionArrays, getSeatCoords, getStageDims, STAGE_DIMS, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import CustomDealer from "../../assets/CustomDealer.svg";
 import { useDealerPosition } from "../../hooks/game/useDealerPosition";
 
@@ -154,7 +135,6 @@ import { useTurnNotification } from "../../hooks/notifications/useTurnNotificati
 import ConnectionBanner from "./ConnectionBanner";
 
 import { hasElements } from "../../utils/guards";
-import { resolveDebugOverlayAction } from "../../utils/debugOverlayKeys";
 
 //* Here's the typical sequence of a poker hand:
 //* ANTE - Initial forced bets
@@ -183,9 +163,8 @@ const NetworkDisplay = memo(({ isMainnet = false }: NetworkDisplayProps) => {
 NetworkDisplay.displayName = "NetworkDisplay";
 
 // Global debug state — shared between LayoutDebugOverlay and Table component
-// Keys (ui#741): Ctrl+I/⌘I = all overlays + enable debug mode, then while on:
-// 2 = geometry, 3 = seats, 4 = chips, 5 = dealers, 6 = crosshair,
-// 7 = hole-card slots + deck (ui#21 dealing-animation targets)
+// Keys: 1 = all overlays, 2 = geometry, 3 = seats, 4 = chips, 5 = dealers,
+// 6 = crosshair, 7 = hole-card slots + deck (ui#21 dealing-animation targets)
 let _debugChips = false;
 let _debugDealers = false;
 let _debugSeats = false;
@@ -204,11 +183,7 @@ function useDebugToggle() {
     return { showChips: _debugChips, showDealers: _debugDealers, showSeats: _debugSeats, showGeometry: _debugGeometry, showCards: _debugCards };
 }
 
-/**
- * DEBUG OVERLAY (ui#741): Ctrl+I (⌘I on macOS) toggles all overlays and enables
- * debug mode. Once on, 2=geometry, 3=seats, 4=chips, 5=dealers, 6=crosshair,
- * 7=cards. Key events from inputs are ignored so typing never flips the overlays.
- */
+/** DEBUG OVERLAY: Press 'D' to toggle. Shows draggable marker with coordinates. */
 const LayoutDebugOverlay = () => {
     const [visible, setVisible] = useState(false);
     const [debugMode, setDebugMode] = useState(false);
@@ -698,9 +673,23 @@ const GeometryToggleButton: React.FC = () => {
 
 const Table = React.memo(() => {
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
+    const isWatchMode = searchParams.get("watch") === "1";
     // Game state context and subscription
-    const { subscribeToTable, unsubscribeFromTable, gameState, gameFormat, gameName, validationError, error, loadHistoricalState, isReplayMode, replayHandNumber, replayActionIndex, connection } =
-        useGameStateContext();
+    const {
+        subscribeToTable,
+        unsubscribeFromTable,
+        gameState,
+        gameFormat,
+        gameName,
+        validationError,
+        error,
+        loadHistoricalState,
+        isReplayMode,
+        replayHandNumber,
+        replayActionIndex,
+        connection
+    } = useGameStateContext();
     const { currentNetwork } = useNetwork();
 
     // Replay mode — read hand/index query params from the readonly share link.
@@ -797,29 +786,7 @@ const Table = React.memo(() => {
     }, [publicKey, fetchAccountBalance]);
 
     // Zoom is now managed by useTableLayout hook
-    //
-    // Always-visible floating panel with two tabs (History default, then
-    // Settings) — replaces the two former fly-out overlays (ui#752). The panel
-    // is never closed; the header gear/panel controls just switch the tab.
-    const [panelTab, setPanelTab] = useState<TablePanelTab>("history");
-    // Phones: the panel covers the felt, so it is closed until opened from the hamburger menu.
-    const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
-    // Desktop: the panel can be collapsed to a slim edge tab; the choice is remembered.
-    const [desktopPanelCollapsed, setDesktopPanelCollapsed] = useState<boolean>(() => {
-        try {
-            return localStorage.getItem(DESKTOP_PANEL_COLLAPSED_KEY) === "1";
-        } catch {
-            return false;
-        }
-    });
-    const setDesktopPanelCollapsedPersisted = useCallback((collapsed: boolean) => {
-        setDesktopPanelCollapsed(collapsed);
-        try {
-            localStorage.setItem(DESKTOP_PANEL_COLLAPSED_KEY, collapsed ? "1" : "0");
-        } catch {
-            // storage unavailable (private mode) — keep in-memory state only
-        }
-    }, []);
+
 
     // Leave table modal state
     const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -898,6 +865,15 @@ const Table = React.memo(() => {
     // the same treatment as portrait: one-row header + hamburger, no persistent
     // banner, no style selector — just with the horizontal stage.
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
+    const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory } = useTablePanels(!isCompactMobile);
+    const [tableOnly, setTableOnly] = useState(false);
+    const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom, tableOnly, isCompactMobile);
+    useEffect(() => {
+        if (!tableOnly) return;
+        const restore = (event: KeyboardEvent) => { if (event.key === "Escape") setTableOnly(false); };
+        window.addEventListener("keydown", restore);
+        return () => window.removeEventListener("keydown", restore);
+    }, [tableOnly]);
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
     const stageDims = STAGE_DIMS[isMobilePortrait ? "portrait" : "landscape"];
@@ -945,8 +921,8 @@ const Table = React.memo(() => {
         } else {
             // Cash game: blinds are USDC microunits, convert to dollars
             return {
-                smallBlindFormatted: formatUSDCToSimpleDollars(gameOptions.smallBlind),
-                bigBlindFormatted: formatUSDCToSimpleDollars(gameOptions.bigBlind),
+                smallBlindFormatted: formatMicroUsd(gameOptions.smallBlind ?? 0),
+                bigBlindFormatted: formatMicroUsd(gameOptions.bigBlind ?? 0),
                 isTournamentStyle: false
             };
         }
@@ -1154,7 +1130,7 @@ const Table = React.memo(() => {
     // useEffect(() => { ... }, [tableSize, id]);
 
     // Memoize formatted balance - Cosmos returns microunits (6 decimals)
-    const balanceFormatted = useMemo(() => (accountBalance ? formatUSDCToSimpleDollars(accountBalance) : "0.00"), [accountBalance]);
+    const balanceFormatted = useMemo(() => (accountBalance ? formatMicroUsd(accountBalance ?? 0) : "0.00"), [accountBalance]);
 
     const potDisplayValues = useMemo(() => {
         const pots = Array.isArray(gameState?.pots) ? (gameState?.pots as string[]) : [];
@@ -1194,7 +1170,7 @@ const Table = React.memo(() => {
             return;
         }
         try {
-             // `?hand=N` opens the hand's final state, so the link keeps working after
+            // `?hand=N` opens the hand's final state, so the link keeps working after
             // the hand ends (an `&index=` link only resolves while the hand is live).
             const shareUrl = buildHandShareUrl(window.location.origin, id, handNumber);
             await navigator.clipboard.writeText(shareUrl);
@@ -1306,374 +1282,347 @@ const Table = React.memo(() => {
 
     return (
         <SitOutIntentProvider tableId={id} network={currentNetwork} pendingSitOut={pendingSitOut} legalActions={playerLegalActions}>
-        <div className="table-container" data-connection={connection.status}>
-            {/* Connection freshness (ui#613): shown whenever the live socket is not live */}
-            {!isReplayMode && id && (
-                <ConnectionBanner
-                    connection={connection}
-                    onRetry={() => {
-                        unsubscribeFromTable();
-                        subscribeToTable(id);
-                    }}
-                />
-            )}
-            {/* Replay mode banner */}
-            {isReplayMode && replayHandNumber != null && (
-                <div
-                    // Bottom pill: the table header (also z-[100], later in the DOM) covered
-                    // a top banner, and replay mode has no action panel down here.
-                    className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] flex items-center justify-center gap-4 py-2 px-4 text-sm rounded-full shadow-lg"
-                    style={{ background: "rgba(214, 60, 94, 0.95)", color: "#fff" }}
-                >
-                    <span>
-                        Viewing hand #{replayHandNumber}
-                        {replayActionIndex != null ? ` at action ${replayActionIndex}` : " · final state (read-only)"}
-                    </span>
-                    <button
-                        onClick={clearReplayParams}
-                        className="px-3 py-1 rounded text-xs font-bold transition-opacity hover:opacity-80"
-                        style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
+        <div className="table-container" style={historyDock} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings} data-table-only={tableOnly}>
+                {/* Connection freshness (ui#613): shown whenever the live socket is not live */}
+                {!isReplayMode && id && (
+                    <ConnectionBanner
+                        connection={connection}
+                        onRetry={() => {
+                            unsubscribeFromTable();
+                            subscribeToTable(id);
+                        }}
+                    />
+                )}
+                {/* Replay mode banner */}
+                {isReplayMode && replayHandNumber != null && (
+                    <div
+                        // Bottom pill: the table header (also z-[100], later in the DOM) covered
+                        // a top banner, and replay mode has no action panel down here.
+                        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[150] flex items-center justify-center gap-4 py-2 px-4 text-sm rounded-full shadow-lg"
+                        style={{ background: "rgba(214, 60, 94, 0.95)", color: "#fff" }}
                     >
-                        Go Live
-                    </button>
-                </div>
-            )}
-            {/* DEBUG OVERLAY: Press D/C/B/S/G to toggle debug tools */}
-            <LayoutDebugOverlay />
-            {/* Table style toggle — on phones (either orientation) this lives in
-                the hamburger menu instead. z-index is deliberately modest: this must
-                never sit above modals/overlays (it used to be 999999 and beat everything). */}
-            {!isCompactMobile && (
-                <button
-                    onClick={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
-                    style={{
-                        position: "fixed",
-                        bottom: 12,
-                        left: 12,
-                        zIndex: 30,
-                        padding: "6px 12px",
-                        borderRadius: tableStyle === "nouns" ? 0 : 6,
-                        border: tableStyle === "nouns" ? "2px solid #d63c5e" : "2px solid #555",
-                        backgroundColor: tableStyle === "nouns" ? "rgba(26,26,46,0.8)" : "rgba(0,0,0,0.6)",
-                        color: tableStyle === "nouns" ? "#e1d7d5" : "#ccc",
-                        fontSize: 12,
-                        fontFamily: tableStyle === "nouns" ? "'Silkscreen', monospace" : "monospace",
-                        fontWeight: "bold",
-                        cursor: "pointer"
-                    }}
-                >
-                    Table: {tableStyle === "modern" ? "Modern" : tableStyle === "classic" ? "Classic" : "Nouns"}
-                </button>
-            )}
-            <GeometryFixedOverlay
-                containerWidth={tableLayout.containerWidth}
-                containerHeight={tableLayout.containerHeight}
-                zoom={tableLayout.zoom}
-                tableSize={tableSize}
-            />
+                        <span>
+                            Viewing hand #{replayHandNumber}
+                            {replayActionIndex != null ? ` at action ${replayActionIndex}` : " · final state (read-only)"}
+                        </span>
+                        <button
+                            onClick={clearReplayParams}
+                            className="px-3 py-1 rounded text-xs font-bold transition-opacity hover:opacity-80"
+                            style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
+                        >
+                            Go Live
+                        </button>
+                    </div>
+                )}
+                {/* DEBUG OVERLAY: Press D/C/B/S/G to toggle debug tools */}
+                <LayoutDebugOverlay />
+                {/* Table appearance lives in Settings, keeping the felt clear. */}
+                <GeometryFixedOverlay
+                    containerWidth={tableLayout.containerWidth}
+                    containerHeight={tableLayout.containerHeight}
+                    zoom={tableLayout.zoom}
+                    tableSize={tableSize}
+                />
 
-            {/*//! HEADER - CASINO STYLE — phones (both orientations) get the
+                {/*//! HEADER - CASINO STYLE — phones (both orientations) get the
                 collapsed one-row header + hamburger */}
-            {isCompactMobile ? (
-                <MobileTableHeader
-                    tableId={id || ""}
-                    tableName={gameName}
-                    currentNetwork={currentNetwork}
-                    gameFormat={gameFormat || null}
-                    gameOptions={gameOptions}
-                    tableActivePlayers={tableActivePlayers}
-                    publicKey={publicKey}
-                    formattedAddress={formattedAddress}
-                    isBalanceLoading={isBalanceLoading}
-                    balanceFormatted={balanceFormatted}
-                    formattedValues={formattedValues}
-                    handNumber={handNumber}
-                    nextToAct={nextToAct}
-                    currentPlayerData={currentPlayerData || null}
-                    isCurrentUserSeated={isCurrentUserSeated}
-                    legalActions={playerLegalActions}
-                    currentStack={currentPlayerData?.stack || "0"}
-                    minBuyIn={gameOptions?.minBuyIn || "0"}
-                    maxBuyIn={gameOptions?.maxBuyIn || "0"}
-                    walletBalance={accountBalance}
-                    tableStyle={tableStyle}
-                    onCycleTableStyle={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
-                    onOpenPanel={tab => {
-                        setPanelTab(tab);
-                        setMobilePanelOpen(true);
-                    }}
-                    handleLobbyClick={handleLobbyClick}
-                    handleCopyTableLink={handleCopyTableLink}
-                    fetchAccountBalance={fetchAccountBalance}
-                    copyToClipboard={copyToClipboard}
-                    handleLeaveTableClick={handleLeaveTableClick}
-                    handleShareHand={handleShareHand}
-                />
-            ) : (
-                <TableHeader
-                    tableId={id || ""}
-                    tableName={gameName}
-                    isMobileLandscape={isMobileLandscape}
-                    gameFormat={gameFormat || null}
-                    gameOptions={gameOptions}
-                    tableActivePlayers={tableActivePlayers}
-                    publicKey={publicKey}
-                    formattedAddress={formattedAddress}
-                    isBalanceLoading={isBalanceLoading}
-                    balanceFormatted={balanceFormatted}
-                    formattedValues={formattedValues}
-                    handNumber={handNumber}
-                    actionCount={actionCount}
-                    nextToAct={nextToAct}
-                    currentPlayerData={currentPlayerData || null}
-                    handleLobbyClick={handleLobbyClick}
-                    handleCopyTableLink={handleCopyTableLink}
-                    handleDepositClick={handleDepositClick}
-                    fetchAccountBalance={fetchAccountBalance}
-                    copyToClipboard={copyToClipboard}
-                    handleLeaveTableClick={handleLeaveTableClick}
-                    handleShareHand={handleShareHand}
-                />
-            )}
-
-            {/*//! BODY — single flex-grow container, measured by geometry engine */}
-            <div ref={tableContainerRef} className="flex-grow relative overflow-visible">
-                {/* Background layers */}
-                {tableStyle !== "nouns" && <HexagonPattern patternId="hexagons-table" />}
-                {tableStyle === "nouns" ? (
-                    <div className="nouns-background" />
+                {tableOnly && <button className="restore-table-banner" aria-label="Restore table banners" title="Restore banners (Esc)" onClick={() => setTableOnly(false)}>↙ <span>Show controls</span></button>}
+                <div className="table-banner-wrap">
+                {isCompactMobile ? (
+                    <MobileTableHeader
+                        onToggleFocus={() => setTableOnly(true)}
+                        tableId={id || ""}
+                        tableName={gameName}
+                        currentNetwork={currentNetwork}
+                        gameFormat={gameFormat || null}
+                        gameOptions={gameOptions}
+                        tableActivePlayers={tableActivePlayers}
+                        publicKey={publicKey}
+                        formattedAddress={formattedAddress}
+                        isBalanceLoading={isBalanceLoading}
+                        balanceFormatted={balanceFormatted}
+                        formattedValues={formattedValues}
+                        handNumber={handNumber}
+                        nextToAct={nextToAct}
+                        currentPlayerData={currentPlayerData || null}
+                        isCurrentUserSeated={isCurrentUserSeated}
+                        legalActions={playerLegalActions}
+                        currentStack={currentPlayerData?.stack || "0"}
+                        minBuyIn={gameOptions?.minBuyIn || "0"}
+                        maxBuyIn={gameOptions?.maxBuyIn || "0"}
+                        walletBalance={accountBalance}
+                        openSidebar={openSidebar}
+                        openSettings={openSettings}
+                        tableStyle={tableStyle}
+                        onCycleTableStyle={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
+                        handleLobbyClick={handleLobbyClick}
+                        handleCopyTableLink={handleCopyTableLink}
+                        fetchAccountBalance={fetchAccountBalance}
+                        copyToClipboard={copyToClipboard}
+                        onCloseSideBar={onCloseSideBar}
+                        onToggleSettings={onToggleSettings}
+                        handleLeaveTableClick={handleLeaveTableClick}
+                        handleShareHand={handleShareHand}
+                    />
                 ) : (
-                    <>
-                        <div className="background-shimmer shimmer-animation" />
-                        <div className="background-animated-static" />
-                        <div className="background-base-static" />
-                    </>
+                    <TableHeader
+                        onToggleFocus={() => setTableOnly(true)}
+                        tableId={id || ""}
+                        tableName={gameName}
+                        isMobileLandscape={isMobileLandscape}
+                        gameFormat={gameFormat || null}
+                        gameOptions={gameOptions}
+                        tableActivePlayers={tableActivePlayers}
+                        publicKey={publicKey}
+                        formattedAddress={formattedAddress}
+                        isBalanceLoading={isBalanceLoading}
+                        balanceFormatted={balanceFormatted}
+                        formattedValues={formattedValues}
+                        handNumber={handNumber}
+                        actionCount={actionCount}
+                        nextToAct={nextToAct}
+                        currentPlayerData={currentPlayerData || null}
+                        openSidebar={openSidebar}
+                        openSettings={openSettings}
+                        handleLobbyClick={handleLobbyClick}
+                        handleCopyTableLink={handleCopyTableLink}
+                        handleDepositClick={handleDepositClick}
+                        fetchAccountBalance={fetchAccountBalance}
+                        copyToClipboard={copyToClipboard}
+                        onCloseSideBar={onCloseSideBar}
+                        onToggleSettings={onToggleSettings}
+                        handleLeaveTableClick={handleLeaveTableClick}
+                        handleShareHand={handleShareHand}
+                    />
                 )}
 
-                {/*//! TABLE — zoom-wrapper applies calculated transform */}
-                <div className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} style={{ transform: tableLayout.tableTransform }}>
-                    {/*//! Table coordinate space — the felt div at its stage origin.
+                </div>
+                {/*//! BODY — single flex-grow container, measured by geometry engine */}
+                <div ref={tableContainerRef} className="table-stage flex-grow relative overflow-visible">
+                    {/* Background layers */}
+                    {tableStyle !== "nouns" && <HexagonPattern patternId="hexagons-table" />}
+                    {tableStyle === "nouns" ? (
+                        <div className="nouns-background" />
+                    ) : (
+                        <>
+                            <div className="background-shimmer shimmer-animation" />
+                            <div className="background-animated-static" />
+                            <div className="background-base-static" />
+                        </>
+                    )}
+
+                    {/*//! TABLE — zoom-wrapper applies calculated transform */}
+                    <div className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} style={{ transform: tableLayout.tableTransform }}>
+                        {/*//! Table coordinate space — the felt div at its stage origin.
                         Landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Portrait: 500×1000 at (175,300) on the 850×1600 stage.
                         Also the root for the card-animation durations (src/bus/timing.ts → CSS custom properties). */}
-                    <div
-                        ref={tableDivRef}
-                        className="absolute"
-                        style={{
-                            width: `${stageDims.tableWidth}px`,
-                            height: `${stageDims.tableHeight}px`,
-                            left: `${stageDims.originX}px`,
-                            top: `${stageDims.originY}px`,
-                            ...cssVars(ANIMATION_CSS_VARS)
-                        }}
-                    >
-                        {/* Outer rail — Ignition-style 3D depth (modern and nouns) */}
-                        {(tableStyle === "modern" || tableStyle === "nouns") && (
-                            <div
-                                className="absolute z-10 rounded-[290px]"
-                                style={{
-                                    width: `${stageDims.tableWidth + 60}px`,
-                                    height: `${stageDims.tableHeight + 60}px`,
-                                    left: "-30px",
-                                    top: "-30px",
-                                    border: tableStyle === "nouns" ? "10px solid rgba(26, 26, 46, 0.8)" : "10px solid rgba(100, 75, 40, 0.6)",
-                                    boxShadow:
-                                        tableStyle === "nouns"
-                                            ? "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)"
-                                            : "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)",
-                                    background:
-                                        tableStyle === "nouns"
-                                            ? "linear-gradient(180deg, rgba(26,26,46,0.4) 0%, rgba(26,26,46,0.7) 100%)"
-                                            : "linear-gradient(180deg, rgba(80,55,25,0.25) 0%, rgba(40,25,10,0.45) 100%)"
-                                }}
-                            />
-                        )}
-                        {/* Table felt surface */}
                         <div
-                            className={`table-surface-shadow z-20 relative flex flex-col text-center border-solid rounded-[250px] items-center justify-center ${tableStyle === "nouns" ? "nouns-table-felt border-[3px]" : tableStyle === "classic" ? "border-[3px]" : "border-[2px]"}`}
+                            ref={tableDivRef}
+                            className="absolute"
                             style={{
                                 width: `${stageDims.tableWidth}px`,
                                 height: `${stageDims.tableHeight}px`,
-                                borderColor:
-                                    tableStyle === "nouns"
-                                        ? "rgba(214, 60, 94, 0.4)"
-                                        : tableStyle === "classic"
-                                          ? "rgba(255, 255, 255, 0.3)"
-                                          : "rgba(255, 255, 255, 0.08)"
+                                left: `${stageDims.originX}px`,
+                                top: `${stageDims.originY}px`,
+                                ...cssVars(ANIMATION_CSS_VARS)
                             }}
                         >
-                            <TableBoard
-                                clubLogo={clubLogo}
-                                potDisplayValues={potDisplayValues}
-                                communityCards={tableDataValues.tableDataCommunityCards || []}
+                            {/* Outer rail — Ignition-style 3D depth (modern and nouns) */}
+                            {(tableStyle === "modern" || tableStyle === "nouns") && (
+                                <div
+                                    className="absolute z-10 rounded-[290px]"
+                                    style={{
+                                        width: `${stageDims.tableWidth + 60}px`,
+                                        height: `${stageDims.tableHeight + 60}px`,
+                                        left: "-30px",
+                                        top: "-30px",
+                                        border: tableStyle === "nouns" ? "10px solid rgba(26, 26, 46, 0.8)" : "10px solid rgba(177, 76, 255, 0.34)",
+                                        boxShadow:
+                                            tableStyle === "nouns"
+                                                ? "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)"
+                                                : "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)",
+                                        background:
+                                            tableStyle === "nouns"
+                                                ? "linear-gradient(180deg, rgba(26,26,46,0.4) 0%, rgba(26,26,46,0.7) 100%)"
+                                                : "linear-gradient(180deg, rgba(177,76,255,0.16) 0%, rgba(10,8,15,0.72) 100%)"
+                                    }}
+                                />
+                            )}
+                            {/* Table felt surface */}
+                            <div
+                                className={`table-surface-shadow z-20 relative flex flex-col text-center border-solid rounded-[250px] items-center justify-center ${tableStyle === "nouns" ? "nouns-table-felt border-[3px]" : tableStyle === "classic" ? "border-[3px]" : "border-[2px]"}`}
+                                style={{
+                                    width: `${stageDims.tableWidth}px`,
+                                    height: `${stageDims.tableHeight}px`,
+                                    borderColor:
+                                        tableStyle === "nouns"
+                                            ? "rgba(214, 60, 94, 0.4)"
+                                            : tableStyle === "classic"
+                                              ? "rgba(255, 255, 255, 0.3)"
+                                              : "rgba(255, 255, 255, 0.08)"
+                                }}
+                            >
+                                <TableBoard
+                                    clubLogo={clubLogo}
+                                    potDisplayValues={potDisplayValues}
+                                    communityCards={tableDataValues.tableDataCommunityCards || []}
+                                    isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
+                                    cardBackStyle={cardBackStyle}
+                                    tableTheme={tableStyle}
+                                    isPortrait={isMobilePortrait}
+                                    tableSize={tableSize}
+                                    winnerCards={winnerCards}
+                                />
+
+                                {/* Chips — per-seat memoized leaf; only the affected seat re-renders on WS update (#424) */}
+                                {!isSitAndGoWaitingForPlayers &&
+                                    tableLayout.positions.chips.map((position, positionIndex) => {
+                                        const seatNumber = ((positionIndex - startIndex + tableSize) % tableSize) + 1;
+                                        return (
+                                            <PlayerChipDisplay
+                                                key={`chip-${positionIndex}`}
+                                                seatIndex={seatNumber}
+                                                left={position.left}
+                                                bottom={position.bottom}
+                                                isTournament={isTournamentFormat(gameFormat)}
+                                            />
+                                        );
+                                    })}
+                            </div>
+
+                            {/* Dealer Button — convert seat number to rotated screen position */}
+                            {(() => {
+                                const dIdx = dealerSeat != null && dealerSeat > 0 ? (dealerSeat - 1 + startIndex) % tableSize : -1;
+                                const dPos = dIdx >= 0 ? tableLayout.positions.dealers[dIdx] : null;
+                                if (!dPos) return null;
+                                return (
+                                    <div className="absolute w-12 h-12 z-[25]" style={{ left: dPos.left, top: dPos.top, transform: "translate(-50%, -50%)" }}>
+                                        <img src={CustomDealer} alt="Dealer Button" className="w-full h-full" />
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Player seats */}
+                            <PlayerSeating
+                                tableLayout={tableLayout}
+                                tableSize={tableSize}
+                                startIndex={startIndex}
+                                tableActivePlayers={tableActivePlayers}
+                                tableDataPlayers={tableDataValues.tableDataPlayers}
+                                userWalletAddress={userWalletAddress}
+                                currentIndex={currentIndex}
+                                hasWinner={hasWinner}
                                 isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
+                                winnerInfo={winnerInfo}
                                 cardBackStyle={cardBackStyle}
-                                tableTheme={tableStyle}
-                                winnerCards={winnerCards}
+                                updateBalanceOnPlayerJoin={updateBalanceOnPlayerJoin}
                             />
 
-                            {/* Chips — per-seat memoized leaf; only the affected seat re-renders on WS update (#424) */}
-                            {!isSitAndGoWaitingForPlayers &&
-                                tableLayout.positions.chips.map((position, positionIndex) => {
-                                    const seatNumber = ((positionIndex - startIndex + tableSize) % tableSize) + 1;
-                                    return (
-                                        <PlayerChipDisplay
-                                            key={`chip-${positionIndex}`}
-                                            seatIndex={seatNumber}
-                                            left={position.left}
-                                            bottom={position.bottom}
-                                            isTournament={isTournamentFormat(gameFormat)}
-                                        />
-                                    );
-                                })}
+                            {/* DEBUG overlays */}
+                            <PositionDebugMarkers positions={tableLayout.positions} />
+                            <GeometryDebugOverlay
+                                tableSize={tableSize}
+                                containerWidth={tableLayout.containerWidth}
+                                containerHeight={tableLayout.containerHeight}
+                                zoom={tableLayout.zoom}
+                                tableDivRef={tableDivRef}
+                            />
                         </div>
-
-                        {/* Dealer Button — convert seat number to rotated screen position */}
-                        {(() => {
-                            const dIdx = dealerSeat != null && dealerSeat > 0 ? (dealerSeat - 1 + startIndex) % tableSize : -1;
-                            const dPos = dIdx >= 0 ? tableLayout.positions.dealers[dIdx] : null;
-                            if (!dPos) return null;
-                            return (
-                                <div className="absolute w-12 h-12 z-[25]" style={{ left: dPos.left, top: dPos.top, transform: "translate(-50%, -50%)" }}>
-                                    <img src={CustomDealer} alt="Dealer Button" className="w-full h-full" />
-                                </div>
-                            );
-                        })()}
-
-                        {/* Player seats */}
-                        <PlayerSeating
-                            tableLayout={tableLayout}
-                            tableSize={tableSize}
-                            startIndex={startIndex}
-                            tableActivePlayers={tableActivePlayers}
-                            tableDataPlayers={tableDataValues.tableDataPlayers}
-                            userWalletAddress={userWalletAddress}
-                            currentIndex={currentIndex}
-                            hasWinner={hasWinner}
-                            isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
-                            winnerInfo={winnerInfo}
-                            cardBackStyle={cardBackStyle}
-                            updateBalanceOnPlayerJoin={updateBalanceOnPlayerJoin}
-                        />
-
-                        {/* DEBUG overlays */}
-                        <PositionDebugMarkers positions={tableLayout.positions} />
-                        <GeometryDebugOverlay
-                            tableSize={tableSize}
-                            containerWidth={tableLayout.containerWidth}
-                            containerHeight={tableLayout.containerHeight}
-                            zoom={tableLayout.zoom}
-                            tableDivRef={tableDivRef}
-                        />
                     </div>
+
+                    {/* Live Hand Strength Display */}
+                    <LiveHandStrengthDisplay />
                 </div>
 
-                {/* Live Hand Strength Display */}
-                <LiveHandStrengthDisplay />
-            </div>
-
-            {/*//! FOOTER — hidden in replay mode (read-only).
-                Phones (both orientations) get NO persistent banner: the panel stays
-                MOUNTED (it hosts the auto-deal/auto-blinds/auto-fold/auto-new-hand
-                hooks, which must run regardless of visibility) in a chromeless
-                overlay above the safe area, so it occupies space only when it has
-                something to show — i.e. when it's the user's turn. The safe-area
-                left/right insets matter in landscape, where the notch eats a side. */}
-            {!isReplayMode &&
-                (isCompactMobile ? (
-                    <div
-                        className="fixed bottom-0 left-0 right-0 z-[10] [&>div]:!bottom-0"
-                        style={{
-                            paddingBottom: "env(safe-area-inset-bottom)",
-                            paddingLeft: "env(safe-area-inset-left)",
-                            paddingRight: "env(safe-area-inset-right)"
-                        }}
-                    >
-                        <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
-                        {/* SNG payout structure is hidden on mobile: the floating panel
+                {/* Mobile controls reserve normal-flow space below the stage.
+                    Keep PokerActionPanel mounted for its automatic gameplay hooks. */}
+                {!isReplayMode &&
+                    (isCompactMobile ? (
+                        <MobileActionDock portrait={isMobilePortrait}>
+                            <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
+                            {/* SNG payout structure is hidden on mobile: the floating panel
                             sat on top of the ALL-IN preset button (ui#693). It stays on
                             desktop/landscape below, where there's lateral room for it. */}
-                    </div>
-                ) : (
-                    <div className="w-full flex justify-center items-center z-[10] h-[160px] fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 backdrop-blur-sm">
-                        <div className="w-full flex justify-center items-center h-full max-w-[700px]">
-                            <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
-                        </div>
-                        {gameFormat && isSitAndGoFormat(gameFormat) && (
-                            <div className="absolute right-4 bottom-3 z-20">
-                                <SngPayoutPanel />
+                        </MobileActionDock>
+                    ) : (
+                        <div className="w-full flex justify-center items-center z-[10] h-[160px] fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 backdrop-blur-sm">
+                            <div className="w-full flex justify-center items-center h-full max-w-[700px]">
+                                <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
                             </div>
-                        )}
-                    </div>
-                ))}
+                            {gameFormat && isSitAndGoFormat(gameFormat) && (
+                                <div className="absolute right-4 bottom-3 z-20">
+                                    <SngPayoutPanel />
+                                </div>
+                            )}
+                        </div>
+                    ))}
 
-            {/*//! FLOATING PANEL — History + Settings tabs (ui#752). Always visible on
-                desktop; on phones it opens from the hamburger menu and closes itself. */}
-            {isCompactMobile ? (
-                mobilePanelOpen && <TablePanel activeTab={panelTab} onSelectTab={setPanelTab} onClose={() => setMobilePanelOpen(false)} />
-            ) : desktopPanelCollapsed ? (
-                <TablePanelExpandTab onExpand={() => setDesktopPanelCollapsedPersisted(false)} />
-            ) : (
-                <TablePanel activeTab={panelTab} onSelectTab={setPanelTab} onCollapse={() => setDesktopPanelCollapsedPersisted(true)} />
-            )}
+                {/*//! ACTION LOG OVERLAY */}
+                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />
 
-            {/* Layout Debug Panel */}
-            <LayoutDebugInfo viewportMode={viewportMode} startIndex={startIndex} tableSize={tableSize} results={results} setStartIndex={setStartIndex} />
+                {/*//! SETTINGS OVERLAY */}
+                <TableSettingsSidebar isOpen={openSettings} tableStyle={tableStyle} onTableStyleChange={setTableStyle} onClose={onToggleSettings} />
 
-            {/* Player Action Buttons — hidden in replay mode (read-only) */}
-            {!isReplayMode && (
-                <PlayerActionButtons
-                    isMobile={isMobile}
-                    isMobileLandscape={isMobileLandscape}
-                    isCompactMobile={isCompactMobile}
-                    legalActions={playerLegalActions}
-                    tableId={id}
-                    currentNetwork={currentNetwork}
-                    playerStatus={playerStatus}
-                    sitInMethod={sitInMethod}
-                    pendingSitOut={pendingSitOut}
-                    totalSeatedPlayers={tableActivePlayers.length}
-                    handNumber={handNumber}
-                    hasActivePlayers={hasActivePlayers}
-                    currentStack={currentPlayerData?.stack || "0"}
-                    minBuyIn={gameOptions?.minBuyIn || "0"}
-                    maxBuyIn={gameOptions?.maxBuyIn || "0"}
-                    walletBalance={accountBalance}
-                    isCurrentUserSeated={isCurrentUserSeated}
-                    isTableFull={isTableFull}
-                />
-            )}
+                {/* Layout Debug Panel */}
+                <LayoutDebugInfo viewportMode={viewportMode} startIndex={startIndex} tableSize={tableSize} results={results} setStartIndex={setStartIndex} />
 
-            {/* All Table Modals */}
-            {/* Read-only replay: no join/leave/countdown/result modals (they act on the live table). */}
-            {!isReplayMode && (
-            <TableModals
-                showCountdown={showCountdown}
-                gameStartTime={gameStartTime}
-                handleCountdownComplete={handleCountdownComplete}
-                handleSkipCountdown={handleSkipCountdown}
-                gameState={gameState}
-                gameFormat={gameFormat}
-                isUserAlreadyPlaying={isUserAlreadyPlaying}
-                tableId={id}
-                onAutoJoinSuccess={() => window.location.reload()}
-                isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
-                handleLeaveTableClick={handleLeaveTableClick}
-                recentTxHash={recentTxHash}
-                handleCloseTransactionPopup={handleCloseTransactionPopup}
-                isLeaveModalOpen={isLeaveModalOpen}
-                handleLeaveModalClose={handleLeaveModalClose}
-                handleLeaveTableConfirm={handleLeaveTableConfirm}
-                handleClaimWinnings={handleClaimWinnings}
-                currentPlayerStack={currentPlayerData?.stack || "0"}
-                isInActiveHand={isGameInProgress && currentUserSeat > 0}
-            />
-            )}
+                {/* Player Action Buttons — hidden in replay mode (read-only) */}
+                {!isReplayMode && (
+                    <PlayerActionButtons
+                        isMobile={isMobile}
+                        isMobileLandscape={isMobileLandscape}
+                        isCompactMobile={isCompactMobile}
+                        legalActions={playerLegalActions}
+                        tableId={id}
+                        currentNetwork={currentNetwork}
+                        playerStatus={playerStatus}
+                        sitInMethod={sitInMethod}
+                        pendingSitOut={pendingSitOut}
+                        totalSeatedPlayers={tableActivePlayers.length}
+                        handNumber={handNumber}
+                        hasActivePlayers={hasActivePlayers}
+                        currentStack={currentPlayerData?.stack || "0"}
+                        minBuyIn={gameOptions?.minBuyIn || "0"}
+                        maxBuyIn={gameOptions?.maxBuyIn || "0"}
+                        walletBalance={accountBalance}
+                        isCurrentUserSeated={isCurrentUserSeated}
+                        isTableFull={isTableFull}
+                    />
+                )}
 
-            {/* No-wallet overlay — blurs the table and walks the user through wallet setup */}
-            {/* Replay is read-only and must work without a wallet (poker-vm#2025). */}
-            {!hasWallet && !isReplayMode && <NoWalletOverlay onWalletReady={handleWalletReady} />}
-        </div>
+                {/* All Table Modals */}
+                {/* Read-only replay: no join/leave/countdown/result modals (they act on the live table). */}
+                {!isReplayMode && (
+                    <TableModals
+                        isWatchMode={isWatchMode}
+                        hasOpenSeats={emptySeatIndexes.length > 0}
+                        showCountdown={showCountdown}
+                        gameStartTime={gameStartTime}
+                        handleCountdownComplete={handleCountdownComplete}
+                        handleSkipCountdown={handleSkipCountdown}
+                        gameState={gameState}
+                        gameFormat={gameFormat}
+                        isUserAlreadyPlaying={isUserAlreadyPlaying}
+                        tableId={id}
+                        onAutoJoinSuccess={() => window.location.reload()}
+                        isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
+                        handleLeaveTableClick={handleLeaveTableClick}
+                        recentTxHash={recentTxHash}
+                        handleCloseTransactionPopup={handleCloseTransactionPopup}
+                        isLeaveModalOpen={isLeaveModalOpen}
+                        handleLeaveModalClose={handleLeaveModalClose}
+                        handleLeaveTableConfirm={handleLeaveTableConfirm}
+                        handleClaimWinnings={handleClaimWinnings}
+                        currentPlayerStack={currentPlayerData?.stack || "0"}
+                        isInActiveHand={isGameInProgress && currentUserSeat > 0}
+                    />
+                )}
+
+                {/* No-wallet overlay — blurs the table and walks the user through wallet setup */}
+                {/* Replay is read-only and must work without a wallet (poker-vm#2025). */}
+                {!hasWallet && !isReplayMode && <NoWalletOverlay onWalletReady={handleWalletReady} />}
+            </div>
         </SitOutIntentProvider>
     );
 });

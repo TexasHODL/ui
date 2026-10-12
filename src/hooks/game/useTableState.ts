@@ -1,3 +1,4 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useMemo } from "react";
 import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameMeta } from "../../context/gameState/GameMetaContext";
@@ -5,7 +6,7 @@ import { useGameUI } from "../../context/gameState/GameUIContext";
 import { TexasHoldemRound, GameFormat } from "@block52/poker-vm-sdk";
 import { TableStateReturn } from "../../types/index";
 import { getGameFormat } from "../../utils/gameFormatUtils";
-import { formatMicroAsUsdc } from "../../constants/currency";
+
 import { hasElements } from "../../utils/guards";
 
 /**
@@ -62,7 +63,7 @@ export const useTableState = (): TableStateReturn => {
             }
 
             // Format total pot value to display format
-            const formattedTotalPot = formatMicroAsUsdc(totalPotWei);
+            const formattedTotalPot = formatMicroUsd(totalPotWei);
 
             // Extract the current round
             const currentRound = gameState.round || TexasHoldemRound.PREFLOP;

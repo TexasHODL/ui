@@ -1,3 +1,4 @@
+import { ModalHeader } from "../common/ModalHeader";
 /**
  * SitAndGoWaitingModal Component
  *
@@ -69,36 +70,10 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ onLeaveConf
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className="bg-gray-800/90 backdrop-blur-md p-8 rounded-xl w-96 shadow-2xl border border-blue-400/20 relative overflow-hidden">
-                {/* Web3 styled background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl"></div>
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse"></div>
+            <div className="hodl-modal p-6 w-96 relative">
 
                 <div className="relative z-10">
-                    <div className="flex items-center justify-center mb-4">
-                        <img src="/block52.png" alt="Block52 Logo" className="h-16 w-auto object-contain" />
-                    </div>
-
-                    {/* Waiting Icon with Animation */}
-                    <div className="flex items-center justify-center mb-6">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-400/30 relative">
-                            {/* Rotating ring animation */}
-                            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-400 animate-spin"></div>
-                            <svg className="w-10 h-10 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                                />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <h2 className="text-2xl font-bold text-white text-center mb-2 text-shadow">Waiting for Players</h2>
-                    <p className="text-gray-300 text-center mb-6 text-sm">
-                        {playerCountLabel} tournament is filling up...
-                    </p>
+                    <ModalHeader kicker="Tournament" title="Waiting for Players" subtitle={`${playerCountLabel} tournament is filling up...`} />
 
                     {/* Players Progress Display */}
                     <div className="mb-6">
@@ -113,7 +88,7 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ onLeaveConf
                             {/* Progress bar */}
                             <div className="w-full bg-gray-600 rounded-full h-2.5 mt-3">
                                 <div
-                                    className="bg-gradient-to-r from-blue-500 to-purple-500 h-2.5 rounded-full transition-all duration-500"
+                                    className="bg-gradient-to-r from-purple-500 to-fuchsia-500 h-2.5 rounded-full transition-all duration-500"
                                     style={{ width: `${(playersJoined / maxPlayers) * 100}%` }}
                                 ></div>
                             </div>
