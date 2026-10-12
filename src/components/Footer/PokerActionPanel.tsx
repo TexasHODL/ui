@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from "react";
 import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { hasContent, hasElements } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
@@ -61,6 +61,7 @@ import { DealButtonGroup } from "./DealButtonGroup";
 import { ShowdownButtons } from "./ShowdownButtons";
 import { BlindButtonGroup } from "./BlindButtonGroup";
 import { MainActionButtons } from "./MainActionButtons";
+import { MobileBettingCluster } from "./MobileBettingCluster";
 import { RaiseBetControls } from "./RaiseBetControls";
 import { PreCheckControl } from "./PreCheckControl";
 import { isCheckFreeForPlayer } from "../../utils/chipUtils";
@@ -89,12 +90,14 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // plays from the same warmed buffers without fetching when sounds are off.
     const { playActionSound } = useActionSounds({ preload: false });
 
-    // Detect mobile landscape orientation
-    const [isMobileLandscape, setIsMobileLandscape] = useState(getViewportMode() === "mobile-landscape");
+    const [viewportMode, setViewportMode] = useState(getViewportMode);
+    const isMobileLandscape = viewportMode === "mobile-landscape";
+    const isMobilePortrait = viewportMode === "mobile-portrait";
+    const isMobileBetting = isMobilePortrait || isMobileLandscape;
 
     useEffect(() => {
         const checkOrientation = () => {
-            setIsMobileLandscape(getViewportMode() === "mobile-landscape");
+            setViewportMode(getViewportMode());
         };
 
         window.addEventListener("resize", checkOrientation);
@@ -122,7 +125,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         autoFold: autoFoldEnabled,
         autoMuck: autoMuckEnabled,
         playerActionSounds,
-        preSelectCheck
+        preSelectCheck,
+        leftHandMode
     } = useGameSettings();
 
     // Get user address
@@ -417,6 +421,21 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         setRaiseAmount(prev => Math.max(prev - step, minAmount));
     };
 
+    const showMobileActions = isMobileBetting && showActionButtons && !showSmallBlindButton && !showBigBlindButton;
+    const showdownVisible = shouldShowShowdownBar({ hasShowAction, hasMuckAction, isUsersTurn, controlsPending });
+    const newHandVisible = gameState?.round === TexasHoldemRound.END && !autoNewHandEnabled && !controlsPending;
+    const dealingVisible = Boolean(autoNewHandEnabled && isDealingNewHand && !controlsPending);
+    const blindsVisible = (showSmallBlindButton || showBigBlindButton) && !controlsPending;
+    const dockOpen = showPreCheck || shouldShowDealButton || newHandVisible || dealingVisible || showdownVisible || blindsVisible || showMobileActions;
+    const dockRef = useRef<HTMLDivElement>(null);
+
+    useLayoutEffect(() => {
+        const slot = dockRef.current?.closest("[data-testid='mobile-action-slot']");
+        if (!(slot instanceof HTMLElement)) return;
+        slot.dataset.open = dockOpen ? "true" : "false";
+        slot.dataset.hasActions = showMobileActions ? "true" : "false";
+    }, [dockOpen, showMobileActions]);
+
     const handleAllInAction = () => {
         const maxAmount = hasBetAction ? maxBet : maxRaise;
         setRaiseAmount(maxAmount);
@@ -447,16 +466,72 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         submitAction("raise", () => raiseHand(tableId, stackMicro, network), false);
     };
 
+    const actionButtonProps = {
+        canFold: canFoldAnytime,
+        canCheck: hasCheckAction,
+        // Defensive guard for #2152: never offer CALL to an ALL_IN player.
+        canCall: hasCallAction && userPlayer?.status !== PlayerStatus.ALL_IN,
+        callAmount: formattedCallAmount,
+        callIsAllIn,
+        canBet: hasBetAction,
+        canRaise: hasRaiseAction && !shortShoveRaise,
+        raiseAmount,
+        isRaiseAmountInvalid,
+        playerStatus: userPlayer?.status || PlayerStatus.SEATED,
+        loading: loadingAction,
+        isAllIn: raiseAmount >= (hasBetAction ? maxBet : maxRaise),
+        isMobileLandscape,
+        currentRound: gameState?.round || TexasHoldemRound.ANTE,
+        previousActions: gameState?.previousActions || [],
+        userAddress: userAddress || "",
+        isTournament,
+        canAllIn: shortShoveRaise,
+        allInAmount: formattedAllInAmount,
+        onFold: handleFoldAction,
+        onCheck: handleCheckAction,
+        onCall: handleCallAction,
+        onBetOrRaise: hasRaiseAction ? handleRaiseAction : handleBetAction,
+        onAllIn: handleShortShoveAllInAction
+    };
+    const showSizing = (hasBetAction || hasRaiseAction) && !shortShoveRaise;
+    const sizingProps = {
+        amount: raiseAmount,
+        minAmount: hasBetAction ? minBet : minRaise,
+        maxAmount: hasBetAction ? maxBet : maxRaise,
+        formattedMaxAmount: formattedMaxBetAmount,
+        step: getStep(),
+        displayOffset: hasRaiseAction
+            ? getRaiseToAmount(raiseAmount, gameState?.previousActions || [], gameState?.round || TexasHoldemRound.ANTE, userAddress || "", isTournament) - raiseAmount
+            : 0,
+        totalPotMicro,
+        callAmountMicro,
+        isInvalid: isRaiseAmountInvalid,
+        isMobileLandscape,
+        isTournament,
+        currentRound: gameState?.round || TexasHoldemRound.ANTE,
+        previousActions: gameState?.previousActions || [],
+        disabled: !isUsersTurn,
+        onAmountChange: setRaiseAmount,
+        onIncrement: handleRaiseIncrement,
+        onDecrement: handleRaiseDecrement,
+        onAllIn: handleAllInAction
+    };
+
     return (
         <div
-            className={`poker-action-dock fixed left-0 right-0 text-white flex justify-center items-center relative ${
-                isMobileLandscape ? "bottom-0 p-0.5" : "bottom-12 lg:bottom-1 p-2 lg:p-1 pb-4 lg:pb-1"
-            }`}
+            ref={dockRef}
+            className={
+                isMobileBetting
+                    ? "poker-action-dock mobile-dock-root text-white relative"
+                    : "poker-action-dock fixed left-0 right-0 text-white flex justify-center items-center relative bottom-12 lg:bottom-1 p-2 lg:p-1 pb-4 lg:pb-1"
+            }
         >
             <div
-                className={`flex flex-col w-full justify-center rounded-lg relative z-10 ${
-                    isMobileLandscape ? "mx-1 space-y-0.5 max-w-full" : "lg:w-[570px] mx-4 lg:mx-0 space-y-2 lg:space-y-3 max-w-full"
-                }`}
+                className={
+                    isMobileBetting
+                        ? "mobile-dock-inner"
+                        : "flex flex-col w-full justify-center rounded-lg relative z-10 lg:w-[570px] mx-4 lg:mx-0 space-y-2 lg:space-y-3 max-w-full"
+                }
             >
                 {/* Pre-select "Check" (ui#388) — offered when it's not your turn
                     and checking is currently free; auto-checks on your turn, and
@@ -544,79 +619,23 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                             />
                         )}
 
-                        {/* Main Action Buttons */}
+                        {/* Main Action Buttons. Mobile uses the overlay / side column.
+                            Desktop and tablet keep the horizontal bar and range slider. */}
                         {showActionButtons && !showSmallBlindButton && !showBigBlindButton && (
-                            <>
-                                <MainActionButtons
-                                    canFold={canFoldAnytime}
-                                    canCheck={hasCheckAction}
-                                    // Defensive guard for #2152: never offer CALL to an ALL_IN
-                                    // player. The engine doesn't emit CALL in this case, but a
-                                    // stale legalActions render (optimistic-update desync, mid-
-                                    // tx flicker) could otherwise paint a "CALL $0.00" button.
-                                    canCall={hasCallAction && userPlayer?.status !== PlayerStatus.ALL_IN}
-                                    callAmount={formattedCallAmount}
-                                    // Capped all-in call: the CALL commits the whole stack — relabel it.
-                                    callIsAllIn={callIsAllIn}
-                                    canBet={hasBetAction}
-                                    // Short-shove RAISE is an all-in-only range; the dedicated ALL-IN
-                                    // button handles it, so suppress the normal (slider-driven) raise.
-                                    canRaise={hasRaiseAction && !shortShoveRaise}
-                                    raiseAmount={raiseAmount}
-                                    isRaiseAmountInvalid={isRaiseAmountInvalid}
-                                    playerStatus={userPlayer?.status || PlayerStatus.SEATED}
-                                    loading={loadingAction}
-                                    isAllIn={raiseAmount >= (hasBetAction ? maxBet : maxRaise)}
-                                    isMobileLandscape={isMobileLandscape}
-                                    currentRound={gameState?.round || TexasHoldemRound.ANTE}
-                                    previousActions={gameState?.previousActions || []}
-                                    userAddress={userAddress || ""}
-                                    isTournament={isTournament}
-                                    canAllIn={shortShoveRaise}
-                                    allInAmount={formattedAllInAmount}
-                                    onFold={handleFoldAction}
-                                    onCheck={handleCheckAction}
-                                    onCall={handleCallAction}
-                                    onBetOrRaise={hasRaiseAction ? handleRaiseAction : handleBetAction}
-                                    onAllIn={handleShortShoveAllInAction}
+                            isMobileBetting ? (
+                                <MobileBettingCluster
+                                    presentation={isMobilePortrait ? "portrait" : "landscape"}
+                                    leftHand={leftHandMode}
+                                    showSizing={showSizing}
+                                    actions={actionButtonProps}
+                                    sizing={sizingProps}
                                 />
-
-                                {/* Raise/Bet Controls — hidden for a short-shove RAISE, whose
-                                    all-in-only (min===max) range would render a degenerate slider;
-                                    the dedicated ALL-IN button drives that shove instead. */}
-                                {(hasBetAction || hasRaiseAction) && !shortShoveRaise && (
-                                    <RaiseBetControls
-                                        amount={raiseAmount}
-                                        minAmount={hasBetAction ? minBet : minRaise}
-                                        maxAmount={hasBetAction ? maxBet : maxRaise}
-                                        formattedMaxAmount={formattedMaxBetAmount}
-                                        step={getStep()}
-                                        displayOffset={
-                                            hasRaiseAction
-                                                ? getRaiseToAmount(
-                                                      raiseAmount,
-                                                      gameState?.previousActions || [],
-                                                      gameState?.round || TexasHoldemRound.ANTE,
-                                                      userAddress || "",
-                                                      isTournament
-                                                  ) - raiseAmount
-                                                : 0
-                                        }
-                                        totalPotMicro={totalPotMicro}
-                                        callAmountMicro={callAmountMicro}
-                                        isInvalid={isRaiseAmountInvalid}
-                                        isMobileLandscape={isMobileLandscape}
-                                        isTournament={isTournament}
-                                        currentRound={gameState?.round || TexasHoldemRound.ANTE}
-                                        previousActions={gameState?.previousActions || []}
-                                        disabled={!isUsersTurn}
-                                        onAmountChange={setRaiseAmount}
-                                        onIncrement={handleRaiseIncrement}
-                                        onDecrement={handleRaiseDecrement}
-                                        onAllIn={handleAllInAction}
-                                    />
-                                )}
-                            </>
+                            ) : (
+                                <>
+                                    <MainActionButtons {...actionButtonProps} />
+                                    {showSizing && <RaiseBetControls {...sizingProps} />}
+                                </>
+                            )
                         )}
                     </>
                 )}

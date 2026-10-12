@@ -166,3 +166,16 @@ describe("PotSizedBetButtons — #692 values ($0.01/$0.02, $0.04 pot)", () => {
         expect(onAmountSelect).toHaveBeenCalledWith(0.02);
     });
 });
+
+describe("PotSizedBetButtons — mobile preset row", () => {
+    it("offers Min, 1/2, 3/4, Pot and All-in, and Min selects the legal minimum", () => {
+        const { onAmountSelect, onAllIn } = renderButtons({ mobilePresets: true });
+        expect(screen.queryByRole("button", { name: "1/4 Pot" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Min" }));
+        expect(onAmountSelect).toHaveBeenCalledWith(2);
+        fireEvent.click(screen.getByRole("button", { name: "1/2" }));
+        expect(onAmountSelect).toHaveBeenLastCalledWith(2);
+        fireEvent.click(screen.getByRole("button", { name: "All-in" }));
+        expect(onAllIn).toHaveBeenCalledTimes(1);
+    });
+});

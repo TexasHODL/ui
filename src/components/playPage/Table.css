@@ -346,10 +346,29 @@
     flex-direction: column;
 }
 
-/* The stage excludes the measured mobile action slot. Controls, safe-area
-   padding and extra rows can no longer draw over the bottom player's seat. */
+/* The stage fills the play row. Portrait actions overlay the felt. Landscape
+   actions are a side column and only consume width while a turn is open. */
 .table-stage { flex: 1 1 0; min-height: 0; }
 .table-banner-wrap { flex-shrink: 0; }
+.table-play-row {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+.table-play-row.is-landscape {
+    flex-direction: row;
+}
+.table-play-row.is-landscape.hand-left {
+    flex-direction: row-reverse;
+}
+.table-play-row > .table-stage {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+}
 .mobile-action-slot {
     position: relative;
     flex: 0 0 auto;
@@ -358,6 +377,90 @@
     width: 100%;
     padding-top: 12px;
     z-index: 10;
+}
+.table-play-row.is-portrait .mobile-action-slot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    z-index: 30;
+    pointer-events: none;
+    display: block;
+}
+.table-play-row.is-portrait .mobile-action-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+    transform: translateY(110%);
+    transition: transform 180ms ease-out;
+}
+.table-play-row.is-portrait .mobile-action-slot[data-open="true"] .mobile-action-content {
+    transform: none;
+}
+.table-play-row.is-portrait .mobile-action-slot[data-open="true"] .poker-action-dock {
+    pointer-events: auto;
+}
+.table-play-row.is-landscape .mobile-action-slot {
+    flex: 0 0 0px;
+    width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+    align-self: stretch;
+    z-index: 30;
+}
+.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] {
+    flex-basis: calc(124px + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
+    width: calc(124px + env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px));
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] .mobile-action-content {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+.table-play-row.is-landscape .mobile-action-slot[data-has-actions="false"] {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: auto;
+    flex: none;
+    pointer-events: none;
+}
+.table-play-row.is-landscape .mobile-action-slot[data-has-actions="false"] .poker-action-dock {
+    pointer-events: auto;
+}
+.mobile-dock-root {
+    width: 100%;
+    pointer-events: auto;
+}
+.mobile-dock-inner {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    min-height: 0;
+}
+.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] .mobile-dock-root,
+.table-play-row.is-landscape .mobile-action-slot[data-has-actions="true"] .mobile-dock-inner {
+    height: 100%;
 }
 .mobile-action-content {
     width: 100%;

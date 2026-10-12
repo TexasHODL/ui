@@ -760,12 +760,12 @@ export const VIEWPORT_PARAMS: Record<ViewportMode, {
     "mobile-landscape": {
         paddingH: 10,
         paddingV: 15,
-        footerOverlay: 0        // measured normal-flow action dock
+        footerOverlay: 0        // the action column sits beside the measured stage
     },
     "mobile-portrait": {
         paddingH: 12,
         paddingV: 10,
-        footerOverlay: 0        // measured normal-flow action dock, including safe area
+        footerOverlay: 0        // actions overlay the felt and do not resize it
     }
 };
 

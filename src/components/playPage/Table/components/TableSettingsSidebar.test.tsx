@@ -9,11 +9,13 @@ jest.mock("../../../../context/GameSettingsContext", () => ({
         autoMuck: false,
         sitInOptions: false,
         preSelectCheck: false,
+        leftHandMode: false,
         toggleTurnNotificationSound: jest.fn(),
         togglePlayerActionSounds: jest.fn(),
         toggleAutoMuck: jest.fn(),
         toggleSitInOptions: jest.fn(),
-        togglePreSelectCheck: jest.fn()
+        togglePreSelectCheck: jest.fn(),
+        toggleLeftHandMode: jest.fn()
     })
 }));
 
@@ -27,8 +29,9 @@ describe("Table settings", () => {
         const onStyle = jest.fn();
         const onClose = jest.fn();
         render(<TableSettingsSidebar isOpen tableStyle="modern" onTableStyleChange={onStyle} onClose={onClose} />);
-        expect(screen.getAllByRole("switch")).toHaveLength(5);
+        expect(screen.getAllByRole("switch")).toHaveLength(6);
         expect(screen.getByRole("switch", { name: "Pre-Select Check" })).toBeVisible();
+        expect(screen.getByRole("switch", { name: "Left-hand mode" })).toHaveAttribute("aria-checked", "false");
         expect(screen.getByRole("switch", { name: "Turn Notification Sound" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("switch", { name: "Auto Muck" })).toHaveAttribute("aria-checked", "false");
         fireEvent.change(screen.getByRole("combobox", { name: "Table appearance" }), { target: { value: "classic" } });

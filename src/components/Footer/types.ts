@@ -52,6 +52,8 @@ export interface FoldButtonProps {
     disabled: boolean;
     isMobileLandscape?: boolean;
     onClick: () => void;
+    /** Replaces the default size classes. Desktop leaves this unset. */
+    className?: string;
 }
 
 // ============================================================================
@@ -144,6 +146,10 @@ export interface MainActionButtonsProps {
     onBetOrRaise: () => void;
     /** Shove the whole remaining stack via the all-in-only RAISE (short shove). */
     onAllIn: () => void;
+    /** Mobile arrangement. Omitted on desktop and tablet, which keep the horizontal bar. */
+    presentation?: "portrait" | "landscape";
+    /** Rendered over the raise button. Used by the portrait pill slider. */
+    raiseAccessory?: React.ReactNode;
 }
 
 // ============================================================================
@@ -207,4 +213,7 @@ export interface PotSizedBetButtonsProps {
     disabled: boolean;
     onAmountSelect: (amount: number) => void;
     onAllIn: () => void;
+    /** Mobile set: Min, 1/2, 3/4, Pot, All-in. Desktop keeps 1/4 Pot through Pot. */
+    mobilePresets?: boolean;
+    className?: string;
 }
