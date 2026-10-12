@@ -3,7 +3,10 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import { FaEllipsisH, FaArrowUp } from "react-icons/fa";
 import { NetworkSelector } from "./NetworkSelector";
 import { ProfileAvatarButton } from "./profile";
+import { viteEnv } from "../utils/viteEnv";
 import styles from "./GlobalHeader.module.css";
+
+const bundledLogo = "/texas-hodl-logo.png";
 
 const extraGroups = [
     {
@@ -35,7 +38,15 @@ export const GlobalHeader: React.FC = () => {
         <header className={styles.headerShell}>
             <div className={styles.inner}>
                 <Link to="/" className={styles.brand} aria-label="Texas HODL lobby">
-                    <img src={import.meta.env.VITE_CLUB_LOGO || "/texas-hodl-logo.png"} alt="" />
+                    <img
+                        src={viteEnv.VITE_CLUB_LOGO || bundledLogo}
+                        alt=""
+                        onError={({ currentTarget }) => {
+                            // A stale external branding URL must not leave the lobby logo broken.
+                            // Do not retry if the bundled asset itself fails.
+                            if (currentTarget.getAttribute("src") !== bundledLogo) currentTarget.src = bundledLogo;
+                        }}
+                    />
                     <span>
                         TEXAS <b>HODL</b>
                         <small>POKER. PROVEN FAIR.</small>
