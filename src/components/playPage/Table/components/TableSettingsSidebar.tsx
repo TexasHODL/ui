@@ -55,11 +55,13 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
         autoMuck,
         sitInOptions,
         preSelectCheck,
+        leftHandMode,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
         toggleSitInOptions,
-        togglePreSelectCheck
+        togglePreSelectCheck,
+        toggleLeftHandMode
     } = useGameSettings();
 
     return (
@@ -134,6 +136,12 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                             description="Queue a free check. Cancels if a bet lands; never folds."
                             checked={preSelectCheck}
                             onToggle={togglePreSelectCheck}
+                        />
+                        <ToggleRow
+                            label="Left-hand mode"
+                            description="Landscape controls sit on the left edge. Off: right edge."
+                            checked={leftHandMode}
+                            onToggle={toggleLeftHandMode}
                         />
                     </div>
                 </div>

@@ -55,11 +55,13 @@ const SettingsTab: React.FC = () => {
         autoMuck,
         sitInOptions,
         preSelectCheck,
+        leftHandMode,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
         toggleSitInOptions,
-        togglePreSelectCheck
+        togglePreSelectCheck,
+        toggleLeftHandMode
     } = useGameSettings();
 
     return (
@@ -93,6 +95,12 @@ const SettingsTab: React.FC = () => {
                 description="Show a Check box before your turn when checking is free, so you can queue an auto-check. Clears if a bet lands — it can only ever check, never fold."
                 checked={preSelectCheck}
                 onToggle={togglePreSelectCheck}
+            />
+            <ToggleRow
+                label="Left-hand mode"
+                description="Put landscape betting controls on the left edge. Off keeps them on the right."
+                checked={leftHandMode}
+                onToggle={toggleLeftHandMode}
             />
         </div>
     );

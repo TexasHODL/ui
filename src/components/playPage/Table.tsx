@@ -827,7 +827,7 @@ const Table = React.memo(() => {
     } = useNextToActInfo(id);
 
     // Enable turn-to-act notifications (tab flashing + optional sound)
-    const { turnNotificationSound, playerActionSounds, seatAtBottom } = useGameSettings();
+    const { turnNotificationSound, playerActionSounds, seatAtBottom, leftHandMode } = useGameSettings();
     useTurnNotification(isCurrentUserTurn, {
         enableSound: turnNotificationSound,
         soundVolume: 0.3,
@@ -1397,7 +1397,9 @@ const Table = React.memo(() => {
                 )}
 
                 </div>
-                {/*//! BODY — single flex-grow container, measured by geometry engine */}
+                {/*//! BODY — measured by the geometry engine. Mobile landscape gives
+                    the action column a fixed width beside this stage. */}
+                <div className={["table-play-row", isMobilePortrait ? "is-portrait" : "", tableLayout.viewportMode === "mobile-landscape" ? "is-landscape" : "", tableLayout.viewportMode === "mobile-landscape" && leftHandMode ? "hand-left" : ""].filter(Boolean).join(" ")}>
                 <div ref={tableContainerRef} className="table-stage flex-grow relative overflow-visible">
                     {/* Background layers */}
                     {tableStyle !== "nouns" && <HexagonPattern patternId="hexagons-table" />}
@@ -1535,28 +1537,29 @@ const Table = React.memo(() => {
                     <LiveHandStrengthDisplay />
                 </div>
 
-                {/* Mobile controls reserve normal-flow space below the stage.
-                    Keep PokerActionPanel mounted for its automatic gameplay hooks. */}
-                {!isReplayMode &&
-                    (isCompactMobile ? (
-                        <MobileActionDock portrait={isMobilePortrait}>
+                {/* Mobile controls stay mounted for automatic gameplay hooks.
+                    The portrait dock and landscape column always reserve space. */}
+                {!isReplayMode && isCompactMobile && (
+                    <MobileActionDock mode={isMobilePortrait ? "overlay" : "column"}>
+                        <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
+                    </MobileActionDock>
+                )}
+                </div>
+
+                {/* Desktop and tablet keep the fixed footer. SNG payouts stay
+                    here, where there is room beside the action bar (ui#693). */}
+                {!isReplayMode && !isCompactMobile && (
+                    <div className="w-full flex justify-center items-center z-[10] h-[160px] fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 backdrop-blur-sm">
+                        <div className="w-full flex justify-center items-center h-full max-w-[700px]">
                             <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
-                            {/* SNG payout structure is hidden on mobile: the floating panel
-                            sat on top of the ALL-IN preset button (ui#693). It stays on
-                            desktop/landscape below, where there's lateral room for it. */}
-                        </MobileActionDock>
-                    ) : (
-                        <div className="w-full flex justify-center items-center z-[10] h-[160px] fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 backdrop-blur-sm">
-                            <div className="w-full flex justify-center items-center h-full max-w-[700px]">
-                                <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
-                            </div>
-                            {gameFormat && isSitAndGoFormat(gameFormat) && (
-                                <div className="absolute right-4 bottom-3 z-20">
-                                    <SngPayoutPanel />
-                                </div>
-                            )}
                         </div>
-                    ))}
+                        {gameFormat && isSitAndGoFormat(gameFormat) && (
+                            <div className="absolute right-4 bottom-3 z-20">
+                                <SngPayoutPanel />
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/*//! ACTION LOG OVERLAY */}
                 <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />

@@ -1,5 +1,5 @@
 import React from "react";
-import { calculatePotBetWithVariation, PotBetVariation } from "../../utils/calculatePotBetAmount";
+import { calculatePotBetWithVariation, type PotBetVariation } from "../../utils/calculatePotBetAmount";
 import { microBigIntToUsdc, roundMicroToCent } from "../../constants/currency";
 import type { PotSizedBetButtonsProps } from "./types";
 
@@ -13,14 +13,23 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
     previousActions,
     disabled,
     onAmountSelect,
-    onAllIn
+    onAllIn,
+    mobilePresets = false,
+    className
 }) => {
-    const potBetOptions: { label: string; variation: PotBetVariation }[] = [
-        { label: "1/4 Pot", variation: "1/4" },
-        { label: "1/2 Pot", variation: "1/2" },
-        { label: "3/4 Pot", variation: "3/4" },
-        { label: "Pot", variation: "1" }
-    ];
+    const potBetOptions: { label: string; variation: PotBetVariation | "min" }[] = mobilePresets
+        ? [
+            { label: "Min", variation: "min" },
+            { label: "1/2", variation: "1/2" },
+            { label: "3/4", variation: "3/4" },
+            { label: "Pot", variation: "1" }
+        ]
+        : [
+            { label: "1/4 Pot", variation: "1/4" },
+            { label: "1/2 Pot", variation: "1/2" },
+            { label: "3/4 Pot", variation: "3/4" },
+            { label: "Pot", variation: "1" }
+        ];
 
     // The preset's true size: the pot fraction, rounded to the cent (cash) or a
     // whole chip (tournaments). Never lifted to the minimum — a preset that comes
@@ -43,8 +52,20 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
     const cannotAffordMin = minAmount > maxAmount;
 
     return (
-        <div className="flex justify-between gap-1 lg:gap-2 mb-1">
+        <div className={className ?? "flex justify-between gap-1 lg:gap-2 mb-1"}>
             {potBetOptions.map(({ label, variation }) => {
+                if (variation === "min") {
+                    return (
+                        <button
+                            key={label}
+                            className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[10px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
+                            onClick={() => onAmountSelect(minAmount)}
+                            disabled={disabled || cannotAffordMin}
+                        >
+                            {label}
+                        </button>
+                    );
+                }
                 const amount = presetAmount(variation);
                 // Each preset is judged on its own: one that would bet less than the
                 // legal minimum (one big blind to open, the min raise when facing a
@@ -69,7 +90,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
                 onClick={onAllIn}
                 disabled={disabled}
             >
-                ALL-IN
+                {mobilePresets ? "All-in" : "ALL-IN"}
             </button>
         </div>
     );

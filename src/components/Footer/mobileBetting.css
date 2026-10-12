@@ -1,0 +1,254 @@
+/* Mobile betting cluster and the frosted pill slider.
+   Desktop and tablet never receive these classes. The portrait slider is the
+   only control allowed to draw over the felt. */
+
+.mobile-bet {
+    width: 100%;
+    min-height: 0;
+}
+
+.mobile-bet-portrait {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mobile-bet-landscape {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+    width: 120px;
+    max-width: 100%;
+    height: 100%;
+    gap: 2px;
+    min-height: 0;
+    margin-left: auto;
+}
+
+.mobile-bet-landscape.hand-left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.mobile-bet-sizing {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 4px;
+    min-height: 0;
+    width: 100%;
+}
+
+.mobile-bet.hand-left .mobile-bet-sizing {
+    flex-direction: row-reverse;
+}
+
+.mobile-presets {
+    display: flex;
+    flex-direction: column;
+    width: 68px;
+    flex: 0 0 68px;
+    gap: 2px;
+    margin: 0;
+}
+
+.mobile-presets button {
+    flex: 1 1 0;
+    min-height: 0;
+    padding: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.mobile-presets-row {
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    margin: 0;
+}
+
+.mobile-presets-row button {
+    flex: 1 1 0;
+    min-height: 40px;
+    padding: 4px 2px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.mobile-bet-slider {
+    width: 48px;
+    flex: 0 0 48px;
+    min-height: 0;
+}
+
+.mobile-actions-row {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+}
+
+.mobile-actions-stack {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 4px;
+    width: 100%;
+    flex: 0 0 auto;
+}
+
+.mobile-actions-row > button,
+.mobile-actions-row > .mobile-raise-anchor {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.mobile-actions-row > button,
+.mobile-actions-row .mobile-raise-anchor > button {
+    min-height: 48px;
+}
+
+.mobile-actions-stack > button {
+    width: 100%;
+    min-height: 44px;
+}
+
+.mobile-actions-row > button,
+.mobile-actions-stack > button,
+.mobile-raise-anchor > button {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    padding: 8px 4px;
+}
+
+.mobile-actions-row .btn-raise,
+.mobile-actions-stack .btn-raise,
+.mobile-raise-anchor .btn-raise {
+    background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+    border-color: #ff9fdc;
+}
+
+.mobile-raise-anchor {
+    position: relative;
+    display: flex;
+    min-width: 0;
+}
+
+.mobile-raise-anchor > button {
+    width: 100%;
+}
+
+.pill-slider {
+    display: flex;
+    flex-direction: column;
+    width: 52px;
+    height: 100%;
+    min-height: 0;
+    background: rgba(18, 12, 32, 0.42);
+    backdrop-filter: blur(16px) saturate(1.35);
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.mobile-bet-landscape .pill-slider,
+.mobile-bet-slider .pill-slider {
+    width: 48px;
+}
+
+.pill-slider-invalid {
+    box-shadow: 0 0 0 1px #f87171, 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.pill-cap {
+    flex: 0 0 38px;
+    height: 38px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pill-cap:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pill-cap-plus {
+    background: #ff9717;
+}
+
+.pill-cap-minus {
+    background: linear-gradient(to top, #f02bc6, #ff4a83);
+}
+
+.pill-track {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 48px;
+    touch-action: none;
+}
+
+.pill-rail {
+    position: absolute;
+    left: 50%;
+    top: 11px;
+    bottom: 11px;
+    width: 6px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    overflow: hidden;
+}
+
+.pill-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.pill-thumb {
+    position: absolute;
+    left: 50%;
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+}
+
+.pill-value {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 2px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff4e5;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+    pointer-events: none;
+}
+
+.portrait-raise-slider {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    width: 52px;
+    height: 50dvh;
+    max-height: 420px;
+    z-index: 5;
+}
+
