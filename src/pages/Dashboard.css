@@ -1,50 +1,50 @@
 .scrollbar-custom::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
-
-.scrollbar-custom::-webkit-scrollbar-track {
-    background: #2d3748;
-}
-
 .scrollbar-custom::-webkit-scrollbar-thumb {
-    background-color: #718096;
-    border-radius: 4px;
+    background: #655071;
+    border-radius: 6px;
 }
-
-.scrollbar-custom::-webkit-scrollbar-thumb:hover {
-    background-color: #a0aec0;
-}
-
-/* Dashboard animations */
 @keyframes gradient {
-    0% {
+    0%,
+    100% {
         background-position: 0% 50%;
     }
     50% {
         background-position: 100% 50%;
     }
+}
+@keyframes shimmer {
+    0% {
+        background-position: 0% 0;
+    }
     100% {
-        background-position: 0% 50%;
+        background-position: 200% 0;
     }
 }
-
-@keyframes shimmer {
-    0% { background-position: 0% 0; }
-    100% { background-position: 200% 0; }
-}
-
 @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
 }
-
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
 }
-
+@keyframes textShine {
+    to {
+        background-position: 200% center;
+    }
+}
 .text-gradient {
     background-clip: text;
     -webkit-background-clip: text;
@@ -52,9 +52,137 @@
     background-size: 200% auto;
     animation: textShine 3s linear infinite;
 }
-
-@keyframes textShine {
-    to {
-        background-position: 200% center;
+.dashboard-lobby {
+    align-items: stretch;
+    justify-content: flex-start;
+    min-height: calc(100dvh - 74px);
+    background: #09070e;
+}
+.lobby-ambient {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse at 7% 2%, #7929bd29, transparent 48%), radial-gradient(ellipse at 97% 12%, #f02bc616, transparent 42%),
+        radial-gradient(ellipse at 100% 90%, #ff97170a, transparent 40%);
+}
+.dashboard-content {
+    max-width: 1440px;
+    padding: 44px 32px 65px;
+}
+.lobby-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 275px;
+    gap: 40px;
+    align-items: start;
+}
+.lobby-games {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+.lobby-wallet {
+    grid-column: 2;
+    grid-row: 1;
+    position: sticky;
+    top: 108px;
+}
+.lobby-transactions {
+    margin-top: 16px;
+    border: 1px solid #ffffff12;
+    border-radius: 12px;
+    overflow: hidden;
+}
+.lobby-transactions > summary {
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    padding: 17px 20px;
+    color: #c2b3ce;
+    font-size: 12px;
+    list-style: none;
+}
+.lobby-transactions > summary::-webkit-details-marker {
+    display: none;
+}
+.lobby-transactions > summary span {
+    color: #ab6edc;
+}
+.lobby-transactions .bg-gray-800,
+.lobby-transactions .bg-gray-900 {
+    background: #100b17;
+    border: 0;
+}
+.lobby-tip {
+    padding: 26px 8px;
+}
+.lobby-tip > span {
+    color: #887795;
+    font:
+        8px "DM Mono",
+        monospace;
+    letter-spacing: 0.12em;
+}
+.lobby-tip p {
+    font-size: 17px;
+    color: #dfd2e8;
+    margin-top: 14px;
+}
+.lobby-tip small {
+    display: block;
+    color: #a394af;
+    font-size: 12px;
+    line-height: 1.8;
+    margin: 9px 0 18px;
+}
+.lobby-tip a {
+    color: #c292e6;
+    font-size: 11px;
+}
+.dashboard-lobby input,
+.dashboard-lobby select {
+    color-scheme: dark;
+}
+.dashboard-lobby .lobby-transactions .text-gray-400 {
+    color: #aa9bb7;
+}
+@media (max-width: 1199px) {
+    .lobby-layout {
+        grid-template-columns: minmax(0, 1fr) 240px;
+        gap: 24px;
+    }
+    .dashboard-content {
+        padding: 32px 24px;
+    }
+}
+@media (max-width: 1000px) {
+    .lobby-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .lobby-wallet {
+        grid-column: 1;
+        grid-row: 2;
+        position: static;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    .lobby-transactions {
+        align-self: start;
+        margin: 0;
+    }
+    .lobby-tip {
+        display: none;
+    }
+}
+@media (max-width: 600px) {
+    .dashboard-content {
+        padding: 26px 16px 36px;
+    }
+    .lobby-wallet {
+        display: block;
+    }
+    .lobby-transactions {
+        margin-top: 16px;
     }
 }

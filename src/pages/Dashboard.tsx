@@ -1,3 +1,6 @@
+import { ModalHeader } from "../components/common/ModalHeader";
+import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
+import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
@@ -14,9 +17,9 @@ import { usdcToMicroBigInt, formatMicroAsUsdc, microToUsdc } from "../constants/
 
 import { WithdrawalModal, USDCDepositModal, UpcomingSngModal } from "../components/modals";
 import TableList from "../components/TableList";
+import TableCreatedModal, { type TableCreationReceipt } from "../components/modals/TableCreatedModal";
 import WalletPanel from "../components/WalletPanel";
 import TransactionPanel from "../components/TransactionPanel";
-import { AnimatedBackground } from "../components/common";
 
 // Game wallet and SDK imports
 // ...existing code...
@@ -33,12 +36,7 @@ import { isTournamentFormat, toGameFormat } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 
 // Password protection utils
-import {
-    checkAuthCookie,
-    isPasswordProtectionEnabled,
-    handlePasswordSubmit as utilHandlePasswordSubmit,
-    handlePasswordKeyPress as utilHandlePasswordKeyPress
-} from "../utils/passwordProtectionUtils";
+import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as utilHandlePasswordSubmit, handlePasswordKeyPress as utilHandlePasswordKeyPress } from "../utils/passwordProtectionUtils";
 
 // Club branding imports
 import { colors, hexToRgba } from "../utils/colorConfig";
@@ -73,6 +71,9 @@ const Dashboard: React.FC = () => {
 
     // New game creation states
     const [showCreateGameModal, setShowCreateGameModal] = useState(false);
+    const [creationReceipt, setCreationReceipt] = useState<TableCreationReceipt | null>(null);
+    const [tablesRevision, setTablesRevision] = useState(0);
+    const closeCreationReceipt = useCallback(() => setCreationReceipt(null), []);
     const [selectedContractAddress, setSelectedContractAddress] = useState("0x4c1d6ea77a2ba47dcd0771b7cde0df30a6df1bfaa7");
     const [createGameError, setCreateGameError] = useState("");
 
@@ -82,7 +83,6 @@ const Dashboard: React.FC = () => {
     const [modalSitAndGoBuyIn, setModalSitAndGoBuyIn] = useState(1); // Single buy-in for Sit & Go
     const [modalPlayerCount, setModalPlayerCount] = useState(4);
     // For Cash Game: min/max players
-    const [modalMinPlayers, setModalMinPlayers] = useState(2);
     const [modalMaxPlayers, setModalMaxPlayers] = useState(9);
     // Selected blind level (index in BLIND_LEVELS array)
     const [selectedBlindLevel, setSelectedBlindLevel] = useState(DEFAULT_BLIND_LEVEL_INDEX);
@@ -184,7 +184,8 @@ const Dashboard: React.FC = () => {
                 format: modalGameFormat,
                 minBuyIn: isTournament ? modalSitAndGoBuyIn : calculatedMinBuyIn,
                 maxBuyIn: isTournament ? modalSitAndGoBuyIn : calculatedMaxBuyIn,
-                minPlayers: modalGameFormat === GameFormat.CASH ? modalMinPlayers : modalPlayerCount,
+                // Cash tables can start heads-up; tournaments require every seat.
+                minPlayers: modalGameFormat === GameFormat.CASH ? 2 : modalPlayerCount,
                 maxPlayers: modalGameFormat === GameFormat.CASH ? modalMaxPlayers : modalPlayerCount,
                 smallBlind: modalSmallBlind,
                 bigBlind: modalBigBlind,
@@ -193,10 +194,12 @@ const Dashboard: React.FC = () => {
             };
 
             // Use the createTable function from the hook (Cosmos SDK)
-            const txHash = await createTable(gameOptions);
+            const result = await createTable(gameOptions);
 
-            if (txHash) {
+            if (result) {
                 setShowCreateGameModal(false);
+                setCreationReceipt(result);
+                setTablesRevision(revision => revision + 1);
                 setModalTableName("");
                 // The chain just debited the creation (+ name) fee — show the real balance.
                 void cosmosWallet.refreshBalance();
@@ -351,8 +354,7 @@ const Dashboard: React.FC = () => {
         [modalGameFormat, modalSmallBlind, modalBigBlind, isModalTournament, modalSitAndGoBuyIn, calculatedMinBuyIn, modalStartingStack]
     );
     const creationTotalMicro = creationFeeMicro === null ? null : creationFeeMicro + computeGameNameFee(normalizedTableName);
-    const insufficientForCreation =
-        creationTotalMicro === null || creationTotalMicro > usdcToMicroBigInt(numericUsdcBalance);
+    const insufficientForCreation = creationTotalMicro === null || creationTotalMicro > usdcToMicroBigInt(numericUsdcBalance);
     const createDisabled = isCreatingTable || !!tableNameError || insufficientForName || insufficientForCreation;
 
     // Check if transfer amount exceeds available balance
@@ -399,9 +401,8 @@ const Dashboard: React.FC = () => {
     // Removed: Game selection button handlers - no longer needed
 
     return (
-        <div className="min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
-            {/* Animated background with hexagon pattern */}
-            <AnimatedBackground />
+        <div className="dashboard-lobby min-h-screen flex flex-col justify-center items-center relative overflow-hidden">
+            <div className="lobby-ambient" aria-hidden="true" />
 
             {/* Wallet Generated Notification */}
             {showWalletGeneratedNotification && (
@@ -428,31 +429,9 @@ const Dashboard: React.FC = () => {
             {/* Password Protection Modal */}
             {!isAuthenticated && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-                    <div className={`backdrop-blur-md p-8 rounded-xl w-96 shadow-2xl relative overflow-hidden ${styles.passwordModal}`}>
-                        {/* Web3 styled background */}
-                        <div className={`absolute inset-0 rounded-xl ${styles.passwordModalOverlay}`}></div>
-                        <div className={`absolute top-0 left-0 w-full h-1 animate-pulse ${styles.passwordModalTopBar}`}></div>
-
+                    <div className={`hodl-modal backdrop-blur-md p-8 rounded-xl w-96 shadow-2xl relative overflow-hidden ${styles.passwordModal}`}>
                         <div className="relative z-10">
-                            <div className="flex items-center justify-center mb-4">
-                                <img src="/block52.png" alt="Block52 Logo" className="h-16 w-auto object-contain" />
-                            </div>
-
-                            <div className="flex items-center justify-center mb-6">
-                                <div className={`w-16 h-16 rounded-full flex items-center justify-center ${styles.passwordIconCircle}`}>
-                                    <svg className={`w-8 h-8 ${styles.brandPrimaryText}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                                        />
-                                    </svg>
-                                </div>
-                            </div>
-
-                            <h2 className="text-2xl font-bold text-white text-center mb-2 text-shadow">Secure Access</h2>
-                            <p className="text-gray-300 text-center mb-6 text-sm">Enter password to access the Block52 demo</p>
+                            <ModalHeader kicker="Welcome" title="Secure Access" subtitle="Enter password to access the Block52 demo" />
 
                             <div className="space-y-4">
                                 <div className="relative">
@@ -501,7 +480,7 @@ const Dashboard: React.FC = () => {
 
                                 <button
                                     onClick={handlePasswordSubmit}
-                                    className={`w-full py-3 text-white rounded-lg transition duration-300 transform hover:scale-105 shadow-md font-semibold ${styles.passwordSubmitButton}`}
+                                    className={`w-full py-3 text-white rounded-lg transition duration-300 transform hover:scale-105 shadow-md font-semibold hodl-primary ${styles.passwordSubmitButton}`}
                                 >
                                     <div className="flex items-center justify-center gap-2">
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -535,8 +514,8 @@ const Dashboard: React.FC = () => {
                     {/* Import B52 Wallet Seed Phrase Modal */}
                     {showCosmosImportModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className={`p-6 rounded-xl w-[440px] shadow-2xl border ${styles.modalPanel}`}>
-                                <h3 className="text-xl font-bold text-white mb-2 whitespace-nowrap">Import B52 Wallet Seed Phrase</h3>
+                            <div className={`hodl-modal p-6 rounded-xl w-[440px] shadow-2xl border ${styles.modalPanel}`}>
+                                <ModalHeader title="Import B52 Wallet Seed Phrase" />
                                 <div className={styles.modalTitleDivider} />
                                 <div className="space-y-4">
                                     <div>
@@ -554,7 +533,7 @@ const Dashboard: React.FC = () => {
                                         <button
                                             onClick={handleImportCosmosSeed}
                                             disabled={cosmosWallet.isLoading}
-                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
+                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed hodl-primary ${styles.brandPrimaryBg}`}
                                         >
                                             {cosmosWallet.isLoading ? "Importing..." : "Import"}
                                         </button>
@@ -564,7 +543,7 @@ const Dashboard: React.FC = () => {
                                                 setCosmosSeedPhrase("");
                                                 setCosmosImportError("");
                                             }}
-                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 ${styles.cancelBg}`}
+                                            className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 hodl-secondary ${styles.cancelBg}`}
                                         >
                                             Cancel
                                         </button>
@@ -579,8 +558,8 @@ const Dashboard: React.FC = () => {
                     {/* New B52 Wallet Created Modal - shows seed phrase */}
                     {showNewWalletModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className={`p-6 rounded-xl w-[480px] shadow-2xl border ${styles.modalPanel}`}>
-                                <h3 className="text-xl font-bold text-white mb-2">New B52 Wallet Created</h3>
+                            <div className={`hodl-modal p-6 rounded-xl w-[480px] shadow-2xl border ${styles.modalPanel}`}>
+                                <ModalHeader title="New B52 Wallet Created" />
                                 <div className={styles.modalTitleDivider} />
                                 <p className="text-gray-400 text-sm mb-4">
                                     Write down your seed phrase and store it in a safe place. You will need it to recover your wallet.
@@ -666,7 +645,7 @@ const Dashboard: React.FC = () => {
                                     <button
                                         onClick={handleConfirmNewWallet}
                                         disabled={!seedPhraseCopied}
-                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed ${styles.brandPrimaryBg}`}
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed hodl-primary ${styles.brandPrimaryBg}`}
                                     >
                                         I've Saved My Seed Phrase
                                     </button>
@@ -677,7 +656,7 @@ const Dashboard: React.FC = () => {
                                             setNewWalletAddress("");
                                             setSeedPhraseCopied(false);
                                         }}
-                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 ${styles.cancelBg}`}
+                                        className={`w-full px-4 py-3 text-sm font-medium text-white rounded-lg transition duration-300 hover:opacity-80 hodl-secondary ${styles.cancelBg}`}
                                     >
                                         Cancel
                                     </button>
@@ -689,14 +668,14 @@ const Dashboard: React.FC = () => {
                     {/* USDC Transfer Modal */}
                     {showCosmosTransferModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className={`p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}>
-                                <h3 className="text-xl font-bold text-white mb-4">Send</h3>
+                            <div className={`hodl-modal p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}>
+                                <ModalHeader title="Send" />
                                 <div className="space-y-4">
                                     {/* Available Balance Display */}
                                     <div className={`p-3 rounded-lg ${styles.balanceBox}`}>
                                         <div className="flex justify-between items-center">
                                             <span className="text-gray-400 text-sm">Available Balance:</span>
-                                            <span className={`font-bold ${styles.brandPrimaryText}`}>{getTransferTokenBalance()} USDC</span>
+                                            <span className={`font-bold ${styles.brandPrimaryText}`}>{formatUsd(getTransferTokenBalance())} USDC</span>
                                         </div>
                                     </div>
 
@@ -726,7 +705,7 @@ const Dashboard: React.FC = () => {
                                         <button
                                             onClick={handleCosmosTransfer}
                                             disabled={isTransferring || !isValidRecipient || !transferAmount || isAmountExceedingBalance}
-                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 ${styles.brandPrimaryBg}`}
+                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 hodl-primary ${styles.brandPrimaryBg}`}
                                         >
                                             {isTransferring ? "Sending..." : "Send USDC"}
                                         </button>
@@ -737,7 +716,7 @@ const Dashboard: React.FC = () => {
                                                 setTransferAmount("");
                                                 setTransferError("");
                                             }}
-                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 ${styles.cancelGradientButton}`}
+                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 hodl-secondary ${styles.cancelGradientButton}`}
                                         >
                                             Cancel
                                         </button>
@@ -749,13 +728,14 @@ const Dashboard: React.FC = () => {
 
                     {/* Create New Game Modal */}
                     {showCreateGameModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className={`p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}>
-                                <h3 className="text-xl font-bold text-white mb-4">Create New Table</h3>
+                        <div className="creation-overlay">
+                            <div className="table-creation creation-modal" role="dialog" aria-modal="true" aria-labelledby="create-table-title">
+                                <ModalHeader kicker="Your game, your table" titleId="create-table-title" title="Create a table." subtitle="Choose your setup. Invite your players." />
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-white text-sm mb-1">Game Type</label>
                                         <select
+                                            aria-label="Game type"
                                             value={modalGameFormat}
                                             onChange={e => {
                                                 const format = toGameFormat(e.target.value);
@@ -776,6 +756,7 @@ const Dashboard: React.FC = () => {
                                         </label>
                                         <input
                                             type="text"
+                                            aria-label="Table name"
                                             value={modalTableName}
                                             onChange={e => setModalTableName(e.target.value)}
                                             placeholder="e.g. friday-degens"
@@ -786,60 +767,40 @@ const Dashboard: React.FC = () => {
                                         ) : normalizedTableName.length > 0 ? (
                                             <p className="text-xs text-gray-400 mt-1">
                                                 {tableNameCharCount(normalizedTableName)} characters × $0.10 ={" "}
-                                                <span className="text-white font-semibold">${tableNameFeeUsd.toFixed(2)}</span>
+                                                <span className="text-white font-semibold">${formatUsd(tableNameFeeUsd)}</span>
                                                 {/* Show the canonical form the chain stores when it differs from the raw input. */}
                                                 {normalizedTableName !== modalTableName && (
                                                     <span className="text-gray-500"> — saved as “{normalizedTableName}”</span>
                                                 )}
                                                 {insufficientForName && (
-                                                    <span className="text-red-400"> — exceeds your ${numericUsdcBalance.toFixed(2)} balance</span>
+                                                    <span className="text-red-400"> — exceeds your ${formatUsd(numericUsdcBalance)} balance</span>
                                                 )}
                                             </p>
                                         ) : (
-                                            <p className="text-xs text-gray-400 mt-1">Free if left blank. Lowercase a–z, 0–9 and hyphens; $0.10 per character.</p>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                Free if left blank. Lowercase a–z, 0–9 and hyphens; $0.10 per character.
+                                            </p>
                                         )}
                                     </div>
 
-                                    {modalGameFormat === GameFormat.CASH ? (
-                                        <div className="flex gap-4">
-                                            <div className="flex-1">
-                                                <label className="block text-white text-sm mb-1">Min Players</label>
-                                                <input
-                                                    type="number"
-                                                    min={2}
-                                                    max={9}
-                                                    value={modalMinPlayers ?? 2}
-                                                    onChange={e => setModalMinPlayers(Number(e.target.value))}
-                                                    className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                                />
-                                            </div>
-                                            <div className="flex-1">
-                                                <label className="block text-white text-sm mb-1">Max Players</label>
-                                                <input
-                                                    type="number"
-                                                    min={2}
-                                                    max={9}
-                                                    value={modalMaxPlayers ?? 9}
-                                                    onChange={e => setModalMaxPlayers(Number(e.target.value))}
-                                                    className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : (
                                         <div>
-                                            <label className="block text-white text-sm mb-1">Number of Players</label>
+                                            <label htmlFor="lobby-max-players" className="block text-white text-sm mb-1">Max Players</label>
                                             <select
-                                                value={modalPlayerCount}
-                                                onChange={e => setModalPlayerCount(Number(e.target.value))}
+                                                id="lobby-max-players"
+                                                value={modalGameFormat === GameFormat.CASH ? modalMaxPlayers : modalPlayerCount}
+                                                onChange={e => {
+                                                    const count = Number(e.target.value);
+                                                    if (modalGameFormat === GameFormat.CASH) setModalMaxPlayers(count);
+                                                    else setModalPlayerCount(count);
+                                                }}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             >
-                                                <option value={2}>2 Players (Heads-Up)</option>
-                                                <option value={4}>4 Players (Sit & Go)</option>
-                                                <option value={6}>6 Players (Sit & Go)</option>
-                                                <option value={9}>9 Players (Full Ring)</option>
+                                                <option value={2}>2 (Heads-Up)</option>
+                                                <option value={4}>4 (Sit & Go)</option>
+                                                <option value={6}>6 (Sit & Go)</option>
+                                                <option value={9}>9 (Full Ring)</option>
                                             </select>
                                         </div>
-                                    )}
 
                                     {/* Show different fields based on game format */}
                                     {isTournamentFormat(modalGameFormat) ? (
@@ -848,6 +809,7 @@ const Dashboard: React.FC = () => {
                                             <label className="block text-white text-sm mb-1">Tournament Buy-In ($)</label>
                                             <input
                                                 type="number"
+                                                aria-label="Tournament buy-in"
                                                 value={modalSitAndGoBuyIn}
                                                 onChange={e => setModalSitAndGoBuyIn(Number(e.target.value))}
                                                 min="10"
@@ -857,6 +819,7 @@ const Dashboard: React.FC = () => {
                                             <p className="text-xs text-gray-400 mt-1">All players pay the same buy in</p>
                                             <label className="block text-white text-sm mb-1 mt-3">Starting Stack (chips)</label>
                                             <select
+                                                aria-label="Starting stack"
                                                 value={modalStartingStack}
                                                 onChange={e => setModalStartingStack(Number(e.target.value))}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
@@ -867,6 +830,7 @@ const Dashboard: React.FC = () => {
                                             </select>
                                             <label className="block text-white text-sm mb-1 mt-3">Starting Blinds (chips)</label>
                                             <select
+                                                aria-label="Starting blinds"
                                                 value={modalSngBlindsIndex}
                                                 onChange={e => setModalSngBlindsIndex(Number(e.target.value))}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
@@ -879,6 +843,7 @@ const Dashboard: React.FC = () => {
                                             </select>
                                             <label className="block text-white text-sm mb-1 mt-3">Blind Level Duration</label>
                                             <select
+                                                aria-label="Blind level duration"
                                                 value={modalBlindLevelDuration}
                                                 onChange={e => setModalBlindLevelDuration(Number(e.target.value))}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
@@ -896,6 +861,7 @@ const Dashboard: React.FC = () => {
                                             <div>
                                                 <label className="block text-white text-sm mb-1">Game Size (Small Blind / Big Blind)</label>
                                                 <select
+                                                    aria-label="Starting blinds"
                                                     value={selectedBlindLevel}
                                                     onChange={e => setSelectedBlindLevel(Number(e.target.value))}
                                                     className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
@@ -919,9 +885,7 @@ const Dashboard: React.FC = () => {
                                                             setModalMaxBuyInBB(100);
                                                         }}
                                                         className={`px-3 py-1 text-xs rounded transition-all duration-200 ${
-                                                            modalMinBuyInBB === 20 && modalMaxBuyInBB === 100
-                                                                ? "bg-blue-600 text-white"
-                                                                : "bg-gray-600 text-gray-300 hover:bg-gray-500"
+                                                            modalMinBuyInBB === 20 && modalMaxBuyInBB === 100 ? "creation-preset-active" : "creation-preset"
                                                         }`}
                                                     >
                                                         Standard (20-100 BB)
@@ -933,9 +897,7 @@ const Dashboard: React.FC = () => {
                                                             setModalMaxBuyInBB(200);
                                                         }}
                                                         className={`px-3 py-1 text-xs rounded transition-all duration-200 ${
-                                                            modalMinBuyInBB === 40 && modalMaxBuyInBB === 200
-                                                                ? "bg-blue-600 text-white"
-                                                                : "bg-gray-600 text-gray-300 hover:bg-gray-500"
+                                                            modalMinBuyInBB === 40 && modalMaxBuyInBB === 200 ? "creation-preset-active" : "creation-preset"
                                                         }`}
                                                     >
                                                         Deep (40-200 BB)
@@ -947,9 +909,7 @@ const Dashboard: React.FC = () => {
                                                             setModalMaxBuyInBB(300);
                                                         }}
                                                         className={`px-3 py-1 text-xs rounded transition-all duration-200 ${
-                                                            modalMinBuyInBB === 100 && modalMaxBuyInBB === 300
-                                                                ? "bg-blue-600 text-white"
-                                                                : "bg-gray-600 text-gray-300 hover:bg-gray-500"
+                                                            modalMinBuyInBB === 100 && modalMaxBuyInBB === 300 ? "creation-preset-active" : "creation-preset"
                                                         }`}
                                                     >
                                                         Deep Stack (100-300 BB)
@@ -963,6 +923,7 @@ const Dashboard: React.FC = () => {
                                                     <label className="block text-white text-sm mb-1">Minimum Buy-In (BB)</label>
                                                     <input
                                                         type="number"
+                                                        aria-label="Minimum buy-in"
                                                         value={modalMinBuyInBB}
                                                         onChange={e => setModalMinBuyInBB(Number(e.target.value))}
                                                         min="20"
@@ -974,6 +935,7 @@ const Dashboard: React.FC = () => {
                                                     <label className="block text-white text-sm mb-1">Maximum Buy-In (BB)</label>
                                                     <input
                                                         type="number"
+                                                        aria-label="Maximum buy-in"
                                                         value={modalMaxBuyInBB}
                                                         onChange={e => setModalMaxBuyInBB(Number(e.target.value))}
                                                         min="20"
@@ -985,12 +947,12 @@ const Dashboard: React.FC = () => {
 
                                             {/* Calculated buy-in preview */}
                                             {modalBigBlind > 0 && (
-                                                <div className="bg-gray-700/50 rounded p-3 border border-gray-600">
+                                                <div className="creation-preview">
                                                     <p className="text-xs text-gray-400 mb-1">Calculated Buy-In Range:</p>
                                                     <p className="text-sm text-green-400">
-                                                        ${calculatedMinBuyIn.toFixed(2)} - ${calculatedMaxBuyIn.toFixed(2)}
+                                                        ${formatUsd(calculatedMinBuyIn)} - ${formatUsd(calculatedMaxBuyIn)}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 mt-1">Based on ${modalBigBlind.toFixed(2)} BB</p>
+                                                    <p className="text-xs text-gray-500 mt-1">Based on ${formatUsd(modalBigBlind)} BB</p>
                                                 </div>
                                             )}
                                         </>
@@ -999,6 +961,7 @@ const Dashboard: React.FC = () => {
                                     <div>
                                         <label className="block text-white text-sm mb-1">Variant</label>
                                         <select
+                                            aria-label="Variant"
                                             value={selectedContractAddress}
                                             onChange={e => setSelectedContractAddress(e.target.value)}
                                             className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
@@ -1018,16 +981,16 @@ const Dashboard: React.FC = () => {
                                         </select>
                                     </div>
 
-                                    <div className="flex items-center justify-between rounded bg-gray-900 border border-gray-700 p-2 text-sm">
+                                    <div className="creation-fee">
                                         <span className="text-gray-400">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds)</span>
                                         <span className="text-white font-mono">
-                                            {creationFeeMicro === null ? "—" : `$${formatMicroAsUsdc(creationFeeMicro.toString(), 6)}`}
+                                            {creationFeeMicro === null ? "—" : `$${formatMicroUsd(creationFeeMicro.toString())}`}
                                         </span>
                                     </div>
                                     {insufficientForCreation && creationTotalMicro !== null && (
-                                        <p className="text-red-400 text-sm">
-                                            You need ${formatMicroAsUsdc(creationTotalMicro.toString(), 6)} to create this table (fee
-                                            {normalizedTableName.length > 0 ? " + name" : ""}); your balance is ${numericUsdcBalance.toFixed(6)}.
+                                        <p className="creation-notice">
+                                            You need ${formatMicroUsd(creationTotalMicro.toString())} to create this table (fee
+                                            {normalizedTableName.length > 0 ? " + name" : ""}); your balance is ${formatUsd(numericUsdcBalance)}.
                                         </p>
                                     )}
 
@@ -1041,17 +1004,11 @@ const Dashboard: React.FC = () => {
                                                 setCreateGameError("");
                                                 setModalTableName("");
                                             }}
-                                            className="px-4 py-2 text-sm bg-gray-600 hover:bg-gray-700 hover:opacity-90 text-white rounded-lg transition duration-300 shadow-inner"
+                                            className="creation-secondary"
                                         >
                                             Cancel
                                         </button>
-                                        <button
-                                            onClick={handleCreateNewGame}
-                                            disabled={createDisabled}
-                                            className={`px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md flex items-center ${
-                                                createDisabled ? "bg-gray-500" : `${styles.brandPrimaryBg} hover:opacity-90`
-                                            }`}
-                                        >
+                                        <button onClick={handleCreateNewGame} disabled={createDisabled} className="creation-primary">
                                             {isCreatingTable ? (
                                                 <>
                                                     <svg
@@ -1070,7 +1027,7 @@ const Dashboard: React.FC = () => {
                                                     Creating Table...
                                                 </>
                                             ) : (
-                                                "Create Game"
+                                                "Create table"
                                             )}
                                         </button>
                                     </div>
@@ -1080,10 +1037,10 @@ const Dashboard: React.FC = () => {
                     )}
 
                     {/* Two-column layout: Wallet (fixed width) on left, Tables (flex) on right */}
-                    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 z-10 mt-8 sm:mt-12 lg:mt-16">
-                        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+                    <div className="dashboard-content w-full mx-auto z-10">
+                        <div className="lobby-layout">
                             {/* Left column: Wallet and Transactions (fixed width) */}
-                            <div className="w-full lg:w-[400px] flex-shrink-0 space-y-4">
+                            <aside className="lobby-wallet">
                                 <WalletPanel
                                     onDeposit={handleDepositClick}
                                     onWithdraw={handleWithdrawClick}
@@ -1094,12 +1051,27 @@ const Dashboard: React.FC = () => {
                                     usdcBalance={getTransferTokenBalance()}
                                     cosmosWalletAddress={cosmosWallet.address}
                                 />
-                                <TransactionPanel cosmosWalletAddress={cosmosWallet.address} usdcBalance={getTransferTokenBalance()} />
-                            </div>
+                                <details className="lobby-transactions">
+                                    <summary>
+                                        Recent activity <span>↗</span>
+                                    </summary>
+                                    <TransactionPanel cosmosWalletAddress={cosmosWallet.address} usdcBalance={getTransferTokenBalance()} />
+                                </details>
+                                <div className="lobby-tip">
+                                    <span>MAKE YOURSELF AT HOME</span>
+                                    <p>New to the table?</p>
+                                    <small>Open any game to watch. When you’re ready, choose an open seat and your buy-in.</small>
+                                    <a href="https://texashodl.net/" target="_blank" rel="noopener noreferrer">
+                                        Explore Texas HODL ↗
+                                    </a>
+                                </div>
+                            </aside>
 
                             {/* Right column: Table List (takes remaining space) */}
-                            <div className="flex-1 min-w-0">
+                            <main className="lobby-games">
+                                <TableCreatedModal receipt={creationReceipt} onClose={closeCreationReceipt} />
                                 <TableList
+                                    refreshKey={tablesRevision}
                                     onCreateTable={() => {
                                         setCreateGameError("");
                                         setShowCreateGameModal(true);
@@ -1112,7 +1084,7 @@ const Dashboard: React.FC = () => {
                                         <img src="/block52.png" alt="Block52 Logo" className="h-5 w-auto object-contain" />
                                     </div>
                                 </div>
-                            </div>
+                            </main>
                         </div>
                     </div>
 

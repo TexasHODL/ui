@@ -1,3 +1,4 @@
+import { formatUsd } from "../../../utils/moneyDisplay";
 import { useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { PaymentDisplayProps } from "../types";
@@ -65,7 +66,7 @@ const PaymentDisplay: React.FC<PaymentDisplayProps> = ({
                     <p className="text-2xl font-bold text-white">
                         {payAmount} <span className="text-lg">{displayName}</span>
                     </p>
-                    <p className="text-gray-400 text-xs mt-1">{"\u2248"} ${priceAmount.toFixed(2)} USD</p>
+                    <p className="text-gray-400 text-xs mt-1">{"\u2248"} ${formatUsd(priceAmount)} USD</p>
                 </div>
             </div>
 

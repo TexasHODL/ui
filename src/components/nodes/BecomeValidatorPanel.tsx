@@ -1,3 +1,4 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { FC, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toValoperAddress } from "@block52/poker-vm-sdk";
@@ -8,7 +9,7 @@ import { formatMicroAsUsdc } from "../../constants/currency";
 import { faultTolerance, parseConsensusPubkey, parseMicroAmount, powerShareBps, wouldControlLiveness } from "../../utils/nodePortal";
 import { hasContent } from "../../utils/guards";
 
-const inputClass = "w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500";
+const inputClass = "w-full bg-[#0c0911] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400";
 
 const Field: FC<{ label: string; hint?: string; error?: string | null; children: React.ReactNode }> = ({ label, hint, error, children }) => (
     <label className="block mb-4">
@@ -60,9 +61,9 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
     const amountError = !amount.ok
         ? amount.error
         : amount.value < overview.minValidatorBond
-          ? `Minimum bond is ${formatMicroAsUsdc(overview.minValidatorBond)} ${denomLabel}`
+          ? `Minimum bond is ${formatMicroUsd(overview.minValidatorBond)} ${denomLabel}`
           : amount.value > walletBalance
-            ? `Your wallet has ${formatMicroAsUsdc(walletBalance)} ${denomLabel}`
+            ? `Your wallet has ${formatMicroUsd(walletBalance)} ${denomLabel}`
             : wouldControlLiveness(powers, amount.value)
               ? "This bond would give one validator 1/3 or more of the voting power, enough to halt the chain on its own if it goes offline"
               : null;
@@ -97,19 +98,23 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
 
     if (!hasContent(address)) {
         return (
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-gray-300">
-                Bonding is signed by your Block52 wallet, whose account becomes the validator&apos;s operator. <Link to="/wallet" className="text-blue-400">Create or import a wallet</Link> first.
+            <div className="bg-[#100c17] border border-white/10 rounded-lg p-6 text-gray-300">
+                Bonding is signed by your Block52 wallet, whose account becomes the validator&apos;s operator.{" "}
+                <Link to="/wallet" className="text-purple-300">
+                    Create or import a wallet
+                </Link>{" "}
+                first.
             </div>
         );
     }
 
     if (existing) {
         return (
-            <div className="bg-gray-800 border border-green-700 rounded-lg p-6">
+            <div className="bg-[#100c17] border border-green-700 rounded-lg p-6">
                 <h3 className="text-white font-semibold mb-2">You operate a validator: {existing.moniker}</h3>
                 <p className="text-sm text-gray-300 font-mono break-all">{existing.operatorAddress}</p>
                 <p className="text-sm text-gray-300 mt-2">
-                    Bonded {formatMicroAsUsdc(existing.tokens)} {denomLabel}
+                    Bonded {formatMicroUsd(existing.tokens)} {denomLabel}
                     {existing.jailed ? " · JAILED: your node missed too many blocks; bring it back and unjail it" : " · active"}
                 </p>
             </div>
@@ -121,7 +126,7 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-lg p-6">
+            <div className="lg:col-span-2 bg-[#100c17] border border-white/10 rounded-lg p-6">
                 <h3 className="text-white font-semibold mb-4">Bond a validator</h3>
 
                 <Field
@@ -138,7 +143,7 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
                     </Field>
                     <Field
                         label={`Self-bond (${denomLabel})`}
-                        hint={`Minimum ${formatMicroAsUsdc(overview.minValidatorBond)}; wallet ${formatMicroAsUsdc(walletBalance)}`}
+                        hint={`Minimum ${formatMicroUsd(overview.minValidatorBond)}; wallet ${formatMicroUsd(walletBalance)}`}
                         error={amountInput ? amountError : null}
                     >
                         <input className={inputClass} value={amountInput} onChange={e => setAmountInput(e.target.value)} inputMode="decimal" />
@@ -171,14 +176,14 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
                     My node is running, fully synced (catching_up = false) and uses exactly this consensus key. The key is on no other machine.
                 </label>
                 <label className="flex items-start gap-2 text-sm text-gray-300 mb-5">
-                    <input type="checkbox" className="mt-1" checked={confirmedUpgrades} onChange={e => setConfirmedUpgrades(e.target.checked)} />
-                    I will upgrade pokerchaind with every release and follow coordinated halts. A validator on the wrong binary drops out of consensus.
+                    <input type="checkbox" className="mt-1" checked={confirmedUpgrades} onChange={e => setConfirmedUpgrades(e.target.checked)} />I will upgrade
+                    pokerchaind with every release and follow coordinated halts. A validator on the wrong binary drops out of consensus.
                 </label>
 
                 <button
                     onClick={handleSubmit}
                     disabled={!canSubmit}
-                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
+                    className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-[#21172b] disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium"
                 >
                     {isSubmitting ? "Bonding…" : "Bond validator"}
                 </button>
@@ -194,7 +199,7 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
                 )}
             </div>
 
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 text-sm text-gray-300 space-y-3 h-fit">
+            <div className="bg-[#100c17] border border-white/10 rounded-lg p-6 text-sm text-gray-300 space-y-3 h-fit">
                 <h3 className="text-white font-semibold">Before you bond</h3>
                 <p>
                     <span className="text-white">Sync first.</span> From the moment the bond lands, your node must be signing blocks. A bonded validator that is
@@ -208,8 +213,8 @@ export const BecomeValidatorPanel: FC<{ overview: ChainOverview; onBonded: () =>
                 <p>
                     <span className="text-white">Unbonding takes {Math.round(Number(overview.unbondingTime.replace(/s$/, "")) / 86400)} days.</span>
                 </p>
-                <div className="border-t border-gray-700 pt-3">
-                    <p className="text-gray-400">If you bond {amount.ok ? `${formatMicroAsUsdc(amount.value)} ${denomLabel}` : "this amount"}:</p>
+                <div className="border-t border-white/10 pt-3">
+                    <p className="text-gray-400">If you bond {amount.ok ? `${formatMicroUsd(amount.value)} ${denomLabel}` : "this amount"}:</p>
                     <p className="text-white">{(shareBps / 100).toFixed(2)}% of voting power</p>
                     <p className={toleranceAfter === 0 ? "text-yellow-400" : "text-green-400"}>
                         Network survives {toleranceAfter} validator{toleranceAfter === 1 ? "" : "s"} offline

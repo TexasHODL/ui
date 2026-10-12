@@ -1,3 +1,4 @@
+import { ModalHeader } from "../../common/ModalHeader";
 import React, { useState, useEffect, useCallback } from "react";
 
 interface GameStartCountdownProps {
@@ -78,26 +79,10 @@ const GameStartCountdown: React.FC<GameStartCountdownProps> = ({ gameStartTime, 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className="bg-gray-800/90 backdrop-blur-md p-8 rounded-xl w-96 shadow-2xl border border-blue-400/20 relative overflow-hidden">
-                {/* Web3 styled background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-purple-600/10 rounded-xl"></div>
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 animate-pulse"></div>
+            <div className="hodl-modal p-6 w-96 relative">
 
                 <div className="relative z-10">
-                    <div className="flex items-center justify-center mb-4">
-                        <img src="/block52.png" alt="Block52 Logo" className="h-16 w-auto object-contain" />
-                    </div>
-
-                    <div className="flex items-center justify-center mb-6">
-                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-400/30">
-                            <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-
-                    <h2 className="text-2xl font-bold text-white text-center mb-2 text-shadow">Game Starting Soon</h2>
-                    <p className="text-gray-300 text-center mb-6 text-sm">Please wait for the scheduled game to begin</p>
+                    <ModalHeader kicker="Tournament" title="Game Starting Soon" subtitle="Please wait for the scheduled game to begin" />
 
                     {/* Countdown Display */}
                     <div className="grid grid-cols-4 gap-3 mb-6">

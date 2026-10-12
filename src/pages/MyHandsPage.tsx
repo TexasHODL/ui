@@ -32,17 +32,13 @@ export default function MyHandsPage() {
     const { address } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
     const indexerStatus = useIndexerStatus();
-    const { hands, total, loading, error, hasMore, loadMore, reload } = useMyHandHistory(
-        address,
-        `${currentNetwork.name}|${currentNetwork.rest}`,
-        PAGE_SIZE
-    );
+    const { hands, total, loading, error, hasMore, loadMore, reload } = useMyHandHistory(address, `${currentNetwork.name}|${currentNetwork.rest}`, PAGE_SIZE);
     const formats = useTableFormats(useMemo(() => hands.map(h => h.game_id), [hands]));
 
     useEffect(() => {
-        document.title = "My Hands - Block52";
+        document.title = "My Hands - Texas HODL";
         return () => {
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, []);
 
@@ -58,29 +54,39 @@ export default function MyHandsPage() {
     );
 
     return (
-        <div className="min-h-screen p-4 sm:p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
 
-            <div className="max-w-5xl mx-auto relative z-10">
+            <div className="site-page-content">
                 <ExplorerHeader title="My Hands" />
-
-                {indexerStatus && <p className="mb-4 text-xs sm:text-sm text-gray-400 text-center">{describeIndexing(indexerStatus)}</p>}
 
                 <ExplorerPanel header={header} action={address ? <ExplorerReloadButton onClick={reload} busy={loading} label="Reload hands" /> : null}>
                     {!address ? (
                         <ExplorerEmpty>
-                            No Block52 wallet on this device.{" "}
-                            <Link to="/wallet" className={`hover:underline ${styles.brandText}`}>
-                                Create or import one
-                            </Link>{" "}
-                            to see the hands you&apos;ve played.
+                            <span className="page-empty-symbol" aria-hidden="true">
+                                ♠
+                            </span>
+                            <h2>Your hand history starts here</h2>
+                            <p>Create or import your game wallet to see the hands you’ve played.</p>
+                            <Link to="/wallet" className="page-button-primary">
+                                Set up your wallet
+                            </Link>
                         </ExplorerEmpty>
                     ) : error && isEmpty(hands) ? (
                         <ExplorerError>{error}</ExplorerError>
                     ) : loading && isEmpty(hands) ? (
                         <ExplorerLoading label="Loading your hands…" />
                     ) : isEmpty(hands) ? (
-                        <ExplorerEmpty>No indexed hands for this wallet yet.</ExplorerEmpty>
+                        <ExplorerEmpty>
+                            <span className="page-empty-symbol" aria-hidden="true">
+                                ♠
+                            </span>
+                            <h2>Your next hand is waiting</h2>
+                            <p>No indexed hands for this wallet yet. Once you play, your results and replays will appear here.</p>
+                            <Link to="/" className="page-button-primary">
+                                Find a table ↗
+                            </Link>
+                        </ExplorerEmpty>
                     ) : (
                         <ul className="divide-y divide-white/5">
                             {hands.map(hand => (
@@ -108,6 +114,7 @@ export default function MyHandsPage() {
                         </div>
                     )}
                 </ExplorerPanel>
+                {indexerStatus && <p className="page-index-status">{describeIndexing(indexerStatus)}</p>}
             </div>
         </div>
     );

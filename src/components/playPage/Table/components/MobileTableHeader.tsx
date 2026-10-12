@@ -2,9 +2,9 @@
  * MobileTableHeader Component
  *
  * Portrait-phone replacement for TableHeader: a single 44px row (table name,
- * USDC balance, hamburger) plus a text-only status strip (blinds, hand number,
+ * USDC balance, fullscreen, hamburger) plus a text-only status strip (blinds, hand number,
  * next to act). Everything else — network selector, share/copy/QR, wallet
- * address, avatar, hand history, settings, top-up, table style, seat orientation,
+ * address, avatar, settings, action log, top-up, table style, seat orientation,
  * leave table —
  * lives in the hamburger drawer, each row a ≥44px tap target. Leave Table sits
  * at the bottom of the drawer styled as destructive, never as a bare tap
@@ -12,9 +12,9 @@
  */
 
 import React, { useState } from "react";
-import { FaBars, FaCopy, FaQrcode, FaShare, FaTimes } from "react-icons/fa";
+import { FaBars, FaCopy, FaExpand, FaQrcode, FaShare, FaTimes } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
-import { LuHistory } from "react-icons/lu";
+import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
 import { QRCodeSVG } from "qrcode.react";
 import { Modal } from "../../../common/Modal";
@@ -30,7 +30,6 @@ import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { formatBlindCountdown } from "./TableHeader";
-import type { TablePanelTab } from "./TablePanel";
 import styles from "./TableHeader.module.css";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
@@ -69,18 +68,22 @@ export interface MobileTableHeaderProps {
     maxBuyIn: string;
     walletBalance: string;
 
+    // Sidebar state
+    openSidebar: boolean;
+    openSettings: boolean;
+
     // Table style (the fixed bottom-left selector is hidden on mobile)
     tableStyle: TableStyleOption;
     onCycleTableStyle: () => void;
 
-    // Opens the History / Settings panel, which is hidden on phones until asked for
-    onOpenPanel: (tab: TablePanelTab) => void;
-
     // Handlers
+    onToggleFocus: () => void;
     handleLobbyClick: () => void;
     handleCopyTableLink: () => void;
     fetchAccountBalance: () => void;
     copyToClipboard: (text: string) => void;
+    onCloseSideBar: () => void;
+    onToggleSettings: () => void;
     handleLeaveTableClick: () => void;
     handleShareHand: () => void;
 }
@@ -92,8 +95,7 @@ const TABLE_STYLE_LABELS: Record<TableStyleOption, string> = {
 };
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
-const menuRowClass =
-    "w-full min-h-[44px] flex items-center gap-3 px-4 text-sm text-left text-white transition-colors duration-150 hover:bg-white/10";
+const menuRowClass = "w-full min-h-[44px] flex items-center gap-3 px-4 text-sm text-left text-white transition-colors duration-150 hover:bg-white/10";
 
 export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     tableId,
@@ -116,13 +118,17 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     minBuyIn,
     maxBuyIn,
     walletBalance,
+    openSidebar,
+    openSettings,
     tableStyle,
     onCycleTableStyle,
-    onOpenPanel,
+    onToggleFocus,
     handleLobbyClick,
     handleCopyTableLink,
     fetchAccountBalance,
     copyToClipboard,
+    onCloseSideBar,
+    onToggleSettings,
     handleLeaveTableClick,
     handleShareHand
 }) => {
@@ -154,7 +160,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
 
     return (
         <div className="flex-shrink-0">
-            {/* Single 44px row: table name · balance · hamburger.
+            {/* Single 44px row: table name · balance · fullscreen · hamburger.
                 viewport-fit=cover extends the page under the Dynamic Island and,
                 in landscape, under the notch on one side — the safe-area paddings
                 keep the row's content clear of both. */}
@@ -166,11 +172,12 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     paddingRight: "env(safe-area-inset-right)"
                 }}
             >
-                <button
-                    className="text-white text-sm font-bold cursor-pointer truncate min-w-0 flex-1 min-h-[44px] text-left"
-                    onClick={handleLobbyClick}
-                >
-                    {tableName ? tableName : `Table ${tableId ? tableId.slice(-5) : ""}`}
+                <button className="text-white text-sm font-bold cursor-pointer truncate min-w-0 flex-1 min-h-[44px] text-left" onClick={handleLobbyClick}>
+                    <span className="mr-2 text-purple-300" aria-hidden="true">
+                        ←
+                    </span>
+                    <span className="sr-only">Back to lobby from </span>
+                    {tableName ? tableName : `Table ${tableId ? tableId.slice(-6) : ""}`}
                 </button>
                 <div className="flex items-center flex-shrink-0">
                     {/* Balance — money on the table, wanted at a glance; tap to refresh */}
@@ -188,6 +195,14 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 <span className="text-[9px] ml-1 text-gray-400">USDC</span>
                             </span>
                         )}
+                    </button>
+                    <button
+                        onClick={closeMenuAnd(onToggleFocus)}
+                        className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-300"
+                        title="Table-only view — hide banners"
+                        aria-label="Full screen"
+                    >
+                        <FaExpand size={16} aria-hidden="true" />
                     </button>
                     <button
                         onClick={() => setMenuOpen(true)}
@@ -307,14 +322,12 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             <span>Share on X</span>
                         </a>
 
-                        {/* History / Settings panel. On phones the floating panel would
-                            cover the felt, so it stays closed until opened here and
-                            carries its own close button (ui#752 follow-up). */}
-                        <button className={menuRowClass} onClick={closeMenuAnd(() => onOpenPanel("history"))}>
-                            <LuHistory size={16} />
-                            <span>Hand history</span>
+                        {/* Panels */}
+                        <button className={menuRowClass} onClick={closeMenuAnd(onCloseSideBar)}>
+                            {openSidebar ? <LuPanelLeftOpen size={16} /> : <LuPanelLeftClose size={16} />}
+                            <span>Action log</span>
                         </button>
-                        <button className={menuRowClass} onClick={closeMenuAnd(() => onOpenPanel("settings"))}>
+                        <button className={menuRowClass} onClick={closeMenuAnd(onToggleSettings)}>
                             <IoSettingsOutline size={16} />
                             <span>Settings</span>
                         </button>
@@ -344,16 +357,9 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             the player is seated, and it is useful mainly once they
                             are. It used to be a full-width button pinned below the
                             felt while spectating (#684). */}
-                        <button
-                            className={menuRowClass}
-                            onClick={toggleSeatAtBottom}
-                            role="switch"
-                            aria-checked={seatAtBottom}
-                        >
+                        <button className={menuRowClass} onClick={toggleSeatAtBottom} role="switch" aria-checked={seatAtBottom}>
                             <span className="text-xs text-gray-400">Seat</span>
-                            <span className={seatAtBottom ? "text-amber-300" : undefined}>
-                                {seatAtBottom ? "✓ " : ""}Seat me at 6 o&apos;clock
-                            </span>
+                            <span className={seatAtBottom ? "text-amber-300" : undefined}>{seatAtBottom ? "✓ " : ""}Seat me at 6 o&apos;clock</span>
                         </button>
 
                         {/* Sit-out intents (#684). Queued conditions, not immediate
@@ -365,15 +371,11 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             <>
                                 <button className={menuRowClass} onClick={toggleNextHand} role="switch" aria-checked={nextHandChecked}>
                                     <span className="text-xs text-gray-400">Sit out</span>
-                                    <span className={nextHandChecked ? "text-amber-300" : undefined}>
-                                        {nextHandChecked ? "☑ " : "☐ "}Next hand
-                                    </span>
+                                    <span className={nextHandChecked ? "text-amber-300" : undefined}>{nextHandChecked ? "☑ " : "☐ "}Next hand</span>
                                 </button>
                                 <button className={menuRowClass} onClick={toggleNextBb} role="switch" aria-checked={nextBbQueued}>
                                     <span className="text-xs text-gray-400">Sit out</span>
-                                    <span className={nextBbQueued ? "text-amber-300" : undefined}>
-                                        {nextBbQueued ? "☑ " : "☐ "}Next big blind
-                                    </span>
+                                    <span className={nextBbQueued ? "text-amber-300" : undefined}>{nextBbQueued ? "☑ " : "☐ "}Next big blind</span>
                                 </button>
                             </>
                         )}

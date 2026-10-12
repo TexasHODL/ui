@@ -18,12 +18,28 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
+.rowContent {
+  display: grid;
+  grid-template-columns: minmax(0, 104px) auto;
+  align-items: baseline;
+  column-gap: 8px;
+  justify-content: start;
+}
+
+.rowContent > span:first-child {
+  overflow-wrap: anywhere;
+}
+
+.rowContent > span:last-child {
+  white-space: nowrap;
+}
+
 .playerId {
   color: color-mix(in srgb, var(--brand-primary) 90%, transparent);
 }
 
 .secondaryText {
-  color: var(--ui-text-secondary);
+  color: #b7aabe;
 }
 
 .actionText {

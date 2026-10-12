@@ -1,0 +1,146 @@
+/* App-owned dialogs share the lobby palette, independent of table appearance.
+   Keep semantic success/danger colours; never recolour payment QR codes/images.
+   Legacy utility aliases below are deliberately scoped to these dialog roots. */
+.sng-result-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1000; width: min(380px, calc(100vw - 24px)); }
+.hodl-modal.sng-result-panel { padding: 16px; max-height: calc(100dvh - 24px - env(safe-area-inset-top)); }
+.sng-result-panel .hodl-modal-header { margin-bottom: 12px; }
+.sng-result-panel .hodl-modal-title { font-size: 18px; }
+.sng-result-panel:not(.is-expanded) .hodl-modal-logo { width: 56px; height: auto; }
+.finish-toggle { width: 100%; min-height: 44px; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.finish-recap { margin: 20px 0; }
+.finish-recap h3 { font-size: 15px; font-weight: 600; }
+.finish-recap-note { font-size: 12px; color: #b2a4c0; margin: 10px 0; }
+.finish-board-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 324px; margin: 12px 0; }
+.finish-board-cards .finish-card-image { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; border-radius: 5px; box-shadow: 0 3px 7px #0005; }
+.finish-hole-cards { margin: 14px 8px 0; }
+.finish-recap img.finish-card-winning { transform: translateY(-5px); filter: drop-shadow(0 0 5px #ffd761); }
+.finish-recap img.finish-card-muted { opacity: .4; }
+.finish-seat { padding: 10px 0; border-bottom: 1px solid #34263f; font-size: 12px; }
+.finish-seat > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.finish-winner { color: #79e7aa; }
+@media (max-width: 600px) {
+    .sng-result-notice { width: min(340px, calc(100vw - 24px)); }
+    .hodl-modal.sng-result-panel.is-expanded { max-height: min(65dvh, 580px); }
+}
+.sng-result-notice.sng-result-expanded {
+    inset: 0;
+    transform: none;
+    width: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    background: #08060db3;
+    z-index: 1000;
+}
+.sng-result-expanded .hodl-modal.sng-result-panel.is-expanded {
+    width: 520px;
+    max-width: 100%;
+    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    padding: 24px;
+}
+.hodl-modal.hodl-modal {
+    --ui-bg-dark: #100c17;
+    --ui-bg-medium: #191222;
+    --ui-border-color: #34263f;
+    --ui-text-primary: #f2edf7;
+    --ui-text-secondary: #b2a4c0;
+    --brand-primary: #be87e5;
+    --brand-secondary: #f02bc6;
+    --brand-primary-10: #be87e526;
+    --table-bg-base: #0c0911;
+    color: var(--ui-text-primary);
+    background: var(--ui-bg-dark);
+    border: 1px solid var(--ui-border-color);
+    border-radius: 18px;
+    box-shadow: 0 24px 80px #0009;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #68477c transparent;
+    color-scheme: dark;
+    overflow-wrap: anywhere;
+}
+.hodl-modal :is(h2, h3) { color: #f2edf7; text-shadow: none; letter-spacing: -.025em; }
+.hodl-modal :is(.text-gray-300, .text-gray-400, .text-gray-500) { color: #b2a4c0; }
+.hodl-modal :is(.text-blue-300, .text-blue-400, .text-blue-400\/80, .text-blue-500) { color: #cba1eb; }
+.hodl-modal :is(.bg-gray-600, .bg-gray-700, .bg-gray-800, .bg-gray-900,
+    .bg-gray-700\/80, .bg-gray-800\/50, .bg-gray-900\/50, .bg-gray-600\/30) { background: #191222; }
+.hodl-modal :is(.bg-blue-500\/20, .bg-blue-900\/20, .bg-blue-900\/30) { background: #be87e510; }
+.hodl-modal :is(.border-gray-500, .border-gray-600, .border-gray-700,
+    .border-blue-500\/30, .border-blue-500\/50, .border-blue-400\/30) { border-color: #be87e52e; }
+.hodl-modal :is(.bg-blue-400, .bg-blue-500, .bg-blue-600) { background: #9256ba; }
+.hodl-modal :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea) {
+    background: #0c0911;
+    color: #f2edf7;
+    border: 1px solid #48394f;
+    border-radius: 10px;
+    min-height: 44px;
+    min-width: 0;
+}
+.hodl-modal :is(input, select, textarea) { accent-color: #be87e5; }
+.hodl-modal :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid #d1a4f1;
+    outline-offset: 3px;
+}
+.hodl-modal :is(button, a) { transition: background .15s, opacity .15s; }
+.hodl-modal button:disabled { cursor: not-allowed; opacity: .5; }
+.hodl-modal .hodl-primary,
+.hodl-modal :is(button, a).bg-blue-600 {
+    background: var(--texas-gradient, linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6));
+    color: #180c1a;
+    border: 1px solid transparent;
+    font-weight: 600;
+}
+.hodl-modal .hodl-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.hodl-modal .hodl-secondary {
+    background: transparent;
+    color: #d3c5de;
+    border: 1px solid #48394f;
+}
+.hodl-modal .hodl-secondary:hover:not(:disabled) { background: #be87e512; }
+.hodl-modal .hodl-primary:disabled { background: #34293f; color: #b2a4c0; opacity: 1; }
+.modal-kicker { color: #be87e5; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 12px; }
+.modal-rule { height: 1px; background: #be87e526; margin-bottom: 20px; }
+.modal-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 10px; color: #b2a4c0; font-size: 24px; z-index: 1; }
+.modal-close:hover { background: #be87e512; color: #f2edf7; }
+.hodl-modal-header { position: relative; text-align: left; margin-bottom: 20px; min-width: 0; }
+.hodl-modal-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.hodl-modal-eyebrow { flex: 1; min-width: 0; color: #be87e5; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.hodl-modal-logo { display: block; flex: 0 0 auto; width: 78px; height: 42px; object-fit: contain; }
+.hodl-modal-header .hodl-modal-title { margin: 0; color: #f2edf7; font-size: 24px; font-weight: 700; line-height: 1.25; letter-spacing: -.025em; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.hodl-modal-header .hodl-modal-subtitle { margin: 8px 0 0; color: #b2a4c0; font-size: 13px; line-height: 1.5; text-align: left; }
+.hodl-modal-dismiss { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 10px; color: #b2a4c0; font-size: 24px; }
+.hodl-modal-dismiss:hover { background: #be87e512; color: #f2edf7; }
+.hodl-modal-dismiss:focus-visible { outline: 2px solid #d1a4f1; outline-offset: 2px; }
+@media (max-width: 480px), (max-height: 500px) {
+    .hodl-modal-header .hodl-modal-title { font-size: 20px; }
+    .hodl-modal-brand-row { gap: 8px; }
+}
+.tournament-entry { width: 420px; padding: 24px; }
+.tournament-entry h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.tournament-subtitle { color: #b2a4c0; font-size: 13px; margin-bottom: 20px; }
+.tournament-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.tournament-facts > div { background: #0c0911; border: 1px solid #be87e521; border-radius: 10px; padding: 12px; }
+.tournament-facts dt { font-size: 11px; color: #b2a4c0; margin-bottom: 4px; }
+.tournament-facts dd { font-size: 15px; font-weight: 600; }
+.tournament-costs { border-block: 1px solid #be87e526; padding-block: 12px; margin-bottom: 16px; }
+.tournament-costs > div, .tournament-balance { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; margin-block: 6px; }
+.tournament-costs dt, .tournament-balance > span:first-child { color: #b2a4c0; }
+.tournament-costs .entry-total { border-top: 1px solid #be87e526; padding-top: 10px; margin-top: 10px; font-weight: 600; }
+.tournament-entry > button { width: 100%; min-height: 44px; border-radius: 10px; margin-top: 16px; font-size: 14px; }
+.tournament-note { color: #b2a4c0; text-align: center; font-size: 11px; margin-top: 16px; line-height: 1.6; }
+.tournament-note small { display: block; font-size: 10px; margin-top: 4px; }
+.tournament-error { padding: 10px; border: 1px solid #fb718544; border-radius: 10px; background: #fb718510; color: #fda4af; font-size: 13px; margin-top: 12px; }
+@media (max-width: 480px), (max-height: 500px) {
+    .hodl-modal.hodl-modal:not(.modal-inset-content) { padding: 20px; }
+    .hodl-modal :is(h2, h3) { font-size: 20px; }
+    .tournament-facts { gap: 8px; }
+    .tournament-facts > div { padding: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hodl-modal .animate-pulse, .hodl-modal .animate-bounce { animation: none; }
+}

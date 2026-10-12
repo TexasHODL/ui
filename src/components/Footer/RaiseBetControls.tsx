@@ -43,22 +43,21 @@ export const RaiseBetControls: React.FC<RaiseBetControlsProps> = ({
                 onDecrement={onDecrement}
             />
 
-            {/* Pot-Sized Bet Buttons - Hide in mobile landscape to save space */}
-            {!isMobileLandscape && (
-                <PotSizedBetButtons
-                    totalPotMicro={totalPotMicro}
-                    callAmountMicro={callAmountMicro}
-                    bigBlindMicro={bigBlindMicro}
-                    minAmount={minAmount}
-                    maxAmount={maxAmount}
-                    isTournament={isTournament}
-                    currentRound={currentRound}
-                    previousActions={previousActions}
-                    disabled={disabled}
-                    onAmountSelect={onAmountChange}
-                    onAllIn={onAllIn}
-                />
-            )}
+            {/* Keep every preset available in both orientations. The mobile dock
+                reserves space for this row below the table, not over the seats. */}
+            <PotSizedBetButtons
+                totalPotMicro={totalPotMicro}
+                callAmountMicro={callAmountMicro}
+                bigBlindMicro={bigBlindMicro}
+                minAmount={minAmount}
+                maxAmount={maxAmount}
+                isTournament={isTournament}
+                currentRound={currentRound}
+                previousActions={previousActions}
+                disabled={disabled}
+                onAmountSelect={onAmountChange}
+                onAllIn={onAllIn}
+            />
         </>
     );
 };

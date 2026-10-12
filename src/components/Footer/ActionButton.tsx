@@ -1,3 +1,4 @@
+import { formatUsd } from "../../utils/moneyDisplay";
 import React from "react";
 import { LoadingSpinner } from "../common";
 import type { ActionButtonProps } from "./types";
@@ -38,7 +39,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
                 <>
                     {icon}
                     {label}
-                    {amount && <span className="font-bold ml-1">${amount}</span>}
+                    {amount && <span className="font-bold ml-1">${formatUsd(amount)}</span>}
                 </>
             )}
         </button>

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,4 +15,42 @@ body,
     min-height: 100dvh;
     min-width: 100%;
     overflow-x: hidden;
+}
+
+:root {
+    color-scheme: dark;
+    --texas-bg: #070709;
+    --texas-surface: #0e0f14;
+    --texas-ink: #f7f7f2;
+    --texas-muted: #8b8995;
+    --texas-line: rgba(255, 255, 255, 0.1);
+    --texas-purple: #b14cff;
+    --texas-pink: #f02bc6;
+    --texas-orange: #ff9717;
+    --texas-gradient: linear-gradient(105deg, var(--texas-orange), #ff4a83 52%, var(--texas-pink));
+}
+
+html,
+body {
+    background: var(--texas-bg);
+    color: var(--texas-ink);
+    font-family: "Space Grotesk", "Geist", ui-sans-serif, system-ui, sans-serif;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-size: 72px 72px;
+    mask-image: linear-gradient(to bottom, black, transparent 75%);
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
 }

@@ -1,6 +1,7 @@
+import { formatUsd, formatMicroUsd } from "./moneyDisplay";
 import { BigUnit } from "bigunit";
 import { ethers } from "ethers";
-import { microToUsdc, USDC_TO_MICRO } from "../constants/currency";
+import { microToUsdc } from "../constants/currency";
 import { isBlank, isNullish } from "./guards";
 
 /**
@@ -9,8 +10,7 @@ import { isBlank, isNullish } from "./guards";
  * @returns Formatted string with 2 decimal places
  */
 export const formatBalance = (balance: string | number): string => {
-    const value = Number(balance) / USDC_TO_MICRO; // USDC uses 6 decimals
-    return formatToFixed(value);
+    return formatMicroUsd(balance);
 };
 
 export const formatToFixed = (value: number): string => {
@@ -23,7 +23,7 @@ export const formatToFixed = (value: number): string => {
  * @returns Formatted string with 2 decimal places
  */
 export const formatToFixedFromString = (value: string | number): string => {
-    return microToUsdc(value).toFixed(2);
+    return formatMicroUsd(value);
 };
 
 
@@ -52,7 +52,9 @@ export const convertAmountToBigInt = (amount: string, decimals: number): bigint 
     return BigUnit.from(+amount, decimals).toBigInt();
 };
 
-// Format USDC amounts (6 decimals) to simple dollar format
+// Legacy editable-value formatter, also used by buy-in/Max controls.
+// Do not use for new display labels: moneyDisplay.formatMicroUsd rounds labels up
+// without changing the amounts submitted by these existing controls.
 export const formatUSDCToSimpleDollars = (usdcAmount: string | bigint | undefined | null): string => {
     try {
         // Handle undefined or null values
@@ -107,7 +109,7 @@ export const formatSitAndGoStackString = (stack: string): string => {
  */
 export const formatForCashGame = (value: number): string => {
     // Format with 2 decimal places and dollar sign
-    return `$${value.toFixed(2)}`;
+    return `$${formatUsd(value)}`;
 };
 
 /**
@@ -159,7 +161,7 @@ export const parseSliderInput = (raw: string, displayOffset: number, isTournamen
     return Math.max(0, parseFloat(raw) - displayOffset);
 };
 
-/** Format a numeric dollar value for display: "12.50" */
+/** Legacy editable dollar value. Use moneyDisplay.formatUsd for read-only labels. */
 export function formatDollars(value: number): string {
     return value.toFixed(2);
 }

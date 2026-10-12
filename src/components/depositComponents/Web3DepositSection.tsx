@@ -1,3 +1,4 @@
+import { formatUsd } from "../../utils/moneyDisplay";
 import React from "react";
 import { truncateMiddle } from "../../utils/stringUtils";
 import styles from "./DepositComponents.module.css";
@@ -118,7 +119,7 @@ export const Web3DepositSection: React.FC<Web3DepositSectionProps> = ({
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="text-right">
-                                        <p className={`text-lg font-bold ${styles.primaryText}`}>${web3Balance || "0.00"}</p>
+                                        <p className={`text-lg font-bold ${styles.primaryText}`}>${formatUsd(web3Balance || "0")}</p>
                                     </div>
                                     <button
                                         onClick={onRefreshBalance}

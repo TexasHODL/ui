@@ -1,6 +1,7 @@
+import { formatMicroUsd } from "../utils/moneyDisplay";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { microToUsdc } from "../constants/currency";
+
 import { truncateMiddle } from "../utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
@@ -15,9 +16,8 @@ import styles from "./explorer/AllAccountsPage.module.css";
 const SESSIONS_PAGE_SIZE = 20;
 
 const formatUsd = (micro: number): string => {
-    const value = microToUsdc(micro);
-    const sign = value < 0 ? "-" : "";
-    return `${sign}$${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const label = formatMicroUsd(micro, true);
+    return label.startsWith("-") ? `-${label.slice(1)}` : `${label}`;
 };
 
 const StatCard: React.FC<{ label: string; value: string; valueClass?: string }> = ({ label, value, valueClass = "text-white" }) => (
@@ -41,9 +41,9 @@ export default function PlayerProfilePage() {
     } = usePlayerSessions(address, SESSIONS_PAGE_SIZE, (sessionsPage - 1) * SESSIONS_PAGE_SIZE);
 
     useEffect(() => {
-        document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Block52` : "Player - Block52";
+        document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Texas HODL` : "Player - Texas HODL";
         return () => {
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, [address]);
 
@@ -56,10 +56,10 @@ export default function PlayerProfilePage() {
     };
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
 
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 <ExplorerHeader title="Player Profile" />
 
                 <button onClick={() => navigate("/players")} className="mb-4 text-sm text-gray-400 hover:text-white transition-colors">

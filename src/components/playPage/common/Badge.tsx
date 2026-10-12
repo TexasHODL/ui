@@ -1,10 +1,11 @@
+import { formatMicroUsd } from "../../../utils/moneyDisplay";
 import React from "react";
 import { hasValue } from "../../../utils/guards";
 import { usePlayerActionDropBox } from "../../../hooks/player/usePlayerActionDropBox";
 import { useSeatJoinNotification } from "../../../hooks/notifications/useSeatJoinNotification";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { isTournamentFormat } from "../../../utils/gameFormatUtils";
-import { formatForSitAndGo, formatForCashGame, formatUSDCToSimpleDollars } from "../../../utils/numberUtils";
+import { formatForSitAndGo, formatForCashGame } from "../../../utils/numberUtils";
 import ProgressBar from "./ProgressBar";
 import { colors } from "../../../utils/colorConfig";
 import "./Badge.css";
@@ -257,7 +258,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                     </div>
                     {tournamentPayout && tournamentPayout !== "0" && (
                         <div className="tournament-payout tournament-payout-win">
-                            Won: ${formatUSDCToSimpleDollars(tournamentPayout)}
+                            Won: ${formatMicroUsd(tournamentPayout ?? 0)}
                         </div>
                     )}
                 </div>

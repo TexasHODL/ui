@@ -32,9 +32,9 @@ describe("hole-card slot geometry (ui#21)", () => {
             slots.forEach((slot, i) => {
                 const seatX = px(seats[i].left);
                 const seatY = px(seats[i].top);
-                // 60px cards with a 4px gap: each card centre is 32px off the seat centre.
-                expect(px(slot.first.left)).toBeCloseTo(seatX - 32, 0);
-                expect(px(slot.second.left)).toBeCloseTo(seatX + 32, 0);
+                // Fanned 60px cards overlap by 14px: centres are 23px off the seat.
+                expect(px(slot.first.left)).toBeCloseTo(seatX - 23, 0);
+                expect(px(slot.second.left)).toBeCloseTo(seatX + 23, 0);
                 // Both cards share a row above the seat coordinate.
                 expect(px(slot.first.top)).toBe(px(slot.second.top));
                 expect(px(slot.first.top)).toBeLessThan(seatY);

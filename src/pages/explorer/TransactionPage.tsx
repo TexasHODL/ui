@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { PageHeading } from "../../components/common/PageHeading";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
@@ -42,7 +43,6 @@ export default function TransactionPage() {
 
                 const tx = await cosmosClient.getTx(hashToSearch.trim());
 
-
                 // Validate transaction structure
                 if (!tx) {
                     throw new Error("Transaction not found");
@@ -71,8 +71,6 @@ export default function TransactionPage() {
         [currentNetwork]
     );
 
-
-
     // Auto-search if hash is in URL
     useEffect(() => {
         if (urlHash) {
@@ -85,36 +83,35 @@ export default function TransactionPage() {
         if (urlHash) {
             // Show first 8 characters of hash in title
             const shortHash = urlHash.substring(0, 8);
-            document.title = `Tx ${shortHash}... - Block52 Explorer`;
+            document.title = `Tx ${shortHash}... - Texas HODL Explorer`;
         } else {
-            document.title = "Transaction Details - Block52 Explorer";
+            document.title = "Transaction Details - Texas HODL Explorer";
         }
 
         // Cleanup: reset title when component unmounts
         return () => {
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, [urlHash, transaction]);
 
     return (
-        <div className="min-h-screen flex flex-col items-center relative overflow-hidden p-6">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="w-full max-w-4xl relative z-10">
+            <div className="site-page-content">
                 {/* Centered Title - Not in a box */}
-                <h1 className="text-4xl font-extrabold text-white mb-6 text-center">Transaction Details</h1>
+                <PageHeading
+                    title="Transaction details"
+                    eyebrow="EXPLORE"
+                    backTo="/explorer"
+                    backLabel="Block explorer"
+                    description="Inspect a transaction and its recorded result."
+                />
 
                 {/* Error Display */}
                 {error && (
-                    <div
-                        className={`backdrop-blur-md p-4 rounded-xl shadow-2xl mb-6 ${styles.errorContainer}`}
-                    >
+                    <div className={`backdrop-blur-md p-4 rounded-xl shadow-2xl mb-6 ${styles.errorContainer}`}>
                         <div className="flex items-center gap-3">
-                            <svg
-                                className={`h-6 w-6 flex-shrink-0 ${styles.errorIcon}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
+                            <svg className={`h-6 w-6 flex-shrink-0 ${styles.errorIcon}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span className="text-white font-semibold">Error: {error}</span>
@@ -141,9 +138,7 @@ export default function TransactionPage() {
                             {/* Transaction Hash */}
                             <div>
                                 <label className="block text-gray-400 text-sm font-semibold mb-2">Transaction Hash</label>
-                                <div
-                                    className={`p-3 rounded-lg font-mono text-sm text-white break-all ${styles.hashBox}`}
-                                >
+                                <div className={`p-3 rounded-lg font-mono text-sm text-white break-all ${styles.hashBox}`}>
                                     {transaction.tx_response.txhash}
                                 </div>
                             </div>
@@ -187,9 +182,7 @@ export default function TransactionPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-gray-400 text-sm font-semibold mb-2">Block Height</label>
-                                    <div className={`text-white font-mono ${styles.brandText}`}>
-                                        #{transaction.tx_response.height}
-                                    </div>
+                                    <div className={`text-white font-mono ${styles.brandText}`}>#{transaction.tx_response.height}</div>
                                 </div>
                                 <div>
                                     <label className="block text-gray-400 text-sm font-semibold mb-2">Gas Used / Wanted</label>
@@ -205,10 +198,7 @@ export default function TransactionPage() {
                                     <h3 className="text-xl font-bold text-white mb-3">Messages ({transaction.tx.body.messages.length})</h3>
                                     <div className="space-y-3">
                                         {transaction.tx.body.messages.map((msg: CosmosMessage, index: number) => (
-                                            <div
-                                                key={index}
-                                                className={`p-4 rounded-lg ${styles.messageCard}`}
-                                            >
+                                            <div key={index} className={`p-4 rounded-lg ${styles.messageCard}`}>
                                                 <div className="mb-3">
                                                     <label className="block text-gray-400 text-xs font-semibold mb-1">Type</label>
                                                     <code className={`text-sm font-mono ${styles.brandText}`}>
@@ -217,9 +207,7 @@ export default function TransactionPage() {
                                                 </div>
                                                 <div>
                                                     <label className="block text-gray-400 text-xs font-semibold mb-1">Data</label>
-                                                    <div
-                                                        className={`p-3 rounded text-xs overflow-auto font-mono text-gray-300 ${styles.messageDataBox}`}
-                                                    >
+                                                    <div className={`p-3 rounded text-xs overflow-auto font-mono text-gray-300 ${styles.messageDataBox}`}>
                                                         {renderJSONWithClickableAddresses(msg)}
                                                     </div>
                                                 </div>
@@ -242,24 +230,16 @@ export default function TransactionPage() {
 
                                         if (gameIdAttr) {
                                             return (
-                                                <div
-                                                    className={`p-5 rounded-lg ${styles.successPanel}`}
-                                                >
+                                                <div className={`p-5 rounded-lg ${styles.successPanel}`}>
                                                     <div className="flex items-center gap-2 mb-3">
-                                                        <svg
-                                                            className={`w-6 h-6 ${styles.successText}`}
-                                                            fill="currentColor"
-                                                            viewBox="0 0 20 20"
-                                                        >
+                                                        <svg className={`w-6 h-6 ${styles.successText}`} fill="currentColor" viewBox="0 0 20 20">
                                                             <path
                                                                 fillRule="evenodd"
                                                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                                                 clipRule="evenodd"
                                                             />
                                                         </svg>
-                                                        <h3 className={`text-xl font-bold ${styles.successText}`}>
-                                                            🎮 Game Created Successfully!
-                                                        </h3>
+                                                        <h3 className={`text-xl font-bold ${styles.successText}`}>🎮 Game Created Successfully!</h3>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <div>
@@ -304,24 +284,16 @@ export default function TransactionPage() {
 
                                         if (gameIdAttr) {
                                             return (
-                                                <div
-                                                    className={`p-5 rounded-lg ${styles.successPanel}`}
-                                                >
+                                                <div className={`p-5 rounded-lg ${styles.successPanel}`}>
                                                     <div className="flex items-center gap-2 mb-3">
-                                                        <svg
-                                                            className={`w-6 h-6 ${styles.successText}`}
-                                                            fill="currentColor"
-                                                            viewBox="0 0 20 20"
-                                                        >
+                                                        <svg className={`w-6 h-6 ${styles.successText}`} fill="currentColor" viewBox="0 0 20 20">
                                                             <path
                                                                 fillRule="evenodd"
                                                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
                                                                 clipRule="evenodd"
                                                             />
                                                         </svg>
-                                                        <h3 className={`text-xl font-bold ${styles.successText}`}>
-                                                            🪑 Joined Game Successfully!
-                                                        </h3>
+                                                        <h3 className={`text-xl font-bold ${styles.successText}`}>🪑 Joined Game Successfully!</h3>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <div>
@@ -369,8 +341,8 @@ export default function TransactionPage() {
 
                                         switch (type) {
                                             case "coin_spent": {
-                                                const spender = attrs.find((a) => a.key === "spender")?.value;
-                                                const spentAmount = attrs.find((a) => a.key === "amount")?.value;
+                                                const spender = attrs.find(a => a.key === "spender")?.value;
+                                                const spentAmount = attrs.find(a => a.key === "amount")?.value;
                                                 const isFee = index < 3; // First coin_spent is usually fee
                                                 return {
                                                     icon: "💸",
@@ -384,8 +356,8 @@ export default function TransactionPage() {
                                                 };
                                             }
                                             case "coin_received": {
-                                                const receiver = attrs.find((a) => a.key === "receiver")?.value;
-                                                const receivedAmount = attrs.find((a) => a.key === "amount")?.value;
+                                                const receiver = attrs.find(a => a.key === "receiver")?.value;
+                                                const receivedAmount = attrs.find(a => a.key === "amount")?.value;
                                                 const isFeeCollector = index < 3;
                                                 return {
                                                     icon: "💰",
@@ -399,9 +371,9 @@ export default function TransactionPage() {
                                                 };
                                             }
                                             case "transfer": {
-                                                const recipient = attrs.find((a) => a.key === "recipient")?.value;
-                                                const sender = attrs.find((a) => a.key === "sender")?.value;
-                                                const amount = attrs.find((a) => a.key === "amount")?.value;
+                                                const recipient = attrs.find(a => a.key === "recipient")?.value;
+                                                const sender = attrs.find(a => a.key === "sender")?.value;
+                                                const amount = attrs.find(a => a.key === "amount")?.value;
                                                 return {
                                                     icon: "↔️",
                                                     title: "Transfer Recorded",
@@ -412,8 +384,8 @@ export default function TransactionPage() {
                                                 };
                                             }
                                             case "message": {
-                                                const action = attrs.find((a) => a.key === "action")?.value;
-                                                const module = attrs.find((a) => a.key === "module")?.value;
+                                                const action = attrs.find(a => a.key === "action")?.value;
+                                                const module = attrs.find(a => a.key === "module")?.value;
                                                 if (action) {
                                                     return {
                                                         icon: "📨",
@@ -430,9 +402,9 @@ export default function TransactionPage() {
                                                 };
                                             }
                                             case "tx": {
-                                                const fee = attrs.find((a) => a.key === "fee")?.value;
-                                                const signature = attrs.find((a) => a.key === "signature")?.value;
-                                                const accSeq = attrs.find((a) => a.key === "acc_seq")?.value;
+                                                const fee = attrs.find(a => a.key === "fee")?.value;
+                                                const signature = attrs.find(a => a.key === "signature")?.value;
+                                                const accSeq = attrs.find(a => a.key === "acc_seq")?.value;
 
                                                 if (fee) {
                                                     return {
@@ -459,8 +431,8 @@ export default function TransactionPage() {
                                                 break;
                                             }
                                             case "game_created": {
-                                                const gameId = attrs.find((a) => a.key === "game_id")?.value;
-                                                const gameType = attrs.find((a) => a.key === "game_type")?.value;
+                                                const gameId = attrs.find(a => a.key === "game_id")?.value;
+                                                const gameType = attrs.find(a => a.key === "game_type")?.value;
                                                 return {
                                                     icon: "🎮",
                                                     title: "Poker Game Created",
@@ -471,8 +443,8 @@ export default function TransactionPage() {
                                                 };
                                             }
                                             case "player_joined_game": {
-                                                const joinedGameId = attrs.find((a) => a.key === "game_id")?.value;
-                                                const player = attrs.find((a) => a.key === "player")?.value;
+                                                const joinedGameId = attrs.find(a => a.key === "game_id")?.value;
+                                                const player = attrs.find(a => a.key === "player")?.value;
                                                 return {
                                                     icon: "🪑",
                                                     title: "Player Joined Game",
@@ -510,9 +482,7 @@ export default function TransactionPage() {
                                             </button>
 
                                             {showEventExplanation && (
-                                                <div
-                                                    className={`p-5 rounded-lg mb-4 ${styles.eventExplanationContainer}`}
-                                                >
+                                                <div className={`p-5 rounded-lg mb-4 ${styles.eventExplanationContainer}`}>
                                                     {/* Cosmos Events Primer */}
                                                     <div className={`mb-6 pb-4 ${styles.eventExplanationPrimer}`}>
                                                         <h4 className="text-lg font-bold text-white mb-3">📚 About Block52 Blockchain Events</h4>
@@ -544,10 +514,7 @@ export default function TransactionPage() {
                                                         {transaction.tx_response.events.map((event: CosmosEvent, index: number) => {
                                                             const explanation = explainEvent(event, index);
                                                             return (
-                                                                <div
-                                                                    key={index}
-                                                                    className={`p-3 rounded-lg ${styles.eventBreakdownCard}`}
-                                                                >
+                                                                <div key={index} className={`p-3 rounded-lg ${styles.eventBreakdownCard}`}>
                                                                     <div className="flex items-start gap-3">
                                                                         {explanation && <span className="text-2xl">{explanation.icon}</span>}
                                                                         <div className="flex-1">
@@ -569,12 +536,8 @@ export default function TransactionPage() {
                                                     </div>
 
                                                     {/* Summary */}
-                                                    <div
-                                                        className={`mt-5 p-4 rounded-lg ${styles.eventSummaryBox}`}
-                                                    >
-                                                        <h5 className={`font-bold mb-2 ${styles.eventSummaryTitle}`}>
-                                                            Summary
-                                                        </h5>
+                                                    <div className={`mt-5 p-4 rounded-lg ${styles.eventSummaryBox}`}>
+                                                        <h5 className={`font-bold mb-2 ${styles.eventSummaryTitle}`}>Summary</h5>
                                                         <p className="text-sm text-gray-300">
                                                             This transaction executed successfully with {transaction.tx_response.events.length} events emitted.
                                                             The blockchain recorded fee payments, state changes, and custom poker game events. All events are
@@ -591,9 +554,7 @@ export default function TransactionPage() {
                             {hasElements(transaction.tx_response.events) && (
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-3">Raw Events Data ({transaction.tx_response.events.length})</h3>
-                                    <pre
-                                        className={`p-4 rounded-lg text-xs overflow-auto font-mono text-gray-300 ${styles.rawEventsBox}`}
-                                    >
+                                    <pre className={`p-4 rounded-lg text-xs overflow-auto font-mono text-gray-300 ${styles.rawEventsBox}`}>
                                         {JSON.stringify(transaction.tx_response.events, null, 2)}
                                     </pre>
                                 </div>

@@ -1,4 +1,144 @@
 /* Table animations */
+/* Focused room: same Texas HODL palette, quieter surfaces around the hand. */
+.table-container[data-table-theme="modern"] .table-surface-shadow {
+    background: radial-gradient(ellipse at 50% 40%, #30203d, #1d1428 58%, #100b18);
+    border: 2px solid #b78bcd !important;
+    box-shadow:
+        inset 0 0 85px #0008,
+        0 18px 50px #000a;
+}
+.table-container[data-table-theme="modern"] .table-logo {
+    transform: translate(-50%, -50%);
+    top: 50%;
+    width: 44%;
+}
+.table-container[data-table-theme="modern"] .table-logo img {
+    width: 100%;
+    max-width: 440px;
+    opacity: 0.24;
+    filter: none;
+}
+.table-container .vacant-seat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 100px;
+    padding: 6px;
+    border: 0;
+    border-radius: 16px;
+    background: transparent;
+    color: #d7b6eb;
+}
+.table-container .vacant-seat-plus {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    border: 1px dashed #c194dc88;
+    border-radius: 50%;
+    font-size: 26px;
+    font-weight: 300;
+    color: #d4ace9;
+    background: #b14cff09;
+}
+.vacant-seat-title {
+    font-size: 16px;
+    color: #e4d1ef;
+    line-height: 1.2;
+}
+.vacant-seat-label {
+    font-size: 12px;
+    color: #b8a1c7;
+    letter-spacing: 0.04em;
+}
+.table-container .vacant-seat:hover:not(:disabled) {
+    background: #b14cff14;
+    box-shadow: none;
+}
+.table-container .vacant-seat:disabled {
+    cursor: default;
+    filter: none;
+    box-shadow: none;
+}
+.table-container .vacant-seat:focus-visible {
+    outline: 2px solid #e4b2ff;
+    outline-offset: 5px;
+}
+.table-container .badge-container {
+    background: #140e1d;
+    border: 1px solid #bea3d452;
+    padding: 5px;
+    box-shadow: 0 4px 14px #0007;
+}
+.table-container .badge-value {
+    color: #f4eafc;
+    font-family: "DM Mono", monospace;
+    font-weight: 500;
+}
+.table-container .badge-number {
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    box-shadow: inset 0 0 0 1px #ffffff35;
+}
+.table-spectator-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 12px 19px;
+    border: 1px solid #ffffff16;
+    border-radius: 999px;
+    background: #110b18d9;
+    color: #c0a9d0;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.table-spectator-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #bb7cef;
+}
+.table-container .background-animated-static {
+    opacity: 0.08;
+}
+.table-container .background-shimmer {
+    opacity: 0.08;
+}
+.poker-action-dock button[data-action] {
+    min-height: 44px;
+    box-shadow: none;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+.poker-action-dock button[data-action]:hover {
+    transform: none;
+}
+.poker-action-dock button:focus-visible {
+    outline: 2px solid #e4b2ff;
+    outline-offset: 3px;
+}
+.poker-action-dock .btn-raise {
+    color: #200c1c;
+}
+.poker-action-dock .btn-fold,
+.poker-action-dock .btn-check,
+.poker-action-dock .btn-call {
+    border-width: 1px;
+    background: #18101fe8;
+}
+.poker-action-dock .btn-check:hover,
+.poker-action-dock .btn-call:hover {
+    border-color: #b78bcd;
+    background: #32203d;
+}
+.poker-action-dock .btn-fold:hover {
+    border-color: #ff719b;
+    background: #321923;
+}
 @keyframes gradient {
     0% {
         background-position: 0% 50%;
@@ -12,8 +152,12 @@
 }
 
 @keyframes shimmer {
-    0% { background-position: 0% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+        background-position: 0% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 /*
@@ -32,26 +176,48 @@
  * stylesheet loads last silently redefine the other's animation.
  */
 @keyframes table-shimmer-slide {
-    0% { transform: translate3d(0, 0, 0); }
-    100% { transform: translate3d(-50%, 0, 0); }
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
 }
 
 @keyframes table-gradient-drift {
-    0% { transform: translate3d(0, 0, 0); }
-    50% { transform: translate3d(-75%, 0, 0); }
-    100% { transform: translate3d(0, 0, 0); }
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(-75%, 0, 0);
+    }
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
 }
 
 @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-    100% { transform: translateY(0px); }
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
 }
 
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes textShine {
@@ -95,8 +261,14 @@
 
 /* Winning card highlight — lifts card upward and brightens it */
 @keyframes card-lift {
-    0%   { transform: translateY(0)     scale(1);    filter: brightness(1); }
-    100% { transform: translateY(-14px) scale(1.05); filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 215, 0, 0.85)); }
+    0% {
+        transform: translateY(0) scale(1);
+        filter: brightness(1);
+    }
+    100% {
+        transform: translateY(-14px) scale(1.05);
+        filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 215, 0, 0.85));
+    }
 }
 
 .animate-win-card {
@@ -104,8 +276,6 @@
     position: relative;
     z-index: 20;
 }
-
-
 
 /* Animation classes */
 /*
@@ -149,9 +319,8 @@
 
 /* Hexagon pattern for table */
 .hexagon-pattern {
-    background-image: 
-        linear-gradient(to right, var(--ui-border-color) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--ui-border-color) 1px, transparent 1px);
+    background-image:
+        linear-gradient(to right, var(--ui-border-color) 1px, transparent 1px), linear-gradient(to bottom, var(--ui-border-color) 1px, transparent 1px);
     background-size: 30px 30px;
 }
 
@@ -163,7 +332,9 @@
 
 /* Enhanced glow effects for text */
 .text-glow {
-    text-shadow: 0 0 5px color-mix(in srgb, var(--brand-primary) 50%, transparent), 0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
+    text-shadow:
+        0 0 5px color-mix(in srgb, var(--brand-primary) 50%, transparent),
+        0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 
 /* New classes for extracted inline styles */
@@ -173,6 +344,31 @@
     overflow: visible;
     display: flex;
     flex-direction: column;
+}
+
+/* The stage excludes the measured mobile action slot. Controls, safe-area
+   padding and extra rows can no longer draw over the bottom player's seat. */
+.table-stage { flex: 1 1 0; min-height: 0; }
+.table-banner-wrap { flex-shrink: 0; }
+.mobile-action-slot {
+    position: relative;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    padding-top: 12px;
+    z-index: 10;
+}
+.mobile-action-content {
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+.mobile-action-slot .poker-action-dock {
+    position: relative;
+    inset: auto;
+    width: 100%;
 }
 
 .sub-header {
@@ -225,8 +421,7 @@
     pointer-events: none;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%) 
-    scale(1.5);
+    transform: translate(-50%, -50%) scale(1.5);
 }
 
 .table-logo img {
@@ -259,7 +454,6 @@
     margin-top: 4px;
 }
 
-
 @media (min-width: 640px) {
     .pot-display-secondary {
         font-size: 18px;
@@ -281,56 +475,129 @@
     position: absolute;
 }
 
-/* Floating card panel (History + Settings tabs, ui#752). Always visible, inset
-   from the right edge so it reads as a card floating above the felt (rounded +
-   shadow on the inner element) rather than an edge-docked panel. */
-.table-panel {
-    position: fixed;
-    top: 100px;
-    right: 16px;
-    width: 300px;
-    height: calc(100dvh - 350px);
-    z-index: 1000;
-}
-
-/* Phones: opened from the hamburger menu, so it can take most of the screen. */
-.table-panel--mobile {
-    top: calc(env(safe-area-inset-top) + 74px);
-    left: calc(env(safe-area-inset-left) + 8px);
-    right: calc(env(safe-area-inset-right) + 8px);
-    bottom: calc(env(safe-area-inset-bottom) + 8px);
-    width: auto;
-    height: auto;
-}
-
-/* Desktop: collapsed panel leaves a slim tab on the right edge to reopen it. */
-.table-panel-expand {
+.action-log-overlay {
     position: fixed;
     top: 100px;
     right: 0;
+    transition: all 0.3s ease-in-out;
     z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 6px;
-    background: #1a2234;
-    color: #9ca3af;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-right: none;
-    border-radius: 12px 0 0 12px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    height: calc(100dvh - 350px);
 }
 
-.table-panel-expand:hover {
-    color: #fff;
+.action-log-open {
+    width: 250px;
+    opacity: 1;
 }
 
-.table-panel-expand__label {
-    writing-mode: vertical-rl;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.05em;
+/* Panels float in the corner; they never change the measured table stage. */
+.table-container[data-compact-mobile="false"] {
+    --table-panel-width: 240px;
+}
+.table-container[data-compact-mobile="false"] .action-log-overlay {
+    top: 134px;
+    right: 16px;
+    height: clamp(100px, 22vh, 180px);
+    z-index: 30;
+    border-radius: 0;
+    overflow: hidden;
+    background: transparent;
+    transition: none;
+}
+.table-container[data-compact-mobile="false"] .action-log-open {
+    width: var(--table-panel-width);
+    border: 0;
+}
+.table-container[data-compact-mobile="false"] .table-panel-surface {
+    background: transparent;
+    border-left: 0;
+}
+.table-container[data-compact-mobile="false"] .table-panel-surface > div {
+    backdrop-filter: none;
+}
+.table-container[data-compact-mobile="false"] #table-history-panel {
+    top: var(--history-top, 127px);
+    height: var(--history-height, 100px);
+}
+.table-banner-wrap { flex-shrink: 0; }
+.history-scroll-content { scrollbar-width: thin; scrollbar-color: #a77ac650 transparent; }
+.history-scroll-content:focus-visible { outline: 1px solid #b995cf; outline-offset: -1px; }
+.table-container[data-table-only="true"] .table-banner-wrap { display: none; }
+.table-container[data-table-only="true"] .action-log-overlay { top: 54px; }
+.restore-table-banner { position: fixed; top: 12px; left: 16px; z-index: 110; padding: 7px 10px; border: 1px solid #b995cf55; border-radius: 8px; background: #0c081180; color: #c9b2d9; font-size: 11px; }
+.restore-table-banner:focus-visible { outline: 2px solid #d5a4ff; outline-offset: 3px; }
+.table-container[data-compact-mobile="true"] .restore-table-banner {
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    left: calc(env(safe-area-inset-left, 0px) + 12px);
+    min-height: 44px;
+    min-width: 44px;
+}
+/* A small live feed on desktop; a deliberately opened, bounded reader on phones.
+   Neither mode participates in stage layout or moves the table. */
+.table-container #table-history-panel { transition: none; z-index: 35; }
+.table-container #table-history-panel .table-panel-surface { border: 0; background: transparent; }
+.table-container #table-history-panel[data-expanded="false"] .text-xs { font-size: 12px; }
+.table-container #table-history-panel .text-\[10px\] { font-size: 11px; }
+.table-container #table-history-panel[data-expanded="true"] {
+    top: var(--history-top, 80px);
+    right: 12px;
+    width: min(340px, calc(100vw - 24px));
+    height: min(280px, 36dvh);
+    max-height: calc(100dvh - 200px);
+    border: 1px solid #b995cf40;
+    border-radius: 12px;
+    background: #100b17f5;
+    box-shadow: 0 12px 32px #0005;
+}
+.table-container[data-compact-mobile="true"] #table-history-panel[data-expanded="true"] {
+    top: 80px;
+    width: min(300px, calc(100vw - 24px));
+    height: min(200px, 28dvh);
+}
+.table-container[data-table-only="true"] #table-history-panel[data-expanded="true"] { top: 54px; }
+.history-panel-control { min-width: 32px; min-height: 32px; padding: 4px 6px; border-radius: 6px; color: #d7b7ef; font-size: 11px; }
+.history-panel-control:hover { background: #b995cf18; }
+.history-summary { display: flex; flex-direction: column; justify-content: center; width: 100%; height: 100%; padding: 0 4px; text-align: left; border-radius: 6px; }
+.history-summary-heading { display: flex; justify-content: space-between; width: 100%; color: #c9b2d9; font-size: 11px; line-height: 16px; }
+.history-summary-action { color: #eee4f3; font-size: 12px; line-height: 18px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mobile-history-trigger { position: fixed; top: 80px; right: 12px; z-index: 30; border: 1px solid #b995cf50; border-radius: 18px; background: #100b1799; color: #dcc7ed; padding: 9px 13px; font-size: 12px; }
+.table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; }
+.history-panel-control:focus-visible, .history-summary:focus-visible, .mobile-history-trigger:focus-visible { outline: 2px solid #d5a4ff; outline-offset: -2px; }
+/* Four-seat portrait rings put both side players at the felt's midpoint.
+   Keep the readable five-card row in the empty upper felt, clear of their
+   hole cards, result badges and stacks. Other seat counts/orientations retain
+   their existing centre-board position; player positions never change. */
+.community-board[data-portrait-four="true"] {
+    position: absolute;
+    left: 50%;
+    /* Anchor the card row's bottom, so a second pot label grows upward rather
+       than pushing cards back into the side seats. */
+    bottom: 64%;
+    margin-top: 0;
+    transform: translateX(-50%);
+}
+.table-container #table-settings-panel.action-log-open { width: min(300px, calc(100vw - 32px)); height: auto; background: #100b17f5; border: 1px solid #ffffff18; border-radius: 10px; }
+.settings-content { padding: 0 14px 6px; }
+.settings-heading { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; border-bottom: 1px solid #ffffff18; }
+.settings-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid #ffffff12; }
+.settings-toggle-row:last-child { border: 0; }
+.settings-appearance { display: block; padding: 10px 0; border-bottom: 1px solid #ffffff12; color: white; font-size: 12px; }
+.settings-appearance select { padding: 7px 9px; margin-top: 6px; }
+@media (max-height: 600px) and (min-width: 600px) {
+    .table-container #table-settings-panel.action-log-open { width: min(540px, calc(100vw - 32px)); right: 16px; }
+    .table-container[data-compact-mobile="true"] #table-settings-panel.action-log-open { top: 58px; }
+    .settings-content { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
+    .settings-appearance { grid-column: 1 / -1; }
+}
+
+.settings-panel-width {
+    width: 300px;
+}
+
+.action-log-closed {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .powered-by-block52 {
@@ -384,7 +651,14 @@
 }
 
 .table-surface-shadow {
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3);
+    background:
+        radial-gradient(circle at 50% 42%, rgba(177, 76, 255, 0.18), transparent 44%),
+        radial-gradient(circle at 68% 72%, rgba(240, 43, 198, 0.09), transparent 34%), linear-gradient(145deg, #1a1425 0%, #0d0d14 54%, #070709 100%);
+    border-color: rgba(177, 76, 255, 0.55) !important;
+    box-shadow:
+        0 12px 46px rgba(0, 0, 0, 0.58),
+        inset 0 0 60px rgba(177, 76, 255, 0.09),
+        inset 0 0 1px rgba(255, 255, 255, 0.85);
 }
 
 /* Performance optimized styles - moved from inline */
@@ -449,13 +723,12 @@
     position: absolute;
     inset: 0;
     z-index: 0;
-    background: 
+    background:
         radial-gradient(circle at 20% 30%, var(--anim-color-1-80) 0%, transparent 60%),
         radial-gradient(circle at 0% 0%, var(--anim-color-2-70) 0%, transparent 50%),
         radial-gradient(circle at 100% 0%, var(--anim-color-3-70) 0%, transparent 50%),
         radial-gradient(circle at 0% 100%, var(--anim-color-4-70) 0%, transparent 50%),
-        radial-gradient(circle at 100% 100%, var(--anim-color-5-70) 0%, transparent 50%),
-        var(--table-bg-base);
+        radial-gradient(circle at 100% 100%, var(--anim-color-5-70) 0%, transparent 50%), var(--table-bg-base);
     filter: blur(60px);
     transition: all 0.3s ease-out;
 }
@@ -493,9 +766,21 @@
 
 /* Action box pulse effect for emphasis */
 @keyframes actionPulse {
-    0% { box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent), 0 2px 4px color-mix(in srgb, #000000 30%, transparent); }
-    50% { box-shadow: 0 6px 20px color-mix(in srgb, var(--brand-primary) 60%, transparent), 0 4px 8px color-mix(in srgb, #000000 40%, transparent); }
-    100% { box-shadow: 0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent), 0 2px 4px color-mix(in srgb, #000000 30%, transparent); }
+    0% {
+        box-shadow:
+            0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent),
+            0 2px 4px color-mix(in srgb, #000000 30%, transparent);
+    }
+    50% {
+        box-shadow:
+            0 6px 20px color-mix(in srgb, var(--brand-primary) 60%, transparent),
+            0 4px 8px color-mix(in srgb, #000000 40%, transparent);
+    }
+    100% {
+        box-shadow:
+            0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent),
+            0 2px 4px color-mix(in srgb, #000000 30%, transparent);
+    }
 }
 
 .action-box-pulse {
@@ -506,15 +791,10 @@
 /* Reference: https://www.nouns.com | https://github.com/block52/nouns.poker */
 
 .nouns-table-felt {
-    background: linear-gradient(
-        135deg,
-        #2d1f3d 0%,
-        #1a1a2e 40%,
-        #1e2a3a 100%
-    );
+    background: linear-gradient(135deg, #2d1f3d 0%, #1a1a2e 40%, #1e2a3a 100%);
     box-shadow:
-        0 4px 20px rgba(0,0,0,0.5),
-        inset 0 0 60px rgba(0,0,0,0.3),
+        0 4px 20px rgba(0, 0, 0, 0.5),
+        inset 0 0 60px rgba(0, 0, 0, 0.3),
         inset 0 0 120px rgba(214, 60, 94, 0.05),
         inset 0 0 120px rgba(43, 131, 246, 0.05);
 }
@@ -525,9 +805,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background-image:
-        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 8px 8px;
     pointer-events: none;
     z-index: 1;
@@ -562,17 +840,14 @@
     background:
         radial-gradient(circle at 20% 30%, rgba(214, 60, 94, 0.08) 0%, transparent 50%),
         radial-gradient(circle at 80% 70%, rgba(43, 131, 246, 0.08) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(67, 185, 127, 0.04) 0%, transparent 60%),
-        #0d0d1a;
+        radial-gradient(circle at 50% 50%, rgba(67, 185, 127, 0.04) 0%, transparent 60%), #0d0d1a;
 }
 
 .nouns-background::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image:
-        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
     background-size: 8px 8px;
     pointer-events: none;
 }
@@ -596,11 +871,11 @@
     .background-animated-static::before {
         animation: none;
     }
-    
+
     .shimmer-animation::before {
         animation: none;
     }
-    
+
     .text-gradient {
         animation: none;
         background: linear-gradient(to right, var(--brand-primary), #60a5fa);
@@ -608,7 +883,7 @@
         -webkit-background-clip: text;
         color: transparent;
     }
-    
+
     /* Disable action box animations for reduced motion */
     .action-box-enter,
     .action-box-exit,
@@ -642,11 +917,11 @@
     .shimmer-animation::before {
         animation-duration: 6s; /* Slower = less CPU */
     }
-    
+
     .text-gradient {
         animation-duration: 6s; /* Slower = less CPU */
     }
-    
+
     /* Simplify blur effects on mobile */
     .background-base-static {
         filter: blur(30px); /* Less blur = better performance */
@@ -680,4 +955,134 @@
 /* Active state indicator */
 .sit-out-toggle input[type="checkbox"]:checked ~ span {
     color: #fb923c;
-} 
+}
+
+/* Texas HODL visual system: keep the existing table geometry and gameplay
+   layers intact while replacing generic Block52 blue surfaces with the
+   near-black / purple signal / orange-pink action language from texashodl.net. */
+.table-container {
+    color: var(--texas-ink, #f7f7f2);
+    background: #070709;
+}
+
+.bg-custom-header,
+.bg-custom-footer,
+.sub-header {
+    background: linear-gradient(105deg, rgba(10, 8, 15, 0.96), rgba(28, 14, 42, 0.92) 52%, rgba(9, 8, 13, 0.96));
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.background-base,
+.background-base-static {
+    background-color: #070709;
+}
+
+.background-base-static {
+    background:
+        radial-gradient(circle at 74% 34%, rgba(139, 44, 255, 0.18), transparent 34%),
+        radial-gradient(circle at 28% 76%, rgba(240, 43, 198, 0.1), transparent 32%), #070709;
+}
+
+.table-surface-shadow {
+    box-shadow:
+        0 12px 42px rgba(0, 0, 0, 0.55),
+        inset 0 0 70px rgba(139, 44, 255, 0.08),
+        inset 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.pot-display,
+.pot-display-secondary {
+    border: 1px solid rgba(177, 76, 255, 0.42);
+    background: rgba(7, 7, 9, 0.78);
+    box-shadow: 0 0 22px rgba(177, 76, 255, 0.16);
+    font-family: "DM Mono", ui-monospace, monospace;
+}
+
+.sub-header-shadow {
+    background: linear-gradient(90deg, transparent, #b14cff 42%, #f02bc6 58%, transparent);
+    opacity: 0.72;
+}
+
+.network-display,
+.walletInfo {
+    background-color: rgba(14, 15, 20, 0.72);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.table-logo img {
+    opacity: 0.19;
+    filter: drop-shadow(0 0 28px rgba(177, 76, 255, 0.36));
+}
+
+/* Table UX surfaces: keep the header readable and make action/status chrome
+   feel like one Texas HODL system instead of unrelated utility widgets. */
+.table-header-root button,
+.table-header-root [role="button"] {
+    transition:
+        border-color 160ms ease,
+        background-color 160ms ease,
+        color 160ms ease,
+        transform 160ms ease;
+}
+
+.table-header-root button:hover,
+.table-header-root [role="button"]:hover {
+    transform: translateY(-1px);
+}
+
+.table-sub-header-root {
+    letter-spacing: 0.015em;
+}
+
+.player-seat,
+.vacant-seat {
+    transition:
+        filter 180ms ease,
+        opacity 180ms ease,
+        transform 180ms ease;
+}
+
+.vacant-seat {
+    min-width: 112px;
+    padding: 0.45rem 0.65rem 0.55rem;
+    border: 1px dashed rgba(255, 214, 91, 0.52);
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(177, 76, 255, 0.18), rgba(7, 7, 9, 0.08) 68%);
+    color: #f3d77b;
+}
+
+.vacant-seat:hover,
+.vacant-seat:focus-visible {
+    outline: none;
+    filter: brightness(1.18);
+    border-color: #f0b7ff;
+    box-shadow:
+        0 0 0 3px rgba(177, 76, 255, 0.18),
+        0 0 22px rgba(240, 43, 198, 0.2);
+}
+
+.vacant-seat img {
+    opacity: 0.86;
+    filter: drop-shadow(0 0 10px rgba(177, 76, 255, 0.25));
+}
+
+@media (max-width: 700px) {
+    .table-header-root [class*="copyTableButton"] {
+        padding-left: 0.55rem;
+        padding-right: 0.55rem;
+    }
+
+    .vacant-seat {
+        min-width: 92px;
+        padding: 0.35rem 0.45rem 0.45rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .background-base-static,
+    .table-surface-shadow,
+    .pot-display,
+    .pot-display-secondary {
+        animation: none;
+    }
+}

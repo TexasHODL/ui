@@ -14,8 +14,10 @@ import { SitOutIntentProvider } from "../../../../context/SitOutIntentContext";
 
 const mockSubmit = jest.fn();
 const mockToggleSeatAtBottom = jest.fn();
-const mockOpenPanel = jest.fn();
+const mockToggleFocus = jest.fn();
 
+jest.mock("../../../../hooks/playerActions", () => ({ sitOut: jest.fn(), useAutoSitOutNextBB: jest.fn() }));
+jest.mock("../../../../utils/cosmosAccountUtils", () => ({ getCosmosAddressSync: () => "b521abc" }));
 jest.mock("../../../../context/ActionSubmitContext", () => ({
     useActionSubmit: () => ({ submit: mockSubmit, loadingAction: null, isBusy: false, lastError: null })
 }));
@@ -44,6 +46,7 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[] 
     return render(
         <SitOutIntentProvider tableId="0xtable" network={{} as never} pendingSitOut={null} legalActions={legalActions}>
             <MobileTableHeader
+                onToggleFocus={mockToggleFocus}
                 tableId="0xtable"
                 currentNetwork={{} as never}
                 gameFormat={null}
@@ -63,13 +66,16 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[] 
                 minBuyIn="0"
                 maxBuyIn="0"
                 walletBalance="0"
+                openSidebar={false}
+                openSettings={false}
                 tableStyle="modern"
                 onCycleTableStyle={jest.fn()}
-                onOpenPanel={mockOpenPanel}
                 handleLobbyClick={jest.fn()}
                 handleCopyTableLink={jest.fn()}
                 fetchAccountBalance={jest.fn()}
                 copyToClipboard={jest.fn()}
+                onCloseSideBar={jest.fn()}
+                onToggleSettings={jest.fn()}
                 handleLeaveTableClick={jest.fn()}
                 handleShareHand={jest.fn()}
             />
@@ -82,23 +88,22 @@ const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
 describe("MobileTableHeader drawer (ui#684)", () => {
     beforeEach(() => jest.clearAllMocks());
 
+    it("offers table-only fullscreen directly in the mobile header without submitting a game action", () => {
+        renderHeader();
+        const fullscreen = screen.getByRole("button", { name: "Full screen" });
+        expect(fullscreen).toHaveClass("w-11", "h-11");
+        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
+        fireEvent.click(fullscreen);
+        expect(mockToggleFocus).toHaveBeenCalledTimes(1);
+        expect(mockSubmit).not.toHaveBeenCalled();
+    });
+
     it("offers the 6 o'clock view preference, seated or not", () => {
         renderHeader();
         openMenu();
         const row = screen.getByRole("switch", { name: /Seat me at 6/ });
         fireEvent.click(row);
         expect(mockToggleSeatAtBottom).toHaveBeenCalledTimes(1);
-    });
-
-    it("opens the History / Settings panel from the drawer and closes the drawer", () => {
-        renderHeader();
-        openMenu();
-        fireEvent.click(screen.getByText("Hand history"));
-        expect(mockOpenPanel).toHaveBeenLastCalledWith("history");
-        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
-        openMenu();
-        fireEvent.click(screen.getByText("Settings"));
-        expect(mockOpenPanel).toHaveBeenLastCalledWith("settings");
     });
 
     it("shows the spectate hint while unseated", () => {

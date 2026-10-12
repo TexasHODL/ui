@@ -1,3 +1,5 @@
+import { formatUsd, formatMicroUsd } from "../../../utils/moneyDisplay";
+import { ModalHeader } from "../../common/ModalHeader";
 /**
  * VacantPlayer Component
  *
@@ -16,7 +18,6 @@ import * as React from "react";
 import { memo, useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "react-router-dom";
-import PokerProfile from "../../../assets/PokerProfile.svg";
 
 import { useVacantSeatData } from "../../../hooks/game/useVacantSeatData";
 import type { VacantPlayerProps } from "../../../types/index";
@@ -160,11 +161,11 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                 const buyInValue = parseFloat(buyInDollars);
 
                 if (buyInValue < minBuyInDollars) {
-                    setJoinError(`Buy-in must be at least $${formatDollars(minBuyInDollars)}`);
+                    setJoinError(`Buy-in must be at least $${formatMicroUsd(gameOptions?.minBuyIn ?? 0)}`);
                     return;
                 }
                 if (buyInValue > maxBuyInDollars) {
-                    setJoinError(`Buy-in cannot exceed $${formatDollars(maxBuyInDollars)}`);
+                    setJoinError(`Buy-in cannot exceed $${formatMicroUsd(gameOptions?.maxBuyIn ?? 0)}`);
                     return;
                 }
             }
@@ -217,8 +218,8 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         // Memoize seat text
         const seatText = useMemo(
             () => ({
-                title: isUserAlreadyPlaying ? "Vacant Seat" : `Seat ${index}`,
-                subtitle: !isUserAlreadyPlaying ? (canJoinThisSeat ? "Click to Join" : "Seat Taken") : null
+                title: "Seat " + index,
+                subtitle: isUserAlreadyPlaying ? "Open seat" : canJoinThisSeat ? "Take a seat" : "Unavailable"
             }),
             [isUserAlreadyPlaying, canJoinThisSeat, index]
         );
@@ -230,7 +231,14 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         }, []);
         return (
             <>
-                <div className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2" style={containerStyle} onClick={handleSeatClick}>
+                <button
+                    className="vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                    style={containerStyle}
+                    type="button"
+                    disabled={isUserAlreadyPlaying || !canJoinThisSeat}
+                    onClick={handleSeatClick}
+                    aria-label={!isUserAlreadyPlaying && canJoinThisSeat ? `Join seat ${index}` : `Seat ${index} unavailable`}
+                >
                     {/* Development Mode Debug Info */}
                     {import.meta.env.VITE_NODE_ENV === "development" && (
                         <div className="absolute top-[-50px] left-1/2 transform -translate-x-1/2 bg-gray-600 bg-opacity-80 text-white px-2 py-1 rounded text-[10px] whitespace-nowrap z-50 border border-gray-400">
@@ -241,17 +249,15 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             </div>
                         </div>
                     )}
-                    <div className="flex justify-center mb-2">
-                        <img src={PokerProfile} className="w-12 h-12" alt="Vacant Seat" />
-                    </div>
-                    <div className={`text-center ${styles.seatText}`}>
-                        <div className="text-lg sm:text-sm mb-1 whitespace-nowrap font-medium">{seatText.title}</div>
-                        {seatText.subtitle && <div className="text-base sm:text-xs whitespace-nowrap">{seatText.subtitle}</div>}
-                    </div>
+                    <span className="vacant-seat-plus" aria-hidden="true">
+                        +
+                    </span>
+                    <span className="vacant-seat-title">{seatText.title}</span>
+                    <span className="vacant-seat-label">{seatText.subtitle}</span>
 
                     {/* Dealer Button - TODO: Implement framer motion animation in future iteration */}
                     {/* Dealer Button — rendered at table level using geometry positions */}
-                </div>
+                </button>
 
                 {/* Buy-in modal - using portal to render at document body */}
                 {showBuyInModal &&
@@ -262,8 +268,8 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={() => !isJoining && setShowBuyInModal(false)} />
 
                             {/* Modal */}
-                            <div className={`relative p-8 rounded-xl w-96 shadow-2xl ${styles.modalContainer}`}>
-                                <h3 className="text-2xl font-bold mb-4 text-white text-center">{isSitAndGo ? "Sit & Go Buy-In" : "Cash Game Buy-In"}</h3>
+                            <div className={`hodl-modal relative p-8 rounded-xl w-96 shadow-2xl ${styles.modalContainer}`}>
+                                <ModalHeader kicker="Take your seat" title={isSitAndGo ? "Sit & Go Buy-In" : "Cash Game Buy-In"} />
 
                                 {/* Buy-In Amount - Fixed for Sit & Go, Input for Cash Game */}
                                 {isSitAndGo ? (
@@ -271,7 +277,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                     <div className={`mb-6 p-4 rounded-lg border-2 ${styles.fixedBuyInPanel}`}>
                                         <div className="text-center">
                                             <div className="text-xs text-gray-400 mb-1">Required Buy-In</div>
-                                            <div className="text-3xl font-bold text-white">${formatUSDCToSimpleDollars(gameOptions.minBuyIn)}</div>
+                                            <div className="text-3xl font-bold text-white">${formatMicroUsd(gameOptions.minBuyIn)}</div>
                                             <div className="text-xs text-gray-400 mt-1">Fixed amount for this tournament</div>
                                         </div>
                                     </div>
@@ -283,8 +289,8 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                         {/* Slider with min/max labels */}
                                         <div className="mb-3">
                                             <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                                <span>${formatDollars(minBuyInNum)}</span>
-                                                <span>${formatDollars(maxBuyInNum)}</span>
+                                                <span>${formatMicroUsd(gameOptions?.minBuyIn ?? 0)}</span>
+                                                <span>${formatMicroUsd(gameOptions?.maxBuyIn ?? 0)}</span>
                                             </div>
                                             <input
                                                 type="range"
@@ -337,7 +343,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                                         <div className="flex justify-between items-center">
                                                             <span className="text-white font-semibold">USDC</span>
                                                             <span className={`text-lg font-bold ${exceedsBalance ? "text-red-400" : "text-white"}`}>
-                                                                ${formatDollars(usdcAmount)}
+                                                                ${formatUsd(usdcAmount)}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -363,7 +369,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                     <button
                                         onClick={handleBuyInConfirm}
                                         disabled={isJoining || exceedsBalance}
-                                        className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton} ${
+                                        className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center hodl-primary ${styles.confirmButton} ${
                                             exceedsBalance ? styles.confirmButtonDisabled : ""
                                         }`}
                                     >
@@ -390,13 +396,13 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                                     </button>
                                     <button
                                         onClick={handleDepositClick}
-                                        className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center ${styles.confirmButton}`}
+                                        className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 flex items-center justify-center hodl-primary ${styles.confirmButton}`}
                                     >
                                         Top Up Game Wallet
                                     </button>
                                     <button
                                         onClick={() => setShowBuyInModal(false)}
-                                        className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 ${styles.cancelButton}`}
+                                        className={`w-full px-6 py-3 text-sm font-semibold rounded-lg transition duration-300 hodl-secondary ${styles.cancelButton}`}
                                         disabled={isJoining}
                                     >
                                         Cancel

@@ -1,3 +1,4 @@
+import { formatUsd } from "../../../utils/moneyDisplay";
 import { useState, useEffect, useCallback, useRef } from "react";
 import spinner from "../../../assets/spinning-circles.svg";
 import type { PaymentStatusMonitorProps } from "../types";
@@ -205,7 +206,7 @@ const PaymentStatusMonitor: React.FC<PaymentStatusMonitorProps> = ({ paymentId, 
                     {status.outcome_amount && (
                         <div className="flex justify-between text-sm">
                             <span className="text-gray-400">USDC Received</span>
-                            <span className="text-white font-semibold">${status.outcome_amount.toFixed(2)} USDC</span>
+                            <span className="text-white font-semibold">${formatUsd(status.outcome_amount)} USDC</span>
                         </div>
                     )}
                     {status.bridge_tx_hash && (

@@ -2,16 +2,16 @@
 
 /* Deal button */
 .btn-deal {
-  background: linear-gradient(to right, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 90%, transparent));
-  border: 2px solid var(--brand-primary);
-  box-shadow: 0 0 15px color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+  border: 1px solid #ff9fdc;
+  box-shadow: 0 0 22px rgba(240, 43, 198, 0.26);
 }
 
 /* New hand button */
 .btn-new-hand {
-  background: linear-gradient(to right, var(--brand-secondary), var(--brand-primary));
-  border: 2px solid var(--brand-primary);
-  box-shadow: 0 0 15px color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+  border: 1px solid #ff9fdc;
+  box-shadow: 0 0 22px rgba(240, 43, 198, 0.26);
 }
 
 /* Muck button */
@@ -29,9 +29,9 @@
 
 /* Show button */
 .btn-show {
-  background: linear-gradient(to right, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 90%, transparent));
-  border: 2px solid var(--brand-primary);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+  border: 1px solid #ff9fdc;
+  box-shadow: 0 0 20px rgba(240, 43, 198, 0.22);
   transition: all 0.3s ease;
 }
 
@@ -81,7 +81,7 @@
 /* Check button */
 .btn-check {
   background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
-  border: 2px solid var(--ui-border-color);
+  border: 1px solid var(--ui-border-color);
   color: white;
   transition: all 0.3s ease;
 }
@@ -111,7 +111,7 @@
 /* Call button */
 .btn-call {
   background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
-  border: 2px solid var(--ui-border-color);
+  border: 1px solid var(--ui-border-color);
   color: white;
   transition: all 0.3s ease;
 }
@@ -125,8 +125,8 @@
 
 /* Raise button */
 .btn-raise {
-  background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
-  border: 2px solid var(--ui-border-color);
+  background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+  border: 1px solid #ff9fdc;
   color: white;
   transition: all 0.3s ease;
 }
@@ -171,7 +171,7 @@
 /* All-in button */
 .btn-all-in {
   background: linear-gradient(to right, var(--ui-bg-medium), var(--ui-bg-dark));
-  border: 2px solid var(--ui-border-color);
+  border: 1px solid var(--ui-border-color);
   color: white;
   transition: all 0.3s ease;
 }

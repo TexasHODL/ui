@@ -31,6 +31,8 @@ export interface TableBoardProps {
     // Styling
     cardBackStyle: CardBackStyle;
     tableTheme?: TableTheme;
+    isPortrait?: boolean;
+    tableSize?: number;
 
     // Winning hand cards — cards in this set get the lift animation
     winnerCards?: Set<string>;
@@ -43,6 +45,8 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     isSitAndGoWaitingForPlayers,
     cardBackStyle,
     tableTheme = "modern",
+    isPortrait = false,
+    tableSize = 9,
     winnerCards
 }) => {
     // Phase 5 pilot: mounting useCardAnimations here (the always-mounted board)
@@ -111,7 +115,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
             </div>
 
             {/* Central Display Area */}
-            <div className="flex flex-col items-center justify-center -mt-8">
+            <div className="community-board relative z-[1] flex flex-col items-center justify-center -mt-8" data-portrait-four={isPortrait && tableSize === 4}>
                 {/* Hide pot display when sit-and-go is waiting for players */}
                 {!isSitAndGoWaitingForPlayers && (
                     <>
@@ -126,7 +130,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                 )}
 
                 {/* Community Cards */}
-                <div className="flex gap-2 mt-8">{communityCardsElements}</div>
+                <div className="community-card-row flex gap-2 mt-8">{communityCardsElements}</div>
             </div>
         </>
     );

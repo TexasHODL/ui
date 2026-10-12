@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { STORAGE_KEYS } from "../constants/storageKeys";
+import { viteEnv } from "../utils/viteEnv";
 
 /**
  * NetworkEndpoints describes all endpoints for a given network.
@@ -122,6 +123,11 @@ export const NETWORK_PRESETS: NetworkEndpoints[] = [
     }
 ];
 
+// Local branded builds can opt into a production test network without changing
+// the shared preset order or the default used by the upstream app/tests.
+const DEFAULT_NETWORK_NAME = viteEnv.VITE_DEFAULT_NETWORK || "Block52";
+const DEFAULT_NETWORK = NETWORK_PRESETS.find(network => network.name === DEFAULT_NETWORK_NAME) || NETWORK_PRESETS[0];
+
 interface NetworkContextType {
     currentNetwork: NetworkEndpoints;
     setNetwork: (network: NetworkEndpoints) => void;
@@ -145,16 +151,16 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
                 const parsed = JSON.parse(saved);
                 // Validate that the parsed object has the ws property (for backward compatibility)
                 if (!parsed.ws) {
-                    return NETWORK_PRESETS[0]; // Block52
+                    return DEFAULT_NETWORK;
                 }
                 return parsed;
             } catch {
                 // If localStorage is corrupted, default to Block52
-                return NETWORK_PRESETS[0]; // Block52
+                return DEFAULT_NETWORK;
             }
         }
         // First time user - default to Block52
-        return NETWORK_PRESETS[0]; // Block52
+        return DEFAULT_NETWORK;
     });
 
     // Initialize discovered networks from localStorage

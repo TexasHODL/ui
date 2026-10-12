@@ -1,3 +1,4 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import React, { useState, useMemo, useCallback } from "react";
 import { TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { microToUsdc, usdcToMicroBigInt, parseUsdcToMicro } from "../../constants/currency";
@@ -31,8 +32,8 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
         const maxTopUpAmount = calculateMaxTopUp(current, max, wallet);
 
         return {
-            currentStackFormatted: current.toFixed(2),
-            maxBuyInFormatted: max.toFixed(2),
+            currentStackFormatted: formatMicroUsd(currentStack),
+            maxBuyInFormatted: formatMicroUsd(maxBuyIn),
             walletBalanceFormatted: wallet.toFixed(2),
             minTopUpFormatted: minTopUpAmount.toFixed(2),
             maxTopUpFormatted: maxTopUpAmount.toFixed(2),
@@ -80,12 +81,12 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
             }
 
             if (topUpMicrounits < minTopUpMicro) {
-                setTopUpError(`Minimum top-up is $${minTopUpFormatted}`);
+                setTopUpError(`Minimum top-up is $${formatMicroUsd(minTopUpMicro)}`);
                 return;
             }
 
             if (topUpMicrounits > maxTopUpMicro) {
-                setTopUpError(`Maximum top-up is $${maxTopUpFormatted}`);
+                setTopUpError(`Maximum top-up is $${formatMicroUsd(maxTopUpMicro)}`);
                 return;
             }
 
@@ -109,7 +110,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                 <p className="text-gray-200 mb-6">{successMessage}</p>
                 <button
                     onClick={onClose}
-                    className={`w-full px-5 py-3 rounded-lg text-white font-medium hover:opacity-80 transition-opacity ${styles.buyButton}`}
+                    className={`w-full px-5 py-3 rounded-lg text-white font-medium hover:opacity-80 transition-opacity hodl-primary ${styles.buyButton}`}
                 >
                     Close
                 </button>
@@ -127,7 +128,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                 </p>
                 <button
                     onClick={onClose}
-                    className={`w-full px-5 py-3 rounded-lg text-white font-medium hover:opacity-80 transition-opacity ${styles.cancelButton}`}
+                    className={`w-full px-5 py-3 rounded-lg text-white font-medium hover:opacity-80 transition-opacity hodl-secondary ${styles.cancelButton}`}
                 >
                     Close
                 </button>
@@ -156,7 +157,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
             {/* Wallet Balance */}
             <div className={`mb-3 rounded-lg ${styles.infoCard}`}>
                 <div className="text-xs text-gray-400 mb-0.5">Wallet Balance</div>
-                <div className="text-lg font-bold text-white">${walletBalanceFormatted}</div>
+                <div className="text-lg font-bold text-white">${formatMicroUsd(walletBalance)}</div>
             </div>
 
             {/* Top-Up Amount Selection */}
@@ -168,14 +169,14 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                         className={`flex-1 py-2 text-white rounded transition duration-200 hover:bg-opacity-80 ${styles.maxButton}`}
                     >
                         <div className="text-xs text-gray-400">MIN</div>
-                        <div className="font-bold">${minTopUpFormatted}</div>
+                        <div className="font-bold">${formatMicroUsd(minTopUpMicro)}</div>
                     </button>
                     <button
                         onClick={handleMaxClick}
                         className={`flex-1 py-2 text-white rounded transition duration-200 hover:bg-opacity-80 ${styles.maxButton}`}
                     >
                         <div className="text-xs text-gray-400">MAX</div>
-                        <div className="font-bold">${maxTopUpFormatted}</div>
+                        <div className="font-bold">${formatMicroUsd(maxTopUpMicro)}</div>
                     </button>
                 </div>
                 <div className="flex-1">
@@ -198,7 +199,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                 <button
                     onClick={handleTopUpClick}
                     disabled={isProcessing || isAmountInvalid}
-                    className={`w-full px-5 py-2 rounded-lg font-medium text-white shadow-md flex items-center justify-center gap-2 ${styles.buyButton}`}
+                    className={`w-full px-5 py-2 rounded-lg font-medium text-white shadow-md flex items-center justify-center gap-2 hodl-primary ${styles.buyButton}`}
                 >
                     {isProcessing ? (
                         <>
@@ -212,7 +213,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
                 <button
                     onClick={onClose}
                     disabled={isProcessing}
-                    className={`w-full px-5 py-2 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 ${styles.cancelButton}`}
+                    className={`w-full px-5 py-2 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 hodl-secondary ${styles.cancelButton}`}
                 >
                     Cancel
                 </button>

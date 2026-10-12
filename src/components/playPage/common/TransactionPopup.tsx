@@ -1,3 +1,4 @@
+import { ModalHeader } from "../../common/ModalHeader";
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { copyToClipboard } from "../../../utils/clipboard";
@@ -33,23 +34,10 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({ txHash, onClose }) 
 
     return (
         <div className="fixed bottom-4 right-4 z-[9999] animate-slide-in-bottom-right">
-            <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-w-sm w-full">
+            <div className="hodl-modal modal-inset-content border border-gray-700 rounded-lg shadow-2xl max-w-sm w-full">
                 <div className="p-3">
                     {/* Header */}
-                    <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-green-400 font-semibold text-xs">
-                            Transaction Submitted
-                        </h3>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-400 hover:text-white transition-colors"
-                            title="Close"
-                        >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+                    <ModalHeader title="Transaction Submitted" onClose={onClose} />
 
                     {/* Transaction Hash */}
                     <div className="bg-gray-900 rounded p-2 mb-2">

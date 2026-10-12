@@ -1,3 +1,5 @@
+import { formatMicroUsd } from "../utils/moneyDisplay";
+import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
 import { hasElements } from "../utils/guards";
@@ -176,10 +178,7 @@ export default function GenesisState() {
     const formatAmount = (amount: string, denom: string): string => {
         const num = BigInt(amount);
         if (denom === "usdc") {
-            // USDC has 6 decimals
-            const wholePart = num / BigInt(1_000_000);
-            const decimalPart = num % BigInt(1_000_000);
-            return `${wholePart.toLocaleString()}.${decimalPart.toString().padStart(6, "0")} USDC`;
+            return `${formatMicroUsd(amount, true)} USDC`;
         } else if (denom === "stake" || denom === "b52Token") {
             // Stake has 18 decimals (or whatever you use)
             const wholePart = num / BigInt(1_000_000);
@@ -201,9 +200,9 @@ export default function GenesisState() {
 
     if (loading) {
         return (
-            <div className="min-h-screen p-8 relative">
+            <div className="site-page">
                 <AnimatedBackground />
-                <div className="max-w-7xl mx-auto relative z-10">
+                <div className="site-page-content space-y-8">
                     <div className="text-center text-white text-xl">Loading genesis state...</div>
                 </div>
             </div>
@@ -212,9 +211,9 @@ export default function GenesisState() {
 
     if (error) {
         return (
-            <div className="min-h-screen p-8 relative">
+            <div className="site-page">
                 <AnimatedBackground />
-                <div className="max-w-7xl mx-auto relative z-10">
+                <div className="site-page-content">
                     <div className="bg-red-900/30 border border-red-500 rounded-lg p-6">
                         <h2 className="text-red-400 text-xl font-bold mb-2">Error Loading Genesis State</h2>
                         <p className="text-red-300">{error}</p>
@@ -228,14 +227,11 @@ export default function GenesisState() {
     }
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+            <div className="site-page-content space-y-8">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-blue-900/40 to-purple-900/40 rounded-lg p-8 border border-blue-500/30 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">🔷 Genesis State - Block 0</h1>
-                    <p className="text-gray-300">Initial blockchain state when the chain was started. Shows which accounts exist from genesis.</p>
-                </div>
+                <PageHeading title="Genesis state" description="Inspect the initial blockchain configuration and genesis accounts." eyebrow="THE NETWORK" />
 
                 {/* Your Wallet Status */}
                 {cosmosAddress && (
@@ -245,7 +241,7 @@ export default function GenesisState() {
                             <div className="flex items-center gap-2">
                                 <span className="text-gray-400">Address:</span>
                                 <code className="text-white font-mono text-sm bg-black/30 px-2 py-1 rounded">{cosmosAddress}</code>
-                                <button onClick={() => copyToClipboard(cosmosAddress, "Address")} className="text-blue-400 hover:text-blue-300 text-sm">
+                                <button onClick={() => copyToClipboard(cosmosAddress, "Address")} className="text-purple-300 hover:text-purple-200 text-sm">
                                     📋 Copy
                                 </button>
                             </div>
@@ -270,19 +266,19 @@ export default function GenesisState() {
                 )}
 
                 {/* Genesis Accounts */}
-                <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                <div className="bg-[#100c17] rounded-lg p-6 border border-white/10">
                     <h2 className="text-2xl font-bold text-white mb-4">📊 Genesis Accounts ({accounts.length})</h2>
 
                     <div className="space-y-4">
                         {accounts.map((account, index) => (
                             <div
                                 key={account.address}
-                                className={`bg-gray-900/50 rounded-lg p-5 border ${
+                                className={`bg-[#0c0911] rounded-lg p-5 border ${
                                     isMyWallet(account.address)
                                         ? "border-green-500 bg-green-900/10"
                                         : account.isValidator
                                           ? "border-purple-500 bg-purple-900/10"
-                                          : "border-gray-600"
+                                          : "border-white/20"
                                 }`}
                             >
                                 <div className="flex items-start justify-between mb-3">
@@ -298,7 +294,7 @@ export default function GenesisState() {
                                             <code className="text-sm text-gray-300 font-mono break-all">{account.address}</code>
                                             <button
                                                 onClick={() => copyToClipboard(account.address, "Address")}
-                                                className="text-blue-400 hover:text-blue-300 text-xs flex-shrink-0"
+                                                className="text-purple-300 hover:text-purple-200 text-xs flex-shrink-0"
                                             >
                                                 📋
                                             </button>
@@ -349,8 +345,8 @@ export default function GenesisState() {
                             return (
                                 <div
                                     key={wellKnown.name}
-                                    className={`bg-gray-900/50 rounded-lg p-4 border ${
-                                        isMyWalletAccount ? "border-green-500 bg-green-900/10" : genesisAccount ? "border-blue-500/50" : "border-gray-600"
+                                    className={`bg-[#0c0911] rounded-lg p-4 border ${
+                                        isMyWalletAccount ? "border-green-500 bg-green-900/10" : genesisAccount ? "border-purple-400/50" : "border-white/20"
                                     }`}
                                 >
                                     <div className="flex items-start justify-between mb-3">
@@ -359,7 +355,7 @@ export default function GenesisState() {
                                                 <h3 className="text-lg font-bold text-white capitalize">{wellKnown.name}</h3>
                                                 {isMyWalletAccount && <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">YOU</span>}
                                                 {genesisAccount ? (
-                                                    <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">✅ In Genesis</span>
+                                                    <span className="px-2 py-1 bg-[#7135a4] text-white text-xs rounded-full">✅ In Genesis</span>
                                                 ) : (
                                                     <span className="px-2 py-1 bg-yellow-600 text-white text-xs rounded-full">⚠️ Not in Genesis</span>
                                                 )}
@@ -375,7 +371,7 @@ export default function GenesisState() {
                                                     </code>
                                                     <button
                                                         onClick={() => copyToClipboard(derivedAddress, `${wellKnown.name} address`)}
-                                                        className="text-blue-400 hover:text-blue-300 text-xs flex-shrink-0"
+                                                        className="text-purple-300 hover:text-purple-200 text-xs flex-shrink-0"
                                                     >
                                                         📋
                                                     </button>
@@ -406,15 +402,15 @@ export default function GenesisState() {
                                                 </code>
                                                 <button
                                                     onClick={() => copyToClipboard(wellKnown.mnemonic, `${wellKnown.name} mnemonic`)}
-                                                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded whitespace-nowrap"
+                                                    className="px-3 py-2 bg-[#7135a4] hover:bg-[#8645ba] text-white text-xs rounded whitespace-nowrap"
                                                 >
                                                     📋 Copy
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="mt-2 p-3 bg-blue-900/20 border border-blue-600/30 rounded">
-                                            <p className="text-xs text-blue-200">
+                                        <div className="mt-2 p-3 bg-purple-900/20 border border-purple-600/30 rounded">
+                                            <p className="text-xs text-purple-200">
                                                 💡 <strong>How to use:</strong> Copy the mnemonic above and import it into your Keplr wallet or Block52 wallet
                                                 to access this test account.
                                             </p>
@@ -428,7 +424,7 @@ export default function GenesisState() {
 
                 {/* Validators Info */}
                 {hasElements(validators) && (
-                    <div className="bg-gray-800/50 rounded-lg p-6 border border-gray-700">
+                    <div className="bg-[#100c17] rounded-lg p-6 border border-white/10">
                         <h2 className="text-2xl font-bold text-white mb-4">👑 Validators ({validators.length})</h2>
                         <div className="space-y-3">
                             {validators.map(validator => (
@@ -459,7 +455,7 @@ export default function GenesisState() {
                 <div className="bg-orange-900/20 border border-orange-600/30 rounded-lg p-6">
                     <h2 className="text-2xl font-bold text-orange-400 mb-4">🌉 Bridge State Export (For Chain Reset)</h2>
 
-                    <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 mb-4">
+                    <div className="bg-[#100c17] border border-white/10 rounded-lg p-4 mb-4">
                         <h3 className="text-lg font-semibold text-white mb-2">⚠️ Why Export Bridge State?</h3>
                         <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
                             <li>
@@ -485,9 +481,9 @@ export default function GenesisState() {
                         <div className="space-y-4">
                             {/* Stats */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-3">
+                                <div className="bg-purple-900/20 border border-purple-600/30 rounded-lg p-3">
                                     <div className="text-sm text-gray-400">Withdrawal Requests</div>
-                                    <div className="text-2xl font-bold text-blue-400">{bridgeState.withdrawal_requests?.length || 0}</div>
+                                    <div className="text-2xl font-bold text-purple-300">{bridgeState.withdrawal_requests?.length || 0}</div>
                                 </div>
                                 <div className="bg-green-900/20 border border-green-600/30 rounded-lg p-3">
                                     <div className="text-sm text-gray-400">Processed ETH Txs</div>
@@ -506,14 +502,14 @@ export default function GenesisState() {
                                         📋 Copy JSON
                                     </button>
                                 </div>
-                                <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 overflow-x-auto">
+                                <div className="bg-[#0c0911] border border-white/10 rounded-lg p-4 overflow-x-auto">
                                     <pre className="text-xs text-gray-300 font-mono">{JSON.stringify(bridgeState, null, 2)}</pre>
                                 </div>
                             </div>
 
                             {/* Instructions */}
-                            <div className="bg-blue-900/20 border border-blue-600/30 rounded-lg p-4">
-                                <h3 className="text-lg font-semibold text-blue-400 mb-3">📖 How to Import into New Genesis</h3>
+                            <div className="bg-purple-900/20 border border-purple-600/30 rounded-lg p-4">
+                                <h3 className="text-lg font-semibold text-purple-300 mb-3">📖 How to Import into New Genesis</h3>
                                 <ol className="list-decimal list-inside text-sm text-gray-300 space-y-2">
                                     <li>
                                         <strong>Copy the JSON above</strong> (click "Copy JSON" button)
@@ -523,24 +519,24 @@ export default function GenesisState() {
                                     </li>
                                     <li>
                                         <strong>Reset testnet data:</strong>
-                                        <code className="block bg-gray-800 text-xs p-2 mt-1 rounded font-mono">
+                                        <code className="block bg-[#100c17] text-xs p-2 mt-1 rounded font-mono">
                                             ./run-local-testnet.sh → Option 7 (Clean & Reset)
                                         </code>
                                     </li>
                                     <li>
                                         <strong>Initialize new chain:</strong>
-                                        <code className="block bg-gray-800 text-xs p-2 mt-1 rounded font-mono">
+                                        <code className="block bg-[#100c17] text-xs p-2 mt-1 rounded font-mono">
                                             ./run-local-testnet.sh → Option 1 (Initialize)
                                         </code>
                                     </li>
                                     <li>
                                         <strong>Edit genesis.json before starting:</strong>
-                                        <code className="block bg-gray-800 text-xs p-2 mt-1 rounded font-mono">
+                                        <code className="block bg-[#100c17] text-xs p-2 mt-1 rounded font-mono">
                                             vi ~/.pokerchain-testnet/node1/config/genesis.json
                                         </code>
                                     </li>
                                     <li>
-                                        <strong>Find the poker module section:</strong> Look for <code className="bg-gray-800 px-1">"poker": &#123;</code>
+                                        <strong>Find the poker module section:</strong> Look for <code className="bg-[#100c17] px-1">"poker": &#123;</code>
                                     </li>
                                     <li>
                                         <strong>Paste the copied JSON</strong> into the poker module section (replace existing withdrawal_requests)
@@ -556,14 +552,14 @@ export default function GenesisState() {
 
                 {/* Refresh Button */}
                 <div className="flex justify-center">
-                    <button onClick={fetchGenesisState} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">
+                    <button onClick={fetchGenesisState} className="px-6 py-3 bg-[#7135a4] hover:bg-[#8645ba] text-white rounded-lg font-semibold">
                         🔄 Refresh Genesis State
                     </button>
                 </div>
             </div>
 
             {/* Powered by Block52 */}
-            <div className="fixed bottom-4 left-4 flex items-center z-10 opacity-30">
+            <div className="page-footer">
                 <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                     <div className="text-left mb-1">
                         <span className="text-xs text-white font-medium tracking-wide  ">POWERED BY</span>

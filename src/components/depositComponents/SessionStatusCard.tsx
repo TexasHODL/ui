@@ -1,5 +1,6 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import React from "react";
-import { formatMicroAsUsdc } from "../../constants/currency";
+
 import { DepositSession } from "../../types";
 import styles from "./DepositComponents.module.css";
 
@@ -26,7 +27,7 @@ export const SessionStatusCard: React.FC<SessionStatusCardProps> = ({ session })
             </p>
             {session.amount && (
                 <p className={`text-sm ${styles.secondaryText}`}>
-                    Amount: ${formatMicroAsUsdc(session.amount, 2)} USDC
+                    Amount: ${formatMicroUsd(session.amount)} USDC
                 </p>
             )}
         </div>

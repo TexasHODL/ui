@@ -172,14 +172,14 @@ const DealEntropyModal: React.FC<DealEntropyModalProps> = React.memo(({ tableId,
                 <button
                     onClick={onClose}
                     disabled={isDealing}
-                    className={`px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${styles.buttonSecondary}`}
+                    className={`px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed hodl-secondary ${styles.buttonSecondary}`}
                 >
                     Cancel
                 </button>
                 <button
                     onClick={handleDealClick}
                     disabled={isDealing}
-                    className={`px-5 py-3 rounded-lg text-white font-bold flex-1 transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${styles.buttonPrimary}`}
+                    className={`px-5 py-3 rounded-lg text-white font-bold flex-1 transition-all duration-200 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hodl-primary ${styles.buttonPrimary}`}
                 >
                     {isDealing ? (
                         <>

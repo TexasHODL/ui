@@ -1,6 +1,7 @@
+import { formatMicroUsd } from "../utils/moneyDisplay";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { microToUsdc } from "../constants/currency";
+
 import { truncateMiddle } from "../utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
@@ -15,9 +16,8 @@ import styles from "./explorer/AllAccountsPage.module.css";
 const PAGE_SIZE = 20;
 
 const formatUsd = (micro: number): string => {
-    const value = microToUsdc(micro);
-    const sign = value < 0 ? "-" : "";
-    return `${sign}$${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const label = formatMicroUsd(micro, true);
+    return label.startsWith("-") ? `-${label.slice(1)}` : `${label}`;
 };
 
 export default function PlayersPage() {
@@ -42,9 +42,9 @@ export default function PlayersPage() {
     }, [appliedSearch, sort, order]);
 
     useEffect(() => {
-        document.title = "Players - Block52 Explorer";
+        document.title = "Players - Texas HODL Explorer";
         return () => {
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, []);
 
@@ -67,10 +67,10 @@ export default function PlayersPage() {
     const sortArrow = (field: PlayerSortField) => (sort === field ? (order === "asc" ? " ↑" : " ↓") : "");
 
     return (
-        <div className="min-h-screen p-4 sm:p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
 
-            <div className="max-w-5xl mx-auto relative z-10">
+            <div className="site-page-content">
                 <ExplorerHeader title="Players" />
 
                 <ExplorerSearchInput

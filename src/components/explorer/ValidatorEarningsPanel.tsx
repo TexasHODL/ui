@@ -1,6 +1,7 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import React from "react";
 import { ValidatorBond } from "@block52/poker-vm-sdk";
-import { formatMicroAsUsdc } from "../../constants/currency";
+
 import { truncateMiddle } from "../../utils/stringUtils";
 import { isEmpty } from "../../utils/guards";
 
@@ -30,17 +31,17 @@ const ValidatorEarningsPanel: React.FC<ValidatorEarningsPanelProps> = ({ bonds, 
     return (
         <div className="mb-8">
             <h2 className="text-lg font-semibold text-white mb-4">Validator Earnings</h2>
-            <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+            <div className="bg-[#100c17] rounded-lg border border-white/10 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-gray-900">
+                        <thead className="bg-[#0c0911]">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Validator</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Bonded USDC (split weight)</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Protocol-Fee Earnings</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-700">
+                        <tbody className="divide-y divide-white/10">
                             {isLoading ? (
                                 <tr>
                                     <td className="px-6 py-4 text-gray-400 text-sm" colSpan={3}>
@@ -56,13 +57,13 @@ const ValidatorEarningsPanel: React.FC<ValidatorEarningsPanelProps> = ({ bonds, 
                                 </tr>
                             ) : (
                                 bonds.map(bond => (
-                                    <tr key={bond.validator} className="hover:bg-gray-700/50 transition-colors">
+                                    <tr key={bond.validator} className="hover:bg-[#21172b]/50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className="text-white font-mono text-sm">{truncateMiddle(bond.validator, 10, 8)}</span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {/* bondedUsdc is a Long in micro-USDC (6dp); toString feeds the shared formatter. */}
-                                            <span className="text-white font-mono">${formatMicroAsUsdc(bond.bondedUsdc.toString(), 2)}</span>
+                                            <span className="text-white font-mono">${formatMicroUsd(bond.bondedUsdc.toString())}</span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             {/* No per-validator earnings query exists yet — do NOT fabricate a value. */}

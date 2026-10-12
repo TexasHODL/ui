@@ -13,9 +13,17 @@ import { toast } from "react-toastify";
 import { useGameStateContext } from "../context/GameStateContext";
 import { isEmpty, hasElements } from "../utils/guards";
 import styles from "./ActionsLog.module.css";
+import { useFollowLatest } from "../hooks/useFollowLatest";
 
 // Simple component to display only the action log
-const ActionsLog: React.FC = () => {
+interface ActionsLogProps {
+    summary?: boolean;
+    expanded?: boolean;
+    onExpand?: () => void;
+    onClose?: () => void;
+}
+
+const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = true, onExpand, onClose }) => {
     const { id } = useParams<{ id: string }>();
     const { previousActions } = useGameProgress(id);
     const { gameState, gameFormat } = useGameStateContext();
@@ -34,10 +42,7 @@ const ActionsLog: React.FC = () => {
     // resolves in one engine step — can still be read afterwards. Hidden while
     // the same hand's live winner rows are on screen.
     const lastHandResult = useSyncExternalStore(subscribeLastHandResult, getLastHandResult);
-    const showLastHandBlock =
-        !!lastHandResult &&
-        lastHandResult.tableId === id &&
-        !(showWinnerSummary && lastHandResult.handNumber === gameState?.handNumber);
+    const showLastHandBlock = !!lastHandResult && lastHandResult.tableId === id && !(showWinnerSummary && lastHandResult.handNumber === gameState?.handNumber);
 
     // Monotonic fingerprint of the action log — changes only when a new action
     // lands, not on every gameState identity flip (same approach as
@@ -48,6 +53,7 @@ const ActionsLog: React.FC = () => {
     // while nobody could see it.
     const lastActionIndex = hasElements(previousActions) ? previousActions[previousActions.length - 1].index : -1;
     const actionsFingerprint = `${previousActions.length}:${lastActionIndex}`;
+    const { scrollRef, onScroll } = useFollowLatest(`${gameState?.handNumber}:${actionsFingerprint}:${showWinnerSummary}:${lastHandResult?.handNumber}:${summary}:${expanded}`);
     const [copied, setCopied] = useState(false);
     const [copiedJSON, setCopiedJSON] = useState(false);
     const [copiedShare, setCopiedShare] = useState(false);
@@ -61,7 +67,7 @@ const ActionsLog: React.FC = () => {
                 .then(() => {
                     onSuccess();
                 })
-                .catch((err) => {
+                .catch(err => {
                     console.error("Failed to copy:", err);
                     toast.error(errorMessage);
                 });
@@ -102,9 +108,7 @@ const ActionsLog: React.FC = () => {
         const actionLines = previousActions.map((action: ActionDTO) => getActionLine(action, isTournament));
 
         // Append winner summary rows when the hand has ended
-        const winnerLines = showWinnerSummary && winnerInfo
-            ? winnerInfo.map(getWinnerLine)
-            : [];
+        const winnerLines = showWinnerSummary && winnerInfo ? winnerInfo.map(getWinnerLine) : [];
 
         const logText = [...actionLines, ...winnerLines].join("\n");
 
@@ -129,7 +133,7 @@ const ActionsLog: React.FC = () => {
         try {
             // Create comprehensive hand history JSON with error handling for serialization
             const handHistoryJSON = JSON.stringify(gameState, null, 2);
-            
+
             copyTextToClipboard(
                 handHistoryJSON,
                 () => {
@@ -172,7 +176,7 @@ const ActionsLog: React.FC = () => {
         () =>
             previousActions.map((action: ActionDTO, index: number) => (
                 <div key={index} className={`text-xs py-1 border-b ${styles.actionRow}`}>
-                    <div className="flex justify-between">
+                    <div className={styles.rowContent}>
                         <span className={styles.actionText}>
                             {formatActionName(action.action)}
                             {formatActionAmount(action, isTournamentFormat(gameFormat))}
@@ -193,7 +197,7 @@ const ActionsLog: React.FC = () => {
             showWinnerSummary
                 ? winnerInfo?.map((w, i) => (
                       <div key={`winner-${i}`} className={`text-xs py-1 border-b ${styles.actionRow} ${styles.winnerRow}`}>
-                          <div className="flex justify-between">
+                          <div className={styles.rowContent}>
                               <span className={styles.winnerText}>
                                   WINS {w.formattedAmount}
                                   {w.description && ` — ${w.description}`}
@@ -209,15 +213,28 @@ const ActionsLog: React.FC = () => {
         [showWinnerSummary, winnerInfo, beatenDescription]
     );
 
+    if (summary) {
+        const latest = previousActions[previousActions.length - 1];
+        const winner = showWinnerSummary ? winnerInfo?.[0] : undefined;
+        return (
+            <button className="history-summary" onClick={onExpand} aria-label="Expand hand history" title="Open full hand history">
+                <span className="history-summary-heading">History <span>Expand ↗</span></span>
+                <span className="history-summary-action">
+                    {winner ? `Seat ${winner.seat} wins ${winner.formattedAmount}` : latest
+                        ? `Seat ${latest.seat} · ${formatActionName(latest.action)}${formatActionAmount(latest, isTournamentFormat(gameFormat))}`
+                        : "Waiting for the next action"}
+                </span>
+            </button>
+        );
+    }
+
     return (
-        <div
-            className={`rounded w-full h-full overflow-y-auto scrollbar-hide backdrop-blur-sm ${styles.container}`}
-        >
-            <div 
-                className={`flex justify-between items-center p-2 border-b ${styles.header}`}
-            >
+        <div className={`rounded w-full h-full min-h-0 flex flex-col overflow-hidden ${styles.container}`}>
+            <div className={`flex flex-shrink-0 justify-between items-center p-2 border-b ${styles.header}`}>
                 <h3 className="text-sm font-semibold">History</h3>
                 <div className="flex gap-2">
+                    {!expanded && onExpand && <button className="history-panel-control" onClick={onExpand} aria-label="Expand hand history">Expand ↗</button>}
+                    {expanded && <>
                     <button
                         onClick={handleCopyLog}
                         title="Copy history to clipboard"
@@ -239,35 +256,41 @@ const ActionsLog: React.FC = () => {
                     >
                         {copiedShare ? <FaCheck size={12} /> : <FaShare size={12} />}
                     </button>
+                    </>}
+                    {onClose && <button className="history-panel-control" onClick={onClose} aria-label="Close history" title="Close history">✕</button>}
                 </div>
             </div>
-            
-            {/* Previous hand's result, pinned above the current hand's actions */}
-            {showLastHandBlock && lastHandResult && (
-                <div className={`text-xs p-2 border-b ${styles.actionRow} ${styles.winnerRow}`}>
-                    <div className={`text-[10px] ${styles.secondaryText}`}>Last hand #{lastHandResult.handNumber}</div>
-                    {lastHandResult.lines.map((line, i) => (
-                        <div key={`last-hand-${i}`} className={styles.winnerText}>
-                            {line}
-                        </div>
-                    ))}
-                </div>
-            )}
 
-            {hasElements(previousActions) ? (
-                <div className="space-y-0.5 p-2">
-                    {actionRows}
-                    {winnerRows}
-                </div>
-            ) : (
-                <p
-                    className={`text-xs p-3 ${styles.secondaryText}`}
-                >
-                    No actions recorded yet.
-                </p>
-            )}
+            <div
+                ref={scrollRef}
+                onScroll={onScroll}
+                className="history-scroll-content min-h-0 flex-1 overflow-y-auto"
+                tabIndex={0}
+                aria-label="History actions"
+            >
+                {/* Previous hand's result, pinned above the current hand's actions */}
+                {showLastHandBlock && lastHandResult && (
+                    <div className={`text-xs p-2 border-b ${styles.actionRow} ${styles.winnerRow}`}>
+                        <div className={`text-[10px] ${styles.secondaryText}`}>Last hand #{lastHandResult.handNumber}</div>
+                        {lastHandResult.lines.map((line, i) => (
+                            <div key={`last-hand-${i}`} className={styles.winnerText}>
+                                {line}
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {hasElements(previousActions) ? (
+                    <div className="space-y-0.5 p-2">
+                        {actionRows}
+                        {winnerRows}
+                    </div>
+                ) : (
+                    <p className={`text-xs p-3 ${styles.secondaryText}`}>No actions recorded yet.</p>
+                )}
+            </div>
         </div>
     );
 };
 
-export default ActionsLog; 
+export default ActionsLog;

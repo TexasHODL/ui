@@ -1,3 +1,4 @@
+import { formatMicroUsd, formatUsd } from "../../utils/moneyDisplay";
 import { useState, useEffect, useMemo, useCallback, use } from "react";
 import { isNetworkError } from "../../apis/HTTPClient";
 import { useNavigate } from "react-router-dom";
@@ -263,10 +264,10 @@ export default function AllAccountsPage() {
 
     // Set page title
     useEffect(() => {
-        document.title = "All Accounts - Block52 Explorer";
+        document.title = "All Accounts - Texas HODL Explorer";
 
         return () => {
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, []);
 
@@ -314,6 +315,7 @@ export default function AllAccountsPage() {
     }, [accounts]);
 
     const formatBalance = (amount: string, denom: string) => {
+        if (["usdc", "uusdc"].includes(denom.toLowerCase())) return `${formatMicroUsd(amount, true)} USDC`;
         const value = microToUsdc(amount);
         // Map known denoms to display names
         const denomMap: Record<string, string> = {
@@ -338,10 +340,10 @@ export default function AllAccountsPage() {
     };
 
     return (
-        <div className="min-h-screen p-4 sm:p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
 
-            <div className="max-w-5xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Explorer Navigation Header */}
                 <ExplorerHeader title="Block Explorer" />
 
@@ -370,7 +372,7 @@ export default function AllAccountsPage() {
                     <div className={`backdrop-blur-md px-3 py-2 sm:px-4 sm:py-3 rounded-xl ${styles.containerCard}`}>
                         <p className="text-gray-400 text-xs sm:text-sm">Total USDC</p>
                         <p className={`text-lg sm:text-2xl font-bold ${styles.brandText}`}>
-                            ${stats.totalUsdc.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ${formatUsd(stats.totalUsdc, true)}
                         </p>
                     </div>
                 </div>
@@ -456,10 +458,7 @@ export default function AllAccountsPage() {
                                             <td className="px-3 sm:px-4 py-2 text-right whitespace-nowrap">
                                                 <span className="text-white font-semibold">
                                                     $
-                                                    {account.totalUsdcValue.toLocaleString(undefined, {
-                                                        minimumFractionDigits: 2,
-                                                        maximumFractionDigits: 2
-                                                    })}
+                                                    {formatUsd(account.totalUsdcValue, true)}
                                                 </span>
                                             </td>
                                             <td className="hidden sm:table-cell px-4 py-2 whitespace-nowrap">

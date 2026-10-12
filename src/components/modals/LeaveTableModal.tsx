@@ -1,6 +1,7 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import React, { useState, useCallback } from "react";
 import { colors } from "../../utils/colorConfig";
-import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
+
 import { Modal, LoadingSpinner } from "../common";
 import type { LeaveTableModalProps } from "./types";
 import styles from "./LeaveTableModal.module.css";
@@ -22,7 +23,7 @@ const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, on
         }
     }, [onConfirm, onClose]);
 
-    const stackFormatted = formatUSDCToSimpleDollars(playerStack);
+    const stackFormatted = formatMicroUsd(playerStack ?? 0);
 
     return (
         <Modal
@@ -78,7 +79,7 @@ const LeaveTableModal: React.FC<LeaveTableModalProps> = React.memo(({ isOpen, on
                 <button
                     onClick={onClose}
                     disabled={isLeaving}
-                    className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 ${styles.buttonSecondary}`}
+                    className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 hodl-secondary ${styles.buttonSecondary}`}
                 >
                     Cancel
                 </button>

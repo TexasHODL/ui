@@ -15,6 +15,10 @@ export type { TableBoardProps, TableTheme } from "./TableBoard";
 
 export { TablePanel, TablePanelExpandTab } from "./TablePanel";
 export type { TablePanelProps, TablePanelTab } from "./TablePanel";
+export { TableSidebar } from "./TableSidebar";
+export type { TableSidebarProps } from "./TableSidebar";
+export { TableSettingsSidebar } from "./TableSettingsSidebar";
+export type { TableSettingsSidebarProps } from "./TableSettingsSidebar";
 
 export { TableModals } from "./TableModals";
 export type { TableModalsProps } from "./TableModals";

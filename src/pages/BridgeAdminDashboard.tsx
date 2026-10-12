@@ -1,3 +1,5 @@
+import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
+import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
 import { isEmpty, isBlank, hasContent } from "../utils/guards";
@@ -6,7 +8,7 @@ import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
 import { copyToClipboard } from "../utils/clipboard";
 import { ethers } from "ethers";
-import { formatMicroAsUsdc } from "../constants/currency";
+
 import { getSigningClient } from "../utils/cosmos/client";
 import { BRIDGE_DEPOSITS_ABI } from "../utils/bridge/abis";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
@@ -208,7 +210,7 @@ export default function BridgeAdminDashboard() {
                         index: i,
                         recipient: account,
                         amount: amount.toString(),
-                        amountFormatted: formatMicroAsUsdc(amount.toString(), 6),
+                        amountFormatted: formatMicroUsd(amount.toString()),
                         status: "loading" // Will check processing status next
                     });
                 } catch (err) {
@@ -502,17 +504,14 @@ export default function BridgeAdminDashboard() {
     const hasPrevPage = currentPage > 1;
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">Bridge Admin Dashboard</h1>
-                    <p className="text-gray-400">
-                        View and process Ethereum USDC bridge deposits
-                        <span className="ml-2 font-mono text-sm text-gray-500 break-all">({bridgeContractAddress})</span>
-                    </p>
-                </div>
+                <PageHeading title="Bridge deposits" description="View and process Ethereum USDC bridge deposits." eyebrow="PLATFORM TOOLS" />
+                <p className="mb-6 text-xs text-gray-500 break-all">
+                    Bridge contract: <span className="font-mono">{bridgeContractAddress}</span>
+                </p>
 
                 {/* Configuration Error Warning */}
                 {configError && (
@@ -597,7 +596,7 @@ export default function BridgeAdminDashboard() {
                             <span className="text-2xl">🌉</span> Manual Bridge
                             {hotWalletInfo && (
                                 <span className="text-sm font-normal text-gray-400 ml-2">
-                                    ({parseFloat(hotWalletInfo.usdcBalance).toFixed(2)} USDC available)
+                                    ({formatUsd(hotWalletInfo.usdcBalance)} USDC available)
                                 </span>
                             )}
                         </h3>
@@ -608,13 +607,13 @@ export default function BridgeAdminDashboard() {
                         <div className="p-6 pt-2 border-t border-purple-700/50">
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 {/* Hot Wallet Info */}
-                                <div className="bg-gray-900/50 rounded-lg p-4">
+                                <div className="bg-[#0c0911] rounded-lg p-4">
                                     <h4 className="text-gray-300 font-semibold mb-3 flex items-center gap-2">
                                         <span>🔥</span> Hot Wallet
                                         <button
                                             onClick={loadHotWalletInfo}
                                             disabled={isLoadingHotWallet}
-                                            className="ml-auto text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300"
+                                            className="ml-auto text-xs px-2 py-1 bg-[#21172b] hover:bg-gray-600 rounded text-gray-300"
                                         >
                                             {isLoadingHotWallet ? "..." : "↻"}
                                         </button>
@@ -631,7 +630,7 @@ export default function BridgeAdminDashboard() {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-gray-400">USDC Balance:</span>
-                                                <span className="text-green-400 font-semibold">{parseFloat(hotWalletInfo.usdcBalance).toFixed(2)} USDC</span>
+                                                <span className="text-green-400 font-semibold">{formatUsd(hotWalletInfo.usdcBalance)} USDC</span>
                                             </div>
                                             <div className="flex justify-between items-center">
                                                 <span className="text-gray-400">Bridge Approved:</span>
@@ -661,7 +660,7 @@ export default function BridgeAdminDashboard() {
                                 </div>
 
                                 {/* Manual Bridge Form */}
-                                <form onSubmit={handleManualBridge} className="bg-gray-900/50 rounded-lg p-4">
+                                <form onSubmit={handleManualBridge} className="bg-[#0c0911] rounded-lg p-4">
                                     <h4 className="text-gray-300 font-semibold mb-3 flex items-center gap-2">
                                         <span>📤</span> Send USDC to Block52
                                     </h4>
@@ -673,7 +672,7 @@ export default function BridgeAdminDashboard() {
                                                 value={manualCosmosAddress}
                                                 onChange={e => setManualCosmosAddress(e.target.value)}
                                                 placeholder="b52..."
-                                                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm font-mono focus:border-purple-500 focus:outline-none"
+                                                className="w-full px-3 py-2 bg-[#100c17] border border-white/20 rounded-lg text-white text-sm font-mono focus:border-purple-500 focus:outline-none"
                                             />
                                         </div>
                                         <div>
@@ -684,8 +683,8 @@ export default function BridgeAdminDashboard() {
                                                 min="0"
                                                 value={manualAmount}
                                                 onChange={e => setManualAmount(e.target.value)}
-                                                placeholder="9.107822"
-                                                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white text-sm focus:border-purple-500 focus:outline-none"
+                                                placeholder="9.71"
+                                                className="w-full px-3 py-2 bg-[#100c17] border border-white/20 rounded-lg text-white text-sm focus:border-purple-500 focus:outline-none"
                                             />
                                         </div>
                                         <button
@@ -712,7 +711,7 @@ export default function BridgeAdminDashboard() {
 
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div className="bg-[#100c17] rounded-lg p-4 border border-white/10">
                         <p className="text-gray-400 text-sm mb-1">Total Deposits</p>
                         <p className="text-2xl font-bold text-white">{totalDeposits}</p>
                     </div>
@@ -771,7 +770,7 @@ export default function BridgeAdminDashboard() {
                 </div>
 
                 {/* Controls */}
-                <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+                <div className="bg-[#100c17] rounded-lg p-6 mb-6 border border-white/10">
                     <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
                         <div className="flex flex-wrap items-center gap-4">
                             <div className="flex items-center gap-2">
@@ -779,7 +778,7 @@ export default function BridgeAdminDashboard() {
                                 <select
                                     value={itemsPerPage}
                                     onChange={e => handleItemsPerPageChange(parseInt(e.target.value))}
-                                    className="px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                                    className="px-4 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white"
                                 >
                                     <option value="10">10</option>
                                     <option value="25">25</option>
@@ -791,7 +790,7 @@ export default function BridgeAdminDashboard() {
                                 <label className="text-white text-sm">Sort:</label>
                                 <button
                                     onClick={handleSortOrderChange}
-                                    className="px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                                    className="px-4 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white hover:bg-[#21172b] transition-colors flex items-center gap-2"
                                 >
                                     {sortOrder === "desc" ? "↓ Newest First" : "↑ Oldest First"}
                                 </button>
@@ -804,7 +803,7 @@ export default function BridgeAdminDashboard() {
                                 <select
                                     value={filter}
                                     onChange={e => setFilter(e.target.value as any)}
-                                    className="px-4 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white"
+                                    className="px-4 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white"
                                 >
                                     <option value="all">All</option>
                                     <option value="processed">Processed</option>
@@ -815,7 +814,7 @@ export default function BridgeAdminDashboard() {
                             <button
                                 onClick={loadDeposits}
                                 disabled={isLoading}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 flex items-center gap-2"
+                                className="px-6 py-2 bg-[#7135a4] hover:bg-[#8645ba] text-white rounded-lg font-semibold transition-colors disabled:bg-gray-600 flex items-center gap-2"
                             >
                                 {isLoading ? (
                                     <>
@@ -830,7 +829,7 @@ export default function BridgeAdminDashboard() {
                     </div>
 
                     {/* Pagination Controls */}
-                    <div className="mt-4 flex items-center justify-between border-t border-gray-700 pt-4">
+                    <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
                         <div className="text-gray-400 text-sm">
                             Page {currentPage} of {totalPages > 0 ? totalPages : 1} • Showing deposits {(currentPage - 1) * itemsPerPage} -{" "}
                             {Math.min(currentPage * itemsPerPage, totalDepositsFound > 0 ? totalDepositsFound : totalDeposits)}
@@ -841,7 +840,7 @@ export default function BridgeAdminDashboard() {
                             <button
                                 onClick={() => setCurrentPage(1)}
                                 disabled={!hasPrevPage || isLoading}
-                                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
+                                className="px-3 py-2 bg-[#21172b] hover:bg-gray-600 disabled:bg-[#100c17] disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
                                 title="First page"
                             >
                                 ««
@@ -849,21 +848,21 @@ export default function BridgeAdminDashboard() {
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={!hasPrevPage || isLoading}
-                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
+                                className="px-4 py-2 bg-[#21172b] hover:bg-gray-600 disabled:bg-[#100c17] disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
                             >
                                 Previous
                             </button>
                             <button
                                 onClick={() => setCurrentPage(p => p + 1)}
                                 disabled={!hasNextPage || isLoading}
-                                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
+                                className="px-4 py-2 bg-[#21172b] hover:bg-gray-600 disabled:bg-[#100c17] disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
                             >
                                 Next
                             </button>
                             <button
                                 onClick={() => setCurrentPage(totalPages)}
                                 disabled={!hasNextPage || isLoading}
-                                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
+                                className="px-3 py-2 bg-[#21172b] hover:bg-gray-600 disabled:bg-[#100c17] disabled:text-gray-600 text-white rounded-lg transition-colors text-sm"
                                 title="Last page"
                             >
                                 »»
@@ -873,10 +872,10 @@ export default function BridgeAdminDashboard() {
                 </div>
 
                 {/* Deposits Table */}
-                <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div className="bg-[#100c17] rounded-lg border border-white/10 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-900">
+                            <thead className="bg-[#0c0911]">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Index</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Recipient</th>
@@ -885,7 +884,7 @@ export default function BridgeAdminDashboard() {
                                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-400 tracking-wider">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-700">
+                            <tbody className="divide-y divide-white/10">
                                 {isEmpty(filteredDeposits) ? (
                                     <tr>
                                         <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
@@ -894,7 +893,7 @@ export default function BridgeAdminDashboard() {
                                     </tr>
                                 ) : (
                                     filteredDeposits.map(deposit => (
-                                        <tr key={deposit.index} className="hover:bg-gray-700/50 transition-colors">
+                                        <tr key={deposit.index} className="hover:bg-[#21172b] transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="text-white font-mono text-sm">#{deposit.index}</span>
                                             </td>
@@ -923,7 +922,7 @@ export default function BridgeAdminDashboard() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 {deposit.status === "loading" && (
-                                                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gray-700 text-gray-300 flex items-center gap-2 justify-center">
+                                                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-[#21172b] text-gray-300 flex items-center gap-2 justify-center">
                                                         <LoadingSpinner size="xs" />
                                                         Loading...
                                                     </span>
@@ -952,7 +951,7 @@ export default function BridgeAdminDashboard() {
                                                     <button
                                                         onClick={() => handleProcessDeposit(deposit.index)}
                                                         disabled={processingIndex === deposit.index || !cosmosWallet.address}
-                                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 justify-center mx-auto"
+                                                        className="px-4 py-2 bg-[#7135a4] hover:bg-[#8645ba] disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 justify-center mx-auto"
                                                     >
                                                         {processingIndex === deposit.index ? (
                                                             <>
@@ -976,9 +975,9 @@ export default function BridgeAdminDashboard() {
                 </div>
 
                 {/* Info Box */}
-                <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                    <h3 className="text-blue-200 font-semibold mb-2">ℹ️ How This Works</h3>
-                    <ul className="text-blue-300 text-sm space-y-1 list-disc list-inside">
+                <div className="mt-6 bg-purple-900/20 border border-purple-700 rounded-lg p-4">
+                    <h3 className="text-purple-200 font-semibold mb-2">ℹ️ How This Works</h3>
+                    <ul className="text-purple-200 text-sm space-y-1 list-disc list-inside">
                         <li>This dashboard queries the Ethereum bridge contract for all deposit events</li>
                         <li>Each deposit shows the Cosmos recipient address and USDC amount</li>
                         <li>Status indicates whether the deposit has been processed on Block52 chain</li>
@@ -988,7 +987,7 @@ export default function BridgeAdminDashboard() {
                 </div>
 
                 {/* Powered by Block52 Footer */}
-                <div className="fixed bottom-4 left-4 flex items-center z-10 opacity-30">
+                <div className="page-footer">
                     <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                         <div className="text-left mb-1">
                             <span className="text-xs text-white font-medium tracking-wide">POWERED BY</span>

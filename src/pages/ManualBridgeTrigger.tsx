@@ -1,9 +1,11 @@
+import { formatMicroUsd } from "../utils/moneyDisplay";
+import { PageHeading } from "../components/common/PageHeading";
 import { useState } from "react";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";
 import { ethers } from "ethers";
-import { formatMicroAsUsdc } from "../constants/currency";
+
 import { getSigningClient } from "../utils/cosmos/client";
 import { BRIDGE_DEPOSITS_ABI } from "../utils/bridge/abis";
 import { LoadingSpinner } from "../components/common/LoadingSpinner";
@@ -147,17 +149,14 @@ export default function ManualBridgeTrigger() {
     };
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-2xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-bold text-white mb-2">Manual Bridge Trigger</h1>
-                    <p className="text-gray-400">Process Ethereum deposits manually by deposit index</p>
-                </div>
+                <PageHeading title="Manual bridge" description="Process Ethereum deposits manually by deposit index." eyebrow="PLATFORM TOOLS" />
 
                 {/* Wallet Info */}
-                <div className="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+                <div className="bg-[#100c17] rounded-lg p-6 mb-6 border border-white/10">
                     <h2 className="text-lg font-semibold text-white mb-3">Block52 Wallet</h2>
                     {cosmosWallet.address ? (
                         <div className="space-y-2">
@@ -167,7 +166,9 @@ export default function ManualBridgeTrigger() {
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-gray-400">Balance:</span>
-                                <span className="text-white">{formatMicroAsUsdc(cosmosWallet.balance.find(b => b.denom === "usdc")?.amount || "0", 6)} USDC</span>
+                                <span className="text-white">
+                                    {formatMicroUsd(cosmosWallet.balance.find(b => b.denom === "usdc")?.amount || "0")} USDC
+                                </span>
                             </div>
                         </div>
                     ) : (
@@ -176,7 +177,7 @@ export default function ManualBridgeTrigger() {
                 </div>
 
                 {/* Process Deposit Card */}
-                <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+                <div className="bg-[#100c17] rounded-lg p-6 border border-white/10">
                     <h2 className="text-lg font-semibold text-white mb-4">Process Deposit</h2>
 
                     <div className="space-y-4">
@@ -189,7 +190,7 @@ export default function ManualBridgeTrigger() {
                                 value={depositIndex}
                                 onChange={e => setDepositIndex(e.target.value)}
                                 placeholder="Enter deposit index (e.g., 0, 1, 2...)"
-                                className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                                className="w-full px-4 py-3 bg-[#0c0911] border border-white/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-purple-400"
                                 disabled={isProcessing || isQuerying}
                             />
                             <p className="text-xs text-gray-500 mt-1">The index of the deposit in the Ethereum bridge contract</p>
@@ -200,7 +201,7 @@ export default function ManualBridgeTrigger() {
                             onClick={handleQueryDeposit}
                             disabled={isQuerying || isProcessing}
                             className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all ${
-                                isQuerying || isProcessing ? "bg-gray-600 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+                                isQuerying || isProcessing ? "bg-gray-600 cursor-not-allowed" : "bg-[#7135a4] hover:bg-[#8645ba] active:scale-95"
                             }`}
                         >
                             {isQuerying ? (
@@ -215,16 +216,16 @@ export default function ManualBridgeTrigger() {
 
                         {/* Query Result Display */}
                         {queryResult && (
-                            <div className="p-4 bg-blue-900/30 border border-blue-700 rounded-lg">
-                                <p className="text-blue-200 text-sm font-medium mb-3">📦 Deposit Information</p>
+                            <div className="p-4 bg-purple-900/20 border border-purple-700 rounded-lg">
+                                <p className="text-purple-200 text-sm font-medium mb-3">📦 Deposit Information</p>
                                 <div className="space-y-2">
                                     <div>
-                                        <p className="text-blue-300 text-xs">Recipient (Block52 Address):</p>
-                                        <p className="text-blue-100 text-sm font-mono break-all">{queryResult.recipient}</p>
+                                        <p className="text-purple-200 text-xs">Recipient (Block52 Address):</p>
+                                        <p className="text-purple-100 text-sm font-mono break-all">{queryResult.recipient}</p>
                                     </div>
                                     <div>
-                                        <p className="text-blue-300 text-xs">Amount:</p>
-                                        <p className="text-blue-100 text-sm font-mono">{formatMicroAsUsdc(queryResult.amount, 6)} USDC</p>
+                                        <p className="text-purple-200 text-xs">Amount:</p>
+                                        <p className="text-purple-100 text-sm font-mono">{formatMicroUsd(queryResult.amount)} USDC</p>
                                     </div>
                                 </div>
                             </div>
@@ -237,7 +238,7 @@ export default function ManualBridgeTrigger() {
                             className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all ${
                                 isProcessing || isQuerying || !cosmosWallet.address
                                     ? "bg-gray-600 cursor-not-allowed"
-                                    : "bg-blue-600 hover:bg-blue-700 active:scale-95"
+                                    : "bg-[#7135a4] hover:bg-[#8645ba] active:scale-95"
                             }`}
                         >
                             {isProcessing ? (
@@ -271,7 +272,7 @@ export default function ManualBridgeTrigger() {
                                 {depositDetails && (
                                     <div className="mt-3 pt-3 border-t border-green-700">
                                         <p className="text-green-300 text-xs mb-2">Deposit Details:</p>
-                                        <pre className="text-green-100 text-xs bg-gray-900 p-2 rounded overflow-auto max-h-48">
+                                        <pre className="text-green-100 text-xs bg-[#0c0911] p-2 rounded overflow-auto max-h-48">
                                             {JSON.stringify(depositDetails, null, 2)}
                                         </pre>
                                     </div>
@@ -282,9 +283,9 @@ export default function ManualBridgeTrigger() {
                 </div>
 
                 {/* Instructions */}
-                <div className="mt-6 bg-blue-900/20 border border-blue-700 rounded-lg p-4">
-                    <h3 className="text-blue-200 font-semibold mb-2">How it works:</h3>
-                    <ol className="text-blue-300 text-sm space-y-1 list-decimal list-inside">
+                <div className="mt-6 bg-purple-900/20 border border-purple-700 rounded-lg p-4">
+                    <h3 className="text-purple-200 font-semibold mb-2">How it works:</h3>
+                    <ol className="text-purple-200 text-sm space-y-1 list-decimal list-inside">
                         <li>User deposits USDC on Ethereum to bridge contract</li>
                         <li>Deposit is logged with an incremental index (0, 1, 2, ...)</li>
                         <li>Enter the deposit index and click "Query" to preview deposit info</li>
@@ -296,7 +297,7 @@ export default function ManualBridgeTrigger() {
             </div>
 
             {/* Powered by Block52 */}
-            <div className="fixed bottom-4 left-4 flex items-center z-10 opacity-30">
+            <div className="page-footer">
                 <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                     <div className="text-left mb-1">
                         <span className="text-xs text-white font-medium tracking-wide  ">POWERED BY</span>

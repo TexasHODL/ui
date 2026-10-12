@@ -1,11 +1,9 @@
-import React, { useState, useCallback } from "react";
+import { formatUsd } from "../utils/moneyDisplay";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { FaArrowDown, FaArrowUp, FaCopy, FaRedo, FaCog, FaPlus } from "react-icons/fa";
+import { copyToClipboard } from "../utils/clipboard";
 import styles from "./WalletPanel.module.css";
-import { copyToClipboard as copyToClipboardUtil } from "../utils/clipboard";
-
-// Copy to clipboard utility
-const copyToClipboard = (text: string, label: string) => copyToClipboardUtil(text, `${label} copied to clipboard!`);
 
 interface WalletPanelProps {
     onDeposit: () => void;
@@ -17,12 +15,6 @@ interface WalletPanelProps {
     usdcBalance: string;
     cosmosWalletAddress: string | null;
 }
-
-/**
- * WalletPanel - Cosmos wallet display component
- * Shows wallet address, balances, and action buttons
- * Styled to match TableList component
- */
 const WalletPanel: React.FC<WalletPanelProps> = ({
     onDeposit,
     onWithdraw,
@@ -34,163 +26,82 @@ const WalletPanel: React.FC<WalletPanelProps> = ({
     cosmosWalletAddress
 }) => {
     const navigate = useNavigate();
-    const [isRefreshing, setIsRefreshing] = useState(false);
-
-    const handleRefresh = useCallback(async () => {
-        if (!onRefresh || isRefreshing) return;
-        setIsRefreshing(true);
-        try {
-            await onRefresh();
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [onRefresh, isRefreshing]);
-
-    if (!cosmosWalletAddress) {
-        // No wallet - show create/import options
-        return (
-            <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-                {/* Header */}
-                <div className="px-6 py-4 bg-gray-900 border-b border-gray-700">
-                    <h2 className="text-xl font-bold text-white">Game Wallet</h2>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                    <p className="text-gray-400 mb-6">Create or import a wallet to start playing</p>
-
-                    <div className="space-y-3">
-                        <button
-                            onClick={onCreateWallet}
-                            className={`w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
-                        >
-                            Create New Wallet
-                        </button>
-                        <button
-                            onClick={onImportWallet}
-                            className="w-full py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 border border-gray-600 bg-transparent hover:bg-gray-700"
-                        >
-                            Import Existing Wallet
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
+    const [refreshing, setRefreshing] = useState(false);
+    const [refreshError, setRefreshError] = useState("");
     return (
-        <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
-            {/* Header */}
-            <div className="px-6 py-4 bg-gray-900 border-b border-gray-700 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-white">Game Wallet</h2>
-                <div className="flex items-center gap-2">
-                    {/* Refresh Balance Button */}
-                    {onRefresh && (
-                        <button
-                            onClick={handleRefresh}
-                            disabled={isRefreshing}
-                            className="p-2 rounded-lg transition-all hover:bg-gray-700 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Refresh Balance"
-                        >
-                            <svg
-                                className={`w-5 h-5 text-gray-400 hover:text-white transition-colors ${isRefreshing ? "animate-spin" : ""}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+        <section className={styles.panel} aria-label="Game wallet">
+            <div className={styles.heading}>
+                <h2>Your wallet</h2>
+                <button onClick={() => navigate("/wallet")} aria-label="Manage wallet" title="Manage wallet">
+                    <FaCog />
+                </button>
+            </div>
+            {cosmosWalletAddress ? (
+                <>
+                    <div className={styles.balanceLabel}>
+                        AVAILABLE TO PLAY
+                        {onRefresh && (
+                            <button
+                                aria-label="Refresh balance"
+                                disabled={refreshing}
+                                onClick={async () => {
+                                    setRefreshing(true);
+                                    setRefreshError("");
+                                    try {
+                                        await onRefresh();
+                                    } catch (error) {
+                                        console.error("Wallet refresh failed", error);
+                                        setRefreshError("Balance couldn’t refresh. Please try again.");
+                                    } finally {
+                                        setRefreshing(false);
+                                    }
+                                }}
                             >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                                />
-                            </svg>
-                        </button>
+                                <FaRedo className={refreshing ? "animate-spin" : ""} />
+                            </button>
+                        )}
+                    </div>
+                    <div className={styles.balance}>
+                        {"$" + formatUsd(usdcBalance)} <span>USDC</span>
+                    </div>
+                    {refreshError && (
+                        <p role="alert" className={styles.description}>
+                            {refreshError}
+                        </p>
                     )}
-                    {/* Settings Button */}
-                    <button
-                        onClick={() => navigate("/wallet")}
-                        className="p-2 rounded-lg transition-all hover:bg-gray-700 hover:opacity-90"
-                        title="Manage Wallet"
-                    >
-                        <svg className="w-5 h-5 text-gray-400 hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                            />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                    <button className={styles.primaryButton} onClick={onDeposit}>
+                        <FaPlus /> Add funds
                     </button>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-6">
-                {/* Address */}
-                <div className="mb-4">
-                    <label className="text-gray-400 text-sm">Address</label>
-                    <div className="flex gap-2 items-center mt-1">
-                        <input
-                            type="text"
-                            value={cosmosWalletAddress || ""}
-                            readOnly
-                            className="flex-1 text-white px-3 py-2 rounded-lg border border-gray-600 bg-gray-900 font-mono text-sm truncate"
-                        />
-                        <button
-                            onClick={() => copyToClipboard(cosmosWalletAddress || "", "Address")}
-                            className={`text-white px-3 py-2 rounded-lg transition-all hover:opacity-90 text-sm ${styles.primaryButton}`}
-                        >
-                            Copy
+                    <div className={styles.secondaryActions}>
+                        <button onClick={onWithdraw}>
+                            <FaArrowDown /> Withdraw
+                        </button>
+                        <button onClick={onTransfer}>
+                            <FaArrowUp /> Send
                         </button>
                     </div>
-                </div>
-
-                {/* USDC Balance */}
-                <div className="mb-4">
-                    <div className="p-3 rounded-lg bg-gray-900 border border-gray-700">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${styles.balanceIconContainer}`}>
-                                    <span className={`font-bold text-lg ${styles.balanceIconDollar}`}>$</span>
-                                </div>
-                                <div>
-                                    <p className="text-white font-bold">USDC Balance</p>
-                                    <p className="text-gray-400 text-sm">Gaming funds</p>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-2xl font-bold text-white">${Number(usdcBalance).toFixed(2)}</p>
-                            </div>
+                    <details className={styles.details}>
+                        <summary>Wallet address</summary>
+                        <div>
+                            <code>{cosmosWalletAddress.slice(0, 11) + "…" + cosmosWalletAddress.slice(-6)}</code>
+                            <button aria-label="Copy wallet address" onClick={() => copyToClipboard(cosmosWalletAddress, "Wallet address copied")}>
+                                <FaCopy />
+                            </button>
                         </div>
-                    </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                    <button
-                        onClick={onDeposit}
-                        className={`flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
-                    >
-                        Deposit
+                    </details>
+                </>
+            ) : (
+                <>
+                    <p className={styles.description}>Your seat starts here. Create a game wallet or bring your existing one.</p>
+                    <button className={styles.primaryButton} onClick={onCreateWallet}>
+                        Create wallet
                     </button>
-                    <button
-                        onClick={onWithdraw}
-                        className={`flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
-                    >
-                        Withdraw
+                    <button className={styles.importButton} onClick={onImportWallet}>
+                        Import existing wallet
                     </button>
-                    <button
-                        onClick={onTransfer}
-                        className={`flex-1 py-3 rounded-lg text-white font-semibold transition-all hover:opacity-90 ${styles.primaryButton}`}
-                    >
-                        Send
-                    </button>
-                </div>
-            </div>
-        </div>
+                </>
+            )}
+        </section>
     );
 };
-
 export default WalletPanel;

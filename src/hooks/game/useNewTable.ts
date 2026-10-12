@@ -144,7 +144,9 @@ export const useNewTable = (): UseNewTableReturn => {
                 const cosmosClient = getCosmosClient(currentNetwork);
 
                 if (!cosmosClient) {
-                    return null;
+                    // Preserve the broadcast receipt; never invite a duplicate fee
+                    // just because the read client is temporarily unavailable.
+                    return { txHash, gameId: null };
                 }
 
                 // Wait a moment for the transaction to be indexed

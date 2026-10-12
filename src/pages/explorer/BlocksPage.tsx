@@ -56,9 +56,7 @@ export default function BlocksPage() {
 
             const recentBlocks = await cosmosClient.getLatestBlocks(50);
             // Sort blocks by height in descending order (newest first)
-            const sortedBlocks = recentBlocks.sort((a, b) =>
-                parseInt(b.block.header.height) - parseInt(a.block.header.height)
-            );
+            const sortedBlocks = recentBlocks.sort((a, b) => parseInt(b.block.header.height) - parseInt(a.block.header.height));
             setBlocks(sortedBlocks as unknown as CosmosBlock[]);
             setError(null);
         } catch (err) {
@@ -105,7 +103,7 @@ export default function BlocksPage() {
 
     useEffect(() => {
         // Set page title
-        document.title = "Block Explorer - Block52 Chain";
+        document.title = "Block Explorer - Texas HODL";
 
         // Clear client when network changes to force re-initialization
         clearCosmosClient();
@@ -119,19 +117,22 @@ export default function BlocksPage() {
         return () => {
             clearInterval(interval);
             // Reset title when component unmounts
-            document.title = "Block52 Chain";
+            document.title = "Texas HODL";
         };
     }, [currentNetwork, fetchBlocks]);
 
     if (loading && isEmpty(blocks)) {
         return (
-            <div className="min-h-screen flex items-center justify-center relative">
+            <div className="site-page">
                 <AnimatedBackground />
-                <div className="bg-gray-800 border border-gray-700 p-8 rounded-lg shadow-2xl text-center relative z-10">
-                    <div className="flex justify-center mb-4">
-                        <LoadingSpinner size="xl" className="text-blue-500" />
+                <div className="site-page-content">
+                    <ExplorerHeader />
+                    <div className="bg-[#100c17] border border-white/10 p-8 rounded-lg shadow-2xl text-center relative z-10">
+                        <div className="flex justify-center mb-4">
+                            <LoadingSpinner size="xl" className="text-blue-500" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-white">Loading blocks...</h2>
                     </div>
-                    <h2 className="text-2xl font-bold text-white">Loading blocks...</h2>
                 </div>
             </div>
         );
@@ -139,15 +140,15 @@ export default function BlocksPage() {
 
     if (error && isEmpty(blocks)) {
         return (
-            <div className="min-h-screen p-8 relative">
+            <div className="site-page">
                 <AnimatedBackground />
-                <div className="max-w-7xl mx-auto relative z-10">
+                <div className="site-page-content">
                     {/* Header */}
                     <ExplorerHeader />
 
                     {/* Error Card */}
                     <div className="flex justify-center">
-                        <div className="bg-gray-800 border border-gray-700 p-8 rounded-lg shadow-2xl text-center max-w-lg">
+                        <div className="bg-[#100c17] border border-white/10 p-8 rounded-lg shadow-2xl text-center max-w-lg">
                             <div className="flex justify-center mb-4">
                                 <svg className="h-16 w-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -161,7 +162,7 @@ export default function BlocksPage() {
                             <button
                                 onClick={() => fetchBlocks()}
                                 disabled={loading}
-                                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                                className="px-6 py-3 bg-[#7135a4] hover:bg-[#8645ba] disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
                             >
                                 {loading ? "Retrying..." : "🔄 Retry Connection"}
                             </button>
@@ -173,17 +174,17 @@ export default function BlocksPage() {
     }
 
     return (
-        <div className="min-h-screen p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-7xl mx-auto relative z-10">
+            <div className="site-page-content">
                 {/* Header */}
                 <ExplorerHeader />
 
                 {/* Blocks Table */}
-                <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+                <div className="bg-[#100c17] rounded-lg border border-white/10 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-900">
+                            <thead className="bg-[#0c0911]">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Height</th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Block Hash</th>
@@ -192,16 +193,16 @@ export default function BlocksPage() {
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Time</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-700">
+                            <tbody className="divide-y divide-white/10">
                                 {blocks.map(block => (
-                                    <tr key={block.block.header.height} className="hover:bg-gray-700/50 transition-colors">
+                                    <tr key={block.block.header.height} className="hover:bg-[#21172b] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-blue-400 font-bold">#{block.block.header.height}</span>
+                                            <span className="text-purple-300 font-bold">#{block.block.header.height}</span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <a
                                                 href={`/explorer/block/${block.block.header.height}`}
-                                                className="font-mono text-xs text-blue-400 hover:text-blue-300 cursor-pointer transition-colors break-all block"
+                                                className="font-mono text-xs text-purple-300 hover:text-purple-200 cursor-pointer transition-colors break-all block"
                                                 title="Click to view block details"
                                             >
                                                 {block.block_id.hash}
@@ -217,7 +218,7 @@ export default function BlocksPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="font-mono text-xs text-blue-400" title={block.block.header.proposer_address || ""}>
+                                            <span className="font-mono text-xs text-purple-300" title={block.block.header.proposer_address || ""}>
                                                 {truncateHash(formatProposerAddress(block.block.header.proposer_address || ""))}
                                             </span>
                                         </td>
@@ -246,7 +247,7 @@ export default function BlocksPage() {
                             <button
                                 onClick={() => fetchBlocks()}
                                 disabled={loading}
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-lg font-semibold text-sm transition-colors whitespace-nowrap"
+                                className="px-4 py-2 bg-[#7135a4] hover:bg-[#8645ba] disabled:bg-gray-600 text-white rounded-lg font-semibold text-sm transition-colors whitespace-nowrap"
                             >
                                 {loading ? "⏳" : "🔄 Retry"}
                             </button>
@@ -256,7 +257,7 @@ export default function BlocksPage() {
             </div>
 
             {/* Powered by Block52 */}
-            <div className="fixed bottom-4 left-4 flex items-center z-10 opacity-30">
+            <div className="page-footer">
                 <div className="flex flex-col items-start bg-transparent px-3 py-2 rounded-lg backdrop-blur-sm border-0">
                     <div className="text-left mb-1">
                         <span className="text-xs text-white font-medium tracking-wide  ">POWERED BY</span>

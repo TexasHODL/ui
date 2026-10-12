@@ -94,7 +94,7 @@ function AppContent() {
     }, []);
 
     return (
-        <div className="bg-[#2c3245] min-h-screen">
+        <div className="bg-[#070709] min-h-screen">
             <FaviconSetter />
             <GlobalHeader />
             <ProfileAvatarModal />
@@ -106,6 +106,7 @@ function AppContent() {
                 <Route path="/table/:id" element={<Table />} />
                 <Route path="/table/admin" element={<TableAdminPage />} /> {/* Legacy - keep for backwards compat */}
                 <Route path="/wallet" element={<CosmosWalletPage />} />
+                <Route path="/tables" element={<TableAdminPage />} />
                 {/* User-facing routes */}
                 <Route path="/withdrawals" element={<WithdrawalDashboard />} />
                 <Route path="/bridge/withdrawals" element={<WithdrawalDashboard />} />

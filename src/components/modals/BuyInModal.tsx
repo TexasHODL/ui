@@ -1,10 +1,11 @@
+import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { ModalHeader } from "../common/ModalHeader";
 import React, { useState, useMemo, useCallback } from "react";
 import { useMinAndMaxBuyIns } from "../../hooks/game/useMinAndMaxBuyIns";
 import { useNavigate } from "react-router-dom";
 import { formatUSDCToSimpleDollars } from "../../utils/numberUtils";
 import { computeSngEntryBreakdown } from "../../utils/buyInUtils";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { HexagonPattern } from "../common/Modal";
 import { joinTable } from "../../hooks/playerActions/joinTable";
 import { JoinTableOptions } from "../../hooks/playerActions/types";
 import { useCosmosWallet } from "../../hooks";
@@ -97,10 +98,10 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
 
         return {
             show: isSitAndGo && breakdown.hasProtocolFee,
-            prizePoolPortionFormatted: formatUSDCToSimpleDollars(breakdown.prizePoolPortion),
-            protocolCutFormatted: formatUSDCToSimpleDollars(breakdown.protocolCut),
-            ownerFeeFormatted: formatUSDCToSimpleDollars(breakdown.ownerFee),
-            totalFormatted: formatUSDCToSimpleDollars(breakdown.total)
+            prizePoolPortionFormatted: formatMicroUsd(breakdown.prizePoolPortion),
+            protocolCutFormatted: formatMicroUsd(breakdown.protocolCut),
+            ownerFeeFormatted: formatMicroUsd(breakdown.ownerFee),
+            totalFormatted: formatMicroUsd(breakdown.total)
         };
     }, [isSitAndGo, maxBuyInValue, gameState?.gameOptions?.entryFee, gameState?.gameOptions?.protocolFeeBps]);
 
@@ -146,12 +147,12 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             const buyInMicrounits = parseUsdcToMicro(buyInAmount);
 
             if (buyInMicrounits < BigInt(minBuyInValue!)) {
-                setBuyInError(`Minimum buy-in is $${minBuyInFormatted}`);
+                setBuyInError(`Minimum buy-in is $${formatMicroUsd(minBuyInValue ?? 0)}`);
                 return;
             }
 
             if (buyInMicrounits > BigInt(maxBuyInValue!)) {
-                setBuyInError(`Maximum buy-in is $${maxBuyInFormatted}`);
+                setBuyInError(`Maximum buy-in is $${formatMicroUsd(maxBuyInValue ?? 0)}`);
                 return;
             }
 
@@ -178,12 +179,12 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             const buyInMicrounits = parseUsdcToMicro(buyInAmount);
 
             if (buyInMicrounits < BigInt(minBuyInValue!)) {
-                setBuyInError(`Minimum buy-in is ${minBuyInFormatted}`);
+                setBuyInError(`Minimum buy-in is ${formatMicroUsd(minBuyInValue ?? 0)}`);
                 return;
             }
 
             if (buyInMicrounits > BigInt(maxBuyInValue!)) {
-                setBuyInError(`Maximum buy-in is ${maxBuyInFormatted}`);
+                setBuyInError(`Maximum buy-in is ${formatMicroUsd(maxBuyInValue ?? 0)}`);
                 return;
             }
 
@@ -231,14 +232,14 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose} />
-                <div className={`relative p-8 rounded-xl shadow-2xl w-96 ${styles.modalContainer}`}>
-                    <h2 className="text-xl font-bold mb-4 text-white">Buy In</h2>
+                <div className={`hodl-modal relative p-8 rounded-xl shadow-2xl w-96 ${styles.modalContainer}`}>
+                    <ModalHeader kicker="Take your seat" title="Buy In" />
                     <div className="text-red-400 mb-4">
                         Unable to load buy-in limits from the game. Please try again.
                     </div>
                     <button
                         onClick={onClose}
-                        className={`w-full py-3 rounded-lg text-white font-semibold ${styles.closeButton}`}
+                        className={`w-full py-3 rounded-lg text-white font-semibold hodl-secondary ${styles.closeButton}`}
                     >
                         Close
                     </button>
@@ -253,23 +254,8 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
-            <div className={`relative p-8 rounded-xl shadow-2xl w-96 overflow-hidden ${styles.modalContainer}`}>
-                {/* Hexagon pattern background */}
-                <HexagonPattern patternId="hexagons-buyin" />
-
-                <div className="absolute -right-8 -top-8 text-6xl opacity-10 rotate-12">♠</div>
-                <div className="absolute -left-8 -bottom-8 text-6xl opacity-10 -rotate-12">♥</div>
-
-                <h2 className="text-2xl font-bold mb-4 text-white flex items-center">
-                    <span className={`mr-2 ${styles.suitClub}`}>
-                        ♣
-                    </span>
-                    Buy In
-                    <span className={`ml-2 ${styles.suitDiamond}`}>
-                        ♦
-                    </span>
-                </h2>
-                <div className={`w-full h-0.5 mb-4 opacity-50 ${styles.dividerPrimary}`}></div>
+            <div className={`hodl-modal relative p-8 rounded-xl shadow-2xl w-96 overflow-hidden ${styles.modalContainer}`}>
+                <ModalHeader kicker="Take your seat" title="Buy In" />
 
                 {/* Cosmos Wallet Balances Section */}
                 <div className="mb-5 space-y-2">
@@ -289,7 +275,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                                 const isMicroDenom = balance.denom === "b52Token" || balance.denom === "usdc";
                                 const numericAmount = isMicroDenom ? microToUsdc(balance.amount) : Number(balance.amount);
 
-                                const displayAmount = numericAmount.toLocaleString("en-US", {
+                                const displayAmount = balance.denom === "usdc" ? formatMicroUsd(balance.amount, true) : numericAmount.toLocaleString("en-US", {
                                     minimumFractionDigits: 2,
                                     maximumFractionDigits: 6
                                 });
@@ -297,12 +283,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                                 // For usdc, show USD equivalent
                                 const isUSDC = balance.denom === "usdc";
                                 const usdValue = isUSDC
-                                    ? numericAmount.toLocaleString("en-US", {
-                                          style: "currency",
-                                          currency: "USD",
-                                          minimumFractionDigits: 2,
-                                          maximumFractionDigits: 2
-                                      })
+                                    ? `${formatMicroUsd(balance.amount, true)}`
                                     : null;
 
                                 // Determine if this USDC balance should show red (when buy-in exceeds balance)
@@ -339,7 +320,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                        replace this block automatically. block52/ui#378 */
                     <div className="mb-6">
                         <div className={`mb-4 p-3 rounded-lg text-sm ${styles.depositLink}`}>
-                            You need at least ${minBuyInFormatted} to join this table. Deposit to continue.
+                            You need at least ${formatMicroUsd(minBuyInValue ?? 0)} to join this table. Deposit to continue.
                         </div>
                         <DepositCore showMethodSelector />
                     </div>
@@ -361,7 +342,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                         <div className={`p-4 rounded-lg border-2 ${styles.fixedBuyInPanel}`}>
                             <div className="text-center">
                                 <div className="text-xs text-gray-400 mb-1">Required Buy-In</div>
-                                <div className="text-3xl font-bold text-white">${maxBuyInFormatted}</div>
+                                <div className="text-3xl font-bold text-white">${formatMicroUsd(maxBuyInValue ?? 0)}</div>
                                 <div className="text-xs text-gray-400 mt-1">This is a fixed buy-in tournament</div>
                             </div>
 
@@ -395,8 +376,8 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                             {/* Slider with min/max labels */}
                             <div className="mb-3">
                                 <div className="flex justify-between text-xs text-gray-400 mb-2">
-                                    <span>${minBuyInFormatted}</span>
-                                    <span>${maxBuyInFormatted}</span>
+                                    <span>${formatMicroUsd(minBuyInValue ?? 0)}</span>
+                                    <span>${formatMicroUsd(maxBuyInValue ?? 0)}</span>
                                 </div>
                                 <input
                                     type="range"
@@ -448,24 +429,24 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-between space-x-4 mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
                     <button
                         onClick={onClose}
-                        className={`px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 ${styles.cancelButton}`}
+                        className={`px-5 py-3 rounded-lg text-white font-medium flex-1 transition-all duration-200 hodl-secondary ${styles.cancelButton}`}
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleJoinClick}
                         disabled={viewTableDisabled}
-                        className={`px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm ${styles.viewTableButton}`}
+                        className={`px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm hodl-secondary ${styles.viewTableButton}`}
                     >
                         View Table
                     </button>
                     <button
                         onClick={handleRandomSeatJoin}
                         disabled={takeSeatDisabled}
-                        className={`px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm ${styles.takeSeatButton} ${takeSeatDisabled ? styles.takeSeatButtonDisabled : ""}`}
+                        className={`px-4 py-3 rounded-lg font-medium flex-1 text-white shadow-md text-sm hodl-primary ${styles.takeSeatButton} ${takeSeatDisabled ? styles.takeSeatButtonDisabled : ""}`}
                     >
                         {isJoiningRandomSeat ? "Joining..." : "Take My Seat"}
                     </button>
@@ -476,7 +457,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
                 {needsDeposit && (
                     <button
                         onClick={onClose}
-                        className={`w-full mb-4 px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 ${styles.cancelButton}`}
+                        className={`w-full mb-4 px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 hodl-secondary ${styles.cancelButton}`}
                     >
                         Cancel
                     </button>

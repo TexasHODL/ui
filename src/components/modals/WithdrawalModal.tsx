@@ -1,7 +1,9 @@
+import { formatUsd, formatMicroUsd } from "../../utils/moneyDisplay";
+import { ModalHeader } from "../common/ModalHeader";
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
-import { microToUsdc, usdcToMicroBigInt, formatMicroAsUsdc, parseUsdcToMicro } from "../../constants/currency";
+import { microToUsdc, usdcToMicroBigInt, parseUsdcToMicro } from "../../constants/currency";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
 import { useNetwork } from "../../context/NetworkContext";
 import { getSigningClient } from "../../utils/cosmos/client";
@@ -270,12 +272,12 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
 
     if (!isOpen) return null;
 
-    const balanceDisplay = balanceInUSDC.toFixed(2);
+    const balanceDisplay = formatUsd(balanceInUSDC);
 
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center ${styles.overlay}`}>
-            <div className={`rounded-xl p-6 w-full max-w-md mx-4 ${styles.modalContainer}`}>
-                <h2 className="text-2xl font-bold mb-4 text-white">Withdraw Funds</h2>
+            <div className={`hodl-modal rounded-xl p-6 w-full max-w-md mx-4 ${styles.modalContainer}`}>
+                <ModalHeader title="Withdraw Funds" />
 
                 {/* Step indicator */}
                 <div className="mb-4 flex items-center justify-center gap-2">
@@ -330,7 +332,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                                 </p>
                                 <button
                                     onClick={() => openWalletConnect()}
-                                    className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 ${styles.primaryActionButton}`}
+                                    className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 hodl-primary ${styles.primaryActionButton}`}
                                 >
                                     Connect Your Web3 Wallet
                                 </button>
@@ -365,14 +367,14 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         <div className="flex flex-col space-y-3">
                             <button
                                 onClick={handleWithdraw}
-                                className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 disabled:opacity-50 ${styles.primaryActionButton}`}
+                                className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 disabled:opacity-50 hodl-primary ${styles.primaryActionButton}`}
                                 disabled={!isWeb3Connected || !web3Address || !amount}
                             >
                                 Withdraw
                             </button>
                             <button
                                 onClick={onClose}
-                                className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-80 ${styles.cancelActionButton}`}
+                                className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-80 hodl-secondary ${styles.cancelActionButton}`}
                             >
                                 Cancel
                             </button>
@@ -429,7 +431,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Amount:</span>
-                                    <span className="text-white font-semibold">{formatMicroAsUsdc(withdrawalInfo.amount, 6)} USDC</span>
+                                    <span className="text-white font-semibold">{formatMicroUsd(withdrawalInfo.amount)} USDC</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">To:</span>
@@ -444,14 +446,14 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         <div className="flex flex-col space-y-3">
                             <button
                                 onClick={handleCompleteOnEthereum}
-                                className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 ${styles.primaryActionButton}`}
+                                className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 hodl-primary ${styles.primaryActionButton}`}
                             >
                                 Complete on Ethereum
                             </button>
                             <p className="text-center text-sm text-gray-400">You can complete this withdrawal later from the Withdrawal Dashboard</p>
                             <button
                                 onClick={onClose}
-                                className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-80 ${styles.cancelActionButton}`}
+                                className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-80 hodl-secondary ${styles.cancelActionButton}`}
                             >
                                 Close
                             </button>
@@ -478,7 +480,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                         </div>
                         <button
                             onClick={onClose}
-                            className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 ${styles.primaryActionButton}`}
+                            className={`w-full py-2 px-4 rounded-lg font-semibold text-white transition hover:opacity-90 hodl-primary ${styles.primaryActionButton}`}
                         >
                             Close
                         </button>

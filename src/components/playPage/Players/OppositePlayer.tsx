@@ -14,6 +14,7 @@
 import * as React from "react";
 import { useParams } from "react-router-dom";
 import Badge from "../common/Badge";
+import { HoleCardFan } from "../Card/HoleCardFan";
 import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
@@ -106,7 +107,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
             {/* Main player display */}
             <div
                 key={index}
-                className={`${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[10] ${styles.secondaryText} ${styles.positionTransition}`}
+                className={`player-seat ${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[10] ${styles.secondaryText} ${styles.positionTransition}`}
                 style={{
                     left: left,
                     top: top
@@ -125,16 +126,16 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                     {holeCards && holeCards.length === 2 && !isFolded? (
                         isShowingCards && showingCards ? (
                             // Show the actual cards if player is showing
-                            <>
+                            <HoleCardFan>
                                 <img src={getCardImageUrl(showingCards[0])} alt="Player Card 1" width={60} height={80} className={`mb-[11px]${isWinner && winnerCards.size > 0 && winnerCards.has(showingCards[0]) ? " animate-win-card" : ""}${isWinner && winnerCards.size > 0 && !winnerCards.has(showingCards[0]) ? " opacity-40" : ""}`} />
                                 <img src={getCardImageUrl(showingCards[1])} alt="Player Card 2" width={60} height={80} className={`mb-[11px]${isWinner && winnerCards.size > 0 && winnerCards.has(showingCards[1]) ? " animate-win-card" : ""}${isWinner && winnerCards.size > 0 && !winnerCards.has(showingCards[1]) ? " opacity-40" : ""}`} />
-                            </>
+                            </HoleCardFan>
                         ) : (
                             // Show card backs for opponents (they shouldn't see actual cards)
-                            <>
+                            <HoleCardFan>
                                 <img src={getCardBackUrl(cardBackStyle)} alt="Opposite Player Card" width={60} height={80} className="mb-[11px] rounded-[5px]" />
                                 <img src={getCardBackUrl(cardBackStyle)} alt="Opposite Player Card" width={60} height={80} className="mb-[11px] rounded-[5px]" />
-                            </>
+                            </HoleCardFan>
                         )
                     ) : (
                         <div className="w-[120px] h-[80px]"></div>

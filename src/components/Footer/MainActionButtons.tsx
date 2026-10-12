@@ -113,7 +113,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     ) : (
                         <>
                             {canRaise ? "RAISE TO" : "BET"}{" "}
-                            <span className={styles.amountAccent}>{formatDisplayAmount(raiseToAmount, isTournament)}</span>
+                            <span className={styles.primaryAmount}>{formatDisplayAmount(raiseToAmount, isTournament)}</span>
                         </>
                     )}
                 </button>
@@ -138,7 +138,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                         </>
                     ) : (
                         <>
-                            ALL-IN <span className={styles.amountAccent}>{allInAmount}</span>
+                            ALL-IN <span className={styles.primaryAmount}>{allInAmount}</span>
                         </>
                     )}
                 </button>

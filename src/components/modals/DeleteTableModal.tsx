@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { colors } from "../../utils/colorConfig";
 import { Modal, LoadingSpinner } from "../common";
@@ -14,6 +14,7 @@ export interface DeleteTableModalProps {
 const DeleteTableModal: React.FC<DeleteTableModalProps> = React.memo(({ isOpen, onClose, onConfirm, gameId }) => {
     const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    useEffect(() => { if (isOpen) { setIsDeleting(false); setError(null); } }, [isOpen, gameId]);
 
     const handleConfirm = useCallback(async () => {
         setIsDeleting(true);
@@ -91,7 +92,7 @@ const DeleteTableModal: React.FC<DeleteTableModalProps> = React.memo(({ isOpen, 
                 <button
                     onClick={onClose}
                     disabled={isDeleting}
-                    className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 ${styles.buttonSecondary}`}
+                    className={`w-full px-5 py-3 rounded-lg text-white font-medium transition-all duration-200 disabled:opacity-50 hover:opacity-80 hodl-secondary ${styles.buttonSecondary}`}
                 >
                     Cancel
                 </button>
