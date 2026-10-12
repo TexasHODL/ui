@@ -604,7 +604,6 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                         }
                                         totalPotMicro={totalPotMicro}
                                         callAmountMicro={callAmountMicro}
-                                        bigBlindMicro={bigBlindMicro}
                                         isInvalid={isRaiseAmountInvalid}
                                         isMobileLandscape={isMobileLandscape}
                                         isTournament={isTournament}

@@ -35,6 +35,23 @@ are included.
 
 ## Before going live
 
+### PR #4 follow-up: conflict and E2E checks
+
+- Integrated TexasHODL main `970ffe5`, including its pot-bet sizing/minimum gating
+  and avatar fixes. Resolved the RaiseBetControls conflict by retaining landscape
+  presets while adopting the updated betting props and calculation behavior.
+- Added portrait/landscape regression tests for disabled below-minimum presets;
+  removed the retired prop from the mobile fixture.
+- Updated all 15 stub E2E tests to use accessible Join seat buttons and the named
+  Game wallet region. The exact funded-balance assertion includes its USDC label.
+  Existing gameplay, error, reconnect, frame ordering and showdown assertions are
+  retained; no tests were skipped or disabled.
+- Local validation: production build passed; 157 Jest suites / 1,976 tests passed
+  with coverage; 15/15 Chromium stub E2E tests passed. Only the deterministic test
+  wallet and loopback stub were used, not a live chain or the user's browser session.
+- GitHub CI must finish successfully on this updated PR before merging. This
+  follow-up does not merge main or deploy the site.
+
 1. Review the PR and its GitHub checks in TexasHODL/ui.
 2. Verify the DigitalOcean app still uses TexasHODL/ui and its intended production branch/environment.
 3. Approve and merge only when ready for DigitalOcean to deploy.

@@ -57,7 +57,7 @@ function Fixture() {
                             playerStatus={PlayerStatus.SEATED} loading={null} isMobileLandscape={!portrait} currentRound={TexasHoldemRound.FLOP} previousActions={[]} userAddress="fixture"
                             isAllIn={false} isTournament callIsAllIn={false} canAllIn={false} allInAmount="1330" onFold={noop} onCheck={noop} onCall={noop} onBetOrRaise={noop} onAllIn={noop} />
                         <RaiseBetControls amount={amount} minAmount={20} maxAmount={1330} formattedMaxAmount="1330" step={20} displayOffset={0} totalPotMicro={600n}
-                            callAmountMicro={0n} bigBlindMicro={20n} isInvalid={false} isMobileLandscape={!portrait} isTournament currentRound={TexasHoldemRound.FLOP}
+                            callAmountMicro={0n} isInvalid={false} isMobileLandscape={!portrait} isTournament currentRound={TexasHoldemRound.FLOP}
                             previousActions={[]} disabled={false} onAmountChange={setAmount} onIncrement={noop} onDecrement={noop} onAllIn={noop} />
                     </>}
                 </div>

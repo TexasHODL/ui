@@ -7,7 +7,7 @@ import type { RaiseBetControlsProps } from "./types";
 const baseProps: RaiseBetControlsProps = {
     amount: 320, minAmount: 320, maxAmount: 1390, formattedMaxAmount: "1390",
     step: 320, displayOffset: 0, totalPotMicro: 1280n, callAmountMicro: 0n,
-    bigBlindMicro: 320n, isInvalid: false, isMobileLandscape: true,
+    isInvalid: false, isMobileLandscape: true,
     isTournament: true, currentRound: TexasHoldemRound.FLOP, previousActions: [],
     disabled: false, onAmountChange: jest.fn(), onIncrement: jest.fn(),
     onDecrement: jest.fn(), onAllIn: jest.fn()
@@ -25,6 +25,17 @@ describe("RaiseBetControls presets", () => {
         expect(onAllIn).not.toHaveBeenCalled();
         fireEvent.click(screen.getByRole("button", { name: "ALL-IN" }));
         expect(onAllIn).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([true, false])("retains below-minimum preset gating with landscape=%s", isMobileLandscape => {
+        const onAmountChange = jest.fn();
+        render(<RaiseBetControls {...baseProps} minAmount={640} isMobileLandscape={isMobileLandscape} onAmountChange={onAmountChange} />);
+        const quarterPot = screen.getByRole("button", { name: "1/4 Pot" });
+        expect(quarterPot).toBeDisabled();
+        fireEvent.click(quarterPot);
+        expect(onAmountChange).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "1/2 Pot" }));
+        expect(onAmountChange).toHaveBeenLastCalledWith(640);
     });
 
     it("keeps presets disabled when actions are unavailable in landscape", () => {
