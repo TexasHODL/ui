@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="435" height="600" viewBox="0 0 435 600" role="img" aria-labelledby="th-title th-desc">
   <title id="th-title">Texas HODL card back</title>
-  <desc id="th-desc">Midnight purple playing-card back with the Texas HODL card-fan logo centred and a thin purple border.</desc>
+  <desc id="th-desc">Midnight purple playing-card back with the Texas HODL card-fan logo centred and a thin orange-to-pink border.</desc>
   <defs>
-    <linearGradient id="th-border" x1="0" y1="0" x2="0.35" y2="1">
-      <stop stop-color="#df2cf4"/>
-      <stop offset="0.55" stop-color="#b52add"/>
-      <stop offset="1" stop-color="#7c36c8"/>
+    <linearGradient id="th-border" gradientUnits="userSpaceOnUse" x1="-39.14" y1="231.23" x2="474.14" y2="368.77">
+      <stop stop-color="#ff9717"/>
+      <stop offset="0.52" stop-color="#ff4a83"/>
+      <stop offset="1" stop-color="#f02bc6"/>
     </linearGradient>
   </defs>
   <rect width="435" height="600" rx="36" fill="#1a0b2e"/>
