@@ -39,6 +39,11 @@ const makeProps = (): TableHeaderProps => ({
 });
 
 describe("Focused table header", () => {
+    it("offers light and dark themes directly on the table", () => {
+        render(<TableHeader {...makeProps()} />);
+        expect(screen.getByRole("button", { name: "Light theme" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Dark theme" })).toBeInTheDocument();
+    });
     it("uses the table-only view handler without requiring browser fullscreen support", () => {
         const props = makeProps();
         render(<TableHeader {...props} />);

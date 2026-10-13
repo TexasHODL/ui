@@ -88,6 +88,14 @@ const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
 
 describe("MobileTableHeader drawer (ui#684)", () => {
     beforeEach(() => jest.clearAllMocks());
+    it("offers themes without opening the mobile drawer", () => {
+        renderHeader();
+        fireEvent.click(screen.getByRole("button", { name: "Light theme" }));
+        expect(document.documentElement).toHaveAttribute("data-theme", "light");
+        fireEvent.click(screen.getByRole("button", { name: "Dark theme" }));
+        expect(document.documentElement).not.toHaveAttribute("data-theme");
+        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
+    });
 
     it("offers Leave table without opening the drawer and only opens confirmation", () => {
         renderHeader({ seated: true });

@@ -22,7 +22,7 @@ function MoonIcon() {
 }
 
 /** Icon-only light/dark control. Sun selects light, moon selects dark. */
-export function ThemeToggle() {
+export function ThemeToggle({ touch = false }: { touch?: boolean }) {
     const theme = useAppliedTheme();
 
     const choose = (next: ThemeChoice) => {
@@ -30,7 +30,7 @@ export function ThemeToggle() {
     };
 
     return (
-        <div className={styles.group} role="group" aria-label="Color theme">
+        <div className={`${styles.group} ${touch ? styles.touch : ""}`} role="group" aria-label="Color theme">
             <button type="button" aria-label="Light theme" aria-pressed={theme === "light"} title="Light theme" onClick={() => choose("light")}>
                 <SunIcon />
             </button>
