@@ -1573,6 +1573,7 @@ const Table = React.memo(() => {
                 {/* Player Action Buttons — hidden in replay mode (read-only) */}
                 {!isReplayMode && (
                     <PlayerActionButtons
+                        handleLeaveTableClick={handleLeaveTableClick}
                         isMobile={isMobile}
                         isMobileLandscape={isMobileLandscape}
                         isCompactMobile={isCompactMobile}

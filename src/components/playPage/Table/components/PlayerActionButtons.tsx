@@ -7,6 +7,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
+import { RxExit } from "react-icons/rx";
+import styles from "./TableHeader.module.css";
 
 import { GameFormat, LegalActionDTO, NonPlayerActionType } from "@block52/poker-vm-sdk";
 // Raw sit-in/out hooks THROW on failure (unlike the swallowing handleSitIn/Out
@@ -45,6 +47,7 @@ export interface PlayerActionButtonsProps {
     walletBalance: string;
     isCurrentUserSeated: boolean;
     isTableFull: boolean;
+    handleLeaveTableClick?: () => void;
 }
 
 export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
@@ -65,7 +68,8 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     maxBuyIn,
     walletBalance,
     isCurrentUserSeated,
-    isTableFull
+    isTableFull,
+    handleLeaveTableClick
 }) => {
     const isCompact = isMobile || isMobileLandscape || isCompactMobile;
     const positionClass = isMobileLandscape ? "bottom-2 left-2" : isMobile ? "bottom-[260px] right-4" : "bottom-20 left-4";
@@ -148,7 +152,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     // (MobileTableHeader) — the floating button is landscape/desktop only.
     const buyChipsElement =
         !isCompactMobile && isCurrentUserSeated && tableId && !isSNG ? (
-            <div className={`fixed z-30 ${buyChipsPositionClass}`}>
+            <div className={`fixed z-30 ${buyChipsPositionClass} flex flex-col gap-2`}>
                 <BuyChipsButton
                     tableId={tableId}
                     currentStack={currentStack}
@@ -159,6 +163,11 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     disabled={!canTopUp}
                     disabledReason="You can top up between hands — not while you're in the current hand."
                 />
+                {handleLeaveTableClick && (
+                    <button className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>
+                        <RxExit aria-hidden="true" /> Leave table
+                    </button>
+                )}
             </div>
         ) : null;
 
