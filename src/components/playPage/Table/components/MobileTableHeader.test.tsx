@@ -15,6 +15,7 @@ import { SitOutIntentProvider } from "../../../../context/SitOutIntentContext";
 const mockSubmit = jest.fn();
 const mockToggleSeatAtBottom = jest.fn();
 const mockToggleFocus = jest.fn();
+const mockLeaveTable = jest.fn();
 
 jest.mock("../../../../hooks/playerActions", () => ({ sitOut: jest.fn(), useAutoSitOutNextBB: jest.fn() }));
 jest.mock("../../../../utils/cosmosAccountUtils", () => ({ getCosmosAddressSync: () => "b521abc" }));
@@ -76,7 +77,7 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[] 
                 copyToClipboard={jest.fn()}
                 onCloseSideBar={jest.fn()}
                 onToggleSettings={jest.fn()}
-                handleLeaveTableClick={jest.fn()}
+                handleLeaveTableClick={mockLeaveTable}
                 handleShareHand={jest.fn()}
             />
         </SitOutIntentProvider>
@@ -87,6 +88,19 @@ const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
 
 describe("MobileTableHeader drawer (ui#684)", () => {
     beforeEach(() => jest.clearAllMocks());
+
+    it("offers Leave table without opening the drawer and only opens confirmation", () => {
+        renderHeader({ seated: true });
+        fireEvent.click(screen.getByRole("button", { name: "Leave table" }));
+        expect(mockLeaveTable).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
+        expect(mockSubmit).not.toHaveBeenCalled();
+    });
+
+    it("does not offer Leave table to a spectator", () => {
+        renderHeader();
+        expect(screen.queryByRole("button", { name: "Leave table" })).not.toBeInTheDocument();
+    });
 
     it("offers table-only fullscreen directly in the mobile header without submitting a game action", () => {
         renderHeader();

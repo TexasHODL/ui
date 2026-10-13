@@ -60,6 +60,32 @@
     color: #ffffff;
 }
 
+.visibleLeaveButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid #ff8cac80;
+    border-radius: 9px;
+    background: #181020;
+    color: #ffb3c9;
+    font-size: 14px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.visibleLeaveButton:hover {
+    background: #321825;
+    border-color: #ffb3c9;
+}
+
+.visibleLeaveButton:focus-visible {
+    outline: 2px solid #ffb3c9;
+    outline-offset: 3px;
+}
+
 .roomHeader {
     flex-shrink: 0;
     position: relative;

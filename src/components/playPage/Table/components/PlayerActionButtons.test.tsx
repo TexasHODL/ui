@@ -111,6 +111,16 @@ const render = (ui: React.ReactElement): ReturnType<typeof rtlRender> =>
     );
 
 describe("PlayerActionButtons", () => {
+    it("places Leave table below top-up and opens the existing confirmation", () => {
+        const handleLeaveTableClick = jest.fn();
+        render(<PlayerActionButtons {...baseProps} handleLeaveTableClick={handleLeaveTableClick} />);
+        const leave = screen.getByRole("button", { name: "Leave table" });
+        expect(screen.getByTestId("buy-chips-button").nextElementSibling).toBe(leave);
+        fireEvent.click(leave);
+        expect(handleLeaveTableClick).toHaveBeenCalledTimes(1);
+        expect(mockSubmit).not.toHaveBeenCalled();
+    });
+
     it("renders only the Top-Up Chips wrapper when display kind is none and no top-up legal (#401)", () => {
         const { container } = render(
             <PlayerActionButtons

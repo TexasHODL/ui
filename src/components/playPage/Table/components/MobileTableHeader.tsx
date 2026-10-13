@@ -5,10 +5,8 @@
  * USDC balance, fullscreen, hamburger) plus a text-only status strip (blinds, hand number,
  * next to act). Everything else — network selector, share/copy/QR, wallet
  * address, avatar, settings, action log, top-up, table style, seat orientation,
- * leave table —
- * lives in the hamburger drawer, each row a ≥44px tap target. Leave Table sits
- * at the bottom of the drawer styled as destructive, never as a bare tap
- * target next to the play surface.
+ * lives in the hamburger drawer, each row a ≥44px tap target. Leave table is
+ * also visible in the status strip and opens the existing confirmation dialog.
  */
 
 import React, { useState } from "react";
@@ -215,9 +213,9 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 </div>
             </div>
 
-            {/* Status strip — text only, no controls. No action count on mobile. */}
+            {/* Leave stays outside the betting controls and does not require opening the drawer. */}
             <div
-                className={`w-full flex items-center justify-center gap-3 px-2 h-[22px] sub-header z-[1] ${styles.subHeaderRoot}`}
+                className={`w-full flex flex-wrap items-center justify-center gap-x-3 px-2 min-h-[22px] sub-header z-[1] ${styles.subHeaderRoot}`}
                 style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
             >
                 <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>
@@ -240,7 +238,12 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     )}
                 </span>
                 <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Hand #{handNumber}</span>
-                <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>
+                {!showLeaveTable && <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>}
+                {showLeaveTable && (
+                    <button className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>
+                        <RxExit aria-hidden="true" /> Leave table
+                    </button>
+                )}
             </div>
 
             {/* Hamburger drawer */}
