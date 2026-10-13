@@ -25,10 +25,13 @@
     justify-content: center;
     gap: 5px;
     min-width: 100px;
-    padding: 6px;
-    border: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--theme-line-strong, #d6b2ef66);
     border-radius: 16px;
-    background: transparent;
+    background: var(--empty-seat-glass, rgba(24, 15, 34, 0.42));
+    backdrop-filter: blur(8px) saturate(130%);
+    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    box-shadow: 0 6px 20px #0005, inset 0 1px 0 #ffffff12;
     color: var(--theme-ink, #d7b6eb);
 }
 .table-container .vacant-seat-plus {
@@ -55,8 +58,8 @@
     font-weight: 700;
 }
 .table-container .vacant-seat:hover:not(:disabled) {
-    background: var(--theme-wash, #b14cff14);
-    box-shadow: none;
+    background: var(--empty-seat-glass-hover, rgba(48, 27, 65, 0.58));
+    box-shadow: 0 8px 24px #0006, inset 0 1px 0 #ffffff20;
 }
 .table-container .vacant-seat:disabled {
     cursor: default;
