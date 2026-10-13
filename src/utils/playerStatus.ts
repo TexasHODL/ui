@@ -1,5 +1,10 @@
 import { PlayerStatus } from "@block52/poker-vm-sdk";
 
+/** Only a player still contesting a running hand needs the leave/fold warning. */
+export function shouldWarnOnLeave(isGameInProgress: boolean, status: PlayerStatus | string | null | undefined): boolean {
+    return isGameInProgress && (status === PlayerStatus.ACTIVE || status === PlayerStatus.ALL_IN);
+}
+
 /**
  * Is this seat out of the hand by its own choice — folded, or mucked at
  * showdown?

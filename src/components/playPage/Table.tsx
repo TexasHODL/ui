@@ -112,6 +112,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { useGameSettings } from "../../context/GameSettingsContext";
 import { useNetwork } from "../../context/NetworkContext";
 import { PlayerDTO, PlayerStatus } from "@block52/poker-vm-sdk";
+import { shouldWarnOnLeave } from "../../utils/playerStatus";
 import LiveHandStrengthDisplay from "./LiveHandStrengthDisplay";
 import { useGameStateSounds } from "../../hooks/notifications/useGameStateSounds";
 import NoWalletOverlay from "./NoWalletOverlay";
@@ -1619,7 +1620,7 @@ const Table = React.memo(() => {
                         handleLeaveTableConfirm={handleLeaveTableConfirm}
                         handleClaimWinnings={handleClaimWinnings}
                         currentPlayerStack={currentPlayerData?.stack || "0"}
-                        isInActiveHand={isGameInProgress && currentUserSeat > 0}
+                        isInActiveHand={shouldWarnOnLeave(isGameInProgress, currentPlayerData?.status)}
                     />
                 )}
 
