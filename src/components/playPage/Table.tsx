@@ -1422,6 +1422,7 @@ const Table = React.memo(() => {
                 </div>
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
+                {isCompactMobile && <LiveHandStrengthDisplay />}
                 <div className={["table-play-row", isMobilePortrait ? "is-portrait" : "", tableLayout.viewportMode === "mobile-landscape" ? "is-landscape" : "", tableLayout.viewportMode === "mobile-landscape" && leftHandMode ? "hand-left" : ""].filter(Boolean).join(" ")}>
                 <div ref={tableContainerRef} className="table-stage flex-grow relative overflow-visible">
                     {/* Background layers */}
@@ -1557,7 +1558,7 @@ const Table = React.memo(() => {
                     </div>
 
                     {/* Live Hand Strength Display */}
-                    <LiveHandStrengthDisplay />
+                    {!isCompactMobile && <LiveHandStrengthDisplay />}
                 </div>
 
                 {/* Mobile controls stay mounted for automatic gameplay hooks.
