@@ -1,5 +1,6 @@
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import type { GameWithFormat } from "./convertUtils";
+import { displayTableName } from "./generatedTableName";
 import { filterLobbyGames } from "./lobbyFilters";
 
 const makeGame = (overrides: Partial<GameWithFormat>): GameWithFormat => ({
@@ -39,6 +40,12 @@ describe("lobby discovery", () => {
         expect(filterLobbyGames(games, { ...options, search: "  FRIDAY  " })[0].gameId).toBe("sng-open");
         expect(filterLobbyGames(games, { ...options, search: "CASH-ACTIVE" })[0].gameId).toBe("cash-active");
         expect(filterLobbyGames(games, { ...options, search: "not-a-table" })).toEqual([]);
+    });
+    it("finds an unnamed table by its generated display name", () => {
+        const unnamed = makeGame({ gameId: "0x031d57314cc4ba07a0ae7edaa0c8c9ff3507dc81b8af99ac8cfe5ba9f5f9aea9", name: undefined });
+        const generated = displayTableName(undefined, unnamed.gameId);
+        expect(filterLobbyGames([unnamed], { ...options, search: generated })[0].gameId).toBe(unnamed.gameId);
+        expect(filterLobbyGames([unnamed], { ...options, search: generated.slice(0, 6) })[0].gameId).toBe(unnamed.gameId);
     });
     it("sorts buy-ins numerically, preserving precision for micro-unit strings", () => {
         const expensive = makeGame({ gameId: "expensive", minBuyIn: "9007199254740993" });

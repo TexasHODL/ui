@@ -19,6 +19,7 @@ import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { TopUpModal } from "../../../modals";
+import { displayTableName } from "../../../../utils/generatedTableName";
 import { formatGameFormatDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
@@ -175,7 +176,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         ←
                     </span>
                     <span className="sr-only">Back to lobby from </span>
-                    {tableName ? tableName : `Table ${tableId ? tableId.slice(-6) : ""}`}
+                    {displayTableName(tableName, tableId)}
                 </button>
                 <div className="flex items-center flex-shrink-0">
                     {/* Balance — money on the table, wanted at a glance; tap to refresh */}

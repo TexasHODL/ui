@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { GameFormat } from "@block52/poker-vm-sdk";
+import { displayTableName } from "../../../../utils/generatedTableName";
 import { TableHeader, TableHeaderProps } from "./TableHeader";
 
 jest.mock("../../../common/Modal", () => ({ Modal: () => null }));
@@ -44,6 +45,14 @@ describe("Focused table header", () => {
         render(<TableHeader {...props} />);
         fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
         expect(props.onToggleFocus).toHaveBeenCalledTimes(1);
+    });
+    it("shows a generated name when the table has no custom name", () => {
+        const props = makeProps();
+        props.tableName = undefined;
+        render(<TableHeader {...props} />);
+        const generated = displayTableName(undefined, props.tableId);
+        expect(screen.getByText(generated)).toBeInTheDocument();
+        expect(screen.queryByText("Table " + props.tableId.slice(-6))).not.toBeInTheDocument();
     });
     it("keeps lobby, invite, history and settings connected to existing handlers", () => {
         const props = makeProps();
