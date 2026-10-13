@@ -1,13 +1,6 @@
-import {
-    TABLE_NAME_POKER,
-    TABLE_NAME_CRYPTO,
-    TABLE_NAME_DEGEN,
-    GENERATED_TABLE_NAME_LIST_SIZE,
-    displayTableName,
-    generateTableName
-} from "./generatedTableName";
+import { GENERATED_TABLE_NAMES, GENERATED_TABLE_NAME_LIST_SIZE, displayTableName, generateTableName } from "./generatedTableName";
 
-const NAME_RE = /^[a-z0-9]+(?:-[a-z0-9]+){1,2}$/;
+const NAME_RE = /^[A-Z][a-z]*(?:'[a-z]+)? [A-Z][a-z]*(?:'[a-z]+)?$/;
 
 const SAMPLE_IDS = [
     "",
@@ -20,47 +13,39 @@ const SAMPLE_IDS = [
     "table-7bdb18"
 ];
 
-function assertWordList(words: readonly string[]): void {
-    expect(words).toHaveLength(GENERATED_TABLE_NAME_LIST_SIZE);
-    expect(new Set(words).size).toBe(GENERATED_TABLE_NAME_LIST_SIZE);
-    for (const word of words) {
-        expect(word).toMatch(/^[a-z0-9]+$/);
-    }
-}
+const EXAMPLES = [
+    "Satoshi's River",
+    "Diamond Hands",
+    "Whale Watch",
+    "Moon Flush",
+    "Rug Pull",
+    "Pocket Rockets",
+    "Gas Station",
+    "Bluff Ridge",
+    "Lambo Lounge",
+    "Full Send",
+    "Degen Den",
+    "Paper Hands",
+    "Bull Run",
+    "Royal Flush",
+    "Cold Wallet",
+    "All In"
+];
 
-const POKER_EXAMPLES = ["river", "flop", "turn", "flush", "bluff", "ace", "kicker", "nuts", "allin", "showdown", "shortstack", "backraise"];
-const CRYPTO_EXAMPLES = ["satoshi", "hodl", "whale", "gas", "block", "wallet", "ledger", "lambo", "staking", "airdrop", "mempool", "halving"];
-const DEGEN_EXAMPLES = ["degen", "tilt", "yolo", "jackpot", "highroller", "parlay", "apes", "rekt", "moon", "sweat", "punt", "wager"];
-const OFF_THEME = ["pilot", "compass", "bison", "ember", "anchor", "bridge"];
-
-describe("generated table name lists", () => {
-    it("keeps each list at 200 unique lowercase tokens", () => {
-        assertWordList(TABLE_NAME_POKER);
-        assertWordList(TABLE_NAME_CRYPTO);
-        assertWordList(TABLE_NAME_DEGEN);
-    });
-
-    it("does not repeat a word across lists", () => {
-        const all = [...TABLE_NAME_POKER, ...TABLE_NAME_CRYPTO, ...TABLE_NAME_DEGEN];
-        expect(new Set(all).size).toBe(all.length);
-    });
-
-    it("keeps the example words inside the matching theme", () => {
-        for (const word of POKER_EXAMPLES) {
-            expect(TABLE_NAME_POKER).toContain(word);
-        }
-        for (const word of CRYPTO_EXAMPLES) {
-            expect(TABLE_NAME_CRYPTO).toContain(word);
-        }
-        for (const word of DEGEN_EXAMPLES) {
-            expect(TABLE_NAME_DEGEN).toContain(word);
+describe("generated table names", () => {
+    it("keeps one list of 200 unique two-word names", () => {
+        expect(GENERATED_TABLE_NAMES).toHaveLength(GENERATED_TABLE_NAME_LIST_SIZE);
+        expect(new Set(GENERATED_TABLE_NAMES).size).toBe(GENERATED_TABLE_NAME_LIST_SIZE);
+        for (const name of GENERATED_TABLE_NAMES) {
+            expect(name).toMatch(NAME_RE);
+            expect(name.split(" ")).toHaveLength(2);
+            expect(name).not.toContain("-");
         }
     });
 
-    it("leaves out generic off-theme words", () => {
-        const all = new Set([...TABLE_NAME_POKER, ...TABLE_NAME_CRYPTO, ...TABLE_NAME_DEGEN]);
-        for (const word of OFF_THEME) {
-            expect(all.has(word)).toBe(false);
+    it("includes the hand-written examples", () => {
+        for (const name of EXAMPLES) {
+            expect(GENERATED_TABLE_NAMES).toContain(name);
         }
     });
 });
@@ -83,23 +68,17 @@ describe("generateTableName", () => {
         expect(generateTableName(first)).not.toBe(generateTableName(suffix));
     });
 
-    it("emits a lowercase hyphenated name of two or three list words", () => {
-        const lengths = new Set<number>();
+    it("picks one curated name", () => {
         const ids = [...SAMPLE_IDS, ...Array.from({ length: 40 }, (_, i) => `table-${i}`)];
+        const seen = new Set<string>();
         for (const tableId of ids) {
             const name = generateTableName(tableId);
+            expect(GENERATED_TABLE_NAMES).toContain(name);
             expect(name).toMatch(NAME_RE);
             expect(name).not.toBe("Table " + tableId.slice(-6));
-            const parts = name.split("-");
-            expect([2, 3]).toContain(parts.length);
-            expect(TABLE_NAME_POKER).toContain(parts[0]);
-            expect(TABLE_NAME_CRYPTO).toContain(parts[1]);
-            if (parts.length === 3) {
-                expect(TABLE_NAME_DEGEN).toContain(parts[2]);
-            }
-            lengths.add(parts.length);
+            seen.add(name);
         }
-        expect(lengths).toEqual(new Set([2, 3]));
+        expect(seen.size).toBeGreaterThan(1);
     });
 });
 
