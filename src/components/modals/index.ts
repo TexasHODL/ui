@@ -9,6 +9,7 @@
 export { default as TopUpModal } from "./TopUpModal";
 export { default as USDCDepositModal } from "./USDCDepositModal";
 export { default as WithdrawalModal } from "./WithdrawalModal";
+export { default as SendUsdcModal } from "./SendUsdcModal";
 export { default as BuyInModal } from "./BuyInModal";
 export { default as LeaveTableModal } from "./LeaveTableModal";
 export { default as SitAndGoAutoJoinModal } from "./SitAndGoAutoJoinModal";
@@ -29,6 +30,8 @@ export type {
     SitAndGoAutoJoinModalProps,
     TopUpModalProps,
     USDCDepositModalProps,
+    SendUsdcModalProps,
+    SendTokens,
     WithdrawalModalProps,
     CurrencySelectorProps,
     PaymentDisplayProps,

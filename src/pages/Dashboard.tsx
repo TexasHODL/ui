@@ -13,9 +13,10 @@ import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, SNG_BLINDS } from "../constants/blindLevels";
-import { usdcToMicroBigInt, formatMicroAsUsdc, microToUsdc } from "../constants/currency";
+import { usdcToMicroBigInt, microToUsdc } from "../constants/currency";
+import { readUsdcBalance } from "../utils/usdcBalance";
 
-import { WithdrawalModal, USDCDepositModal, UpcomingSngModal } from "../components/modals";
+import { UpcomingSngModal } from "../components/modals";
 import TableList from "../components/TableList";
 import TableCreatedModal, { type TableCreationReceipt } from "../components/modals/TableCreatedModal";
 import WalletPanel from "../components/WalletPanel";
@@ -40,9 +41,6 @@ import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as u
 
 // Club branding imports
 import { colors, hexToRgba } from "../utils/colorConfig";
-
-// Bech32 address regex: "b52" prefix + "1" separator + valid bech32 data characters
-const B52_ADDRESS_REGEX = /^b521[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{38,}$/;
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -113,16 +111,9 @@ const Dashboard: React.FC = () => {
         [modalMinBuyInBB, modalMaxBuyInBB, modalBigBlind]
     );
 
-    // Withdrawal Modal
-    const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
-
-    // USDC Deposit Modal
-    const [showUSDCDepositModal, setShowUSDCDepositModal] = useState(false);
-
     // Cosmos wallet state and hooks
     const cosmosWallet = useCosmosWallet();
     const [showCosmosImportModal, setShowCosmosImportModal] = useState(false);
-    const [showCosmosTransferModal, setShowCosmosTransferModal] = useState(false);
     const [showWalletGeneratedNotification, setShowWalletGeneratedNotification] = useState(false);
     const [showNewWalletModal, setShowNewWalletModal] = useState(false);
     const [newWalletSeedPhrase, setNewWalletSeedPhrase] = useState("");
@@ -132,10 +123,6 @@ const Dashboard: React.FC = () => {
 
     const [cosmosSeedPhrase, setCosmosSeedPhrase] = useState("");
     const [cosmosImportError, setCosmosImportError] = useState("");
-    const [transferRecipient, setTransferRecipient] = useState("");
-    const [transferAmount, setTransferAmount] = useState("");
-    const [transferError, setTransferError] = useState("");
-    const [isTransferring, setIsTransferring] = useState(false);
 
     // Password validation function
     const handlePasswordSubmit = () => {
@@ -282,59 +269,8 @@ const Dashboard: React.FC = () => {
         setSeedPhraseCopied(true);
     };
 
-    const handleCosmosTransfer = async () => {
-        try {
-            setTransferError("");
-            setIsTransferring(true);
-
-            if (!transferRecipient || !transferAmount) {
-                setTransferError("Please enter recipient address and amount");
-                return;
-            }
-
-            if (!B52_ADDRESS_REGEX.test(transferRecipient)) {
-                setTransferError("Please enter a valid b52 bech32 address");
-                return;
-            }
-
-            const amount = parseFloat(transferAmount);
-            if (isNaN(amount) || amount <= 0) {
-                setTransferError("Please enter a valid amount");
-                return;
-            }
-
-            // Convert to smallest unit (6 decimals for USDC)
-            const amountInSmallestUnit = usdcToMicroBigInt(amount).toString();
-
-            const txHash = await cosmosWallet.sendTokens(transferRecipient, amountInSmallestUnit, "usdc");
-
-            // Reset form and close modal
-            setTransferRecipient("");
-            setTransferAmount("");
-            setTransferError("");
-            setShowCosmosTransferModal(false);
-        } catch (err) {
-            console.error("Failed to send:", err);
-            setTransferError(err instanceof Error ? err.message : "Failed to send");
-        } finally {
-            setIsTransferring(false);
-        }
-    };
-
-    // Get USDC balance for transfer
-    const getTransferTokenBalance = useCallback(() => {
-        const balance = cosmosWallet.balance.find(b => b.denom === "usdc");
-        if (balance) {
-            return formatMicroAsUsdc(balance.amount, 6);
-        }
-        return "0.00";
-    }, [cosmosWallet.balance]);
-
-    // Numeric USDC balance for transfer validation
-    const numericUsdcBalance = useMemo(() => {
-        const balance = cosmosWallet.balance.find(b => b.denom === "usdc");
-        return balance ? microToUsdc(balance.amount) : 0;
-    }, [cosmosWallet.balance]);
+    const gameWalletUsdc = useMemo(() => readUsdcBalance(cosmosWallet.balance), [cosmosWallet.balance]);
+    const numericUsdcBalance = gameWalletUsdc.numeric;
 
     // Block table creation if the name is invalid, or the creator can't cover the
     // naming fee (the definite creation-time debit, poker-vm#337).
@@ -357,19 +293,6 @@ const Dashboard: React.FC = () => {
     const insufficientForCreation = creationTotalMicro === null || creationTotalMicro > usdcToMicroBigInt(numericUsdcBalance);
     const createDisabled = isCreatingTable || !!tableNameError || insufficientForName || insufficientForCreation;
 
-    // Check if transfer amount exceeds available balance
-    const isAmountExceedingBalance = useMemo(() => {
-        const amount = parseFloat(transferAmount);
-        if (isNaN(amount) || amount <= 0) return false;
-        return amount > numericUsdcBalance;
-    }, [transferAmount, numericUsdcBalance]);
-
-    // Validate recipient is a valid b52 bech32 address
-    const isValidRecipient = useMemo(() => {
-        if (!transferRecipient) return false;
-        return B52_ADDRESS_REGEX.test(transferRecipient);
-    }, [transferRecipient]);
-
     // Auto-switch to Ethereum Mainnet when wallet connects
     useEffect(() => {
         const autoSwitchToEthereum = async () => {
@@ -384,16 +307,6 @@ const Dashboard: React.FC = () => {
 
         autoSwitchToEthereum();
     }, [isConnected, chain?.id, switchChain]);
-
-    // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
-    const handleDepositClick = useCallback(() => {
-        setShowUSDCDepositModal(true);
-    }, []);
-
-    // Memoized Withdrawal callback
-    const handleWithdrawClick = useCallback(() => {
-        setShowWithdrawalModal(true);
-    }, []);
 
     // Removed: handleImportModalClick - no longer needed (using Cosmos wallet)
 
@@ -660,67 +573,6 @@ const Dashboard: React.FC = () => {
                                     >
                                         Cancel
                                     </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* USDC Transfer Modal */}
-                    {showCosmosTransferModal && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm">
-                            <div className={`hodl-modal p-6 rounded-xl w-96 shadow-2xl border ${styles.modalPanel}`}>
-                                <ModalHeader title="Send" />
-                                <div className="space-y-4">
-                                    {/* Available Balance Display */}
-                                    <div className={`p-3 rounded-lg ${styles.balanceBox}`}>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-gray-400 text-sm">Available Balance:</span>
-                                            <span className={`font-bold ${styles.brandPrimaryText}`}>{formatUsd(getTransferTokenBalance())} USDC</span>
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-white text-sm mb-1">Recipient Address</label>
-                                        <input
-                                            type="text"
-                                            placeholder="b521abc..."
-                                            value={transferRecipient}
-                                            onChange={e => setTransferRecipient(e.target.value)}
-                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-white text-sm mb-1">Amount (USDC)</label>
-                                        <input
-                                            type="number"
-                                            step="0.000001"
-                                            placeholder="0.00"
-                                            value={transferAmount}
-                                            onChange={e => setTransferAmount(e.target.value)}
-                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                        />
-                                    </div>
-                                    {transferError && <p className="text-red-500 text-sm">{transferError}</p>}
-                                    <div className="flex flex-col space-y-3">
-                                        <button
-                                            onClick={handleCosmosTransfer}
-                                            disabled={isTransferring || !isValidRecipient || !transferAmount || isAmountExceedingBalance}
-                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 disabled:opacity-50 hodl-primary ${styles.brandPrimaryBg}`}
-                                        >
-                                            {isTransferring ? "Sending..." : "Send USDC"}
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setShowCosmosTransferModal(false);
-                                                setTransferRecipient("");
-                                                setTransferAmount("");
-                                                setTransferError("");
-                                            }}
-                                            className={`w-full px-4 py-2 text-sm text-white rounded-lg transition duration-300 shadow-md hover:opacity-90 hodl-secondary ${styles.cancelGradientButton}`}
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1042,20 +894,19 @@ const Dashboard: React.FC = () => {
                             {/* Left column: Wallet and Transactions (fixed width) */}
                             <aside className="lobby-wallet">
                                 <WalletPanel
-                                    onDeposit={handleDepositClick}
-                                    onWithdraw={handleWithdrawClick}
-                                    onTransfer={() => setShowCosmosTransferModal(true)}
                                     onCreateWallet={handleCreateNewWallet}
                                     onImportWallet={() => setShowCosmosImportModal(true)}
                                     onRefresh={cosmosWallet.refreshBalance}
-                                    usdcBalance={getTransferTokenBalance()}
+                                    usdcBalance={gameWalletUsdc.formatted}
+                                    numericUsdcBalance={gameWalletUsdc.numeric}
+                                    sendTokens={cosmosWallet.sendTokens}
                                     cosmosWalletAddress={cosmosWallet.address}
                                 />
                                 <details className="lobby-transactions">
                                     <summary>
                                         Recent activity <span>↗</span>
                                     </summary>
-                                    <TransactionPanel cosmosWalletAddress={cosmosWallet.address} usdcBalance={getTransferTokenBalance()} />
+                                    <TransactionPanel cosmosWalletAddress={cosmosWallet.address} usdcBalance={gameWalletUsdc.formatted} />
                                 </details>
                                 <div className="lobby-tip">
                                     <span>MAKE YOURSELF AT HOME</span>
@@ -1099,26 +950,6 @@ const Dashboard: React.FC = () => {
                             <img src="/block52.png" alt="Block52 Logo" className="h-6 w-auto object-contain interaction-none" />
                         </div>
                     </div>
-
-                    {showWithdrawalModal && (
-                        <WithdrawalModal
-                            isOpen={showWithdrawalModal}
-                            onClose={() => setShowWithdrawalModal(false)}
-                            onSuccess={() => {
-                                // Balance will auto-refresh on next page interaction
-                            }}
-                        />
-                    )}
-                    {showUSDCDepositModal && (
-                        <USDCDepositModal
-                            isOpen={showUSDCDepositModal}
-                            onClose={() => setShowUSDCDepositModal(false)}
-                            onSuccess={() => {
-                                // Balance will auto-refresh on next page interaction
-                                setShowUSDCDepositModal(false);
-                            }}
-                        />
-                    )}
 
                     {/* Welcome modal: lists the next scheduled Sit & Go tournaments once per browser */}
                     <UpcomingSngModal />
