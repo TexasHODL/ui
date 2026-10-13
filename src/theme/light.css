@@ -164,3 +164,12 @@ html[data-theme="light"] #table-settings-panel select {
     background: #0b0b10;
     border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
+
+/* Pot presets must contrast with their pale light-mode surfaces. */
+html[data-theme="light"] .poker-action-dock :is(.btn-pot, .btn-all-in) {
+    color: #1a0b2e;
+}
+html[data-theme="light"] .poker-action-dock :is(.btn-pot, .btn-all-in):disabled {
+    color: #5c4574;
+    opacity: 0.65;
+}
