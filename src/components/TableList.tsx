@@ -7,7 +7,6 @@ import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
 
-import { computeSngEntryBreakdown } from "../utils/buyInUtils";
 import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
 import { copyToClipboard } from "../utils/clipboard";
 import { filterLobbyGames, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
@@ -26,14 +25,6 @@ const formats: { value: LobbyFormat; label: string }[] = [
 const formatBuyIn = (game: GameWithFormat) => {
     const min = "$" + formatMicroUsd(game.minBuyIn);
     return isTournamentFormat(game.gameFormat) ? min : min + " – $" + formatMicroUsd(game.maxBuyIn);
-};
-
-const feeDescription = (game: GameWithFormat) => {
-    if (!isTournamentFormat(game.gameFormat)) return "Choose your buy-in at the table";
-    const breakdown = computeSngEntryBreakdown(game.minBuyIn, game.entryFee, game.protocolFeeBps);
-    return breakdown.hasProtocolFee
-        ? "$" + formatMicroUsd(breakdown.prizePoolPortion) + " prize pool + $" + formatMicroUsd(breakdown.protocolCut) + " protocol fee"
-        : "Fixed entry";
 };
 
 interface TableListProps {
@@ -276,7 +267,6 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                         </td>
                                         <td className={styles.buyInColumn}>
                                             <strong>{formatBuyIn(game)}</strong>
-                                            <span className={styles.detail}>{feeDescription(game)}</span>
                                         </td>
                                         <td>
                                             <div className={styles.rowActions}>
