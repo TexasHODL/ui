@@ -14,13 +14,21 @@ const SAMPLE_IDS = [
 ];
 
 const EXAMPLES = [
-    "Satoshi's River",
+    "Satoshi's Flush",
+    "Bitcoin Bluff",
+    "Whale Raise",
+    "Block Bluff",
+    "Ledger Limp",
+    "Hodl Em",
+    "Crypto Cooler",
+    "Wallet Rekt",
+    "Token Tilt",
+    "Moon River",
+    "Satoshi Shove",
     "Diamond Hands",
-    "Whale Watch",
     "Moon Flush",
     "Rug Pull",
     "Pocket Rockets",
-    "Gas Station",
     "Bluff Ridge",
     "Lambo Lounge",
     "Full Send",
@@ -28,7 +36,6 @@ const EXAMPLES = [
     "Paper Hands",
     "Bull Run",
     "Royal Flush",
-    "Cold Wallet",
     "All In"
 ];
 
