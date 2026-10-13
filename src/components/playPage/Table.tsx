@@ -153,7 +153,7 @@ interface NetworkDisplayProps {
 // Memoize the NetworkDisplay component
 const NetworkDisplay = memo(({ isMainnet = false }: NetworkDisplayProps) => {
     return (
-        <div className="network-display flex items-center gap-1 sm:gap-1.5 px-1 sm:px-2 py-1 rounded-lg text-[10px] sm:text-xs">
+        <div className="network-display flex items-center gap-1 sm:gap-1.5 px-1 sm:px-2 py-1 rounded-lg text-[12px] sm:text-xs">
             <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${isMainnet ? "bg-green-500" : "network-display-dot-devnet"}`}></div>
             <span className="text-gray-300 whitespace-nowrap">Block52 Chain</span>
         </div>
@@ -282,7 +282,7 @@ const LayoutDebugOverlay = () => {
                     justifyContent: "center"
                 }}
             >
-                <span style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>+</span>
+                <span style={{ color: "white", fontSize: 12, fontWeight: "bold" }}>+</span>
             </div>
             <div
                 style={{
@@ -294,7 +294,7 @@ const LayoutDebugOverlay = () => {
                     padding: "8px 12px",
                     borderRadius: 8,
                     fontFamily: "monospace",
-                    fontSize: 12,
+                    fontSize: 14,
                     lineHeight: 1.6,
                     pointerEvents: "auto",
                     minWidth: 220
@@ -353,7 +353,7 @@ const PositionDebugMarkers: React.FC<{ positions: PositionArrays }> = ({ positio
                     boxShadow: "0 0 8px rgba(0,0,0,0.5)"
                 }}
             >
-                <span style={{ color: "white", fontSize: 8, fontWeight: "bold" }}>{label}</span>
+                <span style={{ color: "white", fontSize: 10, fontWeight: "bold" }}>{label}</span>
             </div>
             <div
                 style={{
@@ -363,7 +363,7 @@ const PositionDebugMarkers: React.FC<{ positions: PositionArrays }> = ({ positio
                     transform: "translateX(-50%)",
                     backgroundColor: "rgba(0,0,0,0.8)",
                     color: "white",
-                    fontSize: 8,
+                    fontSize: 10,
                     padding: "1px 4px",
                     borderRadius: 3,
                     whiteSpace: "nowrap",
@@ -390,7 +390,7 @@ const PositionDebugMarkers: React.FC<{ positions: PositionArrays }> = ({ positio
                 border: "2px dashed #a78bfa",
                 borderRadius: 5,
                 color: "#a78bfa",
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: "bold",
                 fontFamily: "monospace",
                 textAlign: "center",
@@ -592,7 +592,7 @@ const GeometryFixedOverlay: React.FC<{
                     padding: "10px 14px",
                     borderRadius: 8,
                     fontFamily: "monospace",
-                    fontSize: 12,
+                    fontSize: 14,
                     lineHeight: 1.7,
                     cursor: dragging ? "grabbing" : "grab",
                     userSelect: "none",
@@ -660,7 +660,7 @@ const GeometryToggleButton: React.FC = () => {
                 border: `2px solid ${debug.showGeometry ? "#f472b6" : "#555"}`,
                 backgroundColor: debug.showGeometry ? "rgba(244,114,182,0.2)" : "rgba(0,0,0,0.6)",
                 color: debug.showGeometry ? "#f472b6" : "#888",
-                fontSize: 12,
+                fontSize: 14,
                 fontFamily: "monospace",
                 fontWeight: "bold",
                 cursor: "pointer"

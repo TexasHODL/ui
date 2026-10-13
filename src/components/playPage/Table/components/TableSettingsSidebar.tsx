@@ -20,7 +20,7 @@ const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, checked, onTo
     <div className="settings-toggle-row">
         <div className="flex-1">
             <p className="text-white text-xs font-semibold leading-tight">{label}</p>
-            <p className="text-gray-400 text-[10px] mt-0.5 leading-snug">{description}</p>
+            <p className="text-gray-400 text-[12px] mt-0.5 leading-snug">{description}</p>
         </div>
         <button
             role="switch"

@@ -16,7 +16,7 @@
   background-color: rgba(0, 0, 0, 0.8);
   color: #facc15;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
@@ -34,7 +34,7 @@
   width: 1.5rem;
   height: 1.5rem;
   color: white;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 700;
   border-radius: 9999px;
 }
@@ -136,7 +136,7 @@
   border-style: solid;
   color: white;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   white-space: normal;
   text-align: center;
   display: flex;
@@ -201,7 +201,7 @@
   border-color: color-mix(in srgb, #ffffff 16%, transparent);
   color: white;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   white-space: normal;
   backdrop-filter: none;
   text-align: center;
@@ -230,13 +230,13 @@
 }
 
 .action-display-text {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 0.05em;
 }
 
 .action-display-amount {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
   opacity: 0.9;
 }
@@ -319,7 +319,7 @@
   background-color: #22c55e;
   color: #fff;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.825rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   border: none;
@@ -365,7 +365,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: 800;
-  font-size: 0.875rem;
+  font-size: 1rem;
   box-shadow: 0 4px 12px color-mix(in srgb, #000000 30%, transparent);
   white-space: nowrap;
   text-transform: uppercase;
@@ -397,7 +397,7 @@
   background-color: color-mix(in srgb, #000000 80%, transparent);
   border-radius: 0.375rem;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   white-space: nowrap;
   box-shadow: 0 2px 8px color-mix(in srgb, #000000 40%, transparent);
 }

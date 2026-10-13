@@ -181,7 +181,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                             {formatActionName(action.action)}
                             {formatActionAmount(action, isTournamentFormat(gameFormat))}
                         </span>
-                        <span className={`text-[10px] ${styles.secondaryText}`}>
+                        <span className={`text-[12px] ${styles.secondaryText}`}>
                             Seat {action.seat} · {formatRoundName(action.round)}
                         </span>
                     </div>
@@ -203,7 +203,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                                   {w.description && ` — ${w.description}`}
                                   {w.description && beatenDescription && ` over ${beatenDescription}`}
                               </span>
-                              <span className={`text-[10px] ${styles.secondaryText}`}>
+                              <span className={`text-[12px] ${styles.secondaryText}`}>
                                   Seat {w.seat} · {w.winType === "showdown" ? "Showdown" : "Uncontested"}
                               </span>
                           </div>
@@ -271,7 +271,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                 {/* Previous hand's result, pinned above the current hand's actions */}
                 {showLastHandBlock && lastHandResult && (
                     <div className={`text-xs p-2 border-b ${styles.actionRow} ${styles.winnerRow}`}>
-                        <div className={`text-[10px] ${styles.secondaryText}`}>Last hand #{lastHandResult.handNumber}</div>
+                        <div className={`text-[12px] ${styles.secondaryText}`}>Last hand #{lastHandResult.handNumber}</div>
                         {lastHandResult.lines.map((line, i) => (
                             <div key={`last-hand-${i}`} className={styles.winnerText}>
                                 {line}

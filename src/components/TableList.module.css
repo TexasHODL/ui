@@ -10,7 +10,7 @@
 }
 .eyebrow {
     font:
-        11px "DM Mono",
+        13px "DM Mono",
         monospace;
     letter-spacing: 0.2em;
     color: #bb91e1;
@@ -29,7 +29,8 @@
 .overview p {
     color: #a7a1b0;
     margin-top: 10px;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 700;
 }
 .secondaryButton {
     display: inline-flex;
@@ -41,7 +42,7 @@
     border: 1px solid #ffffff24;
     background: #ffffff05;
     color: #e5dfee;
-    font-size: 13px;
+    font-size: 15px;
     white-space: nowrap;
 }
 .secondaryButton:hover {
@@ -55,7 +56,8 @@
     gap: 24px;
     padding-bottom: 24px;
     color: #a7a1b0;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 700;
 }
 .stats > span {
     display: flex;
@@ -79,6 +81,7 @@
     padding: 8px;
     border-radius: 8px;
     color: #a7a1b0;
+    font-weight: 700;
 }
 .gameTabs {
     display: flex;
@@ -89,7 +92,8 @@
     padding: 12px 0 16px;
     border-bottom: 2px solid transparent;
     color: #9e98a9;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 700;
 }
 .gameTabs button:hover {
     color: #fff;
@@ -116,6 +120,7 @@
     min-width: 180px;
     flex: 1;
     max-width: 290px;
+    font-weight: 700;
 }
 .search input {
     width: 100%;
@@ -124,7 +129,7 @@
     border: 0 !important;
     box-shadow: none !important;
     color: #eee7f5;
-    font-size: 13px;
+    font-size: 15px;
     outline: none;
 }
 .search:focus-within {
@@ -134,10 +139,11 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    font-size: 14px;
     color: #c2bacb;
     cursor: pointer;
     white-space: nowrap;
+    font-weight: 700;
 }
 .checkbox input {
     accent-color: #b14cff;
@@ -150,7 +156,8 @@
     align-items: center;
     margin-left: auto;
     color: #96909e;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 700;
 }
 .sort select {
     color: #e1d7e9;
@@ -168,13 +175,13 @@
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 13px;
+    font-size: 15px;
 }
 .games th {
     color: #96909f;
-    font-size: 11px;
-    font-weight: 500;
+    font-size: 13px;
     padding: 14px 16px;
+    font-weight: 700;
 }
 .games td {
     padding: 18px 16px;
@@ -215,15 +222,16 @@
     min-width: 0;
 }
 .identityText strong {
-    font-size: 14px;
+    font-size: 16px;
     overflow-wrap: anywhere;
 }
 .identityText > span,
 .detail {
     display: block;
     color: #9a92a4;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.5;
+    font-weight: 700;
 }
 .detail {
     margin-top: 5px;
@@ -237,7 +245,7 @@
 }
 .seatCount strong > span {
     color: #92889d;
-    font-weight: 400;
+    font-weight: 700;
 }
 .seatDots {
     display: flex;
@@ -264,8 +272,8 @@
 .ownerBadge { color: #d1a5f0 !important; }
 .games tr.seatedRow { background: #be87e50a; }
 .games tr.seatedRow td:first-child { box-shadow: inset 3px 0 #be87e5; }
-.identityText > .seatedBadge { color: #dbb8f5; font-size: 11px; font-weight: 600; }
-.ownerAction { padding: 8px 10px; border: 1px solid #e494a650; border-radius: 8px; color: #eeb0bf; font-size: 11px; white-space: nowrap; }
+.identityText > .seatedBadge { color: #dbb8f5; font-size: 13px; font-weight: 600; }
+.ownerAction { padding: 8px 10px; border: 1px solid #e494a650; border-radius: 8px; color: #eeb0bf; font-size: 13px; white-space: nowrap; }
 .ownerAction:hover:not(:disabled) { background: #e494a612; }
 .ownerAction:disabled { opacity: .45; cursor: not-allowed; }
 .actionButton,
@@ -277,10 +285,11 @@
     padding: 11px 14px;
     white-space: nowrap;
     border-radius: 9px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
 }
 .actionButton {
+    font-weight: 700;
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
     color: #170a16;
     border: 1px solid #ff9cbd50;
@@ -292,6 +301,7 @@
     border: 1px solid #ffffff20;
     color: #bdb4c7;
     background: #ffffff03;
+    font-weight: 700;
 }
 .tableMenu {
     position: relative;
@@ -301,6 +311,7 @@
     cursor: pointer;
     padding: 10px 4px;
     color: #958a9f;
+    font-weight: 700;
 }
 .tableMenu summary::-webkit-details-marker {
     display: none;
@@ -337,6 +348,7 @@
     border: 1px dashed #ffffff1c;
     border-radius: 14px;
     color: #a59aae;
+    font-weight: 700;
 }
 .empty svg {
     margin: auto;
@@ -357,9 +369,10 @@
 }
 .footnote {
     color: #95899e;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.7;
     padding: 18px 2px;
+    font-weight: 700;
 }
 .identityText > .mobileFacts {
     display: none;
@@ -390,26 +403,26 @@
     }
     .overview .secondaryButton {
         padding: 10px;
-        font-size: 11px;
+        font-size: 13px;
         gap: 6px;
     }
     .overview p {
         max-width: 240px;
-        font-size: 12px;
+        font-size: 14px;
     }
     .stats {
         gap: 14px;
-        font-size: 10px;
+        font-size: 12px;
         padding-bottom: 15px;
     }
     .stats strong {
-        font-size: 14px;
+        font-size: 16px;
     }
     .gameTabs {
         gap: 19px;
     }
     .gameTabs button {
-        font-size: 12px;
+        font-size: 14px;
     }
     .filters {
         gap: 12px;
@@ -431,10 +444,10 @@
         padding: 15px 10px;
     }
     .identityText strong {
-        font-size: 13px;
+        font-size: 15px;
     }
     .identityText > span {
-        font-size: 10px;
+        font-size: 12px;
     }
     .identityText > .mobileFacts {
         display: block;
@@ -449,7 +462,7 @@
     .watchButton span {
         display: none;
     }
-    .actionButton .returnLabel { display: inline; max-width: 65px; white-space: normal; text-align: center; font-size: 11px; }
+    .actionButton .returnLabel { display: inline; max-width: 65px; white-space: normal; text-align: center; font-size: 13px; }
     .rowActions {
         gap: 5px;
     }

@@ -169,7 +169,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
             >
                 {/* Development Mode Debug Info */}
                 {import.meta.env.VITE_NODE_ENV === "development" && (
-                    <div className="absolute top-[-60px] left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-2 py-1 rounded text-[10px] whitespace-nowrap z-50 border border-green-400">
+                    <div className="absolute top-[-60px] left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-2 py-1 rounded text-[12px] whitespace-nowrap z-50 border border-green-400">
                         <div className="text-green-400">UI Pos: {uiPosition ?? "N/A"}</div>
                         <div className="text-yellow-400">Seat: {index}</div>
                         <div className="text-gray-300">

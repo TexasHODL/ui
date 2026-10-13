@@ -76,7 +76,7 @@ const UpcomingSngModal: React.FC = () => {
                                 <div>
                                     <p className="text-white text-base font-semibold">{sng.name}</p>
                                     <p className="text-gray-400 text-xs mt-0.5">{formatUtcLabel(sng.nextStart)}</p>
-                                    <p className="text-gray-500 text-[11px]">Your time: {formatLocalLabel(sng.nextStart)}</p>
+                                    <p className="text-gray-500 text-[13px]">Your time: {formatLocalLabel(sng.nextStart)}</p>
                                 </div>
                                 <span className="shrink-0 bg-green-900/40 text-green-300 text-sm font-bold px-3 py-1 rounded-lg border border-green-700/50">
                                     {sng.buyIn}
@@ -85,7 +85,7 @@ const UpcomingSngModal: React.FC = () => {
 
                             <div className="flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-gray-500 text-[10px] uppercase tracking-wide">Starts in</p>
+                                    <p className="text-gray-500 text-[12px] uppercase tracking-wide">Starts in</p>
                                     <p className="text-blue-300 text-sm font-mono font-medium tabular-nums">
                                         {formatCountdown(msRemaining)}
                                     </p>

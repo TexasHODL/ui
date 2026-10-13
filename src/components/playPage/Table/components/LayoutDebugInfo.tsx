@@ -42,7 +42,7 @@ export const LayoutDebugInfo: React.FC<LayoutDebugInfoProps> = ({ viewportMode, 
                 <div className="text-green-400">
                     StartIndex: <span className="font-mono">{startIndex}</span>
                 </div>
-                <div className="text-gray-400 text-[10px] mt-1">
+                <div className="text-gray-400 text-[12px] mt-1">
                     {startIndex === 0 && "No rotation (Seat 1 at bottom)"}
                     {startIndex === 1 && "Rotated by 1 (Seat 2 at bottom)"}
                     {startIndex === 2 && "Rotated by 2 (Seat 3 at bottom)"}
@@ -52,19 +52,19 @@ export const LayoutDebugInfo: React.FC<LayoutDebugInfoProps> = ({ viewportMode, 
                 <div className="flex gap-1 mt-2">
                     <button
                         onClick={() => setStartIndex(prev => (prev + 1) % tableSize)}
-                        className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-[10px]"
+                        className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-[12px]"
                         title="Rotate left - increases startIndex"
                     >
                         ← Rotate
                     </button>
                     <button
                         onClick={() => setStartIndex(prev => (prev - 1 + tableSize) % tableSize)}
-                        className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-[10px]"
+                        className="bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-[12px]"
                         title="Rotate right - decreases startIndex"
                     >
                         Rotate →
                     </button>
-                    <button onClick={() => setStartIndex(0)} className="bg-red-700 hover:bg-red-600 text-white px-2 py-1 rounded text-[10px]">
+                    <button onClick={() => setStartIndex(0)} className="bg-red-700 hover:bg-red-600 text-white px-2 py-1 rounded text-[12px]">
                         Reset
                     </button>
                 </div>

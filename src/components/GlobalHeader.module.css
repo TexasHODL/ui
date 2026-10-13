@@ -36,11 +36,12 @@
 .brand small {
     display: block;
     font:
-        8px "DM Mono",
+        10px "DM Mono",
         monospace;
     color: #93849f;
     letter-spacing: 0.2em;
     margin-top: 4px;
+    font-weight: 700;
 }
 .primaryNav {
     display: flex;
@@ -50,7 +51,7 @@
     white-space: nowrap;
     padding: 9px 17px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 15px;
 }
 .navItemActive {
     color: #eddcfb;
@@ -58,6 +59,7 @@
 }
 .navItemInactive {
     color: #a398ad;
+    font-weight: 700;
 }
 .navItemInactive:hover {
     color: #f4e9ff;
@@ -80,7 +82,8 @@
     cursor: pointer;
     padding: 10px;
     color: #aa9eb4;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 700;
 }
 .more summary::-webkit-details-marker {
     display: none;
@@ -108,10 +111,11 @@
     color: #efd9ff;
 }
 .dropdown p {
-    font-size: 9px;
+    font-size: 11px;
     color: #9988a8;
     letter-spacing: 0.15em;
     padding: 6px 10px;
+    font-weight: 700;
 }
 .dropdown a {
     display: flex;
@@ -119,7 +123,7 @@
     align-items: center;
     padding: 9px 10px;
     color: #d2c5de;
-    font-size: 13px;
+    font-size: 15px;
     border-radius: 7px;
 }
 .dropdown a:hover {
@@ -127,7 +131,7 @@
     color: #fff;
 }
 .dropdown a svg {
-    font-size: 9px;
+    font-size: 11px;
     transform: rotate(45deg);
 }
 .network {
@@ -153,10 +157,10 @@
         height: 30px;
     }
     .brand {
-        font-size: 13px;
+        font-size: 15px;
     }
     .brand small {
-        font-size: 7px;
+        font-size: 9px;
     }
     .primaryNav {
         order: 3;

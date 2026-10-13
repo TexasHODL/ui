@@ -36,4 +36,5 @@
 .typePill {
     background-color: color-mix(in srgb, var(--brand-primary) 10%, transparent);
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
