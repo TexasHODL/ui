@@ -31,7 +31,7 @@
 }
 
 /* Preserve the larger +/- targets in the newer pill sliders. */
-.poker-action-dock :is(.pill-cap, .desktop-pill-cap) {
+.poker-action-dock button:is(.pill-cap, .desktop-pill-cap) {
   font-size: 22px;
 }
 
