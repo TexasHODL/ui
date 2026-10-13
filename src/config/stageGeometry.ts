@@ -215,22 +215,22 @@ export const SEAT_COORDS: Record<number, [number, number][]> = {
 // sit ON the straight rim, arc seats ~25px outside the end circles.
 const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
     2: [
-        [425, 1362],    // seat 1 bottom
-        [425, 238]      // seat 2 top
+        [425, 1300],    // hero
+        [425, 275]      // cards just below the mobile chrome
     ],
     4: [
-        [425, 1362],    // Seat 1 - bottom-center
-        [170, 800],     // Seat 2 - left-center
-        [425, 238],     // Seat 3 - top-center
-        [680, 800]      // Seat 4 - right-center
+        [425, 1300],
+        [175, 880],
+        [425, 275],
+        [675, 880]
     ],
     6: [
-        [425, 1362],    // seat 1 bottom
-        [170, 1075],    // seat 2 lower-left
-        [170, 525],     // seat 3 upper-left
-        [425, 238],     // seat 4 top
-        [680, 525],     // seat 5 upper-right
-        [680, 1075]     // seat 6 lower-right
+        [425, 1300],
+        [175, 1045],
+        [175, 555],
+        [425, 275],
+        [675, 555],
+        [675, 1045]
     ],
     // Angular distribution matters on the narrow felt: the first cut put the
     // arc seats at ±45°, which left the 12-o'clock region empty and read as two
@@ -238,15 +238,15 @@ const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
     // vertical on the end circles (r=250 + 25px outside), so the ring reads as
     // a ring. Hero stays alone at 6 o'clock.
     9: [
-        [425, 1362],    // Seat 1 - bottom-center (hero, alone on the bottom arc)
-        [256, 1267],    // Seat 2 - lower-left arc (~38° from vertical)
-        [170, 985],     // Seat 3 - left side, lower
-        [170, 615],     // Seat 4 - left side, upper
-        [300, 305],     // Seat 5 - upper-left arc (~27° from vertical)
-        [550, 305],     // Seat 6 - upper-right arc (~27° from vertical)
-        [680, 615],     // Seat 7 - right side, upper
-        [680, 985],     // Seat 8 - right side, lower
-        [594, 1267]     // Seat 9 - lower-right arc (~38° from vertical)
+        [425, 1300],    // hero remains independent of the turn banner
+        [188, 1182],    // lower arcs spread outward, clear of hero cards
+        [175, 932],
+        [175, 499],
+        [303, 275],
+        [547, 275],
+        [675, 499],
+        [675, 932],
+        [662, 1182]
     ]
 };
 
@@ -334,6 +334,8 @@ export type TableSize = 2 | 4 | 6 | 9;
 
 /** Push a seat position outward from table center by SEAT_SPREAD pixels */
 function applySpread(sx: number, sy: number): [number, number] {
+    // Portrait coordinates already include the approved rail/arc spacing.
+    if (getStageOrientation() === "portrait") return [sx, sy];
     if ((SEAT_SPREAD as number) === 0) return [sx, sy];
     const dims = getStageDims();
     const dx = sx - dims.centerX;
@@ -788,7 +790,7 @@ export const PLAYER_UI_PADDING: Record<ViewportMode, { x: number; top: number; b
     "desktop":          { x: 80, top: 90, bottom: 90 },    // symmetric → perfectly centered between header and footer
     "tablet":           { x: 80, top: 120, bottom: 90 },
     "mobile-landscape": { x: 40, top: 90, bottom: 90 },    // complete 140px seat at COMPONENT_SCALE, including timer
-    "mobile-portrait":  { x: 70, top: 90, bottom: 90 },    // symmetric — vertical stadium, hero at the bottom
+    "mobile-portrait":  { x: 110, top: 100, bottom: 135 }, // larger cards + absolute timer below the hero
 };
 
 export interface ContentBounds {

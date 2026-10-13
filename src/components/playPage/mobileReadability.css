@@ -1,0 +1,119 @@
+/* Screen-space portrait dimensions. The stage supplies the inverse zoom so
+   all players (including revealed opponents) share the approved card size.
+   On smaller/shorter phones the unit shrinks with available space. */
+[data-portrait-readable] .player-seat {
+    width: calc(96 * var(--portrait-unit));
+    height: calc(71 * var(--portrait-unit));
+    justify-content: flex-start;
+}
+[data-portrait-readable] .player-cards {
+    height: calc(56 * var(--portrait-unit));
+    flex: 0 0 calc(56 * var(--portrait-unit));
+}
+[data-portrait-readable] .hole-card-fan {
+    width: calc(74 * var(--portrait-unit));
+    height: calc(56 * var(--portrait-unit));
+    flex-basis: calc(74 * var(--portrait-unit));
+}
+[data-portrait-readable] .hole-card-fan-slot,
+[data-portrait-readable] .hole-card-fan-slot > img {
+    width: calc(39 * var(--portrait-unit));
+    height: calc(51 * var(--portrait-unit));
+    flex-basis: calc(39 * var(--portrait-unit));
+}
+[data-portrait-readable] .hole-card-fan-slot + .hole-card-fan-slot {
+    margin-left: calc(-8 * var(--portrait-unit));
+}
+[data-portrait-readable] .player-details {
+    width: calc(88 * var(--portrait-unit));
+    height: calc(25 * var(--portrait-unit));
+    flex: 0 0 calc(25 * var(--portrait-unit));
+    margin: calc(-10 * var(--portrait-unit)) auto 0;
+    z-index: 2;
+}
+[data-portrait-readable] .player-badge-position { top: 0; }
+[data-portrait-readable] .badge-container {
+    min-height: calc(25 * var(--portrait-unit));
+    padding: calc(2 * var(--portrait-unit)) calc(3 * var(--portrait-unit));
+}
+[data-portrait-readable] .badge-value {
+    font-size: calc(15 * var(--portrait-unit));
+    font-weight: 700;
+}
+[data-portrait-readable] .badge-number {
+    width: calc(19 * var(--portrait-unit));
+    height: calc(19 * var(--portrait-unit));
+    font-size: calc(12 * var(--portrait-unit));
+}
+/* The shell remains absolute: changing turns cannot re-centre a player. */
+[data-portrait-readable] .seat-banner-shell[data-banner-mode="timer"] {
+    margin-top: calc(-22 * var(--portrait-unit));
+    height: calc(38 * var(--portrait-unit));
+}
+[data-portrait-readable] [data-banner-mode="timer"] .seat-banner-box {
+    min-height: calc(38 * var(--portrait-unit));
+    height: calc(38 * var(--portrait-unit));
+    padding: 0 calc(6 * var(--portrait-unit));
+}
+[data-portrait-readable] [data-banner-mode="timer"] .animate-progress {
+    height: calc(5 * var(--portrait-unit));
+    margin-bottom: calc(5 * var(--portrait-unit));
+    gap: calc(5 * var(--portrait-unit));
+}
+[data-portrait-readable] [data-banner-mode="timer"] .animate-progress span {
+    font-size: calc(12 * var(--portrait-unit));
+    width: calc(15 * var(--portrait-unit));
+    margin-left: 0;
+}
+[data-portrait-readable] .community-card-row { gap: calc(3 * var(--portrait-unit)); }
+[data-portrait-readable] .community-card-row > div,
+[data-portrait-readable] .community-card-row .card {
+    width: calc(39 * var(--portrait-unit));
+    height: calc(51 * var(--portrait-unit));
+    flex-shrink: 0;
+}
+[data-portrait-readable] .community-board {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    bottom: auto;
+    margin-top: 0;
+    transform: translate(-50%, -50%);
+}
+[data-portrait-readable] .community-board[data-portrait-seats="4"] {
+    top: 20%;
+    transform: translateX(-50%);
+}
+[data-portrait-readable] .community-board[data-portrait-seats="6"] {
+    top: calc(50% - 12 * var(--portrait-unit));
+}
+[data-portrait-readable] .community-board[data-portrait-seats="9"] {
+    top: calc(50% - 38 * var(--portrait-unit));
+}
+[data-portrait-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
+[data-portrait-readable] .community-board[data-portrait-seats="9"] .community-pots {
+    position: absolute;
+    bottom: calc(100% + 12 * var(--portrait-unit));
+    white-space: nowrap;
+}
+/* Reserve the dock on every turn, but give its recovered height to the felt. */
+.table-play-row.is-portrait .mobile-action-slot {
+    flex-basis: calc(86px + env(safe-area-inset-bottom, 0px));
+    height: calc(86px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(86px + env(safe-area-inset-bottom, 0px));
+    max-height: calc(86px + env(safe-area-inset-bottom, 0px));
+    padding-top: 4px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+}
+.mobile-bet-portrait .mobile-actions-row > button,
+.mobile-bet-portrait .mobile-raise-anchor > button {
+    min-height: 40px;
+    padding: 4px;
+}
+.mobile-bet-portrait .mobile-presets-row button { min-height: 28px; }
+.mobile-bet-portrait .portrait-raise-slider {
+    left: auto;
+    right: 0;
+    transform: none;
+    height: min(230px, 40dvh);
+}

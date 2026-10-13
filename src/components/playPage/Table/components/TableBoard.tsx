@@ -119,10 +119,10 @@ export const TableBoard: React.FC<TableBoardProps> = ({
             </div>
 
             {/* Central Display Area */}
-            <div className="community-board relative z-[1] flex flex-col items-center justify-center -mt-8" data-portrait-four={isPortrait && tableSize === 4}>
+            <div className="community-board relative z-[1] flex flex-col items-center justify-center -mt-8" data-portrait-four={isPortrait && tableSize === 4} data-portrait-seats={isPortrait ? tableSize : undefined}>
                 {/* Hide pot display when sit-and-go is waiting for players */}
                 {!isSitAndGoWaitingForPlayers && (
-                    <>
+                    <div className="community-pots flex flex-col items-center">
                         {potDisplayValues.showTotalPot && (
                             <TotalPotDisplay amount={potDisplayValues.totalPot} isTournamentStyle={potDisplayValues.isTournamentStyle} />
                         )}
@@ -130,7 +130,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                         {potDisplayValues.showMainPot && (
                             <MainPotDisplay amount={potDisplayValues.mainPot} isTournamentStyle={potDisplayValues.isTournamentStyle} />
                         )}
-                    </>
+                    </div>
                 )}
 
                 {/* Community Cards */}
