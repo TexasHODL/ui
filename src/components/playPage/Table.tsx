@@ -1550,7 +1550,7 @@ const Table = React.memo(() => {
                 {/* Desktop and tablet keep the fixed footer. SNG payouts stay
                     here, where there is room beside the action bar (ui#693). */}
                 {!isReplayMode && !isCompactMobile && (
-                    <div className="w-full flex justify-center items-center z-[10] h-[160px] fixed bottom-0 left-0 right-0 bg-black bg-opacity-50 backdrop-blur-sm">
+                    <div className="table-action-bar w-full flex justify-center items-center z-[10] h-[160px] fixed bottom-0 left-0 right-0 backdrop-blur-sm">
                         <div className="w-full flex justify-center items-center h-full max-w-[700px]">
                             <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
                         </div>

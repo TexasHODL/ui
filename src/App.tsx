@@ -94,7 +94,7 @@ function AppContent() {
     }, []);
 
     return (
-        <div className="bg-[#070709] min-h-screen">
+        <div className="app-shell min-h-screen">
             <FaviconSetter />
             <GlobalHeader />
             <ProfileAvatarModal />

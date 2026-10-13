@@ -2,7 +2,7 @@
     width: 6px;
 }
 .scrollbar-custom::-webkit-scrollbar-thumb {
-    background: #655071;
+    background: var(--theme-line-strong, #655071);
     border-radius: 6px;
 }
 @keyframes gradient {
@@ -56,7 +56,7 @@
     align-items: stretch;
     justify-content: flex-start;
     min-height: calc(100dvh - 74px);
-    background: #09070e;
+    background: var(--theme-page, #09070e);
 }
 .lobby-ambient {
     position: absolute;
@@ -89,7 +89,7 @@
 }
 .lobby-transactions {
     margin-top: 16px;
-    border: 1px solid #ffffff12;
+    border: 1px solid var(--theme-line, #ffffff12);
     border-radius: 12px;
     overflow: hidden;
 }
@@ -98,7 +98,7 @@
     display: flex;
     justify-content: space-between;
     padding: 17px 20px;
-    color: #c2b3ce;
+    color: var(--theme-ink, #c2b3ce);
     font-size: 14px;
     list-style: none;
     font-weight: 700;
@@ -107,18 +107,18 @@
     display: none;
 }
 .lobby-transactions > summary span {
-    color: #ab6edc;
+    color: var(--theme-accent, #ab6edc);
 }
 .lobby-transactions .bg-gray-800,
 .lobby-transactions .bg-gray-900 {
-    background: #100b17;
+    background: var(--theme-surface, #100b17);
     border: 0;
 }
 .lobby-tip {
     padding: 26px 8px;
 }
 .lobby-tip > span {
-    color: #887795;
+    color: var(--theme-muted, #887795);
     font:
         10px "DM Mono",
         monospace;
@@ -127,27 +127,27 @@
 }
 .lobby-tip p {
     font-size: 17px;
-    color: #dfd2e8;
+    color: var(--theme-ink, #dfd2e8);
     margin-top: 14px;
 }
 .lobby-tip small {
     display: block;
-    color: #a394af;
+    color: var(--theme-muted, #a394af);
     font-size: 14px;
     line-height: 1.8;
     margin: 9px 0 18px;
     font-weight: 700;
 }
 .lobby-tip a {
-    color: #c292e6;
+    color: var(--theme-accent, #c292e6);
     font-size: 13px;
 }
 .dashboard-lobby input,
 .dashboard-lobby select {
-    color-scheme: dark;
+    color-scheme: var(--theme-scheme, dark);
 }
 .dashboard-lobby .lobby-transactions .text-gray-400 {
-    color: #aa9bb7;
+    color: var(--theme-muted, #aa9bb7);
     font-weight: 700;
 }
 @media (max-width: 1199px) {

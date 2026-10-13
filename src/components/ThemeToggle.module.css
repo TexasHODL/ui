@@ -1,0 +1,28 @@
+.group {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--theme-line, rgba(255, 255, 255, 0.12));
+    border-radius: 999px;
+    background: var(--theme-wash, rgba(177, 76, 255, 0.09));
+}
+.group button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--theme-muted, #a398ad);
+}
+.group button[aria-pressed="true"] {
+    background: var(--texas-gradient);
+    color: #1a0b2e;
+}
+.group button:focus-visible {
+    outline: 2px solid var(--theme-accent, #d5a4ff);
+    outline-offset: 2px;
+}

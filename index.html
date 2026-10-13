@@ -26,6 +26,14 @@
 
         <link rel="manifest" href="/manifest.json" />
         <title>%VITE_APP_TITLE%</title>
+        <script>
+            /* Apply a saved theme before first paint. Missing or any value other than "light" stays dark. */
+            try {
+                if (localStorage.getItem("texas-hodl-theme") === "light") {
+                    document.documentElement.setAttribute("data-theme", "light");
+                }
+            } catch (e) {}
+        </script>
     </head>
     <body>
         <noscript>You need to enable JavaScript to run this app.</noscript>

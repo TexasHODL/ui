@@ -1,13 +1,13 @@
 /* Shared appearance only: existing creation handlers and fee calculations stay in each page. */
 .creation-preview {
     padding: 14px;
-    background: #0b0810;
-    border: 1px solid #ffffff18;
+    background: var(--theme-surface, #0b0810);
+    border: 1px solid var(--theme-line, #ffffff18);
     border-radius: 10px;
 }
 .table-creation {
-    color: #eadff2;
-    --creation-border: #ffffff18;
+    color: var(--theme-ink, #eadff2);
+    --creation-border: var(--theme-line, #ffffff18);
 }
 .creation-overlay {
     position: fixed;
@@ -17,7 +17,7 @@
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: #050308ba;
+    background: var(--theme-surface, #050308ba);
     backdrop-filter: blur(8px);
 }
 .creation-modal {
@@ -25,12 +25,12 @@
     max-height: calc(100dvh - 40px);
     overflow-y: auto;
     padding: 28px;
-    background: #100c17;
-    border: 1px solid #be87e52e;
+    background: var(--theme-surface, #100c17);
+    border: 1px solid var(--theme-wash, #be87e52e);
     border-radius: 18px;
     box-shadow: 0 30px 100px #0009;
     scrollbar-width: thin;
-    scrollbar-color: #644378 #100c17;
+    scrollbar-color: var(--theme-line-strong, #644378) var(--theme-surface, #100c17);
 }
 .creation-layout {
     display: grid;
@@ -44,7 +44,7 @@
 .creation-review {
     min-width: 0;
     padding: 30px 24px;
-    background: #08050b4d;
+    background: var(--theme-surface, #08050b4d);
     border-left: 1px solid var(--creation-border);
     border-radius: 0 0 14px 0;
 }
@@ -53,28 +53,28 @@
 }
 .creation-section-heading > span {
     display: block;
-    color: #b78acb;
+    color: var(--theme-muted, #b78acb);
     font-size: 11px;
     letter-spacing: 0.14em;
     margin-bottom: 10px;
 }
 .creation-section-heading h2,
 .creation-section-heading h3 {
-    color: #f1e9f7;
+    color: var(--theme-ink, #f1e9f7);
     font-size: 22px;
     font-weight: 600;
     letter-spacing: -0.03em;
     margin: 0;
 }
 .creation-section-heading p {
-    color: #a99ab4;
+    color: var(--theme-muted, #a99ab4);
     font-size: 14px;
     line-height: 1.7;
     margin-top: 8px;
     font-weight: 700;
 }
 .table-creation label {
-    color: #ccbcd8;
+    color: var(--theme-ink, #ccbcd8);
     font-size: 14px;
     font-weight: 500;
     margin-bottom: 8px;
@@ -84,37 +84,37 @@
     min-width: 0;
     min-height: 44px;
     padding: 10px 12px;
-    border: 1px solid #ffffff20;
+    border: 1px solid var(--theme-line, #ffffff20);
     border-radius: 9px;
-    color: #eee4f5;
-    background: #0b0810;
+    color: var(--theme-ink, #eee4f5);
+    background: var(--theme-surface, #0b0810);
     font-size: 15px;
     box-shadow: none;
-    color-scheme: dark;
+    color-scheme: var(--theme-scheme, dark);
 }
 .table-creation :is(input, select):focus {
-    border-color: #b97de6;
-    outline: 2px solid #b97de630;
+    border-color: var(--theme-accent, #b97de6);
+    outline: 2px solid var(--theme-wash, #b97de630);
     outline-offset: 1px;
     box-shadow: none;
 }
 .table-creation :is(button, a, summary):focus-visible {
-    outline: 2px solid #d5a4ff;
+    outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 3px;
 }
 .table-creation input[type="checkbox"] {
-    accent-color: #b579df;
+    accent-color: var(--theme-accent, #b579df);
 }
 .table-creation option {
-    background: #100c17;
-    color: #eee4f5;
+    background: var(--theme-surface, #100c17);
+    color: var(--theme-ink, #eee4f5);
 }
 .table-creation input::placeholder {
-    color: #81718e;
+    color: var(--theme-muted, #81718e);
     font-weight: 700;
 }
 .table-creation :is(.text-gray-400, .text-gray-500) {
-    color: #9e8dac;
+    color: var(--theme-muted, #9e8dac);
     line-height: 1.65;
     font-weight: 700;
 }
@@ -149,13 +149,13 @@
 }
 .creation-balance span,
 .creation-total span {
-    color: #a99ab4;
+    color: var(--theme-muted, #a99ab4);
     font-weight: 700;
 }
 .creation-balance strong,
 .creation-total strong {
     font-weight: 500;
-    color: #e9d5f7;
+    color: var(--theme-ink, #e9d5f7);
     overflow-wrap: anywhere;
 }
 .creation-total {
@@ -173,15 +173,15 @@
 .table-creation .creation-notice {
     padding: 14px;
     margin: 16px 0 22px;
-    background: #f39a3310;
-    border: 1px solid #d8a05a32;
+    background: var(--theme-wash, #f39a3310);
+    border: 1px solid var(--theme-wash, #d8a05a32);
     border-radius: 10px;
-    color: #dfbb8d;
+    color: var(--theme-ink, #dfbb8d);
     font-size: 14px;
     line-height: 1.7;
 }
 .creation-notice :is(.text-red-300, .text-red-400, .text-red-400\/80) {
-    color: #dfbb8d;
+    color: var(--theme-ink, #dfbb8d);
 }
 .creation-notice svg {
     width: 16px;
@@ -190,11 +190,11 @@
 .creation-notice a {
     padding: 8px 0;
     background: transparent;
-    color: #e6c4fa;
+    color: var(--theme-ink, #e6c4fa);
     font-size: 14px;
 }
 .creation-notice a:hover {
-    color: #fff;
+    color: var(--theme-ink, #fff);
     background: transparent;
     text-decoration: underline;
 }
@@ -221,20 +221,20 @@
     filter: brightness(1.1);
 }
 .table-creation .creation-primary:disabled {
-    background: #251b30;
-    color: #93829e;
-    border-color: #ffffff0d;
+    background: var(--theme-surface, #251b30);
+    color: var(--theme-muted, #93829e);
+    border-color: var(--theme-line, #ffffff0d);
     cursor: not-allowed;
     font-weight: 700;
 }
 .table-creation .creation-secondary {
     background: transparent;
-    border-color: #ffffff24;
-    color: #cbb6db;
+    border-color: var(--theme-line, #ffffff24);
+    color: var(--theme-ink, #cbb6db);
 }
 .table-creation .creation-secondary:hover:not(:disabled) {
-    background: #b14cff12;
-    border-color: #b579df60;
+    background: var(--theme-wash, #b14cff12);
+    border-color: var(--theme-wash, #b579df60);
 }
 .table-creation .creation-secondary:disabled {
     opacity: 0.4;
@@ -243,23 +243,23 @@
 .table-creation :is(.creation-preset, .creation-preset-active) {
     min-height: 36px;
     padding: 8px 11px;
-    border: 1px solid #ffffff18;
+    border: 1px solid var(--theme-line, #ffffff18);
     border-radius: 8px;
     background: transparent;
-    color: #b9a6c8;
+    color: var(--theme-muted, #b9a6c8);
     font-weight: 700;
 }
 .table-creation .creation-preset-active {
-    border-color: #ba7fe766;
-    background: #b14cff20;
-    color: #ecd5fc;
+    border-color: var(--theme-wash, #ba7fe766);
+    background: var(--theme-wash, #b14cff20);
+    color: var(--theme-ink, #ecd5fc);
 }
 .table-creation .creation-preset:hover {
-    border-color: #ba7fe766;
-    color: #ecd5fc;
+    border-color: var(--theme-wash, #ba7fe766);
+    color: var(--theme-ink, #ecd5fc);
 }
 .creation-footnote {
-    color: #92809f;
+    color: var(--theme-muted, #92809f);
     font-size: 13px;
     line-height: 1.7;
     margin-top: 18px;

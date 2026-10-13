@@ -19,7 +19,7 @@ const SeedPhraseGrid = ({ mnemonic, hidden = false }: { mnemonic: string; hidden
             {words.map((word, index) => (
                 <div key={index} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-mono text-sm ${styles.seedWordCard}`}>
                     <span className={`text-xs ${styles.seedWordIndex}`}>{index + 1}.</span>
-                    <span className="text-white">{hidden ? "••••" : word}</span>
+                    <span className={styles.seedWord}>{hidden ? "••••" : word}</span>
                 </div>
             ))}
         </div>

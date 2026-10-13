@@ -1,13 +1,13 @@
 /* Shared with every account/explorer/tools page; never targets the live table. */
 .site-page {
-    --page-surface: #100c17;
-    --page-inset: #0c0911;
-    --page-border: #ffffff16;
+    --page-surface: var(--theme-surface, #100c17);
+    --page-inset: var(--theme-surface, #0c0911);
+    --page-border: var(--theme-line, #ffffff16);
     position: relative;
     min-height: calc(100dvh - 74px);
     padding: 44px 32px 64px;
-    background: #09070e;
-    color: #eee8f5;
+    background: var(--theme-page, #09070e);
+    color: var(--theme-ink, #eee8f5);
 }
 .site-page-ambient {
     position: absolute;
@@ -34,19 +34,19 @@
     gap: 12px;
     font-size: 12px;
     letter-spacing: 0.12em;
-    color: #9e87b0;
+    color: var(--theme-muted, #9e87b0);
     margin-bottom: 18px;
     font-weight: 700;
 }
 .page-heading-trail a {
-    color: #ba9dcf;
+    color: var(--theme-muted, #ba9dcf);
     letter-spacing: 0;
     font-size: 14px;
     padding: 4px 0;
     font-weight: 700;
 }
 .page-heading-trail a:hover {
-    color: #edd4ff;
+    color: var(--theme-ink, #edd4ff);
 }
 .page-heading-row {
     display: flex;
@@ -59,16 +59,16 @@
     font-weight: 600;
     line-height: 1.15;
     letter-spacing: -0.045em;
-    color: #f5f1fa;
+    color: var(--theme-ink, #f5f1fa);
     margin: 0;
 }
 .page-heading-dot {
-    color: #f02bc6;
+    color: var(--theme-hot, #f02bc6);
 }
 .page-heading p {
     margin: 12px 0 0;
     font-size: 16px;
-    color: #aaa0b5;
+    color: var(--theme-muted, #aaa0b5);
     line-height: 1.7;
     max-width: 680px;
     font-weight: 700;
@@ -85,15 +85,15 @@
     border-bottom: 2px solid transparent;
     font-size: 15px;
     white-space: nowrap;
-    color: #a89caf;
+    color: var(--theme-muted, #a89caf);
     font-weight: 700;
 }
 .page-section-tabs a:hover {
-    color: #eee0fc;
+    color: var(--theme-ink, #eee0fc);
 }
 .page-section-tabs a[aria-current="page"] {
-    border-color: #c176ff;
-    color: #f6efff;
+    border-color: var(--theme-accent, #c176ff);
+    color: var(--theme-ink, #f6efff);
 }
 .page-panel {
     background: var(--page-surface);
@@ -107,11 +107,11 @@
     padding: 20px;
     cursor: pointer;
     font-size: 16px;
-    color: #e2c9f3;
+    color: var(--theme-ink, #e2c9f3);
 }
 .page-create-table > summary > span {
     margin-left: 12px;
-    color: #9d8eaa;
+    color: var(--theme-muted, #9d8eaa);
     font-size: 13px;
     font-weight: 700;
 }
@@ -126,10 +126,10 @@
     font-size: 20px;
     font-weight: 500;
     margin-bottom: 10px;
-    color: #efe6f6;
+    color: var(--theme-ink, #efe6f6);
 }
 .page-empty p {
-    color: #a79ab2;
+    color: var(--theme-muted, #a79ab2);
     font-size: 15px;
     line-height: 1.8;
     max-width: 430px;
@@ -138,7 +138,7 @@
 }
 .page-empty-symbol {
     display: block;
-    color: #bf89e9;
+    color: var(--theme-accent, #bf89e9);
     font-size: 32px;
     margin-bottom: 16px;
 }
@@ -150,16 +150,16 @@
     gap: 8px;
     min-height: 42px;
     padding: 10px 16px;
-    border: 1px solid #ffffff24;
+    border: 1px solid var(--theme-line, #ffffff24);
     border-radius: 9px;
     font-size: 15px;
     font-weight: 500;
-    color: #ddcbe9;
-    background: #ffffff03;
+    color: var(--theme-ink, #ddcbe9);
+    background: var(--theme-line, #ffffff03);
 }
 .page-button:hover {
-    border-color: #bc85e4;
-    background: #b14cff12;
+    border-color: var(--theme-accent, #bc85e4);
+    background: var(--theme-wash, #b14cff12);
 }
 .page-button-primary {
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
@@ -171,7 +171,7 @@
     filter: brightness(1.1);
 }
 .site-page :is(a, button, input, select, textarea, summary):focus-visible {
-    outline: 2px solid #d5a4ff;
+    outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 3px;
 }
 .site-page :is(input, select, textarea) {
@@ -181,18 +181,18 @@
     min-height: 42px;
 }
 .site-page :is(input[type="checkbox"], input[type="radio"]) {
-    accent-color: #b14cff;
+    accent-color: var(--theme-accent, #b14cff);
 }
 .site-page th {
     font-size: 13px;
-    color: #a99ab5;
+    color: var(--theme-muted, #a99ab5);
     font-weight: 700;
 }
 .site-page td {
     font-size: 15px;
 }
 .site-page .page-index-status {
-    color: #95879f;
+    color: var(--theme-muted, #95879f);
     font-size: 13px;
     line-height: 1.7;
     margin: 18px 0;

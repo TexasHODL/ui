@@ -22,6 +22,18 @@ it("uses the bundled Texas HODL logo when no custom logo is configured", () => {
     expect(renderLogo()).toHaveAttribute("src", "/texas-hodl-logo.png");
 });
 
+it("uses the sharp mark in light mode when the bundled logo is showing", () => {
+    delete viteEnv.VITE_CLUB_LOGO;
+    document.documentElement.setAttribute("data-theme", "light");
+    try {
+        expect(renderLogo()).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
+        expect(screen.getByRole("button", { name: "Light theme" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Dark theme" })).toBeInTheDocument();
+    } finally {
+        document.documentElement.removeAttribute("data-theme");
+    }
+});
+
 it("preserves a configured logo until it fails, then loads the bundled asset", () => {
     viteEnv.VITE_CLUB_LOGO = "https://example.com/old-logo.png";
     const logo = renderLogo();

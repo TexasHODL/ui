@@ -1,8 +1,8 @@
 .panel {
     padding: 23px;
-    border: 1px solid #ffffff16;
+    border: 1px solid var(--theme-line, #ffffff16);
     border-radius: 16px;
-    background: linear-gradient(145deg, #21122bc9, #0d0912ed 70%);
+    background: linear-gradient(145deg, var(--theme-surface, #21122bc9), var(--theme-surface, #0d0912ed) 70%);
 }
 .heading {
     display: flex;
@@ -11,12 +11,12 @@
     margin-bottom: 26px;
 }
 .heading h2 {
-    color: #eee5f5;
+    color: var(--theme-ink, #eee5f5);
     font-size: 15px;
     font-weight: 500;
 }
 .heading button {
-    color: #a495b1;
+    color: var(--theme-muted, #a495b1);
     padding: 5px;
     font-weight: 700;
 }
@@ -39,9 +39,9 @@
 }
 .details {
     margin-top: 21px;
-    border-top: 1px solid #ffffff0f;
+    border-top: 1px solid var(--theme-line, #ffffff0f);
     padding-top: 14px;
-    color: #a998b6;
+    color: var(--theme-muted, #a998b6);
     font-size: 13px;
     font-weight: 700;
 }
@@ -60,7 +60,7 @@
     padding: 8px;
 }
 .description {
-    color: #aa9ab6;
+    color: var(--theme-muted, #aa9ab6);
     font-size: 15px;
     line-height: 1.7;
     margin-bottom: 20px;
@@ -69,10 +69,10 @@
 .importButton {
     width: 100%;
     padding: 14px;
-    color: #c6b1d7;
+    color: var(--theme-ink, #c6b1d7);
     font-size: 14px;
 }
 .panel :is(button, summary):focus-visible {
-    outline: 2px solid #d5a4ff;
+    outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 4px;
 }
