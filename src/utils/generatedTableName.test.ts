@@ -1,7 +1,7 @@
 import {
-    TABLE_NAME_ADJECTIVES,
-    TABLE_NAME_NOUNS,
-    TABLE_NAME_TERMS,
+    TABLE_NAME_POKER,
+    TABLE_NAME_CRYPTO,
+    TABLE_NAME_DEGEN,
     GENERATED_TABLE_NAME_LIST_SIZE,
     displayTableName,
     generateTableName
@@ -28,16 +28,40 @@ function assertWordList(words: readonly string[]): void {
     }
 }
 
+const POKER_EXAMPLES = ["river", "flop", "turn", "flush", "bluff", "ace", "kicker", "nuts", "allin", "showdown", "shortstack", "backraise"];
+const CRYPTO_EXAMPLES = ["satoshi", "hodl", "whale", "gas", "block", "wallet", "ledger", "lambo", "staking", "airdrop", "mempool", "halving"];
+const DEGEN_EXAMPLES = ["degen", "tilt", "yolo", "jackpot", "highroller", "parlay", "apes", "rekt", "moon", "sweat", "punt", "wager"];
+const OFF_THEME = ["pilot", "compass", "bison", "ember", "anchor", "bridge"];
+
 describe("generated table name lists", () => {
     it("keeps each list at 200 unique lowercase tokens", () => {
-        assertWordList(TABLE_NAME_ADJECTIVES);
-        assertWordList(TABLE_NAME_NOUNS);
-        assertWordList(TABLE_NAME_TERMS);
+        assertWordList(TABLE_NAME_POKER);
+        assertWordList(TABLE_NAME_CRYPTO);
+        assertWordList(TABLE_NAME_DEGEN);
     });
 
     it("does not repeat a word across lists", () => {
-        const all = [...TABLE_NAME_ADJECTIVES, ...TABLE_NAME_NOUNS, ...TABLE_NAME_TERMS];
+        const all = [...TABLE_NAME_POKER, ...TABLE_NAME_CRYPTO, ...TABLE_NAME_DEGEN];
         expect(new Set(all).size).toBe(all.length);
+    });
+
+    it("keeps the example words inside the matching theme", () => {
+        for (const word of POKER_EXAMPLES) {
+            expect(TABLE_NAME_POKER).toContain(word);
+        }
+        for (const word of CRYPTO_EXAMPLES) {
+            expect(TABLE_NAME_CRYPTO).toContain(word);
+        }
+        for (const word of DEGEN_EXAMPLES) {
+            expect(TABLE_NAME_DEGEN).toContain(word);
+        }
+    });
+
+    it("leaves out generic off-theme words", () => {
+        const all = new Set([...TABLE_NAME_POKER, ...TABLE_NAME_CRYPTO, ...TABLE_NAME_DEGEN]);
+        for (const word of OFF_THEME) {
+            expect(all.has(word)).toBe(false);
+        }
     });
 });
 
@@ -68,10 +92,10 @@ describe("generateTableName", () => {
             expect(name).not.toBe("Table " + tableId.slice(-6));
             const parts = name.split("-");
             expect([2, 3]).toContain(parts.length);
-            expect(TABLE_NAME_ADJECTIVES).toContain(parts[0]);
-            expect(TABLE_NAME_NOUNS).toContain(parts[1]);
+            expect(TABLE_NAME_POKER).toContain(parts[0]);
+            expect(TABLE_NAME_CRYPTO).toContain(parts[1]);
             if (parts.length === 3) {
-                expect(TABLE_NAME_TERMS).toContain(parts[2]);
+                expect(TABLE_NAME_DEGEN).toContain(parts[2]);
             }
             lengths.add(parts.length);
         }
