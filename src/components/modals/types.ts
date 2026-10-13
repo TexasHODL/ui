@@ -99,6 +99,19 @@ export interface TopUpModalProps extends BaseModalProps {
  */
 export type USDCDepositModalProps = ControlledModalWithSuccessProps;
 
+/** Sends USDC from the game wallet. Amount is micro-units when it is a string. */
+export type SendTokens = (recipient: string, amount: bigint | string, denom?: string) => Promise<string>;
+
+/**
+ * Props for SendUsdcModal
+ */
+export interface SendUsdcModalProps extends ControlledModalProps {
+    /** formatMicroAsUsdc(..., 6) display string. */
+    usdcBalance: string;
+    numericUsdcBalance: number;
+    sendTokens: SendTokens;
+}
+
 /**
  * Props for BuyInModal
  */
