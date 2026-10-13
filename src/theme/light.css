@@ -3,7 +3,7 @@
 html[data-theme="light"] {
     color-scheme: light;
     --theme-scheme: light;
-    --empty-seat-glass: rgba(255, 255, 255, 0.40);
+    --empty-seat-glass: rgba(255, 255, 255, 0.20);
     --empty-seat-glass-hover: rgba(255, 255, 255, 0.56);
     --theme-page: #fff6f8;
     --theme-surface: #ffffff;
