@@ -64,6 +64,10 @@ describe("Focused table header", () => {
         render(<TableHeader {...props} />);
         expect(screen.getByText("Friday game")).toBeInTheDocument();
         expect(screen.getByText("$0.01 / $0.02")).toBeInTheDocument();
+        const hand = screen.getByText("Hand #12");
+        const next = screen.getByText("Next: Seat 2");
+        expect(hand.parentElement).toBe(next.parentElement);
+        expect(hand.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
         const panels = screen.getByRole("group", { name: "Table panels" });
         expect(screen.getByRole("banner")).toContainElement(panels);
         expect(panels).toContainElement(screen.getByRole("button", { name: "History" }));

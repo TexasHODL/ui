@@ -285,7 +285,8 @@
     font-size: 12px;
     color: var(--theme-muted, #b897d0);
 }
-.stakes .handNumber {
+.stakes .handNumber,
+.stakes .nextToAct {
     border-left: 1px solid var(--theme-line, #ffffff17);
     padding-left: 14px;
     font-size: 13px;
