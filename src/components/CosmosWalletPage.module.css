@@ -119,17 +119,15 @@
 .dangerButton:hover {
     background: #ff719b0d;
 }
+.funding {
+    margin-bottom: 8px;
+}
 .walletActions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 14px;
-    margin: 25px 0;
-}
-.walletActions > span {
-    color: #9d8ca9;
-    font-size: 13px;
-    font-weight: 700;
+    margin: 14px 0 22px;
 }
 .disclosure {
     border-top: 1px solid #ffffff14;
@@ -229,7 +227,8 @@
     .addressRow {
         flex-wrap: wrap;
     }
-    .addressRow .secondaryButton {
+    .addressRow .secondaryButton,
+    .funding .walletActions .secondaryButton {
         width: 100%;
     }
     .disclosure summary > span {

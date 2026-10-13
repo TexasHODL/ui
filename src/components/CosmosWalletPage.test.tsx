@@ -27,6 +27,30 @@ jest.mock("../hooks/wallet/useUserWalletConnect", () => ({
     __esModule: true,
     default: () => ({ open: mockConnect, disconnect: jest.fn(), isConnected: false, address: null })
 }));
+jest.mock("../hooks/wallet/useCosmosWallet", () => ({
+    __esModule: true,
+    default: () => ({
+        address: mockAddress,
+        balance: mockAddress ? [{ denom: "usdc", amount: "25800000" }] : [],
+        isLoading: false,
+        error: null,
+        refreshBalance: () => mockRefreshBalance(),
+        importSeedPhrase: (mnemonic: string) => mockImportSeed(mnemonic),
+        sendTokens: (recipient: string, amount: string, denom?: string) => mockSendTokens(recipient, amount, denom)
+    })
+}));
+jest.mock("./modals/WithdrawalModal", () => ({
+    __esModule: true,
+    default: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div role="dialog" aria-label="Withdraw Funds" /> : null)
+}));
+jest.mock("./modals/USDCDepositModal", () => ({
+    __esModule: true,
+    default: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div role="dialog" aria-label="Deposit Funds" /> : null)
+}));
+
+const mockRefreshBalance = jest.fn();
+const mockSendTokens = jest.fn();
+const mockImportSeed = jest.fn();
 
 describe("Wallet page presentation", () => {
     beforeEach(() => {
@@ -46,6 +70,12 @@ describe("Wallet page presentation", () => {
         expect(screen.getByText("Remove from this device").closest("details")).not.toHaveAttribute("open");
         expect(mockClear).not.toHaveBeenCalled();
         expect(mockGenerate).not.toHaveBeenCalled();
+        expect(screen.getByText("$25.80")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Add funds" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /Back to the lobby/ })).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Withdraw" }));
+        expect(screen.getByRole("dialog", { name: "Withdraw Funds" })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: /Connect Web3 wallet/ }));
         expect(mockConnect).toHaveBeenCalledTimes(1);
     });
@@ -60,6 +90,8 @@ describe("Wallet page presentation", () => {
         fireEvent.click(screen.getByText("Import an existing wallet"));
         expect(screen.getByRole("button", { name: "Import wallet" })).toBeDisabled();
         expect(screen.getByLabelText("Recovery seed phrase")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Add funds" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Back to the lobby/ })).not.toBeInTheDocument();
         expect(mockGenerate).not.toHaveBeenCalled();
     });
 });

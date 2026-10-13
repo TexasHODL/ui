@@ -15,33 +15,9 @@
     font-size: 15px;
     font-weight: 500;
 }
-.heading button,
-.balanceLabel button {
+.heading button {
     color: #a495b1;
     padding: 5px;
-    font-weight: 700;
-}
-.balanceLabel {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: #a695b3;
-    font-size: 11px;
-    letter-spacing: 0.14em;
-    font-weight: 700;
-}
-.balance {
-    color: #f8f0ff;
-    font-size: 34px;
-    font-weight: 500;
-    letter-spacing: -0.04em;
-    margin: 6px 0 23px;
-    font-variant-numeric: tabular-nums;
-}
-.balance span {
-    font-size: 13px;
-    color: #b1a0bd;
-    letter-spacing: 0.03em;
     font-weight: 700;
 }
 .primaryButton {
@@ -60,30 +36,6 @@
 }
 .primaryButton:hover {
     filter: brightness(1.1);
-}
-.secondaryActions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 10px;
-}
-.secondaryActions button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 40px;
-    border: 1px solid #ffffff17;
-    border-radius: 8px;
-    color: #c5b7ce;
-    font-size: 13px;
-    font-weight: 700;
-}
-.secondaryActions svg {
-    font-size: 11px;
-}
-.secondaryActions button:hover {
-    background: #ffffff08;
 }
 .details {
     margin-top: 21px;

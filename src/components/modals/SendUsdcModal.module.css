@@ -1,0 +1,21 @@
+.modalPanel {
+    background-color: var(--ui-bg-dark);
+    border-color: color-mix(in srgb, var(--brand-primary) 20%, transparent);
+}
+
+.balanceBox {
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+}
+
+.brandPrimaryText {
+    color: var(--brand-primary);
+}
+
+.brandPrimaryBg {
+    background-color: var(--brand-primary);
+}
+
+.cancelGradientButton {
+    background: linear-gradient(135deg, var(--accent-danger) 0%, color-mix(in srgb, var(--accent-danger) 80%, transparent) 100%);
+}

@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateWallet as generateWalletSDK, createWalletFromMnemonic as createWalletSDK, getAddressFromMnemonic } from "@block52/poker-vm-sdk";
-import { setCosmosMnemonic, setCosmosAddress, getCosmosMnemonic, getCosmosAddress, clearCosmosData, isValidSeedPhrase } from "../utils/cosmos";
+import { setCosmosAddress, getCosmosMnemonic, getCosmosAddress, clearCosmosData, isValidSeedPhrase } from "../utils/cosmos";
 import { clearCosmosClient } from "../utils/cosmos/client";
+import { readUsdcBalance } from "../utils/usdcBalance";
 import { AnimatedBackground } from "./common/AnimatedBackground";
 import useUserWalletConnect from "../hooks/wallet/useUserWalletConnect";
+import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
+import GameWalletActions from "./GameWalletActions";
 import styles from "./CosmosWalletPage.module.css";
 import { PageHeading } from "./common/PageHeading";
 
@@ -25,6 +28,8 @@ const SeedPhraseGrid = ({ mnemonic, hidden = false }: { mnemonic: string; hidden
 
 const CosmosWalletPage = () => {
     const navigate = useNavigate();
+    const cosmosWallet = useCosmosWallet();
+    const gameWalletUsdc = useMemo(() => readUsdcBalance(cosmosWallet.balance), [cosmosWallet.balance]);
     const { open: openWeb3Wallet, disconnect: disconnectWeb3, isConnected: isWeb3Connected, address: web3Address } = useUserWalletConnect();
     const [isGenerating, setIsGenerating] = useState(false);
     const [importMnemonic, setImportMnemonic] = useState("");
@@ -72,9 +77,8 @@ const CosmosWalletPage = () => {
             const newMnemonic = walletInfo.mnemonic;
             const newAddress = walletInfo.address;
 
-            // Save to browser storage
-            setCosmosMnemonic(newMnemonic);
-            setCosmosAddress(newAddress);
+            // Persist through the same wallet hook the funding actions read, so balance and send see the new key.
+            await cosmosWallet.importSeedPhrase(newMnemonic);
 
             // Update local state for newly generated wallet display
             setShowMnemonic(true);
@@ -107,9 +111,8 @@ const CosmosWalletPage = () => {
 
             const importedAddress = walletInfo.address;
 
-            // Save to browser storage
-            setCosmosMnemonic(importMnemonic);
-            setCosmosAddress(importedAddress);
+            // Persist through the same wallet hook the funding actions read, so balance and send see the new key.
+            await cosmosWallet.importSeedPhrase(importMnemonic);
 
             // Update local state
             setImportMnemonic("");
@@ -176,20 +179,28 @@ const CosmosWalletPage = () => {
                                 {existingAddress ? (
                                     <>
                                         <p className={styles.description}>This is the wallet you use to take a seat and play.</p>
+                                        <div className={styles.funding}>
+                                            <GameWalletActions
+                                                variant="page"
+                                                usdcBalance={gameWalletUsdc.formatted}
+                                                numericUsdcBalance={gameWalletUsdc.numeric}
+                                                sendTokens={cosmosWallet.sendTokens}
+                                                onRefresh={cosmosWallet.refreshBalance}
+                                            />
+                                            <div className={styles.walletActions}>
+                                                <button type="button" onClick={() => navigate("/")} className={styles.secondaryButton}>
+                                                    Back to the lobby ↗
+                                                </button>
+                                            </div>
+                                        </div>
                                         <label htmlFor="game-wallet-address" className={styles.fieldLabel}>
                                             Wallet address
                                         </label>
                                         <div className={styles.addressRow}>
                                             <input id="game-wallet-address" value={existingAddress} readOnly className={styles.inputField} />
-                                            <button onClick={() => copyToClipboard(existingAddress, "Address")} className={styles.secondaryButton}>
+                                            <button type="button" onClick={() => copyToClipboard(existingAddress, "Address")} className={styles.secondaryButton}>
                                                 Copy address
                                             </button>
-                                        </div>
-                                        <div className={styles.walletActions}>
-                                            <button onClick={() => navigate("/")} className={styles.primaryButton}>
-                                                Back to the lobby ↗
-                                            </button>
-                                            <span>Add funds, send or withdraw from the lobby.</span>
                                         </div>
                                         {existingMnemonic && (
                                             <details className={styles.disclosure} open={showMnemonic || undefined}>

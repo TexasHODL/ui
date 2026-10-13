@@ -1,0 +1,107 @@
+.balanceLabel {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #a695b3;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+}
+.balanceLabel button {
+    color: #a495b1;
+    font-weight: 700;
+    padding: 5px;
+}
+.balanceLabel button:disabled {
+    opacity: 0.45;
+}
+.balance {
+    color: #f8f0ff;
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.04em;
+    margin: 6px 0 23px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+.balance span {
+    font-size: 13px;
+    color: #b1a0bd;
+    letter-spacing: 0.03em;
+    font-weight: 700;
+}
+.refreshError {
+    color: #aa9ab6;
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+.primaryButton {
+    width: 100%;
+    min-height: 44px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    border-radius: 9px;
+    color: #230c1d;
+    font-size: 15px;
+    font-weight: 700;
+    background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+    box-shadow: 0 8px 25px #f02bc614;
+}
+.primaryButton:hover {
+    filter: brightness(1.1);
+}
+.secondaryActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+}
+.secondaryActions button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    min-width: 0;
+    border: 1px solid #ffffff17;
+    border-radius: 8px;
+    color: #c5b7ce;
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+}
+.secondaryActions svg {
+    font-size: 11px;
+}
+.secondaryActions button:hover {
+    background: #ffffff08;
+}
+.pageButtons {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: stretch;
+}
+.pageButtons .primaryButton {
+    width: 100%;
+    min-width: 0;
+}
+.pageButtons .secondaryActions {
+    display: contents;
+    margin-top: 0;
+}
+@media (max-width: 600px) {
+    .balance {
+        font-size: 30px;
+    }
+    .pageButtons {
+        grid-template-columns: 1fr 1fr;
+    }
+    .pageButtons .primaryButton {
+        grid-column: 1 / -1;
+    }
+}
