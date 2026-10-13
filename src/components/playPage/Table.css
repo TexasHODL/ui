@@ -643,6 +643,11 @@
 .history-summary-heading { display: flex; justify-content: space-between; width: 100%; color: var(--theme-ink, #c9b2d9); font-size: 13px; line-height: 16px; }
 .history-summary-action { color: var(--theme-ink, #eee4f3); font-size: 14px; line-height: 18px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mobile-history-trigger { position: fixed; top: 80px; right: 12px; z-index: 30; border: 1px solid var(--theme-wash, #b995cf50); border-radius: 18px; background: var(--theme-surface, #100b1799); color: var(--theme-ink, #dcc7ed); padding: 9px 13px; font-size: 14px; }
+.sub-header .mobile-history-trigger { position: static; top: auto; right: auto; z-index: auto; margin-left: auto; flex: 0 0 auto; }
+.table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-history-panel[data-expanded="true"],
+.table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-settings-panel.action-log-open {
+    top: calc(var(--mobile-chrome-end, 104px) + 8px);
+}
 .table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; }
 .history-panel-control:focus-visible, .history-summary:focus-visible, .mobile-history-trigger:focus-visible { outline: 2px solid var(--theme-accent, #d5a4ff); outline-offset: -2px; }
 /* Four-seat portrait rings put both side players at the felt's midpoint.
@@ -668,7 +673,7 @@
 .settings-appearance select { padding: 7px 9px; margin-top: 6px; }
 @media (max-height: 600px) and (min-width: 600px) {
     .table-container #table-settings-panel.action-log-open { width: min(540px, calc(100vw - 32px)); right: 16px; }
-    .table-container[data-compact-mobile="true"] #table-settings-panel.action-log-open { top: 58px; }
+    .table-container[data-compact-mobile="true"] #table-settings-panel.action-log-open { top: calc(var(--mobile-chrome-end, 104px) + 8px); }
     .settings-content { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
     .settings-appearance, .settings-theme-row { grid-column: 1 / -1; }
 }

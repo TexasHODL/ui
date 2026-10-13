@@ -217,7 +217,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
 
             {/* Leave stays outside the betting controls and does not require opening the drawer. */}
             <div
-                className={`w-full flex flex-wrap items-center justify-center gap-x-3 px-2 min-h-[22px] sub-header z-[1] ${styles.subHeaderRoot}`}
+                className={`w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2 min-h-[22px] sub-header z-[1] ${styles.subHeaderRoot}`}
                 style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
             >
                 <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>
@@ -242,6 +242,18 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Hand #{handNumber}</span>
                 <ThemeToggle touch />
                 {!showLeaveTable && <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>}
+                {!openSidebar && (
+                    <button
+                        type="button"
+                        className="mobile-history-trigger"
+                        aria-label="Open hand history"
+                        aria-controls="table-history-panel"
+                        aria-expanded={false}
+                        onClick={onCloseSideBar}
+                    >
+                        ↶ History
+                    </button>
+                )}
                 {showLeaveTable && (
                     <button className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>
                         <RxExit aria-hidden="true" /> Leave table

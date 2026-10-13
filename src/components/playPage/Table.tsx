@@ -868,6 +868,20 @@ const Table = React.memo(() => {
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
     const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
+    const chromeObserver = useRef<ResizeObserver | null>(null);
+    const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
+        chromeObserver.current?.disconnect();
+        chromeObserver.current = null;
+        const root = banner?.closest(".table-container") as HTMLElement | null;
+        if (!banner || !root) return;
+        const apply = () => {
+            root.style.setProperty("--mobile-chrome-end", `${Math.ceil(banner.getBoundingClientRect().bottom)}px`);
+        };
+        apply();
+        const observer = new ResizeObserver(apply);
+        observer.observe(banner);
+        chromeObserver.current = observer;
+    }, []);
     const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom, tableOnly, isCompactMobile);
     useEffect(() => {
         if (!tableOnly) return;
@@ -1328,7 +1342,7 @@ const Table = React.memo(() => {
                 {/*//! HEADER - CASINO STYLE — phones (both orientations) get the
                 collapsed one-row header + hamburger */}
                 {tableOnly && <button className="restore-table-banner" aria-label="Restore table banners" title="Restore banners (Esc)" onClick={() => setTableOnly(false)}>↙ <span>Show controls</span></button>}
-                <div className="table-banner-wrap">
+                <div className="table-banner-wrap" ref={measureMobileChrome}>
                 {isCompactMobile ? (
                     <MobileTableHeader
                         onToggleFocus={() => setTableOnly(true)}
@@ -1563,7 +1577,7 @@ const Table = React.memo(() => {
                 )}
 
                 {/*//! ACTION LOG OVERLAY */}
-                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />
+                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} anchorInHeader={isCompactMobile && !tableOnly} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />
 
                 {/*//! SETTINGS OVERLAY */}
                 <TableSettingsSidebar isOpen={openSettings} tableStyle={tableStyle} onTableStyleChange={setTableStyle} onClose={onToggleSettings} />

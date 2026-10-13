@@ -17,6 +17,11 @@ jest.mock("../../../ActionsLog", () => ({
     </div>
 }));
 
+test("mobile header owns the launcher while the status strip is on screen", () => {
+    render(<TableSidebar isOpen={false} compact anchorInHeader onOpen={jest.fn()} />);
+    expect(screen.queryByRole("button", { name: "Open hand history" })).not.toBeInTheDocument();
+});
+
 test("mobile has a visible launcher and an explicit close control", () => {
     const close = jest.fn();
     const open = jest.fn();
