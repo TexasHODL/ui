@@ -157,7 +157,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     };
 
     return (
-        <div className="flex-shrink-0">
+        <div className="mobile-table-chrome flex-shrink-0">
             {/* Single 44px row: table name · balance · fullscreen · hamburger.
                 viewport-fit=cover extends the page under the Dynamic Island and,
                 in landscape, under the notch on one side — the safe-area paddings

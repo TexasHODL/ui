@@ -7,6 +7,7 @@
 
 import React from "react";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
+import { ThemeToggle } from "../../../ThemeToggle";
 import type { TableStyleOption } from "./MobileTableHeader";
 
 interface ToggleRowProps {
@@ -76,7 +77,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                 switches in the DOM — focusable, screen-reader reachable, and rendering
                 off-canvas past the viewport's right edge on phones. */}
             {isOpen && (
-                <div className="table-panel-surface h-full bg-[#0b0b10] border-l border-white/10 flex flex-col overflow-hidden">
+                <div className="table-panel-surface table-settings-body h-full flex flex-col overflow-hidden">
                     {/* Header */}
                     <div className="settings-heading">
                         <span className="text-white font-semibold text-sm">Settings</span>
@@ -89,6 +90,9 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
 
                     {/* Toggle list */}
                     <div className="settings-content">
+                        <div className="settings-theme-row">
+                            <ThemeToggle />
+                        </div>
                         {tableStyle && onTableStyleChange && (
                             <label className="settings-appearance">
                                 Table appearance

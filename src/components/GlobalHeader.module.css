@@ -2,8 +2,8 @@
     position: sticky;
     top: 0;
     z-index: 40;
-    background: #0b0812ed;
-    border-bottom: 1px solid #ffffff12;
+    background: var(--theme-surface, #0b0812ed);
+    border-bottom: 1px solid var(--theme-line, #ffffff12);
     backdrop-filter: blur(18px);
 }
 .inner {
@@ -18,7 +18,7 @@
     display: flex;
     align-items: center;
     gap: 11px;
-    color: #f9f2ff;
+    color: var(--theme-ink, #f9f2ff);
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.035em;
@@ -31,14 +31,14 @@
 }
 .brand b {
     font-weight: 600;
-    color: #c591ef;
+    color: var(--theme-accent, #c591ef);
 }
 .brand small {
     display: block;
     font:
         10px "DM Mono",
         monospace;
-    color: #93849f;
+    color: var(--theme-muted, #93849f);
     letter-spacing: 0.2em;
     margin-top: 4px;
     font-weight: 700;
@@ -54,16 +54,16 @@
     font-size: 15px;
 }
 .navItemActive {
-    color: #eddcfb;
-    background: #b14cff18;
+    color: var(--theme-ink, #eddcfb);
+    background: var(--theme-wash, #b14cff18);
 }
 .navItemInactive {
-    color: #a398ad;
+    color: var(--theme-muted, #a398ad);
     font-weight: 700;
 }
 .navItemInactive:hover {
-    color: #f4e9ff;
-    background: #ffffff05;
+    color: var(--theme-ink, #f4e9ff);
+    background: var(--theme-line, #ffffff05);
 }
 .utilities {
     display: flex;
@@ -81,7 +81,7 @@
     align-items: center;
     cursor: pointer;
     padding: 10px;
-    color: #aa9eb4;
+    color: var(--theme-muted, #aa9eb4);
     font-size: 14px;
     font-weight: 700;
 }
@@ -93,26 +93,26 @@
     right: 0;
     top: calc(100% + 18px);
     min-width: 240px;
-    border: 1px solid #ffffff20;
+    border: 1px solid var(--theme-line, #ffffff20);
     border-radius: 14px;
-    background: #15101e;
+    background: var(--theme-surface, #15101e);
     padding: 12px;
     box-shadow: 0 20px 60px #000a;
     max-height: calc(100dvh - 110px);
     overflow-y: auto;
 }
 .menuGroup + .menuGroup {
-    border-top: 1px solid #ffffff0d;
+    border-top: 1px solid var(--theme-line, #ffffff0d);
     margin-top: 7px;
     padding-top: 7px;
 }
 .dropdown a[aria-current="page"] {
-    background: #b14cff18;
-    color: #efd9ff;
+    background: var(--theme-wash, #b14cff18);
+    color: var(--theme-ink, #efd9ff);
 }
 .dropdown p {
     font-size: 11px;
-    color: #9988a8;
+    color: var(--theme-muted, #9988a8);
     letter-spacing: 0.15em;
     padding: 6px 10px;
     font-weight: 700;
@@ -122,20 +122,20 @@
     justify-content: space-between;
     align-items: center;
     padding: 9px 10px;
-    color: #d2c5de;
+    color: var(--theme-ink, #d2c5de);
     font-size: 15px;
     border-radius: 7px;
 }
 .dropdown a:hover {
-    background: #b14cff12;
-    color: #fff;
+    background: var(--theme-wash, #b14cff12);
+    color: var(--theme-ink, #fff);
 }
 .dropdown a svg {
     font-size: 11px;
     transform: rotate(45deg);
 }
 .network {
-    border-top: 1px solid #ffffff12;
+    border-top: 1px solid var(--theme-line, #ffffff12);
     margin-top: 10px;
     padding-top: 10px;
 }
@@ -143,7 +143,7 @@
     width: 100%;
 }
 .headerShell :is(a, summary, button):focus-visible {
-    outline: 2px solid #d5a4ff;
+    outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 3px;
 }
 @media (max-width: 700px) {
