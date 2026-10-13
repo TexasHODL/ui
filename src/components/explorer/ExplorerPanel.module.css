@@ -1,11 +1,11 @@
 .panel {
-    background: #0e0a13d9;
-    border: 1px solid #ffffff16;
+    background: var(--theme-surface, #0e0a13d9);
+    border: 1px solid var(--theme-line, #ffffff16);
     border-radius: 14px;
 }
 
 .panelHeader {
-    border-bottom: 1px solid #ffffff12;
+    border-bottom: 1px solid var(--theme-line, #ffffff12);
     padding: 12px 20px;
     min-height: 54px;
 }
@@ -15,8 +15,9 @@
 }
 
 .searchInput {
-    background: #100b18;
-    border: 1px solid #ffffff20;
+    background: var(--theme-surface, #100b18);
+    color: var(--theme-ink, #ffffff);
+    border: 1px solid var(--theme-line, #ffffff20);
 }
 
 .searchButton {

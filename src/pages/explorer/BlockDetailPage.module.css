@@ -1,6 +1,6 @@
 .containerCard {
-    background-color: #100c17;
-    border: 1px solid #ffffff16;
+    background-color: var(--theme-surface, #100c17);
+    border: 1px solid var(--theme-line, #ffffff16);
 }
 
 .headerCard {
@@ -13,7 +13,7 @@
 }
 
 .brandText {
-    color: #c296e6;
+    color: var(--theme-accent, #c296e6);
 }
 
 .brandTextHover:hover {

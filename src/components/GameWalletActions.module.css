@@ -2,13 +2,13 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #a695b3;
+    color: var(--theme-muted, #a695b3);
     font-weight: 700;
     font-size: 11px;
     letter-spacing: 0.14em;
 }
 .balanceLabel button {
-    color: #a495b1;
+    color: var(--theme-muted, #a495b1);
     font-weight: 700;
     padding: 5px;
 }
@@ -16,7 +16,7 @@
     opacity: 0.45;
 }
 .balance {
-    color: #f8f0ff;
+    color: var(--theme-ink, #f8f0ff);
     font-size: 34px;
     font-weight: 500;
     letter-spacing: -0.04em;
@@ -26,12 +26,12 @@
 }
 .balance span {
     font-size: 13px;
-    color: #b1a0bd;
+    color: var(--theme-muted, #b1a0bd);
     letter-spacing: 0.03em;
     font-weight: 700;
 }
 .refreshError {
-    color: #aa9ab6;
+    color: var(--theme-muted, #aa9ab6);
     font-weight: 700;
     font-size: 15px;
     line-height: 1.7;
@@ -67,9 +67,9 @@
     gap: 8px;
     min-height: 40px;
     min-width: 0;
-    border: 1px solid #ffffff17;
+    border: 1px solid var(--theme-line, #ffffff17);
     border-radius: 8px;
-    color: #c5b7ce;
+    color: var(--theme-muted, #c5b7ce);
     font-weight: 700;
     font-size: 13px;
     white-space: nowrap;
@@ -78,7 +78,7 @@
     font-size: 11px;
 }
 .secondaryActions button:hover {
-    background: #ffffff08;
+    background: var(--theme-wash, #ffffff08);
 }
 .pageButtons {
     display: grid;

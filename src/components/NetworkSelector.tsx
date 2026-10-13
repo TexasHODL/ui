@@ -3,7 +3,7 @@ import { useNetwork } from "../context/NetworkContext";
 import { hasElements } from "../utils/guards";
 import styles from "./NetworkSelector.module.css";
 
-export const NetworkSelector: React.FC = () => {
+export const NetworkSelector: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
     const { currentNetwork, setNetwork, availableNetworks, discoveredNetworks } = useNetwork();
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -31,6 +31,8 @@ export const NetworkSelector: React.FC = () => {
             {/* min-h-[44px]: minimum touch-target size (the header rows that host
                 this are ≥44px tall, so the extra height changes nothing visually) */}
             <button
+                aria-label="Select network"
+                aria-expanded={isOpen}
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center gap-2 px-4 py-2 min-h-[44px] rounded-lg transition-all duration-200 ${styles.dropdownButton}`}
             >
@@ -61,7 +63,7 @@ export const NetworkSelector: React.FC = () => {
             {/* Dropdown Menu */}
             {isOpen && (
                 <div
-                    className={`absolute top-full mt-2 right-0 min-w-[280px] rounded-lg shadow-2xl overflow-hidden z-[10001] ${styles.dropdownMenu}`}
+                    className={`rounded-lg shadow-2xl z-[10001] ${styles.dropdownMenu} ${embedded ? styles.embeddedMenu : styles.floatingMenu}`}
                 >
                     {/* Preset Networks */}
                     {availableNetworks.map((network, index) => {

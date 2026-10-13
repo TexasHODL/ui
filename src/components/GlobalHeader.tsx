@@ -93,7 +93,7 @@ export const GlobalHeader: React.FC = () => {
                             </a>
                             <div className={styles.network}>
                                 <p>CONNECTED NETWORK</p>
-                                <NetworkSelector />
+                                <NetworkSelector embedded />
                             </div>
                         </div>
                     </details>
