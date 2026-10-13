@@ -1,6 +1,19 @@
 /* App-owned dialogs share the lobby palette, independent of table appearance.
    Keep semantic success/danger colours; never recolour payment QR codes/images.
    Legacy utility aliases below are deliberately scoped to these dialog roots. */
+.hodl-modal.hodl-modal[data-viewport-fit="true"] {
+    max-height: none !important;
+    overflow: visible !important;
+    flex-shrink: 0;
+}
+@media (max-width: 700px), (max-height: 500px) and (pointer: coarse) {
+    .finish-seats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+    .finish-seat { min-width: 0; padding: 6px 0; }
+    .finish-recap { margin: 10px 0; }
+    .finish-recap-note { font-size: 12px; margin: 6px 0; }
+    .finish-hole-cards { margin-top: 6px; }
+    .finish-board-cards { max-width: 240px; margin: 8px 0; }
+}
 .sng-result-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1000; width: min(380px, calc(100vw - 24px)); }
 .hodl-modal.sng-result-panel { padding: 16px; max-height: calc(100dvh - 24px - env(safe-area-inset-top)); }
 .sng-result-panel .hodl-modal-header { margin-bottom: 12px; }
