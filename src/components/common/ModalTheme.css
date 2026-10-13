@@ -6,16 +6,16 @@
 .sng-result-panel .hodl-modal-header { margin-bottom: 12px; }
 .sng-result-panel .hodl-modal-title { font-size: 18px; }
 .sng-result-panel:not(.is-expanded) .hodl-modal-logo { width: 56px; height: auto; }
-.finish-toggle { width: 100%; min-height: 44px; border-radius: 10px; padding: 8px 12px; font-size: 13px; }
+.finish-toggle { width: 100%; min-height: 44px; border-radius: 10px; padding: 8px 12px; font-size: 15px; }
 .finish-recap { margin: 20px 0; }
 .finish-recap h3 { font-size: 15px; font-weight: 600; }
-.finish-recap-note { font-size: 12px; color: #b2a4c0; margin: 10px 0; }
+.finish-recap-note { font-size: 14px; color: #b2a4c0; margin: 10px 0; font-weight: 700; }
 .finish-board-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; width: 100%; max-width: 324px; margin: 12px 0; }
 .finish-board-cards .finish-card-image { display: block; width: 100%; height: auto; aspect-ratio: 3 / 4; border-radius: 5px; box-shadow: 0 3px 7px #0005; }
 .finish-hole-cards { margin: 14px 8px 0; }
 .finish-recap img.finish-card-winning { transform: translateY(-5px); filter: drop-shadow(0 0 5px #ffd761); }
 .finish-recap img.finish-card-muted { opacity: .4; }
-.finish-seat { padding: 10px 0; border-bottom: 1px solid #34263f; font-size: 12px; }
+.finish-seat { padding: 10px 0; border-bottom: 1px solid #34263f; font-size: 14px; }
 .finish-seat > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .finish-winner { color: #79e7aa; }
 @media (max-width: 600px) {
@@ -65,7 +65,7 @@
     overflow-wrap: anywhere;
 }
 .hodl-modal :is(h2, h3) { color: #f2edf7; text-shadow: none; letter-spacing: -.025em; }
-.hodl-modal :is(.text-gray-300, .text-gray-400, .text-gray-500) { color: #b2a4c0; }
+.hodl-modal :is(.text-gray-300, .text-gray-400, .text-gray-500) { color: #b2a4c0; font-weight: 700; }
 .hodl-modal :is(.text-blue-300, .text-blue-400, .text-blue-400\/80, .text-blue-500) { color: #cba1eb; }
 .hodl-modal :is(.bg-gray-600, .bg-gray-700, .bg-gray-800, .bg-gray-900,
     .bg-gray-700\/80, .bg-gray-800\/50, .bg-gray-900\/50, .bg-gray-600\/30) { background: #191222; }
@@ -93,7 +93,7 @@
     background: var(--texas-gradient, linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6));
     color: #180c1a;
     border: 1px solid transparent;
-    font-weight: 600;
+    font-weight: 700;
 }
 .hodl-modal .hodl-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .hodl-modal .hodl-secondary {
@@ -102,18 +102,18 @@
     border: 1px solid #48394f;
 }
 .hodl-modal .hodl-secondary:hover:not(:disabled) { background: #be87e512; }
-.hodl-modal .hodl-primary:disabled { background: #34293f; color: #b2a4c0; opacity: 1; }
-.modal-kicker { color: #be87e5; font-size: 10px; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 12px; }
+.hodl-modal .hodl-primary:disabled { background: #34293f; color: #b2a4c0; opacity: 1; font-weight: 700; }
+.modal-kicker { color: #be87e5; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 12px; }
 .modal-rule { height: 1px; background: #be87e526; margin-bottom: 20px; }
-.modal-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 10px; color: #b2a4c0; font-size: 24px; z-index: 1; }
+.modal-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 10px; color: #b2a4c0; font-size: 24px; z-index: 1; font-weight: 700; }
 .modal-close:hover { background: #be87e512; color: #f2edf7; }
 .hodl-modal-header { position: relative; text-align: left; margin-bottom: 20px; min-width: 0; }
 .hodl-modal-brand-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-.hodl-modal-eyebrow { flex: 1; min-width: 0; color: #be87e5; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
+.hodl-modal-eyebrow { flex: 1; min-width: 0; color: #be87e5; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; }
 .hodl-modal-logo { display: block; flex: 0 0 auto; width: 78px; height: 42px; object-fit: contain; }
 .hodl-modal-header .hodl-modal-title { margin: 0; color: #f2edf7; font-size: 24px; font-weight: 700; line-height: 1.25; letter-spacing: -.025em; text-align: left; white-space: normal; overflow-wrap: anywhere; }
-.hodl-modal-header .hodl-modal-subtitle { margin: 8px 0 0; color: #b2a4c0; font-size: 13px; line-height: 1.5; text-align: left; }
-.hodl-modal-dismiss { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 10px; color: #b2a4c0; font-size: 24px; }
+.hodl-modal-header .hodl-modal-subtitle { margin: 8px 0 0; color: #b2a4c0; font-size: 15px; line-height: 1.5; text-align: left; font-weight: 700; }
+.hodl-modal-dismiss { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 10px; color: #b2a4c0; font-size: 24px; font-weight: 700; }
 .hodl-modal-dismiss:hover { background: #be87e512; color: #f2edf7; }
 .hodl-modal-dismiss:focus-visible { outline: 2px solid #d1a4f1; outline-offset: 2px; }
 @media (max-width: 480px), (max-height: 500px) {
@@ -122,19 +122,19 @@
 }
 .tournament-entry { width: 420px; padding: 24px; }
 .tournament-entry h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
-.tournament-subtitle { color: #b2a4c0; font-size: 13px; margin-bottom: 20px; }
+.tournament-subtitle { color: #b2a4c0; font-size: 15px; margin-bottom: 20px; font-weight: 700; }
 .tournament-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
 .tournament-facts > div { background: #0c0911; border: 1px solid #be87e521; border-radius: 10px; padding: 12px; }
-.tournament-facts dt { font-size: 11px; color: #b2a4c0; margin-bottom: 4px; }
+.tournament-facts dt { font-size: 13px; color: #b2a4c0; margin-bottom: 4px; font-weight: 700; }
 .tournament-facts dd { font-size: 15px; font-weight: 600; }
 .tournament-costs { border-block: 1px solid #be87e526; padding-block: 12px; margin-bottom: 16px; }
-.tournament-costs > div, .tournament-balance { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; margin-block: 6px; }
-.tournament-costs dt, .tournament-balance > span:first-child { color: #b2a4c0; }
+.tournament-costs > div, .tournament-balance { display: flex; justify-content: space-between; gap: 16px; font-size: 15px; margin-block: 6px; }
+.tournament-costs dt, .tournament-balance > span:first-child { color: #b2a4c0; font-weight: 700; }
 .tournament-costs .entry-total { border-top: 1px solid #be87e526; padding-top: 10px; margin-top: 10px; font-weight: 600; }
-.tournament-entry > button { width: 100%; min-height: 44px; border-radius: 10px; margin-top: 16px; font-size: 14px; }
-.tournament-note { color: #b2a4c0; text-align: center; font-size: 11px; margin-top: 16px; line-height: 1.6; }
-.tournament-note small { display: block; font-size: 10px; margin-top: 4px; }
-.tournament-error { padding: 10px; border: 1px solid #fb718544; border-radius: 10px; background: #fb718510; color: #fda4af; font-size: 13px; margin-top: 12px; }
+.tournament-entry > button { width: 100%; min-height: 44px; border-radius: 10px; margin-top: 16px; font-size: 16px; }
+.tournament-note { color: #b2a4c0; text-align: center; font-size: 13px; margin-top: 16px; line-height: 1.6; font-weight: 700; }
+.tournament-note small { display: block; font-size: 12px; margin-top: 4px; }
+.tournament-error { padding: 10px; border: 1px solid #fb718544; border-radius: 10px; background: #fb718510; color: #fda4af; font-size: 15px; margin-top: 12px; }
 @media (max-width: 480px), (max-height: 500px) {
     .hodl-modal.hodl-modal:not(.modal-inset-content) { padding: 20px; }
     .hodl-modal :is(h2, h3) { font-size: 20px; }

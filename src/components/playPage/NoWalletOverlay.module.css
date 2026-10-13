@@ -34,6 +34,7 @@
 
 .ghostButton {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .ghostButton:hover {
@@ -47,10 +48,12 @@
 
 .seedWordIndex {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .textSecondary {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .inputField {
@@ -68,6 +71,7 @@
     background-color: var(--ui-bg-medium);
     border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .copyButton:hover {

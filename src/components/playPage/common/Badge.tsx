@@ -158,7 +158,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                             WINS
                         </span>
                         {winnerHandDescription && (
-                            <span className="font-semibold text-[0.65rem] uppercase tracking-wider leading-tight opacity-95">
+                            <span className="font-semibold text-[0.775rem] uppercase tracking-wider leading-tight opacity-95">
                                 {winnerHandDescription}
                             </span>
                         )}

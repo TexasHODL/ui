@@ -192,7 +192,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         ) : (
                             <span className="text-white font-medium text-xs whitespace-nowrap">
                                 ${balanceFormatted}
-                                <span className="text-[9px] ml-1 text-gray-400">USDC</span>
+                                <span className="text-[11px] ml-1 text-gray-400">USDC</span>
                             </span>
                         )}
                     </button>
@@ -220,7 +220,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 className={`w-full flex items-center justify-center gap-3 px-2 h-[22px] sub-header z-[1] ${styles.subHeaderRoot}`}
                 style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
             >
-                <span className={`text-[11px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>
+                <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>
                     {blindLevel.isActive ? (
                         <>
                             {blindLevel.level !== undefined && `L${blindLevel.level + 1} `}
@@ -239,8 +239,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         `$${formattedValues.smallBlindFormatted} / $${formattedValues.bigBlindFormatted}`
                     )}
                 </span>
-                <span className={`text-[11px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Hand #{handNumber}</span>
-                <span className={`text-[11px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>
+                <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Hand #{handNumber}</span>
+                <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>
             </div>
 
             {/* Hamburger drawer */}

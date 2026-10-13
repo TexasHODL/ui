@@ -114,19 +114,19 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                     <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
-                        <p className="text-gray-500 text-[10px] uppercase">Runners</p>
+                        <p className="text-gray-500 text-[12px] uppercase">Runners</p>
                         <p className="text-green-400 text-sm font-medium">{preview.runners}</p>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
-                        <p className="text-gray-500 text-[10px] uppercase">Starting Stack</p>
+                        <p className="text-gray-500 text-[12px] uppercase">Starting Stack</p>
                         <p className="text-green-400 text-sm font-medium">{preview.startingStack.toLocaleString()}</p>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
-                        <p className="text-gray-500 text-[10px] uppercase">Buy-In</p>
+                        <p className="text-gray-500 text-[12px] uppercase">Buy-In</p>
                         <p className="text-green-400 text-sm font-medium">${formatUsd(preview.buyIn)}</p>
                     </div>
                     <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
-                        <p className="text-gray-500 text-[10px] uppercase">Chips In Play</p>
+                        <p className="text-gray-500 text-[12px] uppercase">Chips In Play</p>
                         <p className="text-green-400 text-sm font-medium">{preview.totalChipsInPlay.toLocaleString()}</p>
                     </div>
                 </div>
@@ -152,7 +152,7 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
                             ))}
                         </tbody>
                     </table>
-                    <p className="text-gray-500 text-[10px] mt-2">* Blinds double each level. Level 1 is highlighted.</p>
+                    <p className="text-gray-500 text-[12px] mt-2">* Blinds double each level. Level 1 is highlighted.</p>
                 </div>
             </div>
 

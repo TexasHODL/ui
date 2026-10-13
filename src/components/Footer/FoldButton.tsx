@@ -19,7 +19,7 @@ export const FoldButton: React.FC<FoldButtonProps> = ({
                 className
                     ? className
                     : isMobileLandscape
-                        ? "px-2 py-0.5 text-[10px]"
+                        ? "px-2 py-0.5 text-[12px]"
                         : "px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm"
             }`}
             onClick={onClick}

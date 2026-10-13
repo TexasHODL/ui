@@ -126,7 +126,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
         >
             {/* Min/Max text - placed first in mobile landscape */}
             {isMobileLandscape && (
-                <div className="flex items-center text-[9px] text-gray-400 whitespace-nowrap">
+                <div className="flex items-center text-[11px] text-gray-400 whitespace-nowrap">
                     <span>Min:{formatDisplayAmount(min, isTournament)}</span>
                     <span className="mx-1">/</span>
                     <span>Max:{formattedMax}</span>
@@ -137,7 +137,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
             <button
                 className={
                     isMobileLandscape
-                        ? "btn-slider py-0.5 px-1.5 rounded border text-[10px] transition-all duration-200"
+                        ? "btn-slider py-0.5 px-1.5 rounded border text-[12px] transition-all duration-200"
                         : "btn-slider py-1 px-2 lg:px-4 rounded-lg border text-xs lg:text-sm transition-all duration-200"
                 }
                 onClick={onDecrement}
@@ -169,7 +169,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
             <button
                 className={
                     isMobileLandscape
-                        ? "btn-slider py-0.5 px-1.5 rounded border text-[10px] transition-all duration-200"
+                        ? "btn-slider py-0.5 px-1.5 rounded border text-[12px] transition-all duration-200"
                         : "btn-slider py-1 px-2 lg:px-4 rounded-lg border text-xs lg:text-sm transition-all duration-200"
                 }
                 onClick={onIncrement}
@@ -198,7 +198,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                     inputMode={isTournament ? "numeric" : "decimal"}
                     value={displayString}
                     onChange={(e) => handleInput(e.target.value)}
-                    className={`${inputFieldClassName} px-1 py-0.5 rounded text-[10px] w-[50px] transition-all duration-200 border`}
+                    className={`${inputFieldClassName} px-1 py-0.5 rounded text-[12px] w-[50px] transition-all duration-200 border`}
                     disabled={disabled}
                 />
             )}

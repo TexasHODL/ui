@@ -35,5 +35,6 @@
 
 .noteText {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 

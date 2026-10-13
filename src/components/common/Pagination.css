@@ -8,10 +8,12 @@
     border-radius: 0 0 14px 14px;
     background: #0e0a13;
     color: #ab9cb8;
+    font-weight: 700;
 }
 .pagination-shell > span {
     color: #ab9cb8;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 700;
 }
 .pagination-button {
     min-height: 38px;
@@ -21,7 +23,7 @@
     border-radius: 8px;
     background: transparent;
     color: #cbbbd6;
-    font-size: 12px;
+    font-size: 14px;
     transition:
         background 0.15s,
         border-color 0.15s;

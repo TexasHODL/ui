@@ -27,7 +27,7 @@
 .eyebrow {
     display: block;
     font:
-        9px "DM Mono",
+        11px "DM Mono",
         monospace;
     letter-spacing: 0.15em;
     color: #b691cf;
@@ -38,20 +38,23 @@
     border-radius: 30px;
     padding: 6px 10px;
     color: #bda5ce;
-    font-size: 10px;
+    font-size: 12px;
     white-space: nowrap;
+    font-weight: 700;
 }
 .description {
     color: #a89ab4;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.8;
     margin-bottom: 20px;
+    font-weight: 700;
 }
 .fieldLabel {
     display: block;
-    font-size: 11px;
+    font-size: 13px;
     color: #b8a9c2;
     margin-bottom: 9px;
+    font-weight: 700;
 }
 .addressRow {
     display: flex;
@@ -69,7 +72,7 @@
     padding: 12px;
     color: #e2d8eb;
     font:
-        12px/1.6 "DM Mono",
+        14px/1.6 "DM Mono",
         monospace;
 }
 .primaryButton,
@@ -81,12 +84,12 @@
     min-height: 42px;
     padding: 10px 16px;
     border-radius: 9px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
 }
 .primaryButton {
     color: #220c1b;
-    font-weight: 600;
+    font-weight: 700;
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
     border: 1px solid transparent;
 }
@@ -134,14 +137,15 @@
 .disclosure summary {
     cursor: pointer;
     padding: 14px 0;
-    font-size: 13px;
+    font-size: 15px;
     color: #d7c9e1;
 }
 .disclosure summary > span {
     float: right;
     color: #917f9f;
-    font-size: 10px;
+    font-size: 12px;
     margin-top: 2px;
+    font-weight: 700;
 }
 .disclosure summary > .dangerLabel {
     color: #ca7b92;
@@ -166,9 +170,10 @@
 }
 .seedWordIndex {
     color: #8f7da0;
+    font-weight: 700;
 }
 .warningTextMuted {
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.8;
     color: #c4ad8b;
 }
@@ -181,7 +186,7 @@
 }
 .errorText {
     color: #ff9fbb;
-    font-size: 13px;
+    font-size: 15px;
 }
 .sidebar {
     display: grid;
@@ -198,8 +203,9 @@
 }
 .safetyNote p {
     color: #9e8daa;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.9;
+    font-weight: 700;
 }
 @media (max-width: 900px) {
     .walletLayout {

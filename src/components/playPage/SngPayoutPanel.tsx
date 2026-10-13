@@ -24,14 +24,14 @@ const SngPayoutPanel: React.FC = () => {
             className="w-fit rounded-xl border border-white/15 bg-black/55 px-3 py-2 backdrop-blur-sm shadow-xl"
             data-testid="sng-payout-structure"
         >
-            <div className="text-[11px] sm:text-xs font-bold uppercase tracking-wide text-yellow-300 mb-1">
+            <div className="text-[13px] sm:text-xs font-bold uppercase tracking-wide text-yellow-300 mb-1">
                 Payout Structure
             </div>
             <ul className="space-y-1">
                 {places.map(({ place, payout }) => (
                     <li
                         key={place}
-                        className="text-[10px] sm:text-xs text-white font-medium font-mono whitespace-nowrap"
+                        className="text-[12px] sm:text-xs text-white font-medium font-mono whitespace-nowrap"
                         data-testid={`sng-payout-place-${place}`}
                     >
                         {ordinal(place)} {calcPercent(payout, prizePool)}%: {formatForCashGame(convertUSDCToNumber(payout))}

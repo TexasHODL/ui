@@ -2,6 +2,11 @@ module.exports = {
     content: ["./src/**/*.{js,ts,jsx,tsx}"], // Adjust based on your project
     theme: {
         extend: {
+            // Small UI copy is two pixels larger; body and heading sizes stay unchanged.
+            fontSize: {
+                xs: ["0.875rem", { lineHeight: "1.125rem" }],
+                sm: ["1rem", { lineHeight: "1.375rem" }]
+            },
             spacing: {
                 36: "9rem", // 150px
                 48: "12rem" // 200px

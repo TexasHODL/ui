@@ -1,4 +1,45 @@
 /* Button styles for poker actions */
+@font-face {
+  font-family: "HODL Action";
+  src: url("../assets/fonts/inter-black-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+}
+
+/* One real heavy face for actions, presets and their amounts on every layout. */
+.poker-action-dock :is(button, input[type="text"]) {
+  font-family: "HODL Action", Arial, sans-serif;
+  font-weight: 900;
+  font-size: clamp(14px, calc(1.2vw + 2px), 16px);
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.poker-action-dock button span {
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+}
+
+/* Keep long call/raise labels readable when the larger type needs a second row. */
+.poker-action-dock :is(.btn-fold, .btn-check, .btn-call, .btn-raise) {
+  flex-wrap: wrap;
+}
+
+/* Preserve the larger +/- targets in the newer pill sliders. */
+.poker-action-dock button:is(.pill-cap, .desktop-pill-cap) {
+  font-size: 22px;
+}
+
+.poker-action-dock .pill-value {
+  font-family: "HODL Action", Arial, sans-serif;
+  font-weight: 900;
+  font-size: 12px;
+}
 
 /* Deal button */
 .btn-deal {
@@ -204,6 +245,7 @@
 /* Min/max text styles */
 .min-max-text {
   color: var(--ui-text-secondary);
+  font-weight: 700;
 }
 
 .min-max-text.invalid {

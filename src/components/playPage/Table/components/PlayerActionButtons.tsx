@@ -354,7 +354,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                 >
                     <div className="flex items-center gap-2">
                         <div className="animate-pulse w-2 h-2 rounded-full bg-[#b14cff]" />
-                        <span className={`text-[#d9a8ff] font-medium whitespace-nowrap ${isCompactMobile ? "text-[11px]" : isCompact ? "text-xs" : "text-sm"}`}>
+                        <span className={`text-[#d9a8ff] font-medium whitespace-nowrap ${isCompactMobile ? "text-[13px]" : isCompact ? "text-xs" : "text-sm"}`}>
                             Waiting for players to join...
                         </span>
                     </div>

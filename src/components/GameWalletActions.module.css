@@ -3,11 +3,13 @@
     justify-content: space-between;
     align-items: center;
     color: #a695b3;
-    font-size: 9px;
+    font-weight: 700;
+    font-size: 11px;
     letter-spacing: 0.14em;
 }
 .balanceLabel button {
     color: #a495b1;
+    font-weight: 700;
     padding: 5px;
 }
 .balanceLabel button:disabled {
@@ -23,14 +25,15 @@
     overflow-wrap: anywhere;
 }
 .balance span {
-    font-size: 11px;
+    font-size: 13px;
     color: #b1a0bd;
     letter-spacing: 0.03em;
-    font-weight: 400;
+    font-weight: 700;
 }
 .refreshError {
     color: #aa9ab6;
-    font-size: 13px;
+    font-weight: 700;
+    font-size: 15px;
     line-height: 1.7;
     margin-bottom: 20px;
 }
@@ -43,8 +46,8 @@
     gap: 8px;
     border-radius: 9px;
     color: #230c1d;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
     box-shadow: 0 8px 25px #f02bc614;
 }
@@ -67,11 +70,12 @@
     border: 1px solid #ffffff17;
     border-radius: 8px;
     color: #c5b7ce;
-    font-size: 11px;
+    font-weight: 700;
+    font-size: 13px;
     white-space: nowrap;
 }
 .secondaryActions svg {
-    font-size: 9px;
+    font-size: 11px;
 }
 .secondaryActions button:hover {
     background: #ffffff08;

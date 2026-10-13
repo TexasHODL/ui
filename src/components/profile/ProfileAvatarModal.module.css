@@ -36,7 +36,8 @@
 
 .walletLabel {
   color: var(--ui-text-secondary);
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .walletInputWrapper {
@@ -54,7 +55,7 @@
   color: #ffffff;
   background-color: color-mix(in srgb, var(--ui-bg-medium) 22%, transparent);
   font-family: monospace;
-  font-size: 13px;
+  font-size: 15px;
 }
 
 .walletInput:read-only {
@@ -135,7 +136,8 @@
 
 .meta {
   color: var(--ui-text-secondary);
-  font-size: 12px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .card .meta {
@@ -147,24 +149,26 @@
   text-align: center;
   padding: 24px 0;
   overflow-wrap: anywhere;
+  font-weight: 700;
 }
 
 .noteText {
   color: var(--ui-text-secondary);
-  font-size: 13px;
+  font-size: 15px;
   min-width: 0;
+  font-weight: 700;
 }
 
 .fieldError {
   color: var(--accent-danger);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .inlineButton {
   flex-shrink: 0;
   padding: 8px 12px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 600;
   color: #ffffff;
   background: linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 78%, transparent) 100%);
@@ -183,6 +187,7 @@
 
 .searchInput::placeholder {
   color: var(--ui-text-secondary);
+  font-weight: 700;
 }
 
 .footerActions {
@@ -209,6 +214,7 @@
   border: 1px solid color-mix(in srgb, var(--ui-text-secondary) 35%, transparent);
   color: var(--ui-text-secondary);
   background-color: color-mix(in srgb, var(--ui-bg-medium) 25%, transparent);
+  font-weight: 700;
 }
 
 .footerSecondaryButton:disabled {

@@ -37,6 +37,7 @@
 
 .secondaryText {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .depositButton {
@@ -52,6 +53,7 @@
 
 .leaveTableButton {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .leaveTableButton:hover {
@@ -80,7 +82,8 @@
     border: 1px solid #ffffff18;
     border-radius: 9px;
     color: #c0afce;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 700;
 }
 .roomIdentity {
     min-width: 0;
@@ -98,8 +101,9 @@
     text-overflow: ellipsis;
 }
 .roomIdentity > span {
-    font-size: 10px;
+    font-size: 12px;
     color: #a295ac;
+    font-weight: 700;
 }
 .roomTools {
     display: flex;
@@ -117,7 +121,8 @@
     border: 1px solid #ffffff16;
     border-radius: 9px;
     color: #b8a7c4;
-    font-size: 12px;
+    font-size: 14px;
+    font-weight: 700;
 }
 .roomHeader button:hover {
     color: #f4e5ff;
@@ -139,7 +144,7 @@
     align-items: center;
     min-height: 36px;
     padding: 0 10px;
-    font-size: 13px;
+    font-size: 15px;
     color: #eadcf5;
 }
 .walletMenu summary::-webkit-details-marker,
@@ -147,9 +152,10 @@
     display: none;
 }
 .walletMenu summary span {
-    font-size: 9px;
+    font-size: 11px;
     color: #a595b0;
     margin-left: 6px;
+    font-weight: 700;
 }
 .popover {
     position: absolute;
@@ -165,9 +171,10 @@
 }
 .popover p {
     color: #95819f;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.13em;
     padding: 7px;
+    font-weight: 700;
 }
 .popover > button,
 .popover > a {
@@ -176,7 +183,7 @@
     gap: 10px;
     width: 100%;
     padding: 11px 9px;
-    font-size: 12px;
+    font-size: 14px;
     color: #d4c3df;
     text-align: left;
     border-radius: 7px;
@@ -191,10 +198,11 @@
     display: block;
     padding: 10px 8px;
     font:
-        10px/1.8 "DM Mono",
+        12px/1.8 "DM Mono",
         monospace;
     color: #a18eaf;
     overflow-wrap: anywhere;
+    font-weight: 700;
 }
 .networkSection {
     padding-top: 8px;
@@ -206,8 +214,9 @@
     align-items: center;
     gap: 12px;
     padding: 12px 8px 2px;
-    font-size: 12px;
+    font-size: 14px;
     color: #bbaac7;
+    font-weight: 700;
 }
 .roomStatus {
     min-height: 48px;
@@ -225,25 +234,27 @@
 }
 .stakes > span:first-child {
     font:
-        9px "DM Mono",
+        11px "DM Mono",
         monospace;
     letter-spacing: 0.15em;
     color: #a28aad;
+    font-weight: 700;
 }
 .stakes strong {
-    font-size: 13px;
+    font-size: 15px;
     color: #ece1f5;
     font-weight: 500;
 }
 .stakes small {
-    font-size: 10px;
+    font-size: 12px;
     color: #b897d0;
 }
 .stakes .handNumber {
     border-left: 1px solid #ffffff17;
     padding-left: 14px;
-    font-size: 11px;
+    font-size: 13px;
     color: #93809f;
+    font-weight: 700;
 }
 .panelTabs {
     margin-left: auto;
@@ -260,7 +271,7 @@
     border-radius: 10px;
     background: transparent;
     color: #c9b2d9;
-    font-size: 11px;
+    font-size: 13px;
     transition:
         border-color 150ms ease,
         color 150ms ease,
@@ -276,7 +287,7 @@
 }
 .fullscreenError {
     color: #d9b8e8;
-    font-size: 11px;
+    font-size: 13px;
     padding: 8px 26px;
 }
 @media (max-width: 900px) {

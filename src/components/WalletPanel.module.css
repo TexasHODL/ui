@@ -18,6 +18,7 @@
 .heading button {
     color: #a495b1;
     padding: 5px;
+    font-weight: 700;
 }
 .primaryButton {
     width: 100%;
@@ -28,8 +29,8 @@
     gap: 8px;
     border-radius: 9px;
     color: #230c1d;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 15px;
+    font-weight: 700;
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
     box-shadow: 0 8px 25px #f02bc614;
 }
@@ -41,7 +42,8 @@
     border-top: 1px solid #ffffff0f;
     padding-top: 14px;
     color: #a998b6;
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 700;
 }
 .details summary {
     cursor: pointer;
@@ -52,22 +54,23 @@
     align-items: center;
     gap: 8px;
     padding-top: 12px;
-    font-size: 10px;
+    font-size: 12px;
 }
 .details button {
     padding: 8px;
 }
 .description {
     color: #aa9ab6;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.7;
     margin-bottom: 20px;
+    font-weight: 700;
 }
 .importButton {
     width: 100%;
     padding: 14px;
     color: #c6b1d7;
-    font-size: 12px;
+    font-size: 14px;
 }
 .panel :is(button, summary):focus-visible {
     outline: 2px solid #d5a4ff;

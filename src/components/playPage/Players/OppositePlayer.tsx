@@ -115,7 +115,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
             >
                 {/* Development Mode Debug Info */}
                 {import.meta.env.VITE_NODE_ENV === "development" && (
-                    <div className="absolute top-[-60px] left-1/2 transform -translate-x-1/2 bg-blue-600 bg-opacity-80 text-white px-2 py-1 rounded text-[10px] whitespace-nowrap z-50 border border-blue-400">
+                    <div className="absolute top-[-60px] left-1/2 transform -translate-x-1/2 bg-blue-600 bg-opacity-80 text-white px-2 py-1 rounded text-[12px] whitespace-nowrap z-50 border border-blue-400">
                         <div className="text-blue-200">UI Pos: {uiPosition ?? "N/A"}</div>
                         <div className="text-yellow-300">Seat: {index}</div>
                         <div className="text-gray-200">XY: {left}, {top}</div>

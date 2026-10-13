@@ -9,10 +9,12 @@
 
 .secondaryText {
     color: color-mix(in srgb, var(--ui-text-secondary) 87%, transparent);
+    font-weight: 700;
 }
 
 .secondaryTextStrong {
     color: var(--ui-text-secondary);
+    font-weight: 700;
 }
 
 .secondaryBorder {

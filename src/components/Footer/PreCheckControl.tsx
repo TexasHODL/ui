@@ -38,7 +38,7 @@ export const PreCheckControl: React.FC<PreCheckControlProps> = ({ checked, onCha
                 }`}
             >
                 <span
-                    className={`flex h-4 w-4 items-center justify-center rounded-sm border text-[10px] leading-none ${
+                    className={`flex h-4 w-4 items-center justify-center rounded-sm border text-[12px] leading-none ${
                         checked ? "bg-white border-white text-green-600" : "border-gray-400 text-transparent"
                     }`}
                 >

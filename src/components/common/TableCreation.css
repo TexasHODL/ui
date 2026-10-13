@@ -54,7 +54,7 @@
 .creation-section-heading > span {
     display: block;
     color: #b78acb;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     margin-bottom: 10px;
 }
@@ -68,13 +68,14 @@
 }
 .creation-section-heading p {
     color: #a99ab4;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.7;
     margin-top: 8px;
+    font-weight: 700;
 }
 .table-creation label {
     color: #ccbcd8;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     margin-bottom: 8px;
 }
@@ -87,7 +88,7 @@
     border-radius: 9px;
     color: #eee4f5;
     background: #0b0810;
-    font-size: 13px;
+    font-size: 15px;
     box-shadow: none;
     color-scheme: dark;
 }
@@ -110,10 +111,12 @@
 }
 .table-creation input::placeholder {
     color: #81718e;
+    font-weight: 700;
 }
 .table-creation :is(.text-gray-400, .text-gray-500) {
     color: #9e8dac;
     line-height: 1.65;
+    font-weight: 700;
 }
 .creation-fields > div:not(.creation-section-heading) {
     margin-bottom: 24px;
@@ -139,7 +142,7 @@
     gap: 8px 16px;
     padding: 15px 0;
     border-bottom: 1px solid var(--creation-border);
-    font-size: 12px;
+    font-size: 14px;
 }
 .creation-balance {
     padding-top: 0;
@@ -147,6 +150,7 @@
 .creation-balance span,
 .creation-total span {
     color: #a99ab4;
+    font-weight: 700;
 }
 .creation-balance strong,
 .creation-total strong {
@@ -164,7 +168,7 @@
     gap: 9px;
 }
 .table-creation .creation-fee :is(span, .text-sm) {
-    font-size: 12px;
+    font-size: 14px;
 }
 .table-creation .creation-notice {
     padding: 14px;
@@ -173,7 +177,7 @@
     border: 1px solid #d8a05a32;
     border-radius: 10px;
     color: #dfbb8d;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.7;
 }
 .creation-notice :is(.text-red-300, .text-red-400, .text-red-400\/80) {
@@ -187,7 +191,7 @@
     padding: 8px 0;
     background: transparent;
     color: #e6c4fa;
-    font-size: 12px;
+    font-size: 14px;
 }
 .creation-notice a:hover {
     color: #fff;
@@ -203,12 +207,13 @@
     min-height: 42px;
     padding: 10px 16px;
     border-radius: 9px;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
     border: 1px solid transparent;
     transition: filter 0.15s;
 }
 .table-creation .creation-primary {
+    font-weight: 700;
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
     color: #200c1c;
 }
@@ -220,6 +225,7 @@
     color: #93829e;
     border-color: #ffffff0d;
     cursor: not-allowed;
+    font-weight: 700;
 }
 .table-creation .creation-secondary {
     background: transparent;
@@ -241,6 +247,7 @@
     border-radius: 8px;
     background: transparent;
     color: #b9a6c8;
+    font-weight: 700;
 }
 .table-creation .creation-preset-active {
     border-color: #ba7fe766;
@@ -253,9 +260,10 @@
 }
 .creation-footnote {
     color: #92809f;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.7;
     margin-top: 18px;
+    font-weight: 700;
 }
 @media (max-width: 900px) {
     .creation-layout {

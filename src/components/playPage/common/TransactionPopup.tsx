@@ -41,7 +41,7 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({ txHash, onClose }) 
 
                     {/* Transaction Hash */}
                     <div className="bg-gray-900 rounded p-2 mb-2">
-                        <p className="text-gray-400 text-[10px] mb-1">Transaction Hash:</p>
+                        <p className="text-gray-400 text-[12px] mb-1">Transaction Hash:</p>
                         <div className="flex items-center gap-2">
                             <code className="text-green-400 text-xs font-mono break-all flex-1">
                                 {txHash}

@@ -89,7 +89,7 @@ const CurrencySelector: React.FC<CurrencySelectorProps> = ({ selectedCurrency, o
                                 <div className="text-left flex-1 min-w-0">
                                     <div className="text-white font-semibold uppercase text-sm">{currency.symbol}</div>
                                     <div className="text-gray-400 text-xs truncate">{currency.name}</div>
-                                    <div className="text-gray-500 text-[10px] truncate">{currency.network}</div>
+                                    <div className="text-gray-500 text-[12px] truncate">{currency.network}</div>
                                 </div>
                             </div>
                         </button>

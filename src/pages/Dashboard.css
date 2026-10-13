@@ -99,8 +99,9 @@
     justify-content: space-between;
     padding: 17px 20px;
     color: #c2b3ce;
-    font-size: 12px;
+    font-size: 14px;
     list-style: none;
+    font-weight: 700;
 }
 .lobby-transactions > summary::-webkit-details-marker {
     display: none;
@@ -119,9 +120,10 @@
 .lobby-tip > span {
     color: #887795;
     font:
-        8px "DM Mono",
+        10px "DM Mono",
         monospace;
     letter-spacing: 0.12em;
+    font-weight: 700;
 }
 .lobby-tip p {
     font-size: 17px;
@@ -131,13 +133,14 @@
 .lobby-tip small {
     display: block;
     color: #a394af;
-    font-size: 12px;
+    font-size: 14px;
     line-height: 1.8;
     margin: 9px 0 18px;
+    font-weight: 700;
 }
 .lobby-tip a {
     color: #c292e6;
-    font-size: 11px;
+    font-size: 13px;
 }
 .dashboard-lobby input,
 .dashboard-lobby select {
@@ -145,6 +148,7 @@
 }
 .dashboard-lobby .lobby-transactions .text-gray-400 {
     color: #aa9bb7;
+    font-weight: 700;
 }
 @media (max-width: 1199px) {
     .lobby-layout {

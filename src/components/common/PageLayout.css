@@ -32,16 +32,18 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.12em;
     color: #9e87b0;
     margin-bottom: 18px;
+    font-weight: 700;
 }
 .page-heading-trail a {
     color: #ba9dcf;
     letter-spacing: 0;
-    font-size: 12px;
+    font-size: 14px;
     padding: 4px 0;
+    font-weight: 700;
 }
 .page-heading-trail a:hover {
     color: #edd4ff;
@@ -65,10 +67,11 @@
 }
 .page-heading p {
     margin: 12px 0 0;
-    font-size: 14px;
+    font-size: 16px;
     color: #aaa0b5;
     line-height: 1.7;
     max-width: 680px;
+    font-weight: 700;
 }
 .page-section-tabs {
     display: flex;
@@ -80,9 +83,10 @@
 .page-section-tabs a {
     padding: 12px 0 15px;
     border-bottom: 2px solid transparent;
-    font-size: 13px;
+    font-size: 15px;
     white-space: nowrap;
     color: #a89caf;
+    font-weight: 700;
 }
 .page-section-tabs a:hover {
     color: #eee0fc;
@@ -102,13 +106,14 @@
 .page-create-table > summary {
     padding: 20px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px;
     color: #e2c9f3;
 }
 .page-create-table > summary > span {
     margin-left: 12px;
     color: #9d8eaa;
-    font-size: 11px;
+    font-size: 13px;
+    font-weight: 700;
 }
 .page-create-table[open] > summary {
     border-bottom: 1px solid var(--page-border);
@@ -125,10 +130,11 @@
 }
 .page-empty p {
     color: #a79ab2;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.8;
     max-width: 430px;
     margin: 0 auto 20px;
+    font-weight: 700;
 }
 .page-empty-symbol {
     display: block;
@@ -146,7 +152,7 @@
     padding: 10px 16px;
     border: 1px solid #ffffff24;
     border-radius: 9px;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 500;
     color: #ddcbe9;
     background: #ffffff03;
@@ -158,7 +164,7 @@
 .page-button-primary {
     background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
     color: #200c1c;
-    font-weight: 600;
+    font-weight: 700;
     border-color: transparent;
 }
 .page-button-primary:hover {
@@ -178,18 +184,19 @@
     accent-color: #b14cff;
 }
 .site-page th {
-    font-weight: 500;
-    font-size: 11px;
+    font-size: 13px;
     color: #a99ab5;
+    font-weight: 700;
 }
 .site-page td {
-    font-size: 13px;
+    font-size: 15px;
 }
 .site-page .page-index-status {
     color: #95879f;
-    font-size: 11px;
+    font-size: 13px;
     line-height: 1.7;
     margin: 18px 0;
+    font-weight: 700;
 }
 .site-page .page-footer {
     position: relative;
@@ -205,7 +212,7 @@
     height: 18px;
 }
 .site-page .page-footer span {
-    font-size: 8px;
+    font-size: 10px;
 }
 @media (max-width: 760px) {
     .site-page {
@@ -221,13 +228,13 @@
         gap: 16px;
     }
     .page-heading p {
-        font-size: 12px;
+        font-size: 14px;
     }
     .page-section-tabs {
         gap: 20px;
     }
     .page-section-tabs a {
-        font-size: 12px;
+        font-size: 14px;
     }
     .site-page th,
     .site-page td {

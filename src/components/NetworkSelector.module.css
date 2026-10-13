@@ -44,10 +44,12 @@
 
 .networkEndpointText {
   color: var(--ui-text-secondary);
+  font-weight: 700;
 }
 
 .discoveredHeader {
   background-color: color-mix(in srgb, var(--brand-primary) 5%, transparent);
   color: var(--ui-text-secondary);
   border-bottom: 1px solid color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  font-weight: 700;
 }

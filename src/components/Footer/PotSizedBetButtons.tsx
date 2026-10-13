@@ -74,7 +74,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
                 return (
                     <button
                         key={label}
-                        className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[10px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
+                        className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[12px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
                         // Above the stack, the preset selects the whole stack (all-in).
                         onClick={() => onAmountSelect(Math.min(amount, maxAmount))}
                         disabled={disabled || cannotAffordMin || belowMin}
@@ -86,7 +86,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
             })}
 
             <button
-                className="btn-all-in px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[10px] lg:text-xs transition-all duration-200 font-medium transform active:scale-105"
+                className="btn-all-in px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[12px] lg:text-xs transition-all duration-200 font-medium transform active:scale-105"
                 onClick={onAllIn}
                 disabled={disabled}
             >
