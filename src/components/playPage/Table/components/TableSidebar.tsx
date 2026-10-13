@@ -46,7 +46,9 @@ export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = fa
             }
         };
     }, [isOpen, detailed, compact, onClose]);
-    if (compact && !isOpen) return <button className="mobile-history-trigger" aria-label="Open hand history" aria-controls="table-history-panel" aria-expanded={false} onClick={onOpen}>↶ History</button>;
+    if (compact && !isOpen) {
+        return <button className="mobile-history-trigger" aria-label="Open hand history" aria-controls="table-history-panel" aria-expanded={false} onClick={onOpen}>↶ History</button>;
+    }
     return (
         <div
             ref={panelRef}

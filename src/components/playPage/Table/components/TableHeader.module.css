@@ -86,6 +86,16 @@
     outline-offset: 3px;
 }
 
+/* Phones keep Leave in the 44px row or the 22px fallback. Desktop stays 44px. */
+.mobileStatus .visibleLeaveButton {
+    min-height: 0;
+    height: 20px;
+    padding: 0 8px;
+    gap: 4px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
 .roomHeader {
     flex-shrink: 0;
     position: relative;

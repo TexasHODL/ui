@@ -2,6 +2,7 @@ import { resolveDebugOverlayAction } from "../../utils/debugOverlayKeys";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useTablePanels } from "../../hooks/game/useTablePanels";
 import { useHistoryDock } from "../../hooks/game/useHistoryDock";
+import { placeMobileHistory } from "./Table/placeMobileHistory";
 /**
  * Table Component
  *
@@ -48,7 +49,7 @@ import { useHistoryDock } from "../../hooks/game/useHistoryDock";
  */
 
 import { buildHandShareUrl } from "../../utils/handReplay";
-import { useEffect, useState, useMemo, useCallback, memo, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useMemo, useCallback, memo, useRef } from "react";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatPotDisplay, formatChipCount } from "../../utils/potDisplayUtils";
 // Position arrays now come from useTableLayout hook
@@ -868,6 +869,27 @@ const Table = React.memo(() => {
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
     const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
+    const chromeObserver = useRef<ResizeObserver | null>(null);
+    const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
+        chromeObserver.current?.disconnect();
+        chromeObserver.current = null;
+        const root = banner?.closest(".table-container") as HTMLElement | null;
+        if (!banner || !root) return;
+        const apply = () => {
+            root.style.setProperty("--mobile-chrome-end", `${Math.ceil(banner.getBoundingClientRect().bottom)}px`);
+            placeMobileHistory(root);
+        };
+        apply();
+        const observer = new ResizeObserver(apply);
+        observer.observe(banner);
+        const stage = root.querySelector(".table-stage");
+        if (stage) observer.observe(stage);
+        chromeObserver.current = observer;
+    }, []);
+    useLayoutEffect(() => {
+        const root = tableContainerRef.current?.closest(".table-container");
+        if (root instanceof HTMLElement) placeMobileHistory(root);
+    }, [openSidebar, isCompactMobile, tableOnly, tableLayout.containerWidth, tableLayout.containerHeight]);
     const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom, tableOnly, isCompactMobile);
     useEffect(() => {
         if (!tableOnly) return;
@@ -1328,7 +1350,7 @@ const Table = React.memo(() => {
                 {/*//! HEADER - CASINO STYLE — phones (both orientations) get the
                 collapsed one-row header + hamburger */}
                 {tableOnly && <button className="restore-table-banner" aria-label="Restore table banners" title="Restore banners (Esc)" onClick={() => setTableOnly(false)}>↙ <span>Show controls</span></button>}
-                <div className="table-banner-wrap">
+                <div className="table-banner-wrap" ref={measureMobileChrome}>
                 {isCompactMobile ? (
                     <MobileTableHeader
                         onToggleFocus={() => setTableOnly(true)}

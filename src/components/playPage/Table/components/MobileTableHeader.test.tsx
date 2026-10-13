@@ -43,7 +43,7 @@ jest.mock("../../../modals", () => ({ TopUpModal: () => <div /> }));
 
 const sitOutLegal: LegalActionDTO[] = [{ action: NonPlayerActionType.SIT_OUT, min: "0", max: "0", index: 1 } as LegalActionDTO];
 
-function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[]; tableName?: string } = {}) {
+function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[]; tableName?: string; openSidebar?: boolean; onHistory?: () => void } = {}) {
     const legalActions = over.legalActions ?? [];
     return render(
         <SitOutIntentProvider tableId="0xtable" network={{} as never} pendingSitOut={null} legalActions={legalActions}>
@@ -69,7 +69,7 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[];
                 minBuyIn="0"
                 maxBuyIn="0"
                 walletBalance="0"
-                openSidebar={false}
+                openSidebar={!!over.openSidebar}
                 openSettings={false}
                 tableStyle="modern"
                 onCycleTableStyle={jest.fn()}
@@ -77,7 +77,7 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[];
                 handleCopyTableLink={jest.fn()}
                 fetchAccountBalance={jest.fn()}
                 copyToClipboard={jest.fn()}
-                onCloseSideBar={jest.fn()}
+                onCloseSideBar={over.onHistory ?? jest.fn()}
                 onToggleSettings={jest.fn()}
                 handleLeaveTableClick={mockLeaveTable}
                 handleShareHand={jest.fn()}
@@ -90,6 +90,16 @@ const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
 
 describe("MobileTableHeader drawer (ui#684)", () => {
     beforeEach(() => jest.clearAllMocks());
+    it("keeps blinds in the chrome and the theme control in the top row", () => {
+        renderHeader();
+        expect(screen.queryByRole("button", { name: "Open hand history" })).not.toBeInTheDocument();
+        const fallback = document.querySelector(".mobile-status-fallback");
+        expect(fallback).not.toBeNull();
+        expect(fallback).toHaveTextContent("Hand #1");
+        expect(screen.getByRole("group", { name: "Color theme" }).closest(".mobile-header-row")).not.toBeNull();
+        expect(screen.getByRole("group", { name: "Color theme" }).closest(".mobile-status-fallback")).toBeNull();
+    });
+
     it("offers themes without opening the mobile drawer", () => {
         renderHeader();
         fireEvent.click(screen.getByRole("button", { name: "Light theme" }));
