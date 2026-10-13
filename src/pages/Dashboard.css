@@ -183,8 +183,13 @@
     .dashboard-content {
         padding: 26px 16px 36px;
     }
+    /* Phone widths: wallet column leads. Wider layouts keep the table list first. */
+    .lobby-games {
+        grid-row: 2;
+    }
     .lobby-wallet {
         display: block;
+        grid-row: 1;
     }
     .lobby-transactions {
         margin-top: 16px;
