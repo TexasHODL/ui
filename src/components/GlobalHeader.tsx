@@ -3,13 +3,10 @@ import { NavLink, Link, useLocation } from "react-router-dom";
 import { FaEllipsisH, FaArrowUp } from "react-icons/fa";
 import { NetworkSelector } from "./NetworkSelector";
 import { ProfileAvatarButton } from "./profile";
-import { viteEnv } from "../utils/viteEnv";
-import { useAppliedTheme } from "../theme/useTheme";
+import { TEXAS_HODL_LOGO } from "../constants/branding";
 import { ThemeToggle } from "./ThemeToggle";
 import styles from "./GlobalHeader.module.css";
 
-const bundledLogo = "/texas-hodl-logo.png";
-const lightLogo = "/texas-hodl-logo-sharp.svg";
 
 const extraGroups = [
     {
@@ -36,23 +33,14 @@ const extraGroups = [
 
 export const GlobalHeader: React.FC = () => {
     const { pathname } = useLocation();
-    const theme = useAppliedTheme();
-    const configuredLogo = viteEnv.VITE_CLUB_LOGO;
-    const usesBundledMark = !configuredLogo || configuredLogo === bundledLogo;
-    const logoSrc = theme === "light" && usesBundledMark ? lightLogo : configuredLogo || bundledLogo;
     if (pathname.startsWith("/table/") && pathname !== "/table/admin") return null;
     return (
         <header className={styles.headerShell}>
             <div className={styles.inner}>
                 <Link to="/" className={styles.brand} aria-label="Texas HODL lobby">
                     <img
-                        src={logoSrc}
+                        src={TEXAS_HODL_LOGO}
                         alt=""
-                        onError={({ currentTarget }) => {
-                            // A stale external branding URL must not leave the lobby logo broken.
-                            // Do not retry if the bundled asset itself fails.
-                            if (currentTarget.getAttribute("src") !== bundledLogo) currentTarget.src = bundledLogo;
-                        }}
                     />
                     <span>
                         TEXAS <b>HODL</b>

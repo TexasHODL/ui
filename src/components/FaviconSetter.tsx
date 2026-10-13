@@ -1,6 +1,6 @@
 import { useEffect } from "react";
+import { TEXAS_HODL_FAVICON } from "../constants/branding";
 
-const FALLBACK_FAVICON = "/texas-hodl-logo.png";
 
 function applyFavicon(url: string) {
     const links = document.querySelectorAll("link[rel*=\"icon\"]");
@@ -16,30 +16,14 @@ function applyFavicon(url: string) {
 }
 
 /**
- * Sets the document title and favicon from build-time branding.
- * The repository-owned Texas HODL asset is applied first and remains in place
- * whenever a configured remote or deployment-specific image cannot be loaded.
+ * Sets the document title and repository-owned card-fan favicon.
  */
 const FaviconSetter: React.FC = () => {
     useEffect(() => {
         const appTitle = import.meta.env.VITE_APP_TITLE || "Texas HODL";
         document.title = appTitle;
 
-        const configuredFavicon = import.meta.env.VITE_FAVICON_URL;
-        applyFavicon(FALLBACK_FAVICON);
-
-        if (!configuredFavicon || configuredFavicon === FALLBACK_FAVICON) return;
-
-        let active = true;
-        const image = new Image();
-        image.onload = () => {
-            if (active) applyFavicon(configuredFavicon);
-        };
-        image.src = configuredFavicon;
-
-        return () => {
-            active = false;
-        };
+        applyFavicon(TEXAS_HODL_FAVICON);
     }, []);
 
     return null;

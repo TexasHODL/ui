@@ -347,7 +347,7 @@ describe("createFaviconNotification", () => {
         
         createFaviconNotification(false);
         
-        expect(mockFavicon.href).toContain("/b52favicon.svg");
+        expect(mockFavicon.href).toContain("/texas-hodl-card-fan.svg");
     });
 
     it("should handle missing favicon gracefully", () => {

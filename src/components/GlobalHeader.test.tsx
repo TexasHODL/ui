@@ -19,7 +19,7 @@ function renderLogo() {
 
 it("uses the bundled Texas HODL logo when no custom logo is configured", () => {
     delete viteEnv.VITE_CLUB_LOGO;
-    expect(renderLogo()).toHaveAttribute("src", "/texas-hodl-logo.png");
+    expect(renderLogo()).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
 });
 
 it("uses the sharp mark in light mode when the bundled logo is showing", () => {
@@ -34,12 +34,12 @@ it("uses the sharp mark in light mode when the bundled logo is showing", () => {
     }
 });
 
-it("preserves a configured logo until it fails, then loads the bundled asset", () => {
+it("uses the approved SVG even when an old deployment logo is configured", () => {
     viteEnv.VITE_CLUB_LOGO = "https://example.com/old-logo.png";
     const logo = renderLogo();
-    expect(logo).toHaveAttribute("src", "https://example.com/old-logo.png");
+    expect(logo).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
     fireEvent.error(logo);
-    expect(logo).toHaveAttribute("src", "/texas-hodl-logo.png");
+    expect(logo).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
     expect(screen.getByRole("link", { name: /^Lobby$/ })).toHaveAttribute("href", "/");
 });
 

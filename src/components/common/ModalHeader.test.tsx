@@ -4,7 +4,7 @@ import { ModalHeader } from "./ModalHeader";
 it("uses the Texas HODL asset and the same heading layout for buy-in dialogs", () => {
     const { rerender } = render(<ModalHeader kicker="Take your seat" title="Cash Game Buy-In" />);
     expect(screen.getByRole("heading")).toHaveClass("hodl-modal-title");
-    expect(screen.getByRole("img", { name: "Texas HODL" })).toHaveAttribute("src", "/texas-hodl-logo.png");
+    expect(screen.getByRole("img", { name: "Texas HODL" })).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     rerender(<ModalHeader kicker="Take your seat" title="Sit & Go Tournament" subtitle="Texas Hold’em · 4 Players" />);
     expect(screen.getByRole("heading")).toHaveClass("hodl-modal-title");
