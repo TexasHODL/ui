@@ -9,6 +9,7 @@ import { useLobbySeats } from "../hooks/game/useLobbySeats";
 
 import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
 import { copyToClipboard } from "../utils/clipboard";
+import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
 import DeleteTableModal from "./modals/DeleteTableModal";
 import ForceCloseTableModal from "./modals/ForceCloseTableModal";
@@ -223,7 +224,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const watch = full && !seated;
                                 const tournament = isTournamentFormat(game.gameFormat);
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
-                                const tableName = game.name || "Table " + game.gameId.slice(-6);
+                                const tableName = displayTableName(game.name, game.gameId);
                                 const stakes = tournament
                                     ? "Tournament"
                                     : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);

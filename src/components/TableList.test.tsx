@@ -1,6 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
+import { displayTableName } from "../utils/generatedTableName";
 import TableList from "./TableList";
 const mockRefresh = jest.fn().mockResolvedValue(undefined);
 const mockDelete = jest.fn();
@@ -9,11 +10,13 @@ let mockAddress = "owner";
 let mockSeats: Record<string, number> = {};
 jest.mock("../hooks/game/useLobbySeats", () => ({ useLobbySeats: () => mockSeats }));
 const base = { minBuyIn: "200000", maxBuyIn: "1000000", minPlayers: 2, maxPlayers: 6, smallBlind: "10000", bigBlind: "20000", gameVariant: GameVariant.TEXAS_HOLDEM, status: "waiting" };
+const UNNAMED_ID = "0x031d57314cc4ba07a0ae7edaa0c8c9ff3507dc81b8af99ac8cfe5ba9f5f9aea9";
 const mockGames = [
     { ...base, gameId: "mine", name: "My empty table", creator: "OWNER", gameFormat: GameFormat.CASH, currentPlayers: 0 },
     { ...base, gameId: "occupied", name: "My occupied table", creator: "owner", gameFormat: GameFormat.CASH, currentPlayers: 2 },
     { ...base, gameId: "tournament", name: "My tournament", creator: "owner", gameFormat: GameFormat.SIT_AND_GO, currentPlayers: 2 },
-    { ...base, gameId: "other", name: "Another table", creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 0 }
+    { ...base, gameId: "other", name: "Another table", creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 0 },
+    { ...base, gameId: UNNAMED_ID, creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 1 }
 ];
 jest.mock("../hooks/game/useFindGames", () => ({ useFindGames: () => ({ games: mockGames, isLoading: false, error: null, refetch: mockRefresh }), treasuryAddress: "" }));
 jest.mock("../hooks/wallet/useCosmosWallet", () => ({ __esModule: true, default: () => ({ address: mockAddress }) }));
@@ -98,6 +101,14 @@ test("a creation receipt revision refreshes the displayed list", async () => {
     expect(mockRefresh).not.toHaveBeenCalled();
     rerender(<TableList refreshKey={1} />);
     await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
+});
+
+test("unnamed tables show a generated name", () => {
+    render(<TableList />);
+    const generated = displayTableName(undefined, UNNAMED_ID);
+    expect(screen.getByText(generated)).toBeInTheDocument();
+    expect(screen.queryByText("Table " + UNNAMED_ID.slice(-6))).not.toBeInTheDocument();
+    expect(screen.getByText("My empty table")).toBeInTheDocument();
 });
 
 test("Watch links carry viewing intent while open tables keep the normal join route", () => {

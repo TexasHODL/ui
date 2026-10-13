@@ -9,6 +9,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { NonPlayerActionType, type LegalActionDTO } from "@block52/poker-vm-sdk";
+import { displayTableName } from "../../../../utils/generatedTableName";
 import { MobileTableHeader } from "./MobileTableHeader";
 import { SitOutIntentProvider } from "../../../../context/SitOutIntentContext";
 
@@ -42,13 +43,14 @@ jest.mock("../../../modals", () => ({ TopUpModal: () => <div /> }));
 
 const sitOutLegal: LegalActionDTO[] = [{ action: NonPlayerActionType.SIT_OUT, min: "0", max: "0", index: 1 } as LegalActionDTO];
 
-function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[] } = {}) {
+function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[]; tableName?: string } = {}) {
     const legalActions = over.legalActions ?? [];
     return render(
         <SitOutIntentProvider tableId="0xtable" network={{} as never} pendingSitOut={null} legalActions={legalActions}>
             <MobileTableHeader
                 onToggleFocus={mockToggleFocus}
                 tableId="0xtable"
+                tableName={over.tableName}
                 currentNetwork={{} as never}
                 gameFormat={null}
                 gameOptions={null}
@@ -95,6 +97,16 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         fireEvent.click(screen.getByRole("button", { name: "Dark theme" }));
         expect(document.documentElement).not.toHaveAttribute("data-theme");
         expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
+    });
+
+    it("shows a custom name, or a generated name when none was set", () => {
+        const { unmount } = renderHeader({ tableName: "friday-degens" });
+        expect(screen.getByRole("button", { name: "Back to lobby from friday-degens" })).toBeInTheDocument();
+        unmount();
+        renderHeader();
+        const generated = displayTableName(undefined, "0xtable");
+        expect(screen.getByRole("button", { name: "Back to lobby from " + generated })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Back to lobby from Table xtable" })).not.toBeInTheDocument();
     });
 
     it("offers Leave table without opening the drawer and only opens confirmation", () => {

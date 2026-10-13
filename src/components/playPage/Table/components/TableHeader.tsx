@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
+import { displayTableName } from "../../../../utils/generatedTableName";
 import { formatGameFormatDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, PlayerDTO } from "@block52/poker-vm-sdk";
@@ -24,7 +25,7 @@ export const formatBlindCountdown = (secondsRemaining: number): string => {
 export interface TableHeaderProps {
     // Table info
     tableId: string;
-    /** Optional ENS-style table name (poker-vm#337); falls back to the truncated tableId when absent. */
+    /** Optional ENS-style table name (poker-vm#337); a generated name is shown when absent. */
     tableName?: string;
     isMobileLandscape: boolean;
 
@@ -104,7 +105,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     const [showQR, setShowQR] = useState(false);
     if (isMobileLandscape) return null;
     const tableUrl = window.location.origin + "/table/" + tableId;
-    const title = tableName || "Table " + tableId.slice(-6);
+    const title = displayTableName(tableName, tableId);
     const showLeave = currentPlayerData && !(gameFormat && isSitAndGoFormat(gameFormat));
 
     return (

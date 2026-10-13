@@ -1,4 +1,5 @@
 import type { GameWithFormat } from "./convertUtils";
+import { displayTableName } from "./generatedTableName";
 import { isCashFormat, isTournamentFormat } from "./gameFormatUtils";
 
 export type LobbyFormat = "all" | "cash" | "tournament";
@@ -15,7 +16,7 @@ export function filterLobbyGames(
             game =>
                 (options.format === "all" || (options.format === "cash" ? isCashFormat(game.gameFormat) : isTournamentFormat(game.gameFormat))) &&
                 (!options.openOnly || game.currentPlayers < game.maxPlayers) &&
-                (!query || [game.name, game.gameId, "Table " + game.gameId.slice(-6)].join(" ").toLowerCase().includes(query))
+                (!query || [displayTableName(game.name, game.gameId), game.gameId].join(" ").toLowerCase().includes(query))
         )
         .sort((a, b) => {
             if (options.sort === "buyin") {
