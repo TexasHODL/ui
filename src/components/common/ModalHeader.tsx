@@ -1,4 +1,5 @@
 import React from "react";
+import { TEXAS_HODL_LOGO } from "../../constants/branding";
 
 interface ModalHeaderProps {
     title?: React.ReactNode;
@@ -16,7 +17,7 @@ export function ModalHeader({ title, titleId, kicker = "Texas HODL", subtitle, o
         <header className="hodl-modal-header">
             <div className="hodl-modal-brand-row">
                 <span className="hodl-modal-eyebrow">{kicker}</span>
-                <img className="hodl-modal-logo" src="/texas-hodl-logo.png" alt="Texas HODL" width="139" height="75" />
+                <img className="hodl-modal-logo" src={TEXAS_HODL_LOGO} alt="Texas HODL" width="139" height="75" />
                 {onClose && <button type="button" className="hodl-modal-dismiss" aria-label={closeLabel} onClick={onClose} disabled={closeDisabled}>×</button>}
             </div>
             {title && <h2 id={titleId} className="hodl-modal-title">{title}</h2>}

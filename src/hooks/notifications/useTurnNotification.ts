@@ -1,10 +1,11 @@
 import { useEffect, useRef, useCallback } from "react";
 import { colors } from "../../utils/colorConfig";
+import { TEXAS_HODL_FAVICON } from "../../constants/branding";
 
 /**
- * Default favicon path - can be overridden via environment variable if needed
+ * Restore the same repository-owned icon after a turn notification.
  */
-const DEFAULT_FAVICON_PATH = "/b52favicon.svg";
+const DEFAULT_FAVICON_PATH = TEXAS_HODL_FAVICON;
 
 import { getSoundUrl } from "../../utils/cardImages";
 /**
