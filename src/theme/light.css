@@ -42,6 +42,34 @@ html[data-theme="light"] body {
     color: #1a0b2e;
 }
 
+/* Legacy explorer/network/tools content is outside live-table chrome. */
+html[data-theme="light"] .site-page :is(.bg-\[\#100c17\], .bg-\[\#0c0911\], .bg-gray-800, .bg-gray-900) {
+    background: var(--theme-surface);
+}
+html[data-theme="light"] .site-page :is(.bg-\[\#21172b\], .bg-gray-700, .bg-gray-600) {
+    background: var(--theme-wash);
+}
+html[data-theme="light"] .site-page :is(.text-white, .text-gray-100, .text-gray-200) {
+    color: var(--theme-ink);
+}
+html[data-theme="light"] .site-page :is(.text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600) {
+    color: var(--theme-muted);
+}
+html[data-theme="light"] .site-page :is(.text-purple-300, .text-purple-400, .text-blue-300, .text-blue-400) {
+    color: var(--theme-accent);
+}
+html[data-theme="light"] .site-page :is(.text-green-300, .text-green-400) { color: #087342; }
+html[data-theme="light"] .site-page :is(.text-red-300, .text-red-400) { color: #b4233c; }
+html[data-theme="light"] .site-page :is(.text-yellow-400, .text-yellow-400\/70) { color: #805500; }
+html[data-theme="light"] .site-page :is(.border-white\/10, .border-white\/20) { border-color: var(--theme-line); }
+html[data-theme="light"] .site-page :is(.hover\:bg-\[\#21172b\], .hover\:bg-\[\#21172b\]\/50):hover {
+    background: var(--theme-hover);
+}
+/* Solid action/status colours still need white text, not dark ink. */
+html[data-theme="light"] .site-page :is(.bg-green-600, .bg-red-600, .bg-red-700, .bg-yellow-600, .bg-purple-600, .bg-\[\#7135a4\]).text-white {
+    color: #ffffff;
+}
+
 html[data-theme="light"] body::before {
     background-image: linear-gradient(rgba(181, 42, 221, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(181, 42, 221, 0.06) 1px, transparent 1px);
 }

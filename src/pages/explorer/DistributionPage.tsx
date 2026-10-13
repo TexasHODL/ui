@@ -5,12 +5,16 @@ import { CardStats, StatsSummary, RandomnessReport, IndexerStatus } from "./type
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import styles from "./DistributionPage.module.css";
+import { useAppliedTheme } from "../../theme/useTheme";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export default function DistributionPage() {
+    const lightTheme = useAppliedTheme() === "light";
+    const chartInk = lightTheme ? "#1a0b2e" : "#ffffff";
+    const chartGrid = lightTheme ? "rgba(26, 11, 46, 0.12)" : "rgba(255, 255, 255, 0.1)";
     const [cardStats, setCardStats] = useState<CardStats[]>([]);
     const [summary, setSummary] = useState<StatsSummary | null>(null);
     const [randomness, setRandomness] = useState<RandomnessReport | null>(null);
@@ -103,12 +107,13 @@ export default function DistributionPage() {
         maintainAspectRatio: false,
         plugins: {
             legend: {
-                position: "top" as const
+                position: "top" as const,
+                labels: { color: lightTheme ? "#5c4574" : "#666666" }
             },
             title: {
                 display: true,
                 text: "Card distribution across recorded hands",
-                color: "#ffffff"
+                color: chartInk
             },
             tooltip: {
                 callbacks: {
@@ -122,24 +127,26 @@ export default function DistributionPage() {
         },
         scales: {
             x: {
+                grid: { color: chartGrid },
                 title: {
                     display: true,
                     text: "Card",
-                    color: "#ffffff"
+                    color: chartInk
                 },
                 ticks: {
-                    color: "#ffffff"
+                    color: chartInk
                 }
             },
             y: {
+                grid: { color: chartGrid },
                 title: {
                     display: true,
                     text: "Frequency (Times Dealt)",
-                    color: "#ffffff"
+                    color: chartInk
                 },
                 beginAtZero: true,
                 ticks: {
-                    color: "#ffffff"
+                    color: chartInk
                 }
             }
         }

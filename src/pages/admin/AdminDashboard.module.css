@@ -1,10 +1,10 @@
 .menuCard {
-    background: #100c17d9;
-    border-color: #ffffff16;
+    background: var(--theme-surface, #100c17d9);
+    border-color: var(--theme-line, #ffffff16);
 }
 .menuCard:hover {
-    border-color: #b68bd250;
-    background: #17101f;
+    border-color: var(--theme-accent, #b68bd250);
+    background: var(--theme-hover, #17101f);
 }
 
 .menuIconContainer {

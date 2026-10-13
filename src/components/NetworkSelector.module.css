@@ -12,7 +12,14 @@
 .dropdownMenu {
   background-color: color-mix(in srgb, var(--ui-bg-dark) 95%, transparent);
   border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  max-width: calc(100vw - 32px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  max-height: min(420px, 60dvh);
 }
+.floatingMenu { position: absolute; top: 100%; right: 0; width: 280px; margin-top: 8px; }
+.embeddedMenu { position: relative; width: 100%; margin-top: 8px; box-shadow: none; }
+.networkItem { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
 
 .networkItem {
   background-color: transparent;
@@ -31,7 +38,7 @@
 }
 
 .networkNameDefault {
-  color: #ffffff;
+  color: var(--theme-ink, #ffffff);
 }
 
 .networkNameSelected {
