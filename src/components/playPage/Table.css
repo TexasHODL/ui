@@ -643,12 +643,31 @@
 .history-summary-heading { display: flex; justify-content: space-between; width: 100%; color: var(--theme-ink, #c9b2d9); font-size: 13px; line-height: 16px; }
 .history-summary-action { color: var(--theme-ink, #eee4f3); font-size: 14px; line-height: 18px; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mobile-history-trigger { position: fixed; top: 80px; right: 12px; z-index: 30; border: 1px solid var(--theme-wash, #b995cf50); border-radius: 18px; background: var(--theme-surface, #100b1799); color: var(--theme-ink, #dcc7ed); padding: 9px 13px; font-size: 14px; }
-.sub-header .mobile-history-trigger { position: static; top: auto; right: auto; z-index: auto; margin-left: auto; flex: 0 0 auto; }
+.mobile-header-row { flex-wrap: nowrap; gap: 8px; overflow: hidden; }
+.mobile-header-name { flex: 1 1 auto; min-width: 64px; }
+.mobile-header-tools { display: flex; align-items: center; flex: 0 0 auto; }
+.mobile-status-inline { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; white-space: nowrap; }
+.mobile-status-probe { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; display: inline-flex; align-items: center; gap: 8px; width: max-content; white-space: nowrap; }
+.mobile-status-fallback { display: flex; align-items: center; justify-content: center; gap: 8px; height: 22px; min-height: 22px; max-height: 22px; padding-top: 0; padding-bottom: 0; overflow: hidden; flex-wrap: nowrap; line-height: 22px; }
+/* History floats under the measured chrome. It is not in the banner's flow. */
+.table-container[data-compact-mobile="true"]:not([data-table-only="true"]) .mobile-history-trigger {
+    top: calc(var(--mobile-chrome-end, 48px) + 4px + var(--history-nudge, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    z-index: 40;
+    padding: 2px 8px;
+    font-size: 12px;
+    line-height: 18px;
+    border-radius: 12px;
+}
+.table-container[data-compact-mobile="true"][data-history-anchor="left"]:not([data-table-only="true"]) .mobile-history-trigger {
+    left: max(8px, env(safe-area-inset-left, 0px));
+    right: auto;
+}
 .table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-history-panel[data-expanded="true"],
 .table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-settings-panel.action-log-open {
-    top: calc(var(--mobile-chrome-end, 104px) + 8px);
+    top: calc(var(--mobile-chrome-end, 70px) + 8px);
 }
-.table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; }
+.table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; right: 12px; left: auto; }
 .history-panel-control:focus-visible, .history-summary:focus-visible, .mobile-history-trigger:focus-visible { outline: 2px solid var(--theme-accent, #d5a4ff); outline-offset: -2px; }
 /* Four-seat portrait rings put both side players at the felt's midpoint.
    Keep the readable five-card row in the empty upper felt, clear of their
@@ -673,7 +692,7 @@
 .settings-appearance select { padding: 7px 9px; margin-top: 6px; }
 @media (max-height: 600px) and (min-width: 600px) {
     .table-container #table-settings-panel.action-log-open { width: min(540px, calc(100vw - 32px)); right: 16px; }
-    .table-container[data-compact-mobile="true"] #table-settings-panel.action-log-open { top: calc(var(--mobile-chrome-end, 104px) + 8px); }
+    .table-container[data-compact-mobile="true"] #table-settings-panel.action-log-open { top: calc(var(--mobile-chrome-end, 70px) + 8px); }
     .settings-content { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
     .settings-appearance, .settings-theme-row { grid-column: 1 / -1; }
 }

@@ -1,15 +1,15 @@
 /**
  * MobileTableHeader Component
  *
- * Portrait-phone replacement for TableHeader: a single 44px row (table name,
- * USDC balance, fullscreen, hamburger) plus a text-only status strip (blinds, hand number,
- * next to act). Everything else — network selector, share/copy/QR, wallet
- * address, avatar, settings, action log, top-up, table style, seat orientation,
- * lives in the hamburger drawer, each row a ≥44px tap target. Leave table is
- * also visible in the status strip and opens the existing confirmation dialog.
+ * Phone replacement for TableHeader. The top row stays 44px: back, table name,
+ * blinds / hand / next-to-act when they fit, theme, balance, fullscreen, menu.
+ * A 22px text row appears only when that status does not fit beside the name.
+ * History is a floating overlay owned by TableSidebar, not part of this chrome.
+ * Everything else lives in the hamburger drawer. Leave table stays visible
+ * (inline or on the slim row) and opens the existing confirmation dialog.
  */
 
-import React, { useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { FaBars, FaCopy, FaExpand, FaQrcode, FaShare, FaTimes } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
@@ -152,6 +152,81 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     // Sit-out lives here on phones rather than pinned over the felt (#684).
     const { nextHandChecked, toggleNextHand, nextBbQueued, toggleNextBb, canSitOut } = useSitOutIntent();
     const isTableFull = !!gameOptions?.maxPlayers && tableActivePlayers.length >= gameOptions.maxPlayers;
+    const rowRef = useRef<HTMLDivElement>(null);
+    const toolsRef = useRef<HTMLDivElement>(null);
+    const probeRef = useRef<HTMLDivElement>(null);
+    const [statusInline, setStatusInline] = useState(false);
+
+    // The probe is out of flow, so the decision cannot flip-flop as the row
+    // grows and shrinks. jsdom reports no width, which keeps the slim row.
+    useLayoutEffect(() => {
+        const row = rowRef.current;
+        const tools = toolsRef.current;
+        const probe = probeRef.current;
+        if (!row || !tools || !probe) return;
+        const measure = () => {
+            const computed = getComputedStyle(row);
+            const padLeft = parseFloat(computed.paddingLeft) || 0;
+            const padRight = parseFloat(computed.paddingRight) || 0;
+            const gap = 8;
+            const minName = 64;
+            const available = row.clientWidth - padLeft - padRight - tools.offsetWidth - minName - gap * 2;
+            const fits = probe.scrollWidth > 0 && probe.scrollWidth <= available + 0.5;
+            setStatusInline(current => (current === fits ? current : fits));
+        };
+        measure();
+        if (typeof ResizeObserver === "undefined") return;
+        const observer = new ResizeObserver(measure);
+        observer.observe(row);
+        observer.observe(tools);
+        observer.observe(probe);
+        return () => observer.disconnect();
+    }, [
+        handNumber,
+        nextToAct,
+        showLeaveTable,
+        formattedValues.smallBlindFormatted,
+        formattedValues.bigBlindFormatted,
+        blindLevel.isActive,
+        blindLevel.level,
+        blindLevel.currentBlindsFormatted,
+        blindLevel.secondsRemaining,
+        blindLevel.hasTimer
+    ]);
+
+    const renderStatus = (compactText: boolean) => {
+        const textClass = `${compactText ? "text-[12px] leading-[22px]" : "text-[13px]"} font-semibold whitespace-nowrap ${styles.secondaryText}`;
+        return (
+            <>
+                <span className={textClass}>
+                    {blindLevel.isActive ? (
+                        <>
+                            {blindLevel.level !== undefined && `L${blindLevel.level + 1} `}
+                            {blindLevel.currentBlindsFormatted}
+                            {blindLevel.hasTimer && (
+                                <>
+                                    {" ("}
+                                    <span className={blindLevel.secondsRemaining < 0 ? "text-red-500" : "text-yellow-300"}>
+                                        {formatBlindCountdown(blindLevel.secondsRemaining)}
+                                    </span>
+                                    {")"}
+                                </>
+                            )}
+                        </>
+                    ) : (
+                        `$${formattedValues.smallBlindFormatted} / $${formattedValues.bigBlindFormatted}`
+                    )}
+                </span>
+                <span className={textClass}>Hand #{handNumber}</span>
+                {!showLeaveTable && <span className={textClass}>Next: Seat {nextToAct}</span>}
+                {showLeaveTable && (
+                    <button type="button" className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>
+                        <RxExit aria-hidden="true" /> Leave table
+                    </button>
+                )}
+            </>
+        );
+    };
 
     const closeMenuAnd = (action: () => void) => () => {
         setMenuOpen(false);
@@ -160,26 +235,29 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
 
     return (
         <div className="mobile-table-chrome flex-shrink-0">
-            {/* Single 44px row: table name · balance · fullscreen · hamburger.
-                viewport-fit=cover extends the page under the Dynamic Island and,
-                in landscape, under the notch on one side — the safe-area paddings
-                keep the row's content clear of both. */}
+            {/* 44px row. viewport-fit=cover extends the page under the notch;
+                the safe-area paddings keep the content clear of it. Status joins
+                this row when the probe says it fits; otherwise it drops to the
+                22px row below. The theme control always stays here. */}
             <div
-                className={`w-full min-h-[44px] flex items-center justify-between pl-3 relative z-[100] border-b-2 ${styles.headerRoot}`}
+                ref={rowRef}
+                className={`mobile-header-row w-full min-h-[44px] flex items-center relative z-[100] border-b-2 ${styles.headerRoot}`}
                 style={{
                     paddingTop: "env(safe-area-inset-top)",
                     paddingLeft: "calc(env(safe-area-inset-left) + 12px)",
                     paddingRight: "env(safe-area-inset-right)"
                 }}
             >
-                <button className="text-white text-sm font-bold cursor-pointer truncate min-w-0 flex-1 min-h-[44px] text-left" onClick={handleLobbyClick}>
+                <button className="mobile-header-name text-white text-sm font-bold cursor-pointer truncate min-h-[44px] text-left" onClick={handleLobbyClick}>
                     <span className="mr-2 text-purple-300" aria-hidden="true">
                         ←
                     </span>
                     <span className="sr-only">Back to lobby from </span>
                     {displayTableName(tableName, tableId)}
                 </button>
-                <div className="flex items-center flex-shrink-0">
+                {statusInline && <div className={`mobile-status-inline ${styles.mobileStatus}`}>{renderStatus(false)}</div>}
+                <div ref={toolsRef} className="mobile-header-tools">
+                    <ThemeToggle />
                     {/* Balance — money on the table, wanted at a glance; tap to refresh */}
                     <button
                         onClick={fetchAccountBalance}
@@ -213,53 +291,19 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         <FaBars size={18} />
                     </button>
                 </div>
+                <div ref={probeRef} className={`mobile-status-probe ${styles.mobileStatus}`} aria-hidden="true" inert>
+                    {renderStatus(false)}
+                </div>
             </div>
 
-            {/* Leave stays outside the betting controls and does not require opening the drawer. */}
-            <div
-                className={`w-full flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2 min-h-[22px] sub-header z-[1] ${styles.subHeaderRoot}`}
-                style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
-            >
-                <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>
-                    {blindLevel.isActive ? (
-                        <>
-                            {blindLevel.level !== undefined && `L${blindLevel.level + 1} `}
-                            {blindLevel.currentBlindsFormatted}
-                            {blindLevel.hasTimer && (
-                                <>
-                                    {" ("}
-                                    <span className={blindLevel.secondsRemaining < 0 ? "text-red-500" : "text-yellow-300"}>
-                                        {formatBlindCountdown(blindLevel.secondsRemaining)}
-                                    </span>
-                                    {")"}
-                                </>
-                            )}
-                        </>
-                    ) : (
-                        `$${formattedValues.smallBlindFormatted} / $${formattedValues.bigBlindFormatted}`
-                    )}
-                </span>
-                <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Hand #{handNumber}</span>
-                <ThemeToggle touch />
-                {!showLeaveTable && <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>}
-                {!openSidebar && (
-                    <button
-                        type="button"
-                        className="mobile-history-trigger"
-                        aria-label="Open hand history"
-                        aria-controls="table-history-panel"
-                        aria-expanded={false}
-                        onClick={onCloseSideBar}
-                    >
-                        ↶ History
-                    </button>
-                )}
-                {showLeaveTable && (
-                    <button className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>
-                        <RxExit aria-hidden="true" /> Leave table
-                    </button>
-                )}
-            </div>
+            {!statusInline && (
+                <div
+                    className={`mobile-status-fallback sub-header z-[1] ${styles.subHeaderRoot} ${styles.mobileStatus}`}
+                    style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
+                >
+                    {renderStatus(true)}
+                </div>
+            )}
 
             {/* Hamburger drawer */}
             {menuOpen && (

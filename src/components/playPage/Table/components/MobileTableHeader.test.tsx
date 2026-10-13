@@ -90,16 +90,14 @@ const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
 
 describe("MobileTableHeader drawer (ui#684)", () => {
     beforeEach(() => jest.clearAllMocks());
-    it("keeps hand history in the status strip, beside the blinds", () => {
-        const onHistory = jest.fn();
-        const view = renderHeader({ onHistory });
-        const history = screen.getByRole("button", { name: "Open hand history" });
-        expect(history.closest(".sub-header")).not.toBeNull();
-        fireEvent.click(history);
-        expect(onHistory).toHaveBeenCalledTimes(1);
-        view.unmount();
-        renderHeader({ onHistory, openSidebar: true });
+    it("keeps blinds in the chrome and the theme control in the top row", () => {
+        renderHeader();
         expect(screen.queryByRole("button", { name: "Open hand history" })).not.toBeInTheDocument();
+        const fallback = document.querySelector(".mobile-status-fallback");
+        expect(fallback).not.toBeNull();
+        expect(fallback).toHaveTextContent("Hand #1");
+        expect(screen.getByRole("group", { name: "Color theme" }).closest(".mobile-header-row")).not.toBeNull();
+        expect(screen.getByRole("group", { name: "Color theme" }).closest(".mobile-status-fallback")).toBeNull();
     });
 
     it("offers themes without opening the mobile drawer", () => {

@@ -2,6 +2,7 @@ import { resolveDebugOverlayAction } from "../../utils/debugOverlayKeys";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useTablePanels } from "../../hooks/game/useTablePanels";
 import { useHistoryDock } from "../../hooks/game/useHistoryDock";
+import { placeMobileHistory } from "./Table/placeMobileHistory";
 /**
  * Table Component
  *
@@ -48,7 +49,7 @@ import { useHistoryDock } from "../../hooks/game/useHistoryDock";
  */
 
 import { buildHandShareUrl } from "../../utils/handReplay";
-import { useEffect, useState, useMemo, useCallback, memo, useRef } from "react";
+import { useEffect, useLayoutEffect, useState, useMemo, useCallback, memo, useRef } from "react";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatPotDisplay, formatChipCount } from "../../utils/potDisplayUtils";
 // Position arrays now come from useTableLayout hook
@@ -876,12 +877,19 @@ const Table = React.memo(() => {
         if (!banner || !root) return;
         const apply = () => {
             root.style.setProperty("--mobile-chrome-end", `${Math.ceil(banner.getBoundingClientRect().bottom)}px`);
+            placeMobileHistory(root);
         };
         apply();
         const observer = new ResizeObserver(apply);
         observer.observe(banner);
+        const stage = root.querySelector(".table-stage");
+        if (stage) observer.observe(stage);
         chromeObserver.current = observer;
     }, []);
+    useLayoutEffect(() => {
+        const root = tableContainerRef.current?.closest(".table-container");
+        if (root instanceof HTMLElement) placeMobileHistory(root);
+    }, [openSidebar, isCompactMobile, tableOnly, tableLayout.containerWidth, tableLayout.containerHeight]);
     const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom, tableOnly, isCompactMobile);
     useEffect(() => {
         if (!tableOnly) return;
@@ -1577,7 +1585,7 @@ const Table = React.memo(() => {
                 )}
 
                 {/*//! ACTION LOG OVERLAY */}
-                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} anchorInHeader={isCompactMobile && !tableOnly} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />
+                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />
 
                 {/*//! SETTINGS OVERLAY */}
                 <TableSettingsSidebar isOpen={openSettings} tableStyle={tableStyle} onTableStyleChange={setTableStyle} onClose={onToggleSettings} />

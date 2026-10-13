@@ -15,11 +15,9 @@ export interface TableSidebarProps {
     onClose?: () => void;
     onOpen?: () => void;
     expandedHistory?: boolean;
-    /** The mobile status strip owns the closed launcher, so this panel does not float a second one over the felt. */
-    anchorInHeader?: boolean;
 }
 
-export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = false, dockHeight = 160, onClose, onOpen, expandedHistory = false, anchorInHeader = false }) => {
+export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = false, dockHeight = 160, onClose, onOpen, expandedHistory = false }) => {
     const panelRef = useRef<HTMLDivElement>(null);
     const expandRef = useRef<HTMLButtonElement | null>(null);
     const detailed = compact || expandedHistory;
@@ -49,7 +47,6 @@ export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = fa
         };
     }, [isOpen, detailed, compact, onClose]);
     if (compact && !isOpen) {
-        if (anchorInHeader) return null;
         return <button className="mobile-history-trigger" aria-label="Open hand history" aria-controls="table-history-panel" aria-expanded={false} onClick={onOpen}>↶ History</button>;
     }
     return (
