@@ -22,19 +22,16 @@ const LiveHandStrengthDisplay: React.FC = () => {
         return null;
     }
 
-    // Sit clear of the action bar in both layouts: its height plus a small gap.
-    // Desktop's footer is 160px (hence 168px). On phones the on-demand action
-    // bar measures 161px once it is showing bet sizing, so the old 100px put
-    // this bubble INSIDE it — "A high" sat on top of the bet buttons (#684).
-    // Both offsets are the bar's own height + 8px; the phone one adds the home
-    // indicator, which the bar also pads for.
+    // Mobile renders in its own row above the measured stage, never over the felt.
     const isCompactMobile = viewportMode === "mobile-portrait" || viewportMode === "mobile-landscape";
-    const bottomStyle = isCompactMobile ? { bottom: "calc(env(safe-area-inset-bottom) + 169px)" } : { bottom: "168px" };
+    const positionStyle: React.CSSProperties = isCompactMobile
+        ? { position: "relative", alignSelf: "flex-start", flexShrink: 0, margin: "4px 8px", padding: "4px 8px", maxWidth: "calc(100% - 16px)", pointerEvents: "none" }
+        : { position: "fixed", bottom: "168px", right: "16px" };
 
     return (
-        <div style={bottomStyle} className="fixed right-4 bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50">
+        <div style={positionStyle} className="live-hand-strength bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50">
             <div className="flex flex-col items-end">
-                <div className="text-white font-medium text-sm">{handStrength.descr}</div>
+                <div className="text-white font-medium text-sm" style={isCompactMobile ? { fontSize: "12px", lineHeight: 1.3 } : undefined}>{handStrength.descr}</div>
             </div>
         </div>
     );
