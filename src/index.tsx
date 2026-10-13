@@ -7,6 +7,7 @@ import "./theme/light.css";
 import "./components/common/ModalTheme.css";
 import "react-toastify/dist/ReactToastify.css";
 import App from "./App";
+import { installModalViewportFit } from "./utils/modalViewportFit";
 import { Profiler } from "react";
 import { NetworkProvider } from "./context/NetworkContext";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
@@ -35,6 +36,7 @@ if (!getCosmosMnemonic()) {
 }
 
 const root = createRoot(document.getElementById("app") as HTMLElement);
+installModalViewportFit();
 
 function onRenderCallback(
     _id: string,
