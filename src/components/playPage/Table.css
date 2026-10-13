@@ -25,12 +25,15 @@
     justify-content: center;
     gap: 5px;
     min-width: 100px;
-    padding: 8px 10px;
+    width: max-content;
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 5px 8px;
     border: 1px solid var(--theme-line-strong, #d6b2ef66);
     border-radius: 16px;
-    background: var(--empty-seat-glass, rgba(24, 15, 34, 0.42));
-    backdrop-filter: blur(8px) saturate(130%);
-    -webkit-backdrop-filter: blur(8px) saturate(130%);
+    background: linear-gradient(145deg, #ffffff08, #ffffff02), var(--empty-seat-glass, rgba(36, 24, 49, 0.20));
+    backdrop-filter: blur(var(--empty-seat-blur, 3px)) saturate(130%);
+    -webkit-backdrop-filter: blur(var(--empty-seat-blur, 3px)) saturate(130%);
     box-shadow: 0 6px 20px #0005, inset 0 1px 0 #ffffff12;
     color: var(--theme-ink, #d7b6eb);
 }
@@ -48,6 +51,7 @@
 }
 .vacant-seat-title {
     font-size: 16px;
+    font-weight: 800;
     color: var(--theme-ink, #e4d1ef);
     line-height: 1.2;
 }
@@ -60,6 +64,10 @@
 .table-container .vacant-seat:hover:not(:disabled) {
     background: var(--empty-seat-glass-hover, rgba(48, 27, 65, 0.58));
     box-shadow: 0 8px 24px #0006, inset 0 1px 0 #ffffff20;
+}
+.table-container .vacant-seat:hover,
+.table-container .vacant-seat:focus-visible {
+    filter: none;
 }
 .table-container .vacant-seat:disabled {
     cursor: default;
