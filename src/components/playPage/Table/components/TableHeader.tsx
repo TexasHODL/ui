@@ -9,6 +9,7 @@ import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handRepla
 import { GameFormat, GameOptionsDTO, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import styles from "./TableHeader.module.css";
+import { ThemeToggle } from "../../../ThemeToggle";
 
 export const formatBlindCountdown = (secondsRemaining: number): string => {
     // Negative = overtime (hand still running past the level end); show the
@@ -121,6 +122,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     </span>
                 </div>
                 <div className={styles.roomTools}>
+                    <ThemeToggle />
                     <details className={styles.walletMenu}>
                         <summary aria-label="Wallet options">
                             {isBalanceLoading ? "Loading…" : "$" + balanceFormatted}

@@ -29,6 +29,7 @@ import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { formatBlindCountdown } from "./TableHeader";
 import styles from "./TableHeader.module.css";
+import { ThemeToggle } from "../../../ThemeToggle";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -238,6 +239,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     )}
                 </span>
                 <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Hand #{handNumber}</span>
+                <ThemeToggle touch />
                 {!showLeaveTable && <span className={`text-[13px] font-semibold whitespace-nowrap ${styles.secondaryText}`}>Next: Seat {nextToAct}</span>}
                 {showLeaveTable && (
                     <button className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>

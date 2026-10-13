@@ -26,3 +26,8 @@
     outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 2px;
 }
+
+.touch button {
+    width: 44px;
+    height: 44px;
+}
