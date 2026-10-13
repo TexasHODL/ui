@@ -208,6 +208,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         </small>
                     )}
                     <span className={styles.handNumber}>Hand #{handNumber}</span>
+                    <span className={styles.nextToAct}>Next: Seat {nextToAct}</span>
                 </div>
                 <div className={styles.panelTabs} role="group" aria-label="Table panels">
                     <button
