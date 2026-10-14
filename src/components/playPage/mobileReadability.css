@@ -1,78 +1,78 @@
-/* Screen-space portrait dimensions. The stage supplies the inverse zoom so
+/* Shared screen-space mobile dimensions. The stage supplies the inverse zoom so
    all players (including revealed opponents) share the approved card size.
    On smaller/shorter phones the unit shrinks with available space. */
-[data-portrait-readable] .player-seat {
-    width: calc(96 * var(--portrait-unit));
-    height: calc(71 * var(--portrait-unit));
+[data-mobile-readable] .player-seat {
+    width: calc(96 * var(--mobile-unit));
+    height: calc(71 * var(--mobile-unit));
     justify-content: flex-start;
 }
-[data-portrait-readable] .player-cards {
-    height: calc(56 * var(--portrait-unit));
-    flex: 0 0 calc(56 * var(--portrait-unit));
+[data-mobile-readable] .player-cards {
+    height: calc(56 * var(--mobile-unit));
+    flex: 0 0 calc(56 * var(--mobile-unit));
 }
-[data-portrait-readable] .hole-card-fan {
-    width: calc(74 * var(--portrait-unit));
-    height: calc(56 * var(--portrait-unit));
-    flex-basis: calc(74 * var(--portrait-unit));
+[data-mobile-readable] .hole-card-fan {
+    width: calc(74 * var(--mobile-unit));
+    height: calc(56 * var(--mobile-unit));
+    flex-basis: calc(74 * var(--mobile-unit));
 }
-[data-portrait-readable] .hole-card-fan-slot,
-[data-portrait-readable] .hole-card-fan-slot > img {
-    width: calc(39 * var(--portrait-unit));
-    height: calc(51 * var(--portrait-unit));
-    flex-basis: calc(39 * var(--portrait-unit));
+[data-mobile-readable] .hole-card-fan-slot,
+[data-mobile-readable] .hole-card-fan-slot > img {
+    width: calc(39 * var(--mobile-unit));
+    height: calc(51 * var(--mobile-unit));
+    flex-basis: calc(39 * var(--mobile-unit));
 }
-[data-portrait-readable] .hole-card-fan-slot + .hole-card-fan-slot {
-    margin-left: calc(-8 * var(--portrait-unit));
+[data-mobile-readable] .hole-card-fan-slot + .hole-card-fan-slot {
+    margin-left: calc(-8 * var(--mobile-unit));
 }
-[data-portrait-readable] .player-details {
-    width: calc(88 * var(--portrait-unit));
-    height: calc(25 * var(--portrait-unit));
-    flex: 0 0 calc(25 * var(--portrait-unit));
-    margin: calc(-10 * var(--portrait-unit)) auto 0;
+[data-mobile-readable] .player-details {
+    width: calc(88 * var(--mobile-unit));
+    height: calc(25 * var(--mobile-unit));
+    flex: 0 0 calc(25 * var(--mobile-unit));
+    margin: calc(-10 * var(--mobile-unit)) auto 0;
     z-index: 2;
 }
-[data-portrait-readable] .player-badge-position { top: 0; }
-[data-portrait-readable] .badge-container {
-    min-height: calc(25 * var(--portrait-unit));
-    padding: calc(2 * var(--portrait-unit)) calc(3 * var(--portrait-unit));
+[data-mobile-readable] .player-badge-position { top: 0; }
+[data-mobile-readable] .badge-container {
+    min-height: calc(25 * var(--mobile-unit));
+    padding: calc(2 * var(--mobile-unit)) calc(3 * var(--mobile-unit));
 }
-[data-portrait-readable] .badge-value {
-    font-size: calc(15 * var(--portrait-unit));
+[data-mobile-readable] .badge-value {
+    font-size: calc(15 * var(--mobile-unit));
     font-weight: 700;
 }
-[data-portrait-readable] .badge-number {
-    width: calc(19 * var(--portrait-unit));
-    height: calc(19 * var(--portrait-unit));
-    font-size: calc(12 * var(--portrait-unit));
+[data-mobile-readable] .badge-number {
+    width: calc(19 * var(--mobile-unit));
+    height: calc(19 * var(--mobile-unit));
+    font-size: calc(12 * var(--mobile-unit));
 }
 /* The shell remains absolute: changing turns cannot re-centre a player. */
-[data-portrait-readable] .seat-banner-shell[data-banner-mode="timer"] {
-    margin-top: calc(-22 * var(--portrait-unit));
-    height: calc(38 * var(--portrait-unit));
+[data-mobile-readable] .seat-banner-shell[data-banner-mode="timer"] {
+    margin-top: calc(-22 * var(--mobile-unit));
+    height: calc(38 * var(--mobile-unit));
 }
-[data-portrait-readable] [data-banner-mode="timer"] .seat-banner-box {
-    min-height: calc(38 * var(--portrait-unit));
-    height: calc(38 * var(--portrait-unit));
-    padding: 0 calc(6 * var(--portrait-unit));
+[data-mobile-readable] [data-banner-mode="timer"] .seat-banner-box {
+    min-height: calc(38 * var(--mobile-unit));
+    height: calc(38 * var(--mobile-unit));
+    padding: 0 calc(6 * var(--mobile-unit));
 }
-[data-portrait-readable] [data-banner-mode="timer"] .animate-progress {
-    height: calc(5 * var(--portrait-unit));
-    margin-bottom: calc(5 * var(--portrait-unit));
-    gap: calc(5 * var(--portrait-unit));
+[data-mobile-readable] [data-banner-mode="timer"] .animate-progress {
+    height: calc(5 * var(--mobile-unit));
+    margin-bottom: calc(5 * var(--mobile-unit));
+    gap: calc(5 * var(--mobile-unit));
 }
-[data-portrait-readable] [data-banner-mode="timer"] .animate-progress span {
-    font-size: calc(12 * var(--portrait-unit));
-    width: calc(15 * var(--portrait-unit));
+[data-mobile-readable] [data-banner-mode="timer"] .animate-progress span {
+    font-size: calc(12 * var(--mobile-unit));
+    width: calc(15 * var(--mobile-unit));
     margin-left: 0;
 }
-[data-portrait-readable] .community-card-row { gap: calc(3 * var(--portrait-unit)); }
-[data-portrait-readable] .community-card-row > div,
-[data-portrait-readable] .community-card-row .card {
-    width: calc(39 * var(--portrait-unit));
-    height: calc(51 * var(--portrait-unit));
+[data-mobile-readable] .community-card-row { gap: calc(3 * var(--mobile-unit)); }
+[data-mobile-readable] .community-card-row > div,
+[data-mobile-readable] .community-card-row .card {
+    width: calc(39 * var(--mobile-unit));
+    height: calc(51 * var(--mobile-unit));
     flex-shrink: 0;
 }
-[data-portrait-readable] .community-board {
+[data-mobile-readable] .community-board {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -80,20 +80,20 @@
     margin-top: 0;
     transform: translate(-50%, -50%);
 }
-[data-portrait-readable] .community-board[data-portrait-seats="4"] {
+[data-mobile-readable] .community-board[data-portrait-seats="4"] {
     top: 20%;
     transform: translateX(-50%);
 }
-[data-portrait-readable] .community-board[data-portrait-seats="6"] {
-    top: calc(50% - 12 * var(--portrait-unit));
+[data-mobile-readable] .community-board[data-portrait-seats="6"] {
+    top: calc(50% - 12 * var(--mobile-unit));
 }
-[data-portrait-readable] .community-board[data-portrait-seats="9"] {
-    top: calc(50% - 38 * var(--portrait-unit));
+[data-mobile-readable] .community-board[data-portrait-seats="9"] {
+    top: calc(50% - 38 * var(--mobile-unit));
 }
-[data-portrait-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
-[data-portrait-readable] .community-board[data-portrait-seats="9"] .community-pots {
+[data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
+[data-mobile-readable] .community-board[data-portrait-seats="9"] .community-pots {
     position: absolute;
-    bottom: calc(100% + 12 * var(--portrait-unit));
+    bottom: calc(100% + 12 * var(--mobile-unit));
     white-space: nowrap;
 }
 /* Reserve the dock on every turn, but give its recovered height to the felt. */
@@ -116,4 +116,33 @@
     right: 0;
     transform: none;
     height: min(230px, 40dvh);
+}
+
+/* Centre the five-card row itself, irrespective of one or two pot labels. */
+[data-mobile-readable="landscape"] .community-card-row { margin-top: 0; }
+[data-mobile-readable="landscape"] .community-pots {
+    position: absolute;
+    top: calc(100% + 6 * var(--mobile-unit));
+    white-space: nowrap;
+    flex-direction: row;
+    gap: calc(6 * var(--mobile-unit));
+}
+[data-mobile-readable="landscape"] .pot-display {
+    font-size: calc(14 * var(--mobile-unit));
+    line-height: 1.2;
+}
+[data-mobile-readable="landscape"] .pot-display-secondary {
+    margin-top: 0;
+    font-size: calc(12 * var(--mobile-unit));
+    line-height: 1.2;
+}
+@media (max-height: 350px) {
+    [data-mobile-readable="landscape"] .community-board { top: calc(50% - 2 * var(--mobile-unit)); }
+    [data-mobile-readable="landscape"] .community-pots { top: calc(100% + 2 * var(--mobile-unit)); }
+    [data-mobile-readable="landscape"] .pot-display,
+    [data-mobile-readable="landscape"] .pot-display-secondary {
+        font-size: calc(12 * var(--mobile-unit));
+        line-height: 1.1;
+        padding: var(--mobile-unit) calc(6 * var(--mobile-unit));
+    }
 }
