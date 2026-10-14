@@ -130,6 +130,7 @@ import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getViewportMode, COMPONENT_SCALE, type PositionArrays, getSeatCoords, getStageDims, STAGE_DIMS, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
+import { mobileCardUnit } from "../../config/mobileCardSizing";
 import CustomDealer from "../../assets/CustomDealer.svg";
 import { useDealerPosition } from "../../hooks/game/useDealerPosition";
 
@@ -900,7 +901,7 @@ const Table = React.memo(() => {
     }, [tableOnly]);
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
-    const stageDims = STAGE_DIMS[isMobilePortrait ? "portrait" : "landscape"];
+    const stageDims = STAGE_DIMS[isMobilePortrait ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape"];
 
     // Add the useGameProgress hook
     const { isGameInProgress, handNumber, actionCount, nextToAct } = useGameProgress(id);
@@ -1439,7 +1440,7 @@ const Table = React.memo(() => {
                     )}
 
                     {/*//! TABLE — zoom-wrapper applies calculated transform */}
-                    <div className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-portrait-readable={isMobilePortrait || undefined} style={{ transform: tableLayout.tableTransform, ...cssVars({ "--portrait-unit": `${Math.min(1, tableLayout.containerWidth / 393, tableLayout.containerHeight / 480) / tableLayout.zoom}px` }) }}>
+                    <div className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: tableLayout.tableTransform, ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight) }) }}>
                         {/*//! Table coordinate space — the felt div at its stage origin.
                         Landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Portrait: 500×1000 at (175,300) on the 850×1600 stage.

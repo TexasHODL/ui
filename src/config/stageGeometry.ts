@@ -99,7 +99,7 @@ export const TABLE_ORIGIN_Y = TABLE_CENTER_Y - TABLE_HEIGHT / 2;  // 285
 // 90° (which rendered every seat label and card sideways and was hidden
 // behind the "Rotate to Play" gate).
 
-export type StageOrientation = "landscape" | "portrait";
+export type StageOrientation = "landscape" | "portrait" | "mobile-landscape";
 
 export interface StageDims {
     stageWidth: number;
@@ -116,6 +116,16 @@ export interface StageDims {
 }
 
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
+    "mobile-landscape": {
+        stageWidth: 1600,
+        stageHeight: 850,
+        tableWidth: 1000,
+        tableHeight: 320,
+        centerX: 800,
+        centerY: 425,
+        originX: 300,
+        originY: 265
+    },
     landscape: {
         stageWidth: STAGE_WIDTH,
         stageHeight: STAGE_HEIGHT,
@@ -139,7 +149,8 @@ export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
 };
 
 export function getStageOrientation(): StageOrientation {
-    return getViewportMode() === "mobile-portrait" ? "portrait" : "landscape";
+    const mode = getViewportMode();
+    return mode === "mobile-portrait" ? "portrait" : mode === "mobile-landscape" ? "mobile-landscape" : "landscape";
 }
 
 export function getStageDims(): StageDims {
@@ -250,8 +261,18 @@ const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
     ]
 };
 
+// Shorter mobile stadium, independent of desktop. Card sizing is in screen
+// pixels, so its vertical footprint must be reserved separately from the felt.
+const MOBILE_LANDSCAPE_SEAT_COORDS: Record<TableSize, [number, number][]> = {
+    2: [[800, 585], [800, 265]],
+    4: [[800, 585], [300, 425], [800, 265], [1300, 425]],
+    6: [[800, 585], [340, 515], [340, 335], [800, 265], [1260, 335], [1260, 515]],
+    9: [[800, 585], [565, 585], [300, 480], [390, 300], [665, 265], [935, 265], [1210, 300], [1300, 480], [1035, 585]]
+};
+
 /** Seat coordinates for the current orientation's stage. */
 export function getSeatCoords(tableSize: TableSize): [number, number][] {
+    if (getStageOrientation() === "mobile-landscape") return MOBILE_LANDSCAPE_SEAT_COORDS[tableSize];
     return getStageOrientation() === "portrait" ? PORTRAIT_SEAT_COORDS[tableSize] : SEAT_COORDS[tableSize];
 }
 
@@ -324,6 +345,7 @@ const PORTRAIT_DECK_ORIGIN: Position = { left: "250px", top: "360px" };
 
 /** The deck origin for the current orientation's felt. */
 export function getDeckOrigin(): Position {
+    if (getStageOrientation() === "mobile-landscape") return { left: "500px", top: "100px" };
     return getStageOrientation() === "portrait" ? PORTRAIT_DECK_ORIGIN : DECK_ORIGIN;
 }
 
@@ -335,7 +357,7 @@ export type TableSize = 2 | 4 | 6 | 9;
 /** Push a seat position outward from table center by SEAT_SPREAD pixels */
 function applySpread(sx: number, sy: number): [number, number] {
     // Portrait coordinates already include the approved rail/arc spacing.
-    if (getStageOrientation() === "portrait") return [sx, sy];
+    if (getStageOrientation() !== "landscape") return [sx, sy];
     if ((SEAT_SPREAD as number) === 0) return [sx, sy];
     const dims = getStageDims();
     const dx = sx - dims.centerX;
@@ -601,6 +623,7 @@ const PORTRAIT_GLOBAL_OFFSETS: typeof GLOBAL_OFFSETS = {
 };
 
 function globalOffsetsForOrientation(): typeof GLOBAL_OFFSETS {
+    if (getStageOrientation() === "mobile-landscape") return {};
     return getStageOrientation() === "portrait" ? PORTRAIT_GLOBAL_OFFSETS : GLOBAL_OFFSETS;
 }
 
@@ -789,7 +812,7 @@ const MAX_GLOBAL_SCALE = 2.0;
 export const PLAYER_UI_PADDING: Record<ViewportMode, { x: number; top: number; bottom: number }> = {
     "desktop":          { x: 80, top: 90, bottom: 90 },    // symmetric → perfectly centered between header and footer
     "tablet":           { x: 80, top: 120, bottom: 90 },
-    "mobile-landscape": { x: 40, top: 90, bottom: 90 },    // complete 140px seat at COMPONENT_SCALE, including timer
+    "mobile-landscape": { x: 100, top: 70, bottom: 90 }, // shared mobile cards, stack and absolute timer
     "mobile-portrait":  { x: 110, top: 100, bottom: 135 }, // larger cards + absolute timer below the hero
 };
 
@@ -813,6 +836,13 @@ export function getContentBounds(tableSize: TableSize): ContentBounds {
         maxX = Math.max(maxX, sx);
         minY = Math.min(minY, sy);
         maxY = Math.max(maxY, sy);
+    }
+    // Heads-up seats have no horizontal span; include the actual felt/rail so
+    // auto-fit cannot make a wide landscape table spill outside a short phone.
+    if (mode === "mobile-landscape") {
+        const dims = getStageDims();
+        minX = Math.min(minX, dims.originX - 30);
+        maxX = Math.max(maxX, dims.originX + dims.tableWidth + 30);
     }
     return {
         width: (maxX - minX) + pad.x * 2,

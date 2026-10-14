@@ -7,6 +7,7 @@
  */
 
 import { useState, useLayoutEffect, useCallback, useMemo, type RefObject } from "react";
+import { alignLandscapeSeatEdges } from "../../config/landscapeSeatEdges";
 import {
     type TableSize,
     type PositionArrays,
@@ -122,11 +123,16 @@ export const useTableLayout = (
     // viewportMode is a dependency of all three: it selects the stage orientation
     // (portrait vs landscape seat rings) inside the geometry engine, so a mode
     // flip must recompute positions even when tableSize/container are unchanged.
-    const positions = useMemo(() => getAllPositions(tableSize), [tableSize, viewportMode]);
 
     const { width: cw, height: ch } = containerSize;
 
     const zoom = useMemo(() => calculateZoom(tableSize, cw, ch), [tableSize, cw, ch, viewportMode]);
+    const positions = useMemo(() => {
+        const base = getAllPositions(tableSize);
+        return viewportMode === "mobile-landscape"
+            ? alignLandscapeSeatEdges(base, tableSize, cw, ch, zoom)
+            : base;
+    }, [tableSize, viewportMode, cw, ch, zoom]);
     const tableTransform = useMemo(
         () => getTableTransform(zoom, tableSize, cw, ch, viewportMode.startsWith("mobile") ? 0 : -48),
         [zoom, tableSize, cw, ch, viewportMode]
