@@ -348,7 +348,7 @@ export default function TableAdminPage() {
                 {/* Create Table Form */}
                 <details className="page-panel page-create-table">
                     <summary>
-                        Create a new table <span>Buy-in, blinds and advanced options</span>
+                        Create a new table
                     </summary>
                     <div className="table-creation creation-layout">
                         <section className="creation-fields" aria-label="Table settings">
@@ -439,7 +439,7 @@ export default function TableAdminPage() {
                             {/* Buy-In Section */}
                             <div className="mb-4">
                                 {isTournamentFormat(gameFormat) ? (
-                                    <div className="space-y-4">
+                                    <div className="creation-tournament-fields">
                                         {/* Buy In */}
                                         <div>
                                             <label className="text-gray-300 text-xs mb-1 block">Buy In ($)</label>

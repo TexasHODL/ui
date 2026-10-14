@@ -104,11 +104,17 @@
     margin-bottom: 32px;
 }
 .page-create-table > summary {
-    padding: 20px;
+    padding: 12px 18px;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 10px;
+    background: linear-gradient(110deg, #ff9518, #f020c8);
     cursor: pointer;
     font-size: 16px;
-    color: var(--theme-ink, #e2c9f3);
+    color: #180b24;
+    font-weight: 700;
 }
+.page-create-table:not([open]) { width: fit-content; max-width: 100%; }
 .page-create-table > summary > span {
     margin-left: 12px;
     color: var(--theme-muted, #9d8eaa);
