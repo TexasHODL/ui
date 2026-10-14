@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 20136)
-Total output lines: 1661
-
 import { resolveDebugOverlayAction } from "../../utils/debugOverlayKeys";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useTablePanels } from "../../hooks/game/useTablePanels";
@@ -893,7 +890,14 @@ const Table = React.memo(() => {
     }, []);
     useLayoutEffect(() => {
         const root = tableContainerRef.current?.closest(".table-container");
-        if (root instanceof HTMLElem…136 tokens truncated…turn () => window.removeEventListener("keydown", restore);
+        if (root instanceof HTMLElement) placeMobileHistory(root);
+    }, [openSidebar, isCompactMobile, tableOnly, tableLayout.containerWidth, tableLayout.containerHeight]);
+    const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom, tableOnly, isCompactMobile);
+    useEffect(() => {
+        if (!tableOnly) return;
+        const restore = (event: KeyboardEvent) => { if (event.key === "Escape") setTableOnly(false); };
+        window.addEventListener("keydown", restore);
+        return () => window.removeEventListener("keydown", restore);
     }, [tableOnly]);
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
