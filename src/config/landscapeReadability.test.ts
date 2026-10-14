@@ -1,5 +1,5 @@
 import { mobileCardUnit } from "./mobileCardSizing";
-import { alignLandscapeSeatEdges, landscapeFeltStretch, placeMobileRailMarkers } from "./landscapeSeatEdges";
+import { alignLandscapeSeatEdges, landscapeFeltStretch, mobileCardObstacles, placeMobileRailMarkers } from "./landscapeSeatEdges";
 import { calculateZoom, getAllPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
@@ -105,5 +105,59 @@ describe("landscape mobile readability", () => {
             expect(dealerDist * zoom).toBeGreaterThan(40);
         });
         expect(placed.players).toEqual(aligned.players);
+    });
+
+    test.each([
+        ["844x390 landscape", 844, 390, false],
+        ["915x412 landscape", 915, 412, false],
+        ["1024x650 landscape", 1024, 650, true],
+        ["1024x773 landscape", 1024, 773, true],
+        ["390x844 portrait", 390, 844, false]
+    ])("keeps every chip and dealer with its seat and off the cards at %s", (_label, width, height, coarse) => {
+        window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+        const portrait = height > width;
+        const cw = portrait ? width : width - 124;
+        const ch = portrait ? height - 130 : height - 70;
+        for (const size of [2, 6, 9] as TableSize[]) {
+            const zoom = calculateZoom(size, cw, ch);
+            const screenUnit = parseFloat(mobileCardUnit(portrait, zoom, cw, ch)) * zoom;
+            const base = getAllPositions(size);
+            const seats = portrait ? base : alignLandscapeSeatEdges(base, size, cw, ch, zoom);
+            const placed = placeMobileRailMarkers(seats, zoom, portrait ? 0 : landscapeFeltStretch(seats, size).shiftY, screenUnit, size);
+            const centres = placed.players.map(seat => ({ x: parseFloat(seat.left), y: parseFloat(seat.top) }));
+            const cards = mobileCardObstacles(seats, zoom, screenUnit, size);
+            const chipHalf = height <= 500 && width > height ? 72 : (width <= 768 || height <= 500) ? 86 : 54;
+            const chipHy = 16;
+            const hits = (x: number, y: number, hw: number, hy: number) => cards.some(card =>
+                Math.abs(x - card.x) < hw + card.hw && Math.abs(y - card.y) < hy + card.hy
+            );
+            const problems: string[] = [];
+            centres.forEach((seat, index) => {
+                const chip = { x: parseFloat(placed.chips[index].left), y: parseFloat(placed.chips[index].top ?? "0") };
+                const dealer = { x: parseFloat(placed.dealers[index].left), y: parseFloat(placed.dealers[index].top) };
+                const markers = [
+                    { kind: "chip", ...chip, hw: chipHalf, hy: chipHy },
+                    { kind: "dealer", ...dealer, hw: 24, hy: 24 }
+                ];
+                for (const marker of markers) {
+                    const own = Math.hypot(marker.x - seat.x, marker.y - seat.y);
+                    centres.forEach((other, otherIndex) => {
+                        if (otherIndex === index) return;
+                        const next = Math.hypot(marker.x - other.x, marker.y - other.y);
+                        if (own >= next) problems.push(`${size} seat ${index + 1} ${marker.kind} closer to seat ${otherIndex + 1} (${own.toFixed(0)} vs ${next.toFixed(0)})`);
+                    });
+                    if (hits(marker.x, marker.y, marker.hw, marker.hy)) problems.push(`${size} seat ${index + 1} ${marker.kind} on a card at ${marker.x},${marker.y}`);
+                }
+                const sepX = Math.abs(chip.x - dealer.x);
+                const sepY = Math.abs(chip.y - dealer.y);
+                if (sepX < chipHalf + 24 && sepY < chipHy + 24) {
+                    problems.push(`${size} seat ${index + 1} dealer on chip sep ${sepX.toFixed(0)},${sepY.toFixed(0)} chip ${chip.x},${chip.y} dealer ${dealer.x},${dealer.y}`);
+                }
+            });
+            expect(problems).toEqual([]);
+            expect(placed.players.map(seat => seat.top)).toEqual(seats.players.map(seat => seat.top));
+        }
     });
 });

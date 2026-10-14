@@ -68,7 +68,7 @@ function boxesOverlap(a: KeepOut, b: KeepOut, gap: number): boolean {
  * stays centred on the unscaled felt; portrait shifts the card row the same
  * way mobileReadability.css does.
  */
-function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolean): KeepOut[] {
+function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolean, lift: number): KeepOut[] {
     const dims = getStageDims();
     const cx = dims.tableWidth / 2;
     const mid = dims.tableHeight / 2;
@@ -98,6 +98,10 @@ function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolea
         potCy = groupTop + potH / 2;
         cardCy = groupTop + potH + margin + rowH / 2;
     }
+    // Short landscape CSS lifts the board (`mobileReadability.css`, 12 units)
+    // so the pot is not sitting on the bottom hole cards. The logo stays put.
+    cardCy -= lift;
+    potCy -= lift;
     const logoW = Math.min(dims.tableWidth * 0.44, 440);
     const logoH = logoW * (340 / 640);
     return [
@@ -107,11 +111,47 @@ function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolea
     ];
 }
 
+
 /**
- * Mobile bet chips sit just inside the rail, in front of the seat. The dealer
- * button sits beside that seat, on the felt. Both stay off seats, community
- * cards and the pot. Desktop keeps the hand-tuned offsets in stageGeometry.
+ * Mobile bet chips sit just inside the rail, in front of their own seat. The
+ * dealer button sits on that seat's shoulder, still closer to it than to either
+ * neighbour. Both stay off seats, hole cards, community cards and the pot.
+ * Desktop keeps the hand-tuned offsets in stageGeometry.
+ *
+ * Card rectangles (hole cards and the community row) in table-div pixels, for
+ * the same keep-out the placer uses. Tests assert markers miss these boxes.
  */
+export function mobileCardObstacles(
+    positions: PositionArrays,
+    zoom: number,
+    screenUnit: number,
+    tableSize: TableSize
+): Array<{ x: number; y: number; hw: number; hy: number }> {
+    const dims = getStageDims();
+    const z = Math.max(zoom, 0.01);
+    const unitStage = screenUnit / z;
+    const shortLandscape = typeof window !== "undefined" && window.innerWidth > window.innerHeight && window.innerHeight <= 500;
+    const lift = !shortLandscape ? 0 : (window.innerHeight <= 350 ? 2 : 12) * unitStage;
+    const portrait = dims.tableHeight > dims.tableWidth;
+    const seatHX = 48 * unitStage;
+    const seatHY = 35.5 * unitStage;
+    const holes = positions.players.map(seat => holeCardBox(parseFloat(seat.left), parseFloat(seat.top), seatHX, seatHY, unitStage));
+    const board = mobileBoardKeepOut(tableSize, unitStage, portrait, lift).filter(item => !item.soft);
+    // The first board entry is the community row; the second is the pot.
+    return [...holes, board[0]];
+}
+
+function holeCardBox(sx: number, sy: number, seatHX: number, _seatHY: number, unitStage: number): KeepOut {
+    // The fan is the top 51 units of the 71-unit seat. An 8° rotation sticks
+    // a few units past the seat's top edge (toward the felt on a bottom seat).
+    const cardH = 51 * unitStage;
+    const cardW = 74 * unitStage;
+    const overflow = 1 * unitStage;
+    const top = sy - 35.5 * unitStage - overflow;
+    const height = cardH + overflow;
+    return { x: sx, y: top + height / 2, hw: Math.min(cardW / 2 + 2 * unitStage, seatHX), hy: height / 2 };
+}
+
 export function placeMobileRailMarkers(
     positions: PositionArrays,
     zoom: number,
@@ -134,75 +174,92 @@ export function placeMobileRailMarkers(
     const shortLandscape = typeof window !== "undefined" && window.innerWidth > window.innerHeight && window.innerHeight <= 500;
     const bigChips = typeof window !== "undefined" && (window.innerWidth <= 768 || window.innerHeight <= 500) && !shortLandscape;
     const chipHX = bigChips ? 86 : shortLandscape ? 72 : 54;
-    const chipHY = bigChips ? 19 : 17;
+    const chipHY = 26;
     const dealerHalf = 24;
     // Preferred air when the rail has room. The minimum matches the overlap
     // check used on the rendered boxes (half a pixel of slack).
-    const preferGap = 8 / z;
+    // Tight air: a short felt has only a few pixels between the pot and the
+    // hole cards, so the bet sits against its seat rather than on the pot.
+    const preferGap = 5 / z;
     const minGap = 0.5 / z;
-    const board = mobileBoardKeepOut(tableSize, unitStage, dims.tableHeight > dims.tableWidth);
+    // 12 mobile units on a short landscape felt; 2 when the tighter 350px rule
+    // in mobileReadability.css overrides it. Zero everywhere else.
+    const boardLift = !shortLandscape ? 0 : (window.innerHeight <= 350 ? 2 : 12) * unitStage;
+    const board = mobileBoardKeepOut(tableSize, unitStage, dims.tableHeight > dims.tableWidth, boardLift);
     const seatBoxes: KeepOut[] = positions.players.map(seat => ({
         x: parseFloat(seat.left),
         y: parseFloat(seat.top),
         hw: seatHX,
         hy: seatHY
     }));
+    const holeCards = seatBoxes.map(seat => holeCardBox(seat.x, seat.y, seatHX, seatHY, unitStage));
     const feltTop = Math.min(...seatBoxes.map(seat => seat.y));
     const feltBottom = Math.max(...seatBoxes.map(seat => seat.y));
-
-    const clearOf = (ux: number, uy: number, halfX: number, halfY: number) => {
-        const needX = (seatHX + halfX + preferGap) / Math.max(Math.abs(ux), 0.08);
-        const needY = (seatHY + halfY + preferGap) / Math.max(Math.abs(uy), 0.08);
-        return Math.min(needX, needY);
-    };
+    const neighborDist = seatBoxes.map((seat, index) => {
+        let nearest = Infinity;
+        seatBoxes.forEach((other, otherIndex) => {
+            if (otherIndex !== index) nearest = Math.min(nearest, Math.hypot(seat.x - other.x, seat.y - other.y));
+        });
+        return nearest;
+    });
 
     const choose = (
         sx: number,
         sy: number,
+        seatIndex: number,
         halfX: number,
         halfY: number,
-        targetAng: number,
-        extra: KeepOut[]
+        angles: number[],
+        preferred: number,
+        extra: KeepOut[],
+        inset = 0
     ): { x: number; y: number } => {
         const len = Math.hypot(cx - sx, cy - sy) || 1;
         const ux = (cx - sx) / len;
         const uy = (cy - sy) / len;
-        const hard = [...seatBoxes, ...board.filter(item => !item.soft), ...extra];
+        const clearOf = (dirX: number, dirY: number, halfX: number, halfY: number) => {
+            const needX = (coreHX + halfX + preferGap) / Math.max(Math.abs(dirX), 0.08);
+            const needY = (coreHY + halfY + preferGap) / Math.max(Math.abs(dirY), 0.08);
+            return Math.min(needX, needY);
+        };
+        const coreHX = Math.max(8, seatHX - inset);
+        const coreHY = Math.max(8, seatHY - inset);
+        const coreSeats = seatBoxes.map(seat => ({ ...seat, hw: coreHX, hy: coreHY }));
+        const hard = [...coreSeats, ...holeCards, ...board.filter(item => !item.soft), ...extra];
         const soft = board.filter(item => item.soft);
+        // Stay in this seat's cell: closer to it than to any neighbour, and
+        // not out near the boundary where the bet could be read as either.
+        const owned = (x: number, y: number) => {
+            const own = Math.hypot(x - sx, y - sy);
+            const margin = 8 / z;
+            // Closer to this seat than to any neighbour, by a visible margin,
+            // so the bet cannot be read as belonging to the next player.
+            return seatBoxes.every((other, index) => index === seatIndex || own + margin < Math.hypot(x - other.x, y - other.y));
+        };
         let best: { x: number; y: number; score: number } | null = null;
         const consider = (x: number, y: number, score: number) => {
             const progress = (x - sx) * ux + (y - sy) * uy;
-            // In front of this seat, and inside the seat ring so it stays on the felt.
             if (progress < 4 / z) return;
-            if (y < feltTop || y > feltBottom || x < 0 || x > dims.tableWidth) return;
+            if (y < feltTop - 2 / z || y > feltBottom + 2 / z || x < 0 || x > dims.tableWidth) return;
+            if (!owned(x, y)) return;
             const box = { x, y, hw: halfX, hy: halfY };
             if (hard.some(item => boxesOverlap(box, item, minGap))) return;
             const logoHit = soft.some(item => boxesOverlap(box, item, minGap)) ? 1 : 0;
             const total = score + logoHit * (14 / z);
             if (!best || total < best.score) best = { x, y, score: total };
         };
-        // Stay on the rail, in front of the seat. A small angle puts the dealer
-        // beside the chip; chips themselves prefer the straight inward point.
-        const angles = targetAng === 0 ? [0, 0.22, -0.22, 0.45, -0.45] : [targetAng, -targetAng, 0.4, -0.4, 0];
-        for (const ang of angles) {
+        const cap = Math.max(len * 0.8, neighborDist[seatIndex] * 0.45);
+        const sample = (ang: number) => {
             const dirX = ux * Math.cos(ang) - uy * Math.sin(ang);
             const dirY = uy * Math.cos(ang) + ux * Math.sin(ang);
             const minD = clearOf(dirX, dirY, halfX, halfY);
-            for (let step = 0; step <= 2; step++) {
-                const dist = minD + step * (8 / z);
-                if (dist > len * 0.72) continue;
-                const x = sx + dirX * dist;
-                const y = sy + dirY * dist;
-                const progress = (x - sx) * ux + (y - sy) * uy;
-                if (progress < minD * 0.5) continue;
-                consider(x, y, dist + Math.abs(Math.abs(ang) - targetAng) * (48 / z));
+            for (let step = 0; step <= 8; step++) {
+                const dist = minD + step * (4 / z);
+                if (dist > cap) break;
+                consider(sx + dirX * dist, sy + dirY * dist, dist + Math.abs(Math.abs(ang) - preferred) * (36 / z));
             }
-        }
-        // Short felts put the rail point on the pot or the cards. Slide along
-        // the rail, both ways, and stop at the first step that fits. The slide
-        // stays in front of this seat instead of crossing the table.
-        // A chip that only clips the watermark can step along the rail a short
-        // way. Anything further would leave the seat it belongs to.
+        };
+        for (const ang of angles) sample(ang);
         // `best` is written inside `consider`, which control-flow analysis
         // cannot see, so copy it through a cast before reading its fields.
         const placed = best as { x: number; y: number; score: number } | null;
@@ -210,14 +267,15 @@ export function placeMobileRailMarkers(
             const tx = -uy;
             const ty = ux;
             let nudged: { x: number; y: number; score: number } | null = null;
-            for (let step = 1; step <= 6 && !nudged; step++) {
+            for (let step = 1; step <= 4 && !nudged; step++) {
                 const slide = step * (4 / z);
                 for (const sign of [1, -1]) {
                     const x = placed.x + tx * sign * slide;
                     const y = placed.y + ty * sign * slide;
+                    if (!owned(x, y)) continue;
                     const box = { x, y, hw: halfX, hy: halfY };
                     const progress = (x - sx) * ux + (y - sy) * uy;
-                    if (progress < 4 / z || y < feltTop || y > feltBottom || x < 0 || x > dims.tableWidth) continue;
+                    if (progress < 4 / z || y < feltTop - 2 / z || y > feltBottom + 2 / z || x < 0 || x > dims.tableWidth) continue;
                     if (hard.some(item => boxesOverlap(box, item, minGap))) continue;
                     if (soft.some(item => boxesOverlap(box, item, minGap))) continue;
                     nudged = { x, y, score: placed.score };
@@ -226,45 +284,56 @@ export function placeMobileRailMarkers(
             }
             if (nudged) best = nudged;
         }
+        // A wide angle reaches the shoulder beside the seat when the straight
+        // inward point belongs to the neighbour or sits under the cards.
         if (!best) {
-            const anchorD = Math.min(clearOf(ux, uy, halfX, halfY), len * 0.72);
-            const ax = sx + ux * anchorD;
-            const ay = sy + uy * anchorD;
-            const tx = -uy;
-            const ty = ux;
-            for (let step = 1; step <= 36 && !best; step++) {
-                const slide = step * (4 / z);
-                // Positive lift steps further onto the felt. Negative lift tucks
-                // into the gap beside the seat when the pot covers the rail point.
-                for (const lift of [0, 8 / z, -16 / z, -32 / z]) {
-                    consider(ax + tx * slide + ux * lift, ay + ty * slide + uy * lift, anchorD + slide + lift);
-                    consider(ax - tx * slide + ux * lift, ay - ty * slide + uy * lift, anchorD + slide + lift);
-                }
+            for (let ang = 0; ang <= 1.45; ang += 0.15) {
+                sample(ang);
+                if (ang > 0) sample(-ang);
             }
         }
         if (best) return best;
-        const fallback = Math.min(clearOf(ux, uy, halfX, halfY), len * 0.72);
+        const fallback = Math.min(clearOf(ux, uy, halfX, halfY), cap);
         return { x: sx + ux * fallback, y: sy + uy * fallback };
     };
 
-    // Seats nearer the side rails pick a pocket first. The centred hero then
-    // takes whichever side is left, instead of claiming a corner seat's chip.
+    // Chips prefer the straight inward point. The dealer prefers a shoulder
+    // just off that ray so it is not sitting on the chip or the next seat.
+    const chipAngles = [0, 0.18, -0.18, 0.36, -0.36];
+    const dealerAngles = [1.2, -1.2, 1.45, -1.45, 0.9, -0.9, 0.55, -0.55];
     const order = seatBoxes.map((seat, index) => ({ index, len: Math.hypot(cx - seat.x, cy - seat.y), side: Math.abs(seat.x - cx) }))
         .sort((a, b) => (b.side - a.side) || (b.len - a.len));
     const chipCenters: Array<{ x: number; y: number } | undefined> = [];
     const placedChips: KeepOut[] = [];
     for (const item of order) {
         const seat = seatBoxes[item.index];
-        const point = choose(seat.x, seat.y, chipHX, chipHY, 0, placedChips);
+        const point = choose(seat.x, seat.y, item.index, chipHX, chipHY, chipAngles, 0, placedChips);
+        // On a short felt the centre seats have a band only as tall as the
+        // pill, so the conservative search falls back onto the pot or the
+        // cards. Nudge just those bets back toward their seat. Side seats
+        // already have a clear spot and must stay put.
+        if (shortLandscape) {
+            const vertical = seat.y - cy;
+            const visualHY = (vertical > 0 ? 10 : 14) / z;
+            const onBoard = board.some(item => !item.soft && boxesOverlap(
+                { x: point.x, y: point.y, hw: chipHX, hy: visualHY }, item, 0
+            ));
+            if (onBoard && vertical > 40) point.y += 12;
+            else if (onBoard && vertical < -40) point.y -= 8;
+        }
         chipCenters[item.index] = point;
-        placedChips.push({ x: point.x, y: point.y, hw: chipHX, hy: chipHY });
+        // Pad the obstacle past the pill so the chip stack, which hangs off the
+        // label, still keeps the dealer button off the bet.
+        placedChips.push({ x: point.x, y: point.y, hw: chipHX + 6, hy: chipHY + 6 });
     }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
     });
-    const dealers = seatBoxes.map(seat => {
-        const point = choose(seat.x, seat.y, dealerHalf, dealerHalf, 0.78, placedChips);
+    const dealers = seatBoxes.map((seat, index) => {
+        // The button may sit in the seat's padding so it stays on this player's
+        // side of the gap. Hole cards are still a hard boundary.
+        const point = choose(seat.x, seat.y, index, dealerHalf, dealerHalf, dealerAngles, 1.2, placedChips, 28);
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px` };
     });
     return { ...positions, chips, dealers };

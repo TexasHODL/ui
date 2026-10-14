@@ -142,6 +142,14 @@
     font-size: calc(12 * var(--mobile-unit));
     line-height: 1.2;
 }
+/* A short landscape felt has no band between the pot and the bottom hole
+   cards. Lift the board (logo stays centred) so a bet fits in front of the
+   seat that owns it. Taller landscape and portrait keep the centred board. */
+@media (max-height: 500px) {
+    [data-mobile-readable="landscape"] .community-board {
+        top: calc(50% - 12 * var(--mobile-unit));
+    }
+}
 @media (max-height: 350px) {
     [data-mobile-readable="landscape"] .community-board { top: calc(50% - 2 * var(--mobile-unit)); }
     [data-mobile-readable="landscape"] .community-pots { top: calc(100% + 2 * var(--mobile-unit)); }
