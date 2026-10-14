@@ -290,6 +290,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     >
                         <FaBars size={18} />
                     </button>
+                    <ProfileAvatarButton title="Choose your avatar" />
                 </div>
                 <div ref={probeRef} className={`mobile-status-probe ${styles.mobileStatus}`} aria-hidden="true" inert>
                     {renderStatus(false)}
@@ -354,10 +355,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             <FaCopy size={14} className={styles.brandText} />
                             <span className={`font-mono text-xs truncate ${styles.brandText}`}>{formattedAddress}</span>
                         </button>
-                        <div className={`${menuRowClass} cursor-default`}>
-                            <ProfileAvatarButton title="Open avatar picker" className="min-w-[44px] min-h-[44px] flex items-center justify-center" />
-                            <span>Avatar / NFT badge</span>
-                        </div>
 
                         {/* Sharing */}
                         <button className={menuRowClass} onClick={closeMenuAnd(handleCopyTableLink)}>

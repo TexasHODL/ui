@@ -11,7 +11,7 @@ export const ProfileAvatarButton: React.FC<ProfileAvatarButtonProps> = ({ classN
     const { selectedAvatar, openDrawer } = useProfileAvatar();
 
     return (
-        <button onClick={openDrawer} className={`${styles.avatarButton} ${className}`.trim()} title={title}>
+        <button onClick={openDrawer} className={`${styles.avatarButton} ${className}`.trim()} title={title} aria-label={title}>
             {selectedAvatar?.imageUrl ? (
                 <img src={selectedAvatar.imageUrl} alt="Profile avatar" className={styles.avatarImage} />
             ) : (
