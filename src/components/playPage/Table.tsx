@@ -129,7 +129,6 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getViewportMode, COMPONENT_SCALE, type PositionArrays, getSeatCoords, getStageDims, STAGE_DIMS, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
-import { landscapeFeltStretch } from "../../config/landscapeSeatEdges";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 import CustomDealer from "../../assets/CustomDealer.svg";
@@ -903,10 +902,6 @@ const Table = React.memo(() => {
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
     const stageDims = STAGE_DIMS[isMobilePortrait ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape"];
-    const isLandscapeMobile = tableLayout.viewportMode === "mobile-landscape";
-    const feltStretch = isLandscapeMobile && (tableSize === 2 || tableSize === 4 || tableSize === 6 || tableSize === 9)
-        ? landscapeFeltStretch(tableLayout.positions, tableSize)
-        : null;
 
     // Add the useGameProgress hook
     const { isGameInProgress, handNumber, actionCount, nextToAct } = useGameProgress(id);
@@ -1461,12 +1456,9 @@ const Table = React.memo(() => {
                                 ...cssVars(ANIMATION_CSS_VARS)
                             }}
                         >
-                            {/* Felt paint only. On mobile landscape this scales to the seat
-                                ring; seats, cards, chips and the dealer stay in table space. */}
-                            <div
-                                className="absolute inset-0 pointer-events-none"
-                                style={feltStretch ? { transform: `translateY(${feltStretch.shiftY}px) scaleY(${feltStretch.scaleY})`, transformOrigin: "center center" } : undefined}
-                            >
+                            {/* Felt paint. Mobile landscape uses the same 1000×500 stadium as
+                                desktop and only the stage zoom scales it. */}
+                            <div className="absolute inset-0 pointer-events-none">
                             {/* Outer rail — Ignition-style 3D depth (modern and nouns) */}
                             {(tableStyle === "modern" || tableStyle === "nouns") && (
                                 <div
@@ -1478,10 +1470,7 @@ const Table = React.memo(() => {
                                         top: "-30px",
                                         borderStyle: "solid",
                                         borderColor: tableStyle === "nouns" ? "rgba(26, 26, 46, 0.8)" : "rgba(177, 76, 255, 0.34)",
-                                        borderLeftWidth: 10,
-                                        borderRightWidth: 10,
-                                        borderTopWidth: feltStretch ? 10 / feltStretch.scaleY : 10,
-                                        borderBottomWidth: feltStretch ? 10 / feltStretch.scaleY : 10,
+                                        borderWidth: 10,
                                         boxShadow:
                                             tableStyle === "nouns"
                                                 ? "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)"
@@ -1499,8 +1488,6 @@ const Table = React.memo(() => {
                                 style={{
                                     width: `${stageDims.tableWidth}px`,
                                     height: `${stageDims.tableHeight}px`,
-                                    borderTopWidth: feltStretch ? (tableStyle === "classic" || tableStyle === "nouns" ? 3 : 2) / feltStretch.scaleY : undefined,
-                                    borderBottomWidth: feltStretch ? (tableStyle === "classic" || tableStyle === "nouns" ? 3 : 2) / feltStretch.scaleY : undefined,
                                     borderColor:
                                         tableStyle === "nouns"
                                             ? "rgba(214, 60, 94, 0.4)"

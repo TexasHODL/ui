@@ -1,54 +1,4 @@
-import { mobileCardUnit } from "./mobileCardSizing";
-import { getContentBounds, getSeatCoords, getStageDims, type PositionArrays, type TableSize } from "./stageGeometry";
-
-/** Reserve the timer even when hidden, so changing turns never moves a seat. */
-export function alignLandscapeSeatEdges(positions: PositionArrays, size: TableSize, width: number, height: number, zoom: number): PositionArrays {
-    const unit = parseFloat(mobileCardUnit(false, zoom, width, height)) * zoom;
-    const top = 4 + 39 * unit;
-    const bottom = height - 4 - 54 * unit;
-    const dims = getStageDims();
-    const ty = Number((height / 2 - getContentBounds(size).centerY * zoom).toFixed(1));
-    const ys = positions.players.map(p => parseFloat(p.top));
-    const min = Math.min(...ys), max = Math.max(...ys);
-    const offsets = ys.map((y, i) => {
-        const lift = size === 9 && (i === 1 || i === 8) ? 10 * unit : 0;
-        const target = top + (y - min) / (max - min) * (bottom - top) - lift;
-        return (target - ty) / zoom - dims.originY - y;
-    });
-    const move = <T extends { top: string }>(p: T, i: number): T => ({ ...p, top: `${parseFloat(p.top) + offsets[i]}px` });
-    return {
-        ...positions,
-        players: positions.players.map(move),
-        vacantPlayers: positions.vacantPlayers.map(move),
-        chips: positions.chips.map((p, i) => ({ ...p, bottom: `${parseFloat(p.bottom) - offsets[i]}px` })),
-        dealers: positions.dealers.map(move),
-        turnAnimations: positions.turnAnimations.map(move),
-        winAnimations: positions.winAnimations.map(move),
-        holeCards: positions.holeCards.map((p, i) => ({ first: move(p.first, i), second: move(p.second, i) }))
-    };
-}
-
-/**
- * How far the mobile-landscape felt must scale around its centre so its rail
- * meets the seat ring. Seats are already stretched to the screen; this does
- * not move them. `shiftY` is the table-space nudge that keeps the scaled
- * centre on the stretched ring's centre.
- */
-export function landscapeFeltStretch(positions: PositionArrays, size: TableSize): { scaleY: number; shiftY: number } {
-    const dims = getStageDims();
-    const original = getSeatCoords(size).map(([, y]) => y - dims.originY);
-    const oMin = Math.min(...original);
-    const oMax = Math.max(...original);
-    const span = oMax - oMin;
-    if (span <= 0) return { scaleY: 1, shiftY: 0 };
-    const tops = positions.players.map(seat => parseFloat(seat.top));
-    const min = Math.min(...tops);
-    const max = Math.max(...tops);
-    return {
-        scaleY: (max - min) / span,
-        shiftY: (min + max) / 2 - (oMin + oMax) / 2
-    };
-}
+import { getStageDims, type PositionArrays, type TableSize } from "./stageGeometry";
 
 interface KeepOut {
     x: number;
@@ -130,20 +80,18 @@ export function mobileCardObstacles(
     const dims = getStageDims();
     const z = Math.max(zoom, 0.01);
     const unitStage = screenUnit / z;
-    const shortLandscape = typeof window !== "undefined" && window.innerWidth > window.innerHeight && window.innerHeight <= 500;
-    const lift = !shortLandscape ? 0 : (window.innerHeight <= 350 ? 2 : 12) * unitStage;
     const portrait = dims.tableHeight > dims.tableWidth;
     const seatHX = 48 * unitStage;
     const seatHY = 35.5 * unitStage;
     const holes = positions.players.map(seat => holeCardBox(parseFloat(seat.left), parseFloat(seat.top), seatHX, seatHY, unitStage));
-    const board = mobileBoardKeepOut(tableSize, unitStage, portrait, lift).filter(item => !item.soft);
+    const board = mobileBoardKeepOut(tableSize, unitStage, portrait, 0).filter(item => !item.soft);
     // The first board entry is the community row; the second is the pot.
     return [...holes, board[0]];
 }
 
 /**
  * True when a table-div point lies inside the painted felt, clear of the rail.
- * Landscape stretches the rail in Y; `pad` is the air inside the outer edge,
+ * `pad` is the air inside the outer edge,
  * in table pixels, so a bet sits on the felt rather than on the stroke.
  */
 export function mobileFeltContains(x: number, y: number, scaleY: number, shiftY: number, pad = 4): boolean {
@@ -202,7 +150,7 @@ export function placeMobileRailMarkers(
     const cx = dims.tableWidth / 2;
     const cy = dims.tableHeight / 2 + centerYShift;
     const z = Math.max(zoom, 0.01);
-    const feltScaleY = dims.tableHeight > dims.tableWidth ? 1 : landscapeFeltStretch(positions, tableSize).scaleY;
+    const feltScaleY = 1;
     const boxOnFelt = (x: number, y: number, hw: number, hy: number) =>
         [[-hw, -hy], [hw, -hy], [-hw, hy], [hw, hy]].every(([dx, dy]) => mobileFeltContains(x + dx, y + dy, feltScaleY, centerYShift));
     const unitStage = screenUnit / z;
@@ -224,9 +172,7 @@ export function placeMobileRailMarkers(
     // hole cards, so the bet sits against its seat rather than on the pot.
     const preferGap = 5 / z;
     const minGap = 0.5 / z;
-    // 12 mobile units on a short landscape felt; 2 when the tighter 350px rule
-    // in mobileReadability.css overrides it. Zero everywhere else.
-    const boardLift = !shortLandscape ? 0 : (window.innerHeight <= 350 ? 2 : 12) * unitStage;
+    const boardLift = 0;
     const board = mobileBoardKeepOut(tableSize, unitStage, dims.tableHeight > dims.tableWidth, boardLift);
     const seatBoxes: KeepOut[] = positions.players.map(seat => ({
         x: parseFloat(seat.left),
@@ -281,8 +227,13 @@ export function placeMobileRailMarkers(
         let best: { x: number; y: number; score: number } | null = null;
         const consider = (x: number, y: number, score: number) => {
             const progress = (x - sx) * ux + (y - sy) * uy;
-            if (progress < 4 / z) return;
-            if (y < feltTop - 2 / z || y > feltBottom + 2 / z || x < 0 || x > dims.tableWidth) return;
+            // Chips stay inward of the seat. The dealer may sit on the
+            // shoulder, including slightly outside the rail, so it can clear
+            // the hole cards when those cards fill the inward gap.
+            const minProgress = preferred === 0 ? 4 / z : -36;
+            if (progress < minProgress) return;
+            const yPad = preferred === 0 ? 2 / z : 48;
+            if (y < feltTop - yPad || y > feltBottom + yPad || x < -40 || x > dims.tableWidth + 40) return;
             if (!owned(x, y)) return;
             const box = { x, y, hw: halfX, hy: halfY };
             if (hard.some(item => boxesOverlap(box, item, minGap))) return;
@@ -290,7 +241,7 @@ export function placeMobileRailMarkers(
             const total = score + logoHit * (14 / z);
             if (!best || total < best.score) best = { x, y, score: total };
         };
-        const cap = Math.max(len * 0.8, neighborDist[seatIndex] * 0.45);
+        const cap = Math.max(len * 0.8, neighborDist[seatIndex] * (preferred === 0 ? 0.45 : 0.48));
         const sample = (ang: number) => {
             const dirX = ux * Math.cos(ang) - uy * Math.sin(ang);
             const dirY = uy * Math.cos(ang) + ux * Math.sin(ang);
@@ -335,6 +286,33 @@ export function placeMobileRailMarkers(
             }
         }
         if (best) return best;
+        // The inward point is under the hole cards. Step along the seat's
+        // shoulders until the button is beside the seat and still this player's.
+        if (preferred !== 0) {
+            const tx = -uy;
+            const ty = ux;
+            const accept = (x: number, y: number) => {
+                if (!owned(x, y)) return false;
+                const box = { x, y, hw: halfX, hy: halfY };
+                return !hard.some(item => boxesOverlap(box, item, minGap));
+            };
+            // Outside the rail, beside the player. The inward gap is the hole
+            // cards; this side of the seat is clear and still this player's.
+            for (let dist = 16; dist <= 90; dist += 4) {
+                for (const side of [0, 1, -1]) {
+                    const x = sx - ux * dist + tx * side * dist * 0.6;
+                    const y = sy - uy * dist + ty * side * dist * 0.6;
+                    if (accept(x, y)) return { x, y };
+                }
+            }
+            for (let dist = 16; dist <= 150; dist += 4) {
+                for (const sign of [1, -1]) {
+                    const x = sx + tx * sign * dist + ux * (8 / z);
+                    const y = sy + ty * sign * dist + uy * (8 / z);
+                    if (accept(x, y)) return { x, y };
+                }
+            }
+        }
         const fallback = Math.min(clearOf(ux, uy, halfX, halfY), cap);
         return { x: sx + ux * fallback, y: sy + uy * fallback };
     };
@@ -342,7 +320,7 @@ export function placeMobileRailMarkers(
     // Chips prefer the straight inward point. The dealer prefers a shoulder
     // just off that ray so it is not sitting on the chip or the next seat.
     const chipAngles = [0, 0.18, -0.18, 0.36, -0.36];
-    const dealerAngles = [1.2, -1.2, 1.45, -1.45, 0.9, -0.9, 0.55, -0.55];
+    const dealerAngles = [1.2, -1.2, 1.57, -1.57, 1.45, -1.45, 0.9, -0.9, 0.55, -0.55];
     const order = seatBoxes.map((seat, index) => ({ index, len: Math.hypot(cx - seat.x, cy - seat.y), side: Math.abs(seat.x - cx) }))
         .sort((a, b) => (b.side - a.side) || (b.len - a.len));
     const chipCenters: Array<{ x: number; y: number } | undefined> = [];
@@ -383,7 +361,7 @@ export function placeMobileRailMarkers(
     // mobileReadability.css shrinks the painted mark to 24% (short landscape)
     // and 26% (portrait) of the table. The search still treats the full 44%
     // watermark as a soft penalty; this box is the mark that is actually drawn.
-    const paintedScale = shortLandscape ? 0.24 / 0.44 : dims.tableHeight > dims.tableWidth ? 0.26 / 0.44 : 1;
+    const paintedScale = dims.tableHeight > dims.tableWidth ? 0.26 / 0.44 : 1;
     const fullLogo = board.find(item => item.soft);
     const paintedLogo = fullLogo
         ? { ...fullLogo, hw: fullLogo.hw * paintedScale, hy: fullLogo.hy * paintedScale }

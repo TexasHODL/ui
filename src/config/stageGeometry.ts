@@ -118,15 +118,18 @@ export interface StageDims {
 }
 
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
+    // Same felt as the desktop table (1000×500). Mobile landscape only
+    // uniform-scales this stage into the area under the header, so the
+    // shape stays 2:1 and spare width is left empty.
     "mobile-landscape": {
         stageWidth: 1600,
         stageHeight: 850,
-        tableWidth: 1000,
-        tableHeight: 320,
-        centerX: 800,
-        centerY: 425,
-        originX: 300,
-        originY: 265
+        tableWidth: TABLE_WIDTH,
+        tableHeight: TABLE_HEIGHT,
+        centerX: TABLE_CENTER_X,
+        centerY: TABLE_CENTER_Y,
+        originX: TABLE_ORIGIN_X,
+        originY: TABLE_ORIGIN_Y
     },
     landscape: {
         stageWidth: STAGE_WIDTH,
@@ -263,19 +266,12 @@ const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
     ]
 };
 
-// Shorter mobile stadium, independent of desktop. Card sizing is in screen
-// pixels, so its vertical footprint must be reserved separately from the felt.
-const MOBILE_LANDSCAPE_SEAT_COORDS: Record<TableSize, [number, number][]> = {
-    2: [[800, 585], [800, 265]],
-    4: [[800, 585], [300, 425], [800, 265], [1300, 425]],
-    6: [[800, 585], [340, 515], [340, 335], [800, 265], [1260, 335], [1260, 515]],
-    9: [[800, 585], [565, 585], [300, 480], [390, 300], [665, 265], [935, 265], [1210, 300], [1300, 480], [1035, 585]]
-};
-
-/** Seat coordinates for the current orientation's stage. */
+/** Seat coordinates for the current orientation's stage.
+ *  Mobile landscape uses the desktop ring so seats sit on the same rail;
+ *  only the stage zoom changes. */
 export function getSeatCoords(tableSize: TableSize): [number, number][] {
-    if (getStageOrientation() === "mobile-landscape") return MOBILE_LANDSCAPE_SEAT_COORDS[tableSize];
-    return getStageOrientation() === "portrait" ? PORTRAIT_SEAT_COORDS[tableSize] : SEAT_COORDS[tableSize];
+    if (getStageOrientation() === "portrait") return PORTRAIT_SEAT_COORDS[tableSize];
+    return SEAT_COORDS[tableSize];
 }
 
 
@@ -347,7 +343,6 @@ const PORTRAIT_DECK_ORIGIN: Position = { left: "250px", top: "360px" };
 
 /** The deck origin for the current orientation's felt. */
 export function getDeckOrigin(): Position {
-    if (getStageOrientation() === "mobile-landscape") return { left: "500px", top: "100px" };
     return getStageOrientation() === "portrait" ? PORTRAIT_DECK_ORIGIN : DECK_ORIGIN;
 }
 
@@ -359,7 +354,8 @@ export type TableSize = 2 | 4 | 6 | 9;
 /** Push a seat position outward from table center by SEAT_SPREAD pixels */
 function applySpread(sx: number, sy: number): [number, number] {
     // Portrait coordinates already include the approved rail/arc spacing.
-    if (getStageOrientation() !== "landscape") return [sx, sy];
+    // Mobile landscape shares the desktop ring, including this spread.
+    if (getStageOrientation() === "portrait") return [sx, sy];
     if ((SEAT_SPREAD as number) === 0) return [sx, sy];
     const dims = getStageDims();
     const dx = sx - dims.centerX;

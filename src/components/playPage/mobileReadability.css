@@ -142,29 +142,12 @@
     font-size: calc(12 * var(--mobile-unit));
     line-height: 1.2;
 }
-/* A short landscape felt has no band between the pot and the bottom hole
-   cards. Lift the board (logo stays centred) so a bet fits in front of the
-   seat that owns it. Taller landscape and portrait keep the centred board. */
-@media (max-height: 500px) {
-    [data-mobile-readable="landscape"] .community-board {
-        top: calc(50% - 12 * var(--mobile-unit));
-    }
-    /* The 44% watermark reaches the rail on a short felt, so the centre and
-       side bets sit inside it. A smaller centred mark leaves those bets on
-       the felt. Keep this in sync with the painted-logo box in
-       landscapeSeatEdges.ts (24% of the table). */
-    .table-container[data-table-theme="modern"] [data-mobile-readable="landscape"] .table-logo {
-        width: 24%;
-    }
-}
 /* Portrait's 44% mark reaches the side bets. 26% of the table clears them
    and still sits in the middle of the felt. */
 .table-container[data-table-theme="modern"] [data-mobile-readable="portrait"] .table-logo {
     width: 26%;
 }
 @media (max-height: 350px) {
-    [data-mobile-readable="landscape"] .community-board { top: calc(50% - 2 * var(--mobile-unit)); }
-    [data-mobile-readable="landscape"] .community-pots { top: calc(100% + 2 * var(--mobile-unit)); }
     [data-mobile-readable="landscape"] .pot-display,
     [data-mobile-readable="landscape"] .pot-display-secondary {
         font-size: calc(12 * var(--mobile-unit));

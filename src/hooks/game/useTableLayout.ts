@@ -7,7 +7,7 @@
  */
 
 import { useState, useLayoutEffect, useCallback, useMemo, type RefObject } from "react";
-import { alignLandscapeSeatEdges, landscapeFeltStretch, placeMobileRailMarkers } from "../../config/landscapeSeatEdges";
+import { placeMobileRailMarkers } from "../../config/landscapeSeatEdges";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 import {
     type TableSize,
@@ -131,11 +131,7 @@ export const useTableLayout = (
     const positions = useMemo(() => {
         const base = getAllPositions(tableSize);
         const screenUnit = parseFloat(mobileCardUnit(viewportMode === "mobile-portrait", zoom, cw, ch)) * zoom;
-        if (viewportMode === "mobile-landscape") {
-            const aligned = alignLandscapeSeatEdges(base, tableSize, cw, ch, zoom);
-            return placeMobileRailMarkers(aligned, zoom, landscapeFeltStretch(aligned, tableSize).shiftY, screenUnit, tableSize);
-        }
-        if (viewportMode === "mobile-portrait") {
+        if (viewportMode === "mobile-landscape" || viewportMode === "mobile-portrait") {
             return placeMobileRailMarkers(base, zoom, 0, screenUnit, tableSize);
         }
         return base;
