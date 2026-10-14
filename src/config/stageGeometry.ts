@@ -62,6 +62,8 @@ export interface Position {
 export interface ChipPosition {
     left: string;
     bottom: string;
+    /** Set on mobile, where the chip is centred on this table-space point. */
+    top?: string;
 }
 
 /**

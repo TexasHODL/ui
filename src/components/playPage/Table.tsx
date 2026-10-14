@@ -129,6 +129,7 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getViewportMode, COMPONENT_SCALE, type PositionArrays, getSeatCoords, getStageDims, STAGE_DIMS, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
+import { landscapeFeltStretch } from "../../config/landscapeSeatEdges";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 import CustomDealer from "../../assets/CustomDealer.svg";
@@ -408,7 +409,7 @@ const PositionDebugMarkers: React.FC<{ positions: PositionArrays }> = ({ positio
     );
     return (
         <>
-            {debug.showChips && positions.chips.map((chip, i) => markerStyle(chip.left, chip.bottom, "#4ade80", `C${i + 1}`, true))}
+            {debug.showChips && positions.chips.map((chip, i) => markerStyle(chip.left, chip.top ?? chip.bottom, "#4ade80", `C${i + 1}`, true))}
             {debug.showDealers && positions.dealers.map((d, i) => markerStyle(d.left, d.top, "#fbbf24", `D${i + 1}`))}
             {debug.showSeats && positions.players.map((p, i) => markerStyle(p.left, p.top, "#60a5fa", `S${i + 1}`))}
             {debug.showCards && positions.holeCards.map((slot, i) => [cardOutline(slot.first, `H${i + 1}a`), cardOutline(slot.second, `H${i + 1}b`)])}
@@ -902,6 +903,10 @@ const Table = React.memo(() => {
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
     const stageDims = STAGE_DIMS[isMobilePortrait ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape"];
+    const isLandscapeMobile = tableLayout.viewportMode === "mobile-landscape";
+    const feltStretch = isLandscapeMobile && (tableSize === 2 || tableSize === 4 || tableSize === 6 || tableSize === 9)
+        ? landscapeFeltStretch(tableLayout.positions, tableSize)
+        : null;
 
     // Add the useGameProgress hook
     const { isGameInProgress, handNumber, actionCount, nextToAct } = useGameProgress(id);
@@ -1456,6 +1461,12 @@ const Table = React.memo(() => {
                                 ...cssVars(ANIMATION_CSS_VARS)
                             }}
                         >
+                            {/* Felt paint only. On mobile landscape this scales to the seat
+                                ring; seats, cards, chips and the dealer stay in table space. */}
+                            <div
+                                className="absolute inset-0 pointer-events-none"
+                                style={feltStretch ? { transform: `translateY(${feltStretch.shiftY}px) scaleY(${feltStretch.scaleY})`, transformOrigin: "center center" } : undefined}
+                            >
                             {/* Outer rail — Ignition-style 3D depth (modern and nouns) */}
                             {(tableStyle === "modern" || tableStyle === "nouns") && (
                                 <div
@@ -1465,7 +1476,12 @@ const Table = React.memo(() => {
                                         height: `${stageDims.tableHeight + 60}px`,
                                         left: "-30px",
                                         top: "-30px",
-                                        border: tableStyle === "nouns" ? "10px solid rgba(26, 26, 46, 0.8)" : "10px solid rgba(177, 76, 255, 0.34)",
+                                        borderStyle: "solid",
+                                        borderColor: tableStyle === "nouns" ? "rgba(26, 26, 46, 0.8)" : "rgba(177, 76, 255, 0.34)",
+                                        borderLeftWidth: 10,
+                                        borderRightWidth: 10,
+                                        borderTopWidth: feltStretch ? 10 / feltStretch.scaleY : 10,
+                                        borderBottomWidth: feltStretch ? 10 / feltStretch.scaleY : 10,
                                         boxShadow:
                                             tableStyle === "nouns"
                                                 ? "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)"
@@ -1479,10 +1495,12 @@ const Table = React.memo(() => {
                             )}
                             {/* Table felt surface */}
                             <div
-                                className={`table-surface-shadow z-20 relative flex flex-col text-center border-solid rounded-[250px] items-center justify-center ${tableStyle === "nouns" ? "nouns-table-felt border-[3px]" : tableStyle === "classic" ? "border-[3px]" : "border-[2px]"}`}
+                                className={`table-surface-shadow z-20 relative border-solid rounded-[250px] ${tableStyle === "nouns" ? "nouns-table-felt border-[3px]" : tableStyle === "classic" ? "border-[3px]" : "border-[2px]"}`}
                                 style={{
                                     width: `${stageDims.tableWidth}px`,
                                     height: `${stageDims.tableHeight}px`,
+                                    borderTopWidth: feltStretch ? (tableStyle === "classic" || tableStyle === "nouns" ? 3 : 2) / feltStretch.scaleY : undefined,
+                                    borderBottomWidth: feltStretch ? (tableStyle === "classic" || tableStyle === "nouns" ? 3 : 2) / feltStretch.scaleY : undefined,
                                     borderColor:
                                         tableStyle === "nouns"
                                             ? "rgba(214, 60, 94, 0.4)"
@@ -1490,7 +1508,9 @@ const Table = React.memo(() => {
                                               ? "rgba(255, 255, 255, 0.3)"
                                               : "rgba(255, 255, 255, 0.08)"
                                 }}
-                            >
+                            />
+                            </div>
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pointer-events-none">
                                 <TableBoard
                                     clubLogo={clubLogo}
                                     potDisplayValues={potDisplayValues}
@@ -1513,6 +1533,7 @@ const Table = React.memo(() => {
                                                 seatIndex={seatNumber}
                                                 left={position.left}
                                                 bottom={position.bottom}
+                                                top={position.top}
                                                 isTournament={isTournamentFormat(gameFormat)}
                                             />
                                         );

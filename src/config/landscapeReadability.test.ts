@@ -1,7 +1,6 @@
 import { mobileCardUnit } from "./mobileCardSizing";
-import { alignLandscapeSeatEdges } from "./landscapeSeatEdges";
-import { getAllPositions } from "./stageGeometry";
-import { calculateZoom, getStageDims, getSeatCoords, getContentBounds, getTableTransform, type TableSize } from "./stageGeometry";
+import { alignLandscapeSeatEdges, landscapeFeltStretch, placeMobileRailMarkers } from "./landscapeSeatEdges";
+import { calculateZoom, getAllPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -59,5 +58,52 @@ describe("landscape mobile readability", () => {
                 expect(ys[0] - ys[8]).toBeCloseTo(10);
             }
         }
+    });
+
+    test("scales the felt onto the seat ring without moving seats", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 650 });
+        const size: TableSize = 9;
+        const zoom = calculateZoom(size, 900, 570);
+        const aligned = alignLandscapeSeatEdges(getAllPositions(size), size, 900, 570, zoom);
+        const before = aligned.players.map(seat => seat.top);
+        const stretch = landscapeFeltStretch(aligned, size);
+        expect(stretch.scaleY).toBeGreaterThan(1.4);
+        const dims = getStageDims();
+        const centre = dims.tableHeight / 2 + stretch.shiftY;
+        const tops = aligned.players.map(seat => parseFloat(seat.top));
+        const feltTop = centre - (dims.tableHeight / 2) * stretch.scaleY;
+        const feltBottom = centre + (dims.tableHeight / 2) * stretch.scaleY;
+        expect(feltTop).toBeCloseTo(Math.min(...tops), 0);
+        expect(feltBottom).toBeCloseTo(Math.max(...tops), 0);
+        expect(aligned.players.map(seat => seat.top)).toEqual(before);
+    });
+
+    test("places mobile chips and the dealer beside the seat, not at mid-felt", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 650 });
+        const size: TableSize = 9;
+        const zoom = calculateZoom(size, 900, 570);
+        const aligned = alignLandscapeSeatEdges(getAllPositions(size), size, 900, 570, zoom);
+        const placed = placeMobileRailMarkers(aligned, zoom, landscapeFeltStretch(aligned, size).shiftY);
+        const dims = getStageDims();
+        const cx = dims.tableWidth / 2;
+        const cy = dims.tableHeight / 2;
+        placed.players.forEach((seat, i) => {
+            const sx = parseFloat(seat.left);
+            const sy = parseFloat(seat.top);
+            const chip = placed.chips[i];
+            const dealer = placed.dealers[i];
+            const toCentre = Math.hypot(cx - sx, cy - sy);
+            const chipDist = Math.hypot(parseFloat(chip.left) - sx, parseFloat(chip.top ?? "0") - sy);
+            const dealerDist = Math.hypot(parseFloat(dealer.left) - sx, parseFloat(dealer.top) - sy);
+            expect(chipDist).toBeLessThan(toCentre * 0.5);
+            expect(chipDist * zoom).toBeGreaterThan(40);
+            expect(dealerDist * zoom).toBeLessThan(160);
+            expect(dealerDist * zoom).toBeGreaterThan(40);
+        });
+        expect(placed.players).toEqual(aligned.players);
     });
 });
