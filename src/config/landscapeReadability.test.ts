@@ -1,5 +1,5 @@
 import { mobileCardUnit } from "./mobileCardSizing";
-import { alignLandscapeSeatEdges, landscapeFeltStretch, mobileCardObstacles, placeMobileRailMarkers } from "./landscapeSeatEdges";
+import { alignLandscapeSeatEdges, landscapeFeltStretch, mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
 import { calculateZoom, getAllPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
@@ -126,6 +126,8 @@ describe("landscape mobile readability", () => {
             const base = getAllPositions(size);
             const seats = portrait ? base : alignLandscapeSeatEdges(base, size, cw, ch, zoom);
             const placed = placeMobileRailMarkers(seats, zoom, portrait ? 0 : landscapeFeltStretch(seats, size).shiftY, screenUnit, size);
+            const scaleY = portrait ? 1 : landscapeFeltStretch(seats, size).scaleY;
+            const shiftY = portrait ? 0 : landscapeFeltStretch(seats, size).shiftY;
             const centres = placed.players.map(seat => ({ x: parseFloat(seat.left), y: parseFloat(seat.top) }));
             const cards = mobileCardObstacles(seats, zoom, screenUnit, size);
             const chipHalf = height <= 500 && width > height ? 72 : (width <= 768 || height <= 500) ? 86 : 54;
@@ -149,6 +151,12 @@ describe("landscape mobile readability", () => {
                         if (own >= next) problems.push(`${size} seat ${index + 1} ${marker.kind} closer to seat ${otherIndex + 1} (${own.toFixed(0)} vs ${next.toFixed(0)})`);
                     });
                     if (hits(marker.x, marker.y, marker.hw, marker.hy)) problems.push(`${size} seat ${index + 1} ${marker.kind} on a card at ${marker.x},${marker.y}`);
+                    if (marker.kind === "chip") {
+                        const onFelt = [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
+                            mobileFeltContains(marker.x + sx * chipHalf, marker.y + sy * 18, scaleY, shiftY)
+                        );
+                        if (!onFelt) problems.push(`${size} seat ${index + 1} chip off the felt at ${marker.x},${marker.y}`);
+                    }
                 }
                 const sepX = Math.abs(chip.x - dealer.x);
                 const sepY = Math.abs(chip.y - dealer.y);

@@ -141,6 +141,45 @@ export function mobileCardObstacles(
     return [...holes, board[0]];
 }
 
+/**
+ * True when a table-div point lies inside the painted felt, clear of the rail.
+ * Landscape stretches the rail in Y; `pad` is the air inside the outer edge,
+ * in table pixels, so a bet sits on the felt rather than on the stroke.
+ */
+export function mobileFeltContains(x: number, y: number, scaleY: number, shiftY: number, pad = 4): boolean {
+    const dims = getStageDims();
+    const w = dims.tableWidth;
+    const h = dims.tableHeight;
+    const s = Math.max(scaleY, 0.01);
+    const centerY = h / 2 + shiftY;
+    const localX = x;
+    const localY = h / 2 + (y - centerY) / s;
+    const radius = Math.min(250, Math.min(w, h) / 2);
+    const padX = pad;
+    const padY = pad / s;
+    const landscape = w >= h;
+    if (landscape) {
+        const rx = radius - padX;
+        const ry = radius - padY;
+        if (rx <= 1 || ry <= 1) return false;
+        const cy = h / 2;
+        const cxL = radius;
+        const cxR = w - radius;
+        if (localX < cxL) return ((localX - cxL) / rx) ** 2 + ((localY - cy) / ry) ** 2 <= 1;
+        if (localX > cxR) return ((localX - cxR) / rx) ** 2 + ((localY - cy) / ry) ** 2 <= 1;
+        return localY >= padY && localY <= h - padY && localX >= padX && localX <= w - padX;
+    }
+    const rx = radius - padX;
+    const ry = radius - padY;
+    if (rx <= 1 || ry <= 1) return false;
+    const cx = w / 2;
+    const cyT = radius;
+    const cyB = h - radius;
+    if (localY < cyT) return ((localX - cx) / rx) ** 2 + ((localY - cyT) / ry) ** 2 <= 1;
+    if (localY > cyB) return ((localX - cx) / rx) ** 2 + ((localY - cyB) / ry) ** 2 <= 1;
+    return localX >= padX && localX <= w - padX && localY >= padY && localY <= h - padY;
+}
+
 function holeCardBox(sx: number, sy: number, seatHX: number, _seatHY: number, unitStage: number): KeepOut {
     // The fan is the top 51 units of the 71-unit seat. An 8° rotation sticks
     // a few units past the seat's top edge (toward the felt on a bottom seat).
@@ -163,6 +202,9 @@ export function placeMobileRailMarkers(
     const cx = dims.tableWidth / 2;
     const cy = dims.tableHeight / 2 + centerYShift;
     const z = Math.max(zoom, 0.01);
+    const feltScaleY = dims.tableHeight > dims.tableWidth ? 1 : landscapeFeltStretch(positions, tableSize).scaleY;
+    const boxOnFelt = (x: number, y: number, hw: number, hy: number) =>
+        [[-hw, -hy], [hw, -hy], [-hw, hy], [hw, hy]].every(([dx, dy]) => mobileFeltContains(x + dx, y + dy, feltScaleY, centerYShift));
     const unitStage = screenUnit / z;
     // Seat box is 96×71 mobile units. Chip width covers the pill plus a "$0.18"
     // label; short landscape uses the compact label from Chip.tsx. The dealer
@@ -326,6 +368,46 @@ export function placeMobileRailMarkers(
         // label, still keeps the dealer button off the bet.
         placedChips.push({ x: point.x, y: point.y, hw: chipHX + 6, hy: chipHY + 6 });
     }
+    // The straight-inward spot can leave a wide pile outside the curved rail.
+    // Nudge only those piles, after every bet has a spot, so one correction
+    // cannot push the next player's bet onto the pot.
+    const feltHX = chipHX;
+    const feltHY = 18;
+    const holeGap = shortLandscape ? 12 : 18;
+    const railBlockers = board.filter(blocker => !blocker.soft);
+    seatBoxes.forEach((seat, index) => {
+        const point = chipCenters[index];
+        if (!point || boxOnFelt(point.x, point.y, feltHX, feltHY)) return;
+        const span = Math.hypot(cx - seat.x, cy - seat.y) || 1;
+        const ux = (cx - seat.x) / span;
+        const uy = (cy - seat.y) / span;
+        let best: { x: number; y: number; dist: number } | null = null;
+        for (let ang = -1.5; ang <= 1.5; ang += 0.15) {
+            const dirX = ux * Math.cos(ang) - uy * Math.sin(ang);
+            const dirY = uy * Math.cos(ang) + ux * Math.sin(ang);
+            for (let dist = 24; dist <= 260; dist += 4) {
+                const x = seat.x + dirX * dist;
+                const y = seat.y + dirY * dist;
+                if (!boxOnFelt(x, y, feltHX, feltHY)) continue;
+                const own = Math.hypot(x - seat.x, y - seat.y);
+                const margin = 8 / z;
+                const owned = seatBoxes.every((other, otherIndex) => otherIndex === index || own + margin < Math.hypot(x - other.x, y - other.y));
+                if (!owned) continue;
+                const box = { x, y, hw: feltHX, hy: feltHY };
+                if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) continue;
+                if (holeCards.some((card, cardIndex) => cardIndex !== index && boxesOverlap(box, card, holeGap))) continue;
+                if (holeCards[index] && boxesOverlap(box, holeCards[index], holeGap)) continue;
+                if (!best || dist < best.dist) best = { x, y, dist };
+                break;
+            }
+        }
+        if (best) {
+            point.x = best.x;
+            point.y = best.y;
+            const chipIndex = order.findIndex(item => item.index === index);
+            if (chipIndex >= 0) placedChips[chipIndex] = { x: best.x, y: best.y, hw: chipHX + 6, hy: chipHY + 6 };
+        }
+    });
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
