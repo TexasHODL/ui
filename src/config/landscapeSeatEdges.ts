@@ -374,7 +374,29 @@ export function placeMobileRailMarkers(
     const feltHX = chipHX;
     const feltHY = 18;
     const holeGap = shortLandscape ? 12 : 18;
+    // The wide "$0.16" pile on a 1024 landscape label is wider than the search
+    // box. Seat clearance uses that wider half so the rendered pile clears the
+    // seat widget, not only the pill the search modelled. Short landscape and
+    // portrait already size the search box to the rendered pile.
+    const pileHX = !shortLandscape && !bigChips ? 66 : chipHX;
+    const pileHY = 20;
+    // mobileReadability.css shrinks the painted mark to 24% (short landscape)
+    // and 26% (portrait) of the table. The search still treats the full 44%
+    // watermark as a soft penalty; this box is the mark that is actually drawn.
+    const paintedScale = shortLandscape ? 0.24 / 0.44 : dims.tableHeight > dims.tableWidth ? 0.26 / 0.44 : 1;
+    const fullLogo = board.find(item => item.soft);
+    const paintedLogo = fullLogo
+        ? { ...fullLogo, hw: fullLogo.hw * paintedScale, hy: fullLogo.hy * paintedScale }
+        : undefined;
     const railBlockers = board.filter(blocker => !blocker.soft);
+    const chipIndexOf = (seatIndex: number) => order.findIndex(item => item.index === seatIndex);
+    const remember = (seatIndex: number, x: number, y: number) => {
+        const chipIndex = chipIndexOf(seatIndex);
+        if (chipIndex >= 0) placedChips[chipIndex] = { x, y, hw: chipHX + 6, hy: chipHY + 6 };
+    };
+    // Pull a pile that sits outside the curved rail back onto the felt. This
+    // pass does not know about seats: the seat widget hangs onto the felt, and
+    // requiring both at once can leave the pile outside the rail.
     seatBoxes.forEach((seat, index) => {
         const point = chipCenters[index];
         if (!point || boxOnFelt(point.x, point.y, feltHX, feltHY)) return;
@@ -404,8 +426,51 @@ export function placeMobileRailMarkers(
         if (best) {
             point.x = best.x;
             point.y = best.y;
-            const chipIndex = order.findIndex(item => item.index === index);
-            if (chipIndex >= 0) placedChips[chipIndex] = { x: best.x, y: best.y, hw: chipHX + 6, hy: chipHY + 6 };
+            remember(index, best.x, best.y);
+        }
+    });
+    // A pile that is already on the felt can still cover its seat or the
+    // painted mark. Step it to the nearest spot that is still on the felt, in
+    // front of this seat, and clear of both. If no such spot exists the pile
+    // stays where the felt pass put it.
+    seatBoxes.forEach((seat, index) => {
+        const point = chipCenters[index];
+        if (!point) return;
+        const pileAt = (x: number, y: number) => ({ x, y, hw: pileHX, hy: pileHY });
+        const overlapsSeat = seatBoxes.some(other => boxesOverlap(pileAt(point.x, point.y), other, 2));
+        const overlapsLogo = !!paintedLogo && boxesOverlap(pileAt(point.x, point.y), paintedLogo, 2);
+        if (!overlapsSeat && !overlapsLogo) return;
+        const span = Math.hypot(cx - seat.x, cy - seat.y) || 1;
+        const ux = (cx - seat.x) / span;
+        const uy = (cy - seat.y) / span;
+        // The smallest step off the current pile. A wide 1024 pile has to be
+        // tested at its real width, or the step that clears the seat lands
+        // with the chips hanging off the rail.
+        let best: { x: number; y: number; moved: number } | null = null;
+        for (let ang = -1.55; ang <= 1.55; ang += 0.1) {
+            const dirX = ux * Math.cos(ang) - uy * Math.sin(ang);
+            const dirY = uy * Math.cos(ang) + ux * Math.sin(ang);
+            for (let dist = 20; dist <= 280; dist += 4) {
+                const x = seat.x + dirX * dist;
+                const y = seat.y + dirY * dist;
+                if (!boxOnFelt(x, y, pileHX, feltHY)) continue;
+                const own = Math.hypot(x - seat.x, y - seat.y);
+                const margin = 8 / z;
+                const owned = seatBoxes.every((other, otherIndex) => otherIndex === index || own + margin < Math.hypot(x - other.x, y - other.y));
+                if (!owned) continue;
+                const box = { x, y, hw: feltHX, hy: feltHY };
+                if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) continue;
+                if (holeCards.some((card, cardIndex) => boxesOverlap(box, card, holeGap))) continue;
+                if (seatBoxes.some(other => boxesOverlap(pileAt(x, y), other, 4))) continue;
+                if (paintedLogo && boxesOverlap(pileAt(x, y), paintedLogo, 4)) continue;
+                const moved = Math.hypot(x - point.x, y - point.y);
+                if (!best || moved < best.moved) best = { x, y, moved };
+            }
+        }
+        if (best) {
+            point.x = best.x;
+            point.y = best.y;
+            remember(index, best.x, best.y);
         }
     });
     const chips = seatBoxes.map((_, index) => {
