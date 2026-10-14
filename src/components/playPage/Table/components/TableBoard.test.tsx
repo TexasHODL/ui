@@ -52,6 +52,19 @@ test.each([2, 6, 9])("%i-seat portrait selects its own board placement", tableSi
     expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-seats', String(tableSize));
     expect(container.querySelector('.community-pots')).toContainElement(screen.getByText('Main pot'));
 });
+test("empty community slots keep their places without a visible box", () => {
+    const { container } = render(<TableBoard {...props} communityCards={["QD", "8S", "TH"]} />);
+    const row = container.querySelector(".community-card-row");
+    expect(row?.children).toHaveLength(5);
+    expect(screen.getAllByAltText("Card Front")).toHaveLength(3);
+    const slots = container.querySelectorAll(".community-card-slot");
+    expect(slots).toHaveLength(2);
+    slots.forEach(slot => {
+        expect(slot.className).not.toMatch(/border/);
+        expect(slot).toHaveClass("w-[85px]", "h-[127px]");
+        expect(slot).not.toHaveAttribute("style");
+    });
+});
 test("four-seat landscape keeps the centred board, and empty slots keep the same layout", () => {
     const { container, rerender } = render(<TableBoard {...props} tableSize={4} />);
     expect(container.querySelector('.community-board')).not.toHaveAttribute('data-portrait-seats');

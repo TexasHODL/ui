@@ -99,8 +99,8 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                 return (
                     <div
                         key={idx}
-                        className="w-[85px] h-[127px] aspect-square border-[0.5px] border-dashed border-white rounded-[5px] "
-                        style={{ borderColor: "rgba(255,255,255,0.35)" }}
+                        className="community-card-slot w-[85px] h-[127px] aspect-square"
+                        aria-hidden="true"
                     />
                 );
             }
