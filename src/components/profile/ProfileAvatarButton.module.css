@@ -1,6 +1,7 @@
 .avatarButton {
   width: 36px;
   height: 36px;
+  flex-shrink: 0;
   border-radius: 9999px;
   border: 1px solid color-mix(in srgb, var(--brand-primary) 35%, transparent);
   background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);

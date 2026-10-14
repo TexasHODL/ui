@@ -176,10 +176,6 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                                 <p>NETWORK</p>
                                 <NetworkSelector />
                             </div>
-                            <div className={styles.avatarRow}>
-                                <ProfileAvatarButton title="Choose your avatar" />
-                                <span>Your avatar</span>
-                            </div>
                             {showLeave && (
                                 <button className={styles.leaveTableButton} onClick={handleLeaveTableClick}>
                                     Leave table
@@ -187,6 +183,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             )}
                         </div>
                     </details>
+                    <ProfileAvatarButton title="Choose your avatar" />
                 </div>
             </div>
             <div className={styles.roomStatus}>
