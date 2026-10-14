@@ -121,16 +121,16 @@
 .creation-fields > div:not(.creation-section-heading) {
     margin-bottom: 24px;
 }
-.creation-fields .space-y-4 {
+.creation-fields .creation-tournament-fields {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 22px;
 }
-.creation-fields .space-y-4 > * {
+.creation-fields .creation-tournament-fields > * {
     margin-top: 0;
     min-width: 0;
 }
-.creation-fields .space-y-4 > div:has(button) {
+.creation-fields .creation-tournament-fields > div:has(button) {
     grid-column: 1 / -1;
 }
 .creation-balance,
@@ -287,7 +287,7 @@
     .creation-review {
         padding: 22px 18px;
     }
-    .creation-fields .space-y-4 {
+    .creation-fields .creation-tournament-fields {
         grid-template-columns: minmax(0, 1fr);
     }
 }
