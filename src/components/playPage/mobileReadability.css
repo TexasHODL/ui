@@ -66,11 +66,17 @@
     margin-left: 0;
 }
 [data-mobile-readable] .community-card-row { gap: calc(3 * var(--mobile-unit)); }
+/* Card faces are 550×805. A 39×51 box is too short, and object-fit: cover
+   then crops the rank and suit. Slots use the same rule, so they match. */
 [data-mobile-readable] .community-card-row > div,
 [data-mobile-readable] .community-card-row .card {
     width: calc(39 * var(--mobile-unit));
-    height: calc(51 * var(--mobile-unit));
+    height: calc(39 * 805 / 550 * var(--mobile-unit));
     flex-shrink: 0;
+}
+[data-mobile-readable] .community-card-row .card-front img,
+[data-mobile-readable] .community-card-row .card-back img {
+    object-fit: contain;
 }
 [data-mobile-readable] .community-board {
     position: absolute;

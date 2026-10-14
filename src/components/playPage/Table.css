@@ -681,6 +681,13 @@
    Keep the readable five-card row in the empty upper felt, clear of their
    hole cards, result badges and stacks. Other seat counts/orientations retain
    their existing centre-board position; player positions never change. */
+/* Empty board slots keep the dealt-card footprint. No border or fill,
+   in either theme, so the logo shows through until a card lands. */
+.community-card-slot {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
 .community-board[data-portrait-four="true"] {
     position: absolute;
     left: 50%;
