@@ -122,7 +122,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                         <div className="text-orange-300">Addr: ...{playerData?.address ? playerData.address.slice(-3) : "N/A"}</div>
                     </div>
                 )}
-                <div className="flex justify-center gap-1">
+                <div className="player-cards flex justify-center gap-1">
                     {holeCards && holeCards.length === 2 && !isFolded? (
                         isShowingCards && showingCards ? (
                             // Show the actual cards if player is showing
@@ -141,7 +141,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                         <div className="w-[120px] h-[80px]"></div>
                     )}
                 </div>
-                <div className="relative flex flex-col justify-end mt-[-6px] mx-1">
+                <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
                     {selectedAvatarUrl && (
                         <NftAvatarImage
                             src={selectedAvatarUrl}
@@ -153,7 +153,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                     )}
                     {/* Spacer preserves the 55px flow height the old status bar occupied */}
                     <div className="w-full h-[55px]" />
-                    <div className="absolute top-[-10px] w-full">
+                    <div className="player-badge-position absolute top-[-10px] w-full">
                         <Badge
                             count={index}
                             value={stackValue}

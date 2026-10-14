@@ -178,8 +178,8 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                         <div className="text-orange-300">Addr: ...{playerData?.address ? playerData.address.slice(-3) : "N/A"}</div>
                     </div>
                 )}
-                <div className="flex justify-center gap-1">{renderCards()}</div>
-                <div className="relative flex flex-col justify-end mt-[-6px] mx-1">
+                <div className="player-cards flex justify-center gap-1">{renderCards()}</div>
+                <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
                     {selectedAvatarUrl && (
                         <NftAvatarImage
                             src={selectedAvatarUrl}
@@ -191,7 +191,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                     )}
                     {/* Spacer preserves the 55px flow height the old status bar occupied */}
                     <div className="w-full h-[55px]" />
-                    <div className="absolute top-[-10px] w-full">
+                    <div className="player-badge-position absolute top-[-10px] w-full">
                         <Badge
                             count={index}
                             value={stackValue}

@@ -46,12 +46,15 @@ test("four-seat portrait uses the clear upper board without changing cards or po
     expect(screen.getByText('Total pot')).toBeInTheDocument();
     expect(screen.getByText('Main pot')).toBeInTheDocument();
 });
-test.each([2, 6, 9])("%i-seat portrait keeps its centred board", tableSize => {
+test.each([2, 6, 9])("%i-seat portrait selects its own board placement", tableSize => {
     const { container } = render(<TableBoard {...props} isPortrait tableSize={tableSize} />);
     expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'false');
+    expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-seats', String(tableSize));
+    expect(container.querySelector('.community-pots')).toContainElement(screen.getByText('Main pot'));
 });
 test("four-seat landscape keeps the centred board, and empty slots keep the same layout", () => {
     const { container, rerender } = render(<TableBoard {...props} tableSize={4} />);
+    expect(container.querySelector('.community-board')).not.toHaveAttribute('data-portrait-seats');
     expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'false');
     rerender(<TableBoard {...props} isPortrait tableSize={4} communityCards={[]} />);
     expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'true');

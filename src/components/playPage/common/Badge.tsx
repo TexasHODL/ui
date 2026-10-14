@@ -265,7 +265,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
             )}
 
             {/* Unified seat banner — single animated container for all modes */}
-            <div className={`seat-banner-shell ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
+            <div data-banner-mode={bannerMode} className={`seat-banner-shell ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
                 <div
                     className={`seat-banner-box ${
                         (bannerMode === "action" && !isTransientAnimatingOut) ? "action-display-pulse" : ""
