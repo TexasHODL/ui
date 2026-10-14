@@ -95,6 +95,16 @@ describe("useBlindLevel — countdown resets per level (poker-vm#2292)", () => {
         nowSpy.mockRestore();
         expect(renderAt(start, 190, buildOptions({ blindLevel: 2 })).result.current.secondsRemaining).toBe(-10);
         nowSpy.mockRestore();
-        expect(renderAt(start, 250, buildOptions({ blindLevel: 2 })).result.current.secondsRemaining).toBe(-70);
+        const overtime = renderAt(start, 250, buildOptions({ blindLevel: 2 }));
+        expect(overtime.result.current.secondsRemaining).toBe(-70);
+        expect(overtime.result.current.hasTimer).toBe(true);
+    });
+
+    it("hides a stale level clock that is negative by more than one level", () => {
+        const start = 1_783_405_014_917; // a sit-and-go creation time weeks ago
+        const weeks = 21 * 24 * 60 * 60;
+        const { result } = renderAt(start, LEVEL_SECONDS + weeks, buildOptions({ blindLevel: 0 }));
+        expect(result.current.secondsRemaining).toBeLessThan(-LEVEL_SECONDS);
+        expect(result.current.hasTimer).toBe(false);
     });
 });

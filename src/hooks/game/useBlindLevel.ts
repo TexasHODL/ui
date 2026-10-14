@@ -116,6 +116,12 @@ export const useBlindLevel = (): BlindLevelInfo => {
 
     const nextBlindsFormatted = `${formatChipCount(nextSmallBlind)}/${formatChipCount(nextBigBlind)}`;
 
+    // A hand can run a little past the level (poker-vm#2292), so short overtime
+    // stays visible. A clock negative by more than one whole level is a stale
+    // levelStartTime — often the sit-and-go's creation time — and formats as
+    // tens of thousands of minutes. That is not a live level, so hide it.
+    const timerLive = hasTimer && secondsRemaining >= -levelDurationSeconds;
+
     return {
         level,
         smallBlind: currentSB,
@@ -127,6 +133,6 @@ export const useBlindLevel = (): BlindLevelInfo => {
         secondsRemaining,
         levelDurationSeconds,
         isActive,
-        hasTimer
+        hasTimer: timerLive
     };
 };
