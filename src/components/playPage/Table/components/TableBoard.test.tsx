@@ -18,6 +18,17 @@ const props = {
     winnerCards: new Set(["QD", "QC"])
 };
 
+test("unused winning-hand board cards dim without transparency and reset next hand", () => {
+    const { container, rerender } = render(<TableBoard {...props} />);
+    expect(container.querySelectorAll(".community-card-muted")).toHaveLength(3);
+    expect(container.querySelectorAll(".animate-win-card")).toHaveLength(2);
+    expect(container.querySelector(".community-card-row .opacity-40")).toBeNull();
+    expect(container.querySelector(".community-card-muted.animate-win-card")).toBeNull();
+    rerender(<TableBoard {...props} winnerCards={new Set()} />);
+    expect(container.querySelector(".community-card-muted")).toBeNull();
+    expect(container.querySelector(".animate-win-card")).toBeNull();
+});
+
 test.each(["modern", "classic"] as const)("%s table displays the approved SVG", tableTheme => {
     render(<TableBoard {...props} clubLogo="/texas-hodl-logo-sharp.svg" tableTheme={tableTheme} />);
     expect(screen.getByAltText("Texas HODL")).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");

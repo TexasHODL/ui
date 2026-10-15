@@ -274,6 +274,12 @@
     animation: fall var(--card-drop-ms, 1s) ease-out backwards;
 }
 
+/* Dim unused board cards without revealing the felt or logo through them. */
+.community-card-muted {
+    opacity: 1;
+    filter: brightness(0.65) saturate(0.45);
+}
+
 /* Winning card highlight — lifts card upward and brightens it */
 @keyframes card-lift {
     0% {
