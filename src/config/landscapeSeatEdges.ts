@@ -451,28 +451,61 @@ export function placeMobileRailMarkers(
             remember(index, best.x, best.y);
         }
     });
-    // Seats 2 and 9 flank the hero on the bottom of a 9-seat ring. The inward
-    // search parks both bets beside the hero's chip. Slide each one sideways
-    // onto its own hole cards and keep the height it already has. Portrait
-    // hole cards sit outside the rail, so a sideways slide there would leave
-    // the felt; those bets stay where the search put them.
-    if (tableSize === 9 && dims.tableWidth > dims.tableHeight) {
-        for (const index of [1, 8]) {
+    // The inward search pulls several 9-seat bets off their own hole cards.
+    // Slide each one sideways, at the height it already has, toward that
+    // seat. Seats 2, 9, 5 and 6 reach the card centre. Seats 3 and 8 take
+    // a short step toward the player and stop clear of the card fan. A step
+    // that would leave the felt, cover a card, or cover a seat is not taken.
+    if (tableSize === 9) {
+        const landscape = dims.tableWidth > dims.tableHeight;
+        const fitsChip = (x: number, y: number, feltHalf: number, seatHalf: number, seatGap: number) => {
+            if (!boxOnFelt(x, y, feltHalf, feltHY)) return false;
+            const box = { x, y, hw: feltHX, hy: feltHY };
+            if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) return false;
+            if (holeCards.some(card => boxesOverlap({ x, y, hw: Math.min(chipHX, feltHalf), hy: 16 }, card, 0))) return false;
+            if (seatBoxes.some(other => boxesOverlap({ x, y, hw: seatHalf, hy: pileHY }, other, seatGap))) return false;
+            return true;
+        };
+        const slideToSeat = (index: number, centre: boolean) => {
             const point = chipCenters[index];
             const seat = seatBoxes[index];
-            if (!point || !seat) continue;
-            const x = seat.x;
-            const y = point.y;
-            // The wide label has to stay on the felt and off the seat widget.
-            // Card clearance uses the pill itself: the search gap would reject
-            // a bet that sits above its own cards without covering them.
-            if (!boxOnFelt(x, y, pileHX, feltHY)) continue;
-            const box = { x, y, hw: feltHX, hy: feltHY };
-            if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) continue;
-            if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: 16 }, card, 0))) continue;
-            if (seatBoxes.some(other => boxesOverlap({ x, y, hw: pileHX, hy: pileHY }, other, 4))) continue;
-            point.x = x;
-            remember(index, x, y);
+            if (!point || !seat) return;
+            const y = Math.round(point.y);
+            const goal = Math.round(seat.x);
+            // The wide label stays on the felt. Side bets use a slightly
+            // narrower seat clearance so the pill can step toward the player.
+            // The next step after that meets the card fan, so the nudge stops
+            // while the bet is still clear of the cards and the badge.
+            const feltHalf = pileHX;
+            const seatHalf = centre ? pileHX : Math.max(40, chipHX - 8);
+            const seatGap = centre ? 4 : 0;
+            const fits = (x: number) => fitsChip(x, y, feltHalf, seatHalf, seatGap);
+            if (centre && fits(goal)) {
+                point.x = goal;
+                remember(index, goal, point.y);
+                return;
+            }
+            const dir = Math.sign(goal - point.x);
+            if (dir === 0) return;
+            let best = point.x;
+            for (let x = Math.round(point.x) + dir; dir > 0 ? x <= goal : x >= goal; x += dir) {
+                if (!fits(x)) break;
+                best = x;
+            }
+            point.x = best;
+            remember(index, best, y);
+        };
+        // Portrait cards on these seats hang outside the rail or sit so close
+        // to it that a sideways slide leaves the felt. Landscape has the room.
+        if (landscape) {
+            slideToSeat(1, true);
+            slideToSeat(8, true);
+            // Top pair centres. Side pair only moves as far as the felt and the
+            // cards allow, which keeps the bet beside its player.
+            slideToSeat(4, true);
+            slideToSeat(5, true);
+            slideToSeat(2, false);
+            slideToSeat(7, false);
         }
     }
     const chips = seatBoxes.map((_, index) => {

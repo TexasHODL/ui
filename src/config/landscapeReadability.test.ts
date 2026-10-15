@@ -146,7 +146,7 @@ describe("landscape mobile readability", () => {
         }
     });
 
-    test("centres the bottom flank bets on their hole cards in mobile landscape", () => {
+    test("centres the 9-seat flank and top bets and nudges the side bets toward their cards", () => {
         window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 844 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 390 });
@@ -158,13 +158,23 @@ describe("landscape mobile readability", () => {
             const zoom = calculateZoom(9, contentWidth, contentHeight);
             const screenUnit = parseFloat(mobileCardUnit(false, zoom, contentWidth, contentHeight)) * zoom;
             const placed = placeMobileRailMarkers(getAllPositions(9), zoom, 0, screenUnit, 9);
-            for (const index of [1, 8]) {
+            for (const index of [1, 8, 4, 5]) {
                 const seatX = parseFloat(placed.players[index].left);
                 const chipX = parseFloat(placed.chips[index].left);
                 const chipY = parseFloat(placed.chips[index].top ?? "0");
                 const seatY = parseFloat(placed.players[index].top);
                 expect(chipX).toBe(Math.round(seatX));
-                expect(chipY).toBeLessThan(seatY);
+                expect(chipY).not.toBe(Math.round(seatY));
+            }
+            for (const index of [2, 7]) {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                const centre = getStageDims().tableWidth / 2;
+                const seatSide = Math.sign(seatX - centre);
+                const chipSide = Math.sign(chipX - centre);
+                expect(chipSide).toBe(seatSide);
+                expect(Math.abs(chipX - seatX)).toBeGreaterThan(12);
+                expect(Math.abs(chipX - seatX)).toBeLessThan(Math.abs(centre - seatX));
             }
         };
         assertCentred(844, 390);
@@ -175,7 +185,7 @@ describe("landscape mobile readability", () => {
         const portraitZoom = calculateZoom(9, 390, 714);
         const portraitUnit = parseFloat(mobileCardUnit(true, portraitZoom, 390, 714)) * portraitZoom;
         const portrait = placeMobileRailMarkers(getAllPositions(9), portraitZoom, 0, portraitUnit, 9);
-        for (const index of [1, 8]) {
+        for (const index of [1, 8, 2, 4, 5, 7]) {
             const seatX = parseFloat(portrait.players[index].left);
             const chipX = parseFloat(portrait.chips[index].left);
             expect(Math.abs(chipX - seatX)).toBeGreaterThan(20);
