@@ -101,13 +101,21 @@ export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.15;
  * How much taller the mobile-landscape felt and seat ring are than the
  * desktop 500px stadium. 1 keeps that height. `mobileLandscapeHeightStretch`
  * may lower this so the top hole cards stay a few pixels under the header
- * and the hero's cards and badge stay above the bottom edge. It never goes
- * below 1, and it does not give back the width stretch.
+ * and the lowest action box stays a few pixels above the bottom edge. It
+ * never goes below 1, and it does not give back the width stretch.
  */
 export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.08;
 
-/** Screen pixels kept between the stage edge and the top cards or the hero badge. */
+/** Screen pixels kept between the stage edge and the top cards or the lowest action box. */
 const MOBILE_LANDSCAPE_EDGE_GAP = 6;
+
+/**
+ * Stage pixels the action banner hangs below the hole-card bottom. The banner
+ * is 55px and tucks 22px under the stack badge; the card-bottom model already
+ * reaches that tuck, so 33px of the box still sits below the cards. Those
+ * pixels are inside the zoomed stage, so they are not multiplied by the card unit.
+ */
+const MOBILE_LANDSCAPE_ACTION_BELOW_CARDS = 33;
 export const TABLE_SURFACE_HEIGHT = 500; // Match spec: table surface fills the full table div
 export const TABLE_CENTER_X = 800;
 export const TABLE_CENTER_Y = 535;
@@ -1002,9 +1010,9 @@ function spreadSeatExtent(tableSize: TableSize): { topY: number; botY: number } 
  * Height scale actually applied on mobile landscape. Equals
  * {@link MOBILE_LANDSCAPE_HEIGHT_STRETCH} when the window has vertical room
  * under the header. Otherwise a smaller factor down to 1, so the top hole
- * cards keep {@link MOBILE_LANDSCAPE_EDGE_GAP}px of air and the hero badge
- * stays inside the bottom edge. Zoom stays the width-stretch fit: this does
- * not shrink the table to buy height.
+ * cards keep {@link MOBILE_LANDSCAPE_EDGE_GAP}px of air and the lowest action
+ * box stays that far above the bottom edge. Zoom stays the width-stretch fit:
+ * this does not shrink the table to buy height.
  */
 export function mobileLandscapeHeightStretch(): number {
     const requested = Math.max(1, MOBILE_LANDSCAPE_HEIGHT_STRETCH);
@@ -1027,7 +1035,9 @@ export function mobileLandscapeHeightStretch(): number {
         if (zoom <= 0) return 1;
         const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerW, containerH));
         const limit = (containerH - 2 * MOBILE_LANDSCAPE_EDGE_GAP) / zoom;
-        const maxH = (limit - 2 * half) / span;
+        // The banner hangs below the cards. Reserving it shortens the felt and
+        // pulls the bottom seats up; the nudge then keeps the top cards put.
+        const maxH = (limit - 2 * half - MOBILE_LANDSCAPE_ACTION_BELOW_CARDS) / span;
         allowed = Math.min(allowed, maxH);
     }
     return Math.min(requested, Math.max(1, allowed));
@@ -1039,7 +1049,7 @@ export function mobileLandscapeHeightStretch(): number {
  * CSS wrapper must have: top:0; left:0; transform-origin: 0 0;
  * Mobile landscape then slides the ring so the top hole cards sit
  * {@link MOBILE_LANDSCAPE_EDGE_GAP}px under the stage top, unless that would
- * push the hero badge past the bottom edge.
+ * push the lowest action box past the bottom edge.
  */
 export function getTableTransform(
     zoom: number,
@@ -1086,15 +1096,15 @@ function mobileLandscapeVerticalNudge(
     const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerWidth, containerHeight));
     const seats = getSeatPositions(tableSize);
     let cardTop = Infinity;
-    let heroBottom = -Infinity;
+    let actionBottom = -Infinity;
     for (const seat of seats) {
         const stageY = dims.originY + parseFloat(seat.top);
         cardTop = Math.min(cardTop, stageY - half);
-        heroBottom = Math.max(heroBottom, stageY + half);
+        actionBottom = Math.max(actionBottom, stageY + half + MOBILE_LANDSCAPE_ACTION_BELOW_CARDS);
     }
     let nudge = MOBILE_LANDSCAPE_EDGE_GAP - (ty + cardTop * zoom);
-    const heroAfter = ty + nudge + heroBottom * zoom;
+    const actionAfter = ty + nudge + actionBottom * zoom;
     const limit = containerHeight - MOBILE_LANDSCAPE_EDGE_GAP;
-    if (heroAfter > limit) nudge -= heroAfter - limit;
+    if (actionAfter > limit) nudge -= actionAfter - limit;
     return nudge;
 }

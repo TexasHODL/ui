@@ -71,7 +71,9 @@ describe("landscape mobile readability", () => {
         expect(MOBILE_LANDSCAPE_HEIGHT_STRETCH).toBeLessThanOrEqual(1.12);
         expect(dims.tableWidth).toBeCloseTo(TABLE_WIDTH * MOBILE_LANDSCAPE_WIDTH_STRETCH, 5);
         expect(dims.tableHeight).toBeCloseTo(TABLE_HEIGHT * mobileLandscapeHeightStretch(), 5);
-        expect(mobileLandscapeHeightStretch()).toBeGreaterThan(1);
+        // A 390px-tall phone cannot keep the 1.08 felt and the action banners.
+        // The applied stretch floors at the desktop height so the banners fit.
+        expect(mobileLandscapeHeightStretch()).toBe(1);
         expect(mobileLandscapeHeightStretch()).toBeLessThanOrEqual(MOBILE_LANDSCAPE_HEIGHT_STRETCH);
         expect(dims.tableWidth / dims.tableHeight).toBeGreaterThan(2);
         expect(dims.tableWidth / dims.tableHeight).toBeLessThanOrEqual(2.4);
@@ -93,9 +95,12 @@ describe("landscape mobile readability", () => {
         const tops = getSeatPositions(9).map(seat => dims.originY + parseFloat(seat.top));
         const cardTop = ty + (Math.min(...tops) - half) * zoom;
         const heroBottom = ty + (Math.max(...tops) + half) * zoom;
-        expect(cardTop).toBeGreaterThanOrEqual(4);
+        // 33 stage px is the action banner below the hole cards (55px box, 22px tuck).
+        const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
+        expect(cardTop).toBeGreaterThanOrEqual(3.5);
         expect(cardTop).toBeLessThanOrEqual(12);
         expect(heroBottom).toBeLessThanOrEqual(contentHeight - 4);
+        expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 480 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 400 });
@@ -120,6 +125,31 @@ describe("landscape mobile readability", () => {
         expect(getStageDims().tableWidth).toBe(500);
         expect(getStageDims().tableHeight).toBe(1000);
         expect(getDeckOrigin()).toEqual({ left: "250px", top: "360px" });
+    });
+
+    test.each([
+        ["844x390", 844, 390, false],
+        ["915x412", 915, 412, false],
+        ["1024x650", 1024, 650, true]
+    ])("keeps the lowest action box inside the stage at %s", (_label, width, height, coarse) => {
+        window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+        const contentWidth = width - 124;
+        const contentHeight = height - 80;
+        for (const size of [2, 6, 9] as TableSize[]) {
+            const zoom = calculateZoom(size, contentWidth, contentHeight);
+            const transform = getTableTransform(zoom, size, contentWidth, contentHeight);
+            const ty = Number(transform.match(/translate\([^,]+, ([^)]+)px\)/)?.[1]);
+            const dims = getStageDims();
+            const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, contentWidth, contentHeight));
+            const tops = getSeatPositions(size).map(seat => dims.originY + parseFloat(seat.top));
+            const cardTop = ty + (Math.min(...tops) - half) * zoom;
+            const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
+            expect(cardTop).toBeGreaterThanOrEqual(3.5);
+            expect(cardTop).toBeLessThanOrEqual(12);
+            expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
+        }
     });
 
     test("places mobile chips and the dealer beside the seat, not at mid-felt", () => {
