@@ -231,6 +231,17 @@ describe("landscape mobile readability", () => {
                 expect(chipX).toBe(Math.round(seatX));
                 expect(chipY).not.toBe(Math.round(seatY));
             }
+            // Seats 5 and 6 (indices 4 and 5) sit under a short action box.
+            // The pile stays centred and drops until there is felt between the
+            // box and the chip, short of the community cards.
+            const unit = screenUnit / zoom;
+            const pillHalf = (22.67 / zoom) / 2;
+            for (const index of [4, 5]) {
+                const seatY = parseFloat(placed.players[index].top);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const bannerBottom = seatY + 35.5 * unit + (55 - 22);
+                expect(chipY - pillHalf).toBeGreaterThan(bannerBottom + 20);
+            }
             for (const index of [2, 7]) {
                 const seatX = parseFloat(placed.players[index].left);
                 const chipX = parseFloat(placed.chips[index].left);

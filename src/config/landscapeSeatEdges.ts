@@ -692,6 +692,134 @@ export function placeMobileRailMarkers(
             }
         });
     }
+    // 9-seat mobile landscape. The painted action box is as wide as the 30px
+    // label (POST BB and RAISE TO run past the stack badge) and the chip pill
+    // is wider than the search box, so a pile the model called clear can still
+    // sit under the box. The hole-card fan fills the seat, which hides a dealer
+    // button that only cleared the narrower card box. Re-place those markers
+    // against the painted sizes. 2-seat, 6-seat, portrait and desktop stay put.
+    if (landscapeTable && tableSize === 9) {
+        const labelHalf = Math.max(pileHX, 40 / z);
+        const bannerHalf = Math.max(44 * unitStage, 146);
+        const bannerOf = (seat: KeepOut): KeepOut => ({
+            x: seat.x,
+            y: seat.y + seatHY - 22 + 27.5,
+            hw: bannerHalf,
+            hy: 27.5
+        });
+        const paintedCard = (card: KeepOut): KeepOut => ({ ...card, hw: Math.max(card.hw, seatHX * 0.96) });
+        const badgeOf = (seat: KeepOut): KeepOut => ({
+            x: seat.x,
+            y: seat.y + 23 * unitStage,
+            hw: 44 * unitStage,
+            hy: 13 * unitStage
+        });
+        const ownedBy = (x: number, y: number, index: number) => {
+            const own = Math.hypot(x - seatBoxes[index].x, y - seatBoxes[index].y);
+            const margin = 8 / z;
+            return seatBoxes.every((other, otherIndex) => otherIndex === index || own + margin < Math.hypot(x - other.x, y - other.y));
+        };
+        const chipClear = (index: number, x: number, y: number, bannerGap: number) => {
+            const pile = { x, y, hw: labelHalf, hy: pillHalf };
+            if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+            if (!ownedBy(x, y, index)) return false;
+            if (boxesOverlap(pile, bannerOf(seatBoxes[index]), bannerGap)) return false;
+            if (seatBoxes.some((seat, otherIndex) => otherIndex !== index && boxesOverlap(pile, bannerOf(seat), 4))) return false;
+            if (boxesOverlap(pile, paintedCard(holeCards[index]), 4)) return false;
+            if (boxesOverlap(pile, badgeOf(seatBoxes[index]), 4)) return false;
+            if (board.some(item => !item.soft && boxesOverlap(pile, item, 4))) return false;
+            return true;
+        };
+        // A few pixels of felt under the box, capped so a top bet stays in
+        // front of its seat instead of travelling to mid-felt.
+        const minGap = Math.min(12 / z, 28);
+        seatBoxes.forEach((seat, index) => {
+            const point = chipCenters[index];
+            if (!point || chipClear(index, point.x, point.y, minGap)) return;
+            const toCentre = Math.hypot(cx - seat.x, cy - seat.y) || 1;
+            // Top seats sit above the felt, so the first clear spot under the
+            // banner is a little over halfway to the centre. Still in front of
+            // the seat, not on the board.
+            const maxDist = toCentre * 0.7;
+            const vx = cx - seat.x;
+            const vy = cy - seat.y;
+            const len = Math.hypot(vx, vy) || 1;
+            const ux = vx / len;
+            const uy = vy / len;
+            let best: { x: number; y: number; score: number } | null = null;
+            // Straight down (or up) the seat's own column, so a top bet stays
+            // centred on its hole cards while it clears the action box.
+            const yDir = Math.sign(cy - seat.y) || 1;
+            for (let step = 36; step <= maxDist; step += 4) {
+                const y = seat.y + yDir * step;
+                if (!chipClear(index, seat.x, y, minGap)) continue;
+                best = { x: seat.x, y, score: 100_000 - step };
+                break;
+            }
+            for (let dist = 36; !best && dist <= maxDist; dist += 4) {
+                for (let deg = -100; deg <= 100; deg += 4) {
+                    const ang = deg * Math.PI / 180;
+                    const dirX = ux * Math.cos(ang) - uy * Math.sin(ang);
+                    const dirY = uy * Math.cos(ang) + ux * Math.sin(ang);
+                    const x = seat.x + dirX * dist;
+                    const y = seat.y + dirY * dist;
+                    if (!chipClear(index, x, y, minGap)) continue;
+                    const centred = Math.abs(x - seat.x) <= 1.5;
+                    // Centred and close: directly in front of this seat.
+                    const score = (centred ? 10_000 : 0) - dist - Math.abs(deg) * 2;
+                    if (!best || score > best.score) best = { x: centred ? seat.x : x, y, score };
+                }
+            }
+            if (!best) return;
+            point.x = Math.round(best.x);
+            point.y = Math.round(best.y);
+            remember(index, point.x, point.y);
+        });
+    }
+    // 2-seat and 6-seat. A label wider than the badge, or a pill wider than
+    // the search box, still clips the action banner after the passes above.
+    // Step the pile off that banner without leaving its seat.
+    if (landscapeTable && tableSize !== 9) {
+        const labelHalf = Math.max(pileHX, 34 / z);
+        const bannerHalf = 44 * unitStage + 12;
+        // The painted box hangs a little lower than seatHY - 22 + 27.5, so a
+        // pile that the model calls clear still clips the top of the box.
+        const banners = seatBoxes.map(seat => ({
+            x: seat.x,
+            y: seat.y + seatHY - 22 + 27.5 + 16,
+            hw: bannerHalf,
+            hy: 27.5 + 8
+        }));
+        const clipped = (x: number, y: number) =>
+            banners.some(banner => boxesOverlap({ x, y, hw: labelHalf, hy: pillHalf }, banner, 4));
+        seatBoxes.forEach((seat, index) => {
+            const point = chipCenters[index];
+            if (!point || !clipped(point.x, point.y)) return;
+            const inward = Math.sign(cx - seat.x) || 1;
+            const yDir = Math.sign(cy - seat.y) || 1;
+            let best: { x: number; y: number; score: number } | null = null;
+            const xCap = Math.abs(cx - seat.x) * 0.31;
+            for (let step = 4; step <= 48; step += 4) {
+                const tries = [
+                    { x: point.x, y: point.y - yDir * step },
+                    { x: point.x, y: point.y + yDir * step },
+                    { x: point.x + inward * step, y: point.y }
+                ];
+                for (const candidate of tries) {
+                    if (candidate.x !== point.x && Math.abs(candidate.x - seat.x) > xCap) continue;
+                    if (clipped(candidate.x, candidate.y)) continue;
+                    if (!boxOnFelt(candidate.x, candidate.y, pileHX, feltHY)) continue;
+                    const score = Math.hypot(candidate.x - point.x, candidate.y - point.y);
+                    if (!best || score < best.score) best = { ...candidate, score };
+                }
+                if (best) break;
+            }
+            if (!best) return;
+            point.x = Math.round(best.x);
+            point.y = Math.round(best.y);
+            remember(index, point.x, point.y);
+        });
+    }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
@@ -701,6 +829,27 @@ export function placeMobileRailMarkers(
         if (landscapeTable && hitsBanner(x, y, dealerHalf, dealerHalf)) return true;
         // A button above the curved rail sits in the header and never shows.
         if (landscapeTable && !mobileFeltContains(x, y, 1, 0, dealerHalf)) return true;
+        if (landscapeTable) {
+            // 30px labels run past the stack badge. RAISE TO is the wide one.
+            const bannerHalf = Math.max(44 * unitStage, 146);
+            const wideBanner = seatBoxes.some(seat => boxesOverlap(box, {
+                x: seat.x,
+                y: seat.y + seatHY - 22 + 27.5,
+                hw: bannerHalf,
+                hy: 27.5
+            }, 8 / z));
+            if (wideBanner) return true;
+        }
+        if (landscapeTable && tableSize === 9) {
+            // The fan paints the full seat width and hangs below the model box
+            // on the bottom seats, which is what hides the button.
+            if (holeCards.some(card => boxesOverlap(box, {
+                x: card.x,
+                y: card.y + 10,
+                hw: seatHX + 8,
+                hy: card.hy + 16
+            }, 6))) return true;
+        }
         if (holeCards.some(card => boxesOverlap(box, card, 1))) return true;
         if (board.some(item => !item.soft && boxesOverlap(box, item, 2))) return true;
         if (placedChips.some(chip => boxesOverlap(box, { ...chip, hy: Math.max(chip.hy, pillHalf) }, 2))) return true;
@@ -709,7 +858,10 @@ export function placeMobileRailMarkers(
             if (boxesOverlap(box, badge, 2)) return true;
         }
         const own = Math.hypot(x - seatBoxes[seatIndex].x, y - seatBoxes[seatIndex].y);
-        const margin = 8 / z;
+        // 9-seat bottom buttons sit in a gap only a few pixels wider than the
+        // button. The usual margin pushes that gap into the neighbour's cell
+        // and the ring then keeps a button that is under the hole cards.
+        const margin = landscapeTable && tableSize === 9 ? 0 : 8 / z;
         if (seatBoxes.some((other, otherIndex) => otherIndex !== seatIndex && own + margin >= Math.hypot(x - other.x, y - other.y))) return true;
         if (x < -20 || x > dims.tableWidth + 20 || y < feltTop - 48 || y > feltBottom + 48) return true;
         return false;
@@ -723,11 +875,12 @@ export function placeMobileRailMarkers(
         const point = choose(seat.x, seat.y, index, dealerHalf, dealerHalf, dealerAngles, 1.2, obstacles, 28);
         if (landscapeTable && dealerBlocked(point.x, point.y, index)) {
             let best: { x: number; y: number; score: number } | null = null;
-            const minDist = 44 / z;
+            const minDist = 32 / z;
             const maxDist = 150 / z;
+            const steps = tableSize === 9 ? 48 : 24;
             for (let dist = minDist; dist <= maxDist; dist += 4) {
-                for (let step = 0; step < 24; step++) {
-                    const ang = (step / 24) * Math.PI * 2;
+                for (let step = 0; step < steps; step++) {
+                    const ang = (step / steps) * Math.PI * 2;
                     const x = seat.x + Math.cos(ang) * dist;
                     const y = seat.y + Math.sin(ang) * dist;
                     if (dealerBlocked(x, y, index)) continue;
