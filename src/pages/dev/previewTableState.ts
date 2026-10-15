@@ -20,7 +20,10 @@ const COMMUNITY = ["AH", "KD", "QC", "JH", "TS"];
 
 export interface PreviewOptions {
     seats: PreviewSeatCount;
+    /** Single dealer seat, 1-based. Ignored visually while allDealers is set. */
     dealer: number;
+    /** Draw the real dealer-button position at every seat at once. */
+    allDealers: boolean;
     holeCards: boolean;
     board: PreviewBoardCount;
 }
@@ -33,13 +36,16 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
 
 /**
  * Read the preview from the query string.
- * seats=2|6|9 (default 9), dealer=<seat> (default 1, clamped to the table),
+ * seats=2|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
  * holes=0|1 (default on), board=0|3|4|5 (default a full board).
+ * dealer=all is preview-only: the table still has one dealer seat in the snapshot.
  */
 export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const requestedSeats = Number(params.get("seats"));
     const seats: PreviewSeatCount = isSeatCount(requestedSeats) ? requestedSeats : 9;
-    const requestedDealer = Number(params.get("dealer"));
+    const dealerParam = params.get("dealer");
+    const allDealers = dealerParam === "all";
+    const requestedDealer = Number(dealerParam);
     const dealer = Number.isInteger(requestedDealer) && requestedDealer >= 1 && requestedDealer <= seats
         ? requestedDealer
         : 1;
@@ -48,13 +54,13 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const boardParam = params.get("board");
     const requestedBoard = boardParam === null ? Number.NaN : Number(boardParam);
     const board: PreviewBoardCount = isBoardCount(requestedBoard) ? requestedBoard : 5;
-    return { seats, dealer, holeCards, board };
+    return { seats, dealer, allDealers, holeCards, board };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
     const params = new URLSearchParams();
     params.set("seats", String(options.seats));
-    params.set("dealer", String(options.dealer));
+    params.set("dealer", options.allDealers ? "all" : String(options.dealer));
     params.set("holes", options.holeCards ? "1" : "0");
     params.set("board", String(options.board));
     return params;

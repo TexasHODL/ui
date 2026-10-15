@@ -79,7 +79,7 @@ const TablePreviewPage = () => {
 
     const update = useCallback((patch: Partial<PreviewOptions>) => {
         const next: PreviewOptions = { ...options, ...patch };
-        if (next.dealer > next.seats) next.dealer = 1;
+        if (!next.allDealers && next.dealer > next.seats) next.dealer = 1;
         setSearchParams(previewSearchParams(next), { replace: true });
     }, [options, setSearchParams]);
 
@@ -121,10 +121,14 @@ interface PreviewPanelProps {
 
 const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
     const stepDealer = (delta: number) => {
+        if (options.allDealers) {
+            onChange({ allDealers: false, dealer: delta > 0 ? 1 : options.seats });
+            return;
+        }
         let dealer = options.dealer + delta;
         if (dealer < 1) dealer = options.seats;
         if (dealer > options.seats) dealer = 1;
-        onChange({ dealer });
+        onChange({ dealer, allDealers: false });
     };
 
     return (
@@ -145,9 +149,17 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
             <button type="button" aria-label="Previous dealer seat" onClick={() => stepDealer(-1)} style={buttonStyle(false)}>
                 −
             </button>
-            <span style={valueStyle}>{options.dealer}</span>
+            <span style={valueStyle}>{options.allDealers ? "All" : options.dealer}</span>
             <button type="button" aria-label="Next dealer seat" onClick={() => stepDealer(1)} style={buttonStyle(false)}>
                 +
+            </button>
+            <button
+                type="button"
+                aria-pressed={options.allDealers}
+                onClick={() => onChange({ allDealers: !options.allDealers })}
+                style={buttonStyle(options.allDealers)}
+            >
+                All dealers
             </button>
             <button
                 type="button"

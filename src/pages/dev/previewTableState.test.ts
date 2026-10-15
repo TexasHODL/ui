@@ -11,6 +11,7 @@ describe("parsePreviewSearch", () => {
         expect(parsePreviewSearch(new URLSearchParams())).toEqual({
             seats: 9,
             dealer: 1,
+            allDealers: false,
             holeCards: true,
             board: 5
         });
@@ -32,6 +33,18 @@ describe("parsePreviewSearch", () => {
     it("clamps a dealer seat that is not at the table", () => {
         expect(parsePreviewSearch(new URLSearchParams("seats=2&dealer=9")).dealer).toBe(1);
         expect(parsePreviewSearch(new URLSearchParams("dealer=0")).dealer).toBe(1);
+    });
+
+    it("reads dealer=all without changing the snapshot's single dealer seat", () => {
+        const options = parsePreviewSearch(new URLSearchParams("seats=6&dealer=all"));
+        expect(options.allDealers).toBe(true);
+        expect(options.dealer).toBe(1);
+        expect(options.seats).toBe(6);
+        expect(previewSearchParams(options).get("dealer")).toBe("all");
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.dealer).toBe(1);
+        expect(state.players.filter(player => player.isDealer)).toHaveLength(1);
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
     });
 
     it("reads hole cards and community-card count", () => {
