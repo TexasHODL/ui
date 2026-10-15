@@ -336,16 +336,20 @@ describe("landscape mobile readability", () => {
                 expect(chipX).toBe(Math.round(seatX));
                 expect(chipY).not.toBe(Math.round(seatY));
             }
-            // Seats 5 and 6 (indices 4 and 5) sit under a short action box.
-            // The pile stays centred and drops until there is felt between the
-            // box and the chip, short of the community cards.
+            // Seats 4–7 sit just under their own action boxes. The pile top
+            // keeps 2–4 screen px of air and does not change x.
             const unit = screenUnit / zoom;
             const pillHalf = (22.67 / zoom) / 2;
-            for (const index of [4, 5]) {
+            const visualHalf = Math.max(pillHalf, 16);
+            for (const index of [3, 4, 5, 6]) {
                 const seatY = parseFloat(placed.players[index].top);
                 const chipY = parseFloat(placed.chips[index].top ?? "0");
-                const bannerBottom = seatY + 35.5 * unit + (55 - 22);
-                expect(chipY - pillHalf).toBeGreaterThan(bannerBottom + 20);
+                const bannerBottom = seatY + 35.5 * unit + 33;
+                const gap = (chipY - visualHalf - bannerBottom) * zoom;
+                expect(gap).toBeGreaterThanOrEqual(2);
+                // On a tall tablet the curved rail already stops seats 4 and 7,
+                // so those two piles cannot rise to the box without leaving the felt.
+                if (height <= 500 || index === 4 || index === 5) expect(gap).toBeLessThanOrEqual(4);
             }
             for (const index of [2, 7]) {
                 const seatX = parseFloat(placed.players[index].left);
@@ -359,6 +363,7 @@ describe("landscape mobile readability", () => {
             }
         };
         assertCentred(844, 390);
+        assertCentred(915, 412);
         assertCentred(1024, 650);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });

@@ -767,6 +767,39 @@ export function placeMobileRailMarkers(
             point.y = Math.round(best.y);
             remember(index, point.x, point.y);
         });
+        // Seats 4–7 sit under their own action boxes. The search above leaves
+        // about 12 screen px of air. Pull each pile straight up, keeping its
+        // x, until the pile top is 3 screen px under that box. Stop if the
+        // next pixel would leave the felt or cover a card.
+        const visualHalf = Math.max(pillHalf, 16);
+        const tuckUnderBanner = (index: number) => {
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            if (!point || !seat) return;
+            const bannerBottom = seat.y + seatHY + 33;
+            const targetY = Math.round(bannerBottom + 3 / z + visualHalf);
+            const x = point.x;
+            let best = Math.round(point.y);
+            if (targetY >= best) return;
+            const clear = (y: number) => {
+                if (y - visualHalf < bannerBottom + 2 / z) return false;
+                if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+                const pile = { x, y, hw: labelHalf, hy: visualHalf };
+                if (boxesOverlap(pile, bannerOf(seat), 0)) return false;
+                if (seatBoxes.some((other, otherIndex) => otherIndex !== index && boxesOverlap(pile, bannerOf(other), 2))) return false;
+                if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: visualHalf }, card, 0))) return false;
+                if (board.some(item => !item.soft && boxesOverlap({ x, y, hw: chipHX, hy: visualHalf }, item, 2))) return false;
+                return true;
+            };
+            for (let y = best - 1; y >= targetY; y--) {
+                if (!clear(y)) break;
+                best = y;
+            }
+            if (best === Math.round(point.y)) return;
+            point.y = best;
+            remember(index, x, best);
+        };
+        [3, 4, 5, 6].forEach(tuckUnderBanner);
     }
     // 2-seat and 6-seat. A label wider than the badge, or a pill wider than
     // the search box, still clips the action banner after the passes above.
