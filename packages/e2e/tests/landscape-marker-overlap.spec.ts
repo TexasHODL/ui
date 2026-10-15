@@ -1,10 +1,9 @@
 import { test, expect } from "./fixtures.js";
 
 /**
- * Mobile landscape on the dev table preview. Action boxes paint with the
- * seating layer, above chips and dealer buttons, so a marker inside one is
- * hidden. 2, 6 and 9 seats must keep every chip pile and every dealer button
- * off those boxes.
+ * Mobile landscape on the dev table preview. Action boxes paint under the
+ * seat badge. Chips stay off those boxes. The dealer button is part of the
+ * badge, up and to the left of the seat number, and must not land inside a box.
  */
 test.describe("landscape action boxes", () => {
     test.use({ viewport: { width: 844, height: 390 } });
@@ -13,7 +12,7 @@ test.describe("landscape action boxes", () => {
         test(`${seats} seats keep chips and dealer buttons off action boxes`, async ({ page }) => {
             await page.goto(`/table-preview?seats=${seats}&dealer=all&actions=all&holes=1&board=5`);
             await page.waitForSelector(".chip-position");
-            await page.waitForSelector("[data-preview-dealer]");
+            await page.waitForSelector("[data-dealer-button]");
             await page.waitForSelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
             // The board drop is irrelevant here; freeze it so a late frame cannot
             // move a box under a marker mid-assertion.
@@ -53,8 +52,8 @@ test.describe("landscape action boxes", () => {
                         if (overlap) problems.push(`chip ${index + 1} under ${banner.label} (${overlap})`);
                     }
                 });
-                [...document.querySelectorAll("[data-preview-dealer]")].forEach(el => {
-                    const seat = el.getAttribute("data-preview-dealer");
+                [...document.querySelectorAll("[data-dealer-button]")].forEach(el => {
+                    const seat = el.getAttribute("data-dealer-button");
                     const rect = box(el);
                     for (const banner of banners) {
                         const overlap = hit(rect, banner.rect);
@@ -134,10 +133,101 @@ test.describe("landscape seats stay on screen", () => {
                     document.querySelectorAll(".player-seat").forEach(el => consider("seat", el));
                     document.querySelectorAll(".seat-banner-shell.seat-banner-visible .seat-banner-box").forEach(el => consider("action", el));
                     document.querySelectorAll(".player-cards img, .community-card-row .card").forEach(el => consider("card", el));
+                    const chrome = document.querySelector(".table-banner-wrap");
+                    const chromeBottom = chrome ? chrome.getBoundingClientRect().bottom : 0;
+                    document.querySelectorAll("[data-dealer-button]").forEach(el => {
+                        consider("dealer", el);
+                        const top = el.getBoundingClientRect().y;
+                        if (top < chromeBottom - 1) {
+                            problems.push(`dealer ${el.getAttribute("data-dealer-button")} under the header by ${(chromeBottom - top).toFixed(0)}px`);
+                        }
+                    });
                     return problems;
                 });
 
                 expect(outside).toEqual([]);
+            });
+        }
+    }
+});
+
+/**
+ * The dealer button is attached to the seat-number disc: up and to the left
+ * at 45 degrees, a few pixels clear, above the hole cards, and inside the
+ * viewport on every format.
+ */
+test.describe("dealer button on the seat badge", () => {
+    const viewports = [
+        { width: 844, height: 390, label: "landscape", coarse: true },
+        { width: 390, height: 844, label: "portrait", coarse: true },
+        { width: 1024, height: 768, label: "tablet", coarse: false },
+        { width: 1440, height: 900, label: "desktop", coarse: false }
+    ] as const;
+
+    for (const viewport of viewports) {
+        for (const seats of [2, 6, 9]) {
+            test(`${seats} seats at ${viewport.width}x${viewport.height} ${viewport.label}`, async ({ page }) => {
+                await page.setViewportSize({ width: viewport.width, height: viewport.height });
+                await page.addInitScript((coarse: boolean) => {
+                    const original = window.matchMedia.bind(window);
+                    window.matchMedia = (query: string) => {
+                        if (query.includes("pointer") && query.includes("coarse")) {
+                            return {
+                                matches: coarse,
+                                media: query,
+                                onchange: null,
+                                addListener() {},
+                                removeListener() {},
+                                addEventListener() {},
+                                removeEventListener() {},
+                                dispatchEvent() { return false; }
+                            } as MediaQueryList;
+                        }
+                        return original(query);
+                    };
+                }, viewport.coarse);
+                await page.goto(`/table-preview?seats=${seats}&dealer=all&actions=all&holes=1&board=5`);
+                await page.waitForSelector("[data-dealer-button]");
+                await page.addStyleTag({
+                    content: "*, *::before, *::after { animation: none !important; transition: none !important; } .dealer-badge-button, .dealer-badge-button img { pointer-events: auto !important; }"
+                });
+
+                const problems = await page.evaluate((expected) => {
+                    const found: string[] = [];
+                    const buttons = [...document.querySelectorAll("[data-dealer-button]")];
+                    if (buttons.length !== expected) found.push(`expected ${expected} dealer buttons, found ${buttons.length}`);
+                    const chrome = document.querySelector(".table-banner-wrap");
+                    const chromeBottom = chrome ? chrome.getBoundingClientRect().bottom : 0;
+                    for (const el of buttons) {
+                        const seat = el.getAttribute("data-dealer-button");
+                        const badge = el.closest(".badge-number");
+                        if (!badge) {
+                            found.push(`dealer ${seat} is not inside a seat-number badge`);
+                            continue;
+                        }
+                        const b = el.getBoundingClientRect();
+                        const n = badge.getBoundingClientRect();
+                        const bx = b.x + b.width / 2;
+                        const by = b.y + b.height / 2;
+                        const nx = n.x + n.width / 2;
+                        const ny = n.y + n.height / 2;
+                        const dx = nx - bx;
+                        const dy = ny - by;
+                        if (dx < 4 || dy < 4) found.push(`dealer ${seat} is not up-left of the badge (dx ${dx.toFixed(1)}, dy ${dy.toFixed(1)})`);
+                        if (Math.abs(dx - dy) > 3) found.push(`dealer ${seat} is not on the 45 degree ray (dx ${dx.toFixed(1)}, dy ${dy.toFixed(1)})`);
+                        const gap = Math.hypot(dx, dy) - b.width / 2 - n.width / 2;
+                        if (gap < 1 || gap > 6) found.push(`dealer ${seat} gap is ${gap.toFixed(1)}px`);
+                        if (b.y < chromeBottom - 1) found.push(`dealer ${seat} under the header`);
+                        if (b.x < -1 || b.y < -1 || b.right > window.innerWidth + 1 || b.bottom > window.innerHeight + 1) {
+                            found.push(`dealer ${seat} outside the viewport`);
+                        }
+                        const top = document.elementFromPoint(bx, by);
+                        if (!top || !el.contains(top)) found.push(`dealer ${seat} is covered at its centre`);
+                    }
+                    return found;
+                }, seats);
+
+                expect(problems).toEqual([]);
             });
         }
     }

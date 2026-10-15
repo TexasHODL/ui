@@ -9,6 +9,7 @@ import { GameMetaProvider } from "../../context/gameState/GameMetaContext";
 import { GameUIProvider } from "../../context/gameState/GameUIContext";
 import { IDLE_CONNECTION, type ConnectionState } from "../../context/gameState/connection";
 import { PreviewSeatActionsContext } from "../../context/PreviewSeatActionsContext";
+import { ShowAllDealerButtonsProvider } from "../../context/ShowAllDealerButtonsContext";
 import { ReplayProvider } from "../../context/gameState/ReplayContext";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { getCosmosAddressSync } from "../../utils/cosmosAccountUtils";
@@ -110,7 +111,9 @@ const TablePreviewPage = () => {
                             <GameEventsProvider latestItem={null} ackAnimation={ackAnimation}>
                                 <GameDataProvider gameState={gameState} isOptimistic={false}>
                                     <PreviewSeatActionsContext.Provider value={options.allActions ? PREVIEW_SEAT_ACTIONS : null}>
-                                        <Table />
+                                        <ShowAllDealerButtonsProvider enabled={options.allDealers}>
+                                            <Table />
+                                        </ShowAllDealerButtonsProvider>
                                     </PreviewSeatActionsContext.Provider>
                                 </GameDataProvider>
                             </GameEventsProvider>

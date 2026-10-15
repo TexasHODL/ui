@@ -21,10 +21,8 @@ import { useParams } from "react-router-dom";
 
 import { useVacantSeatData } from "../../../hooks/game/useVacantSeatData";
 import type { VacantPlayerProps } from "../../../types/index";
-import { useDealerPosition } from "../../../hooks/game/useDealerPosition";
 import { joinTable } from "../../../hooks/playerActions/joinTable";
 import { useGameOptions } from "../../../hooks/game/useGameOptions";
-import CustomDealer from "../../../assets/CustomDealer.svg";
 import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../../utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
@@ -48,12 +46,8 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const [, setJoinResponse] = useState<any>(null);
         const [buyInAmount, setBuyInAmount] = useState<string>("");
         const [buyInAmountDisplay, setBuyInAmountDisplay] = useState<string>("");
-        const { dealerSeat } = useDealerPosition();
         // USDC Deposit Modal
         const [showUSDCDepositModal, setShowUSDCDepositModal] = useState(false);
-
-        // Check if this seat is the dealer
-        const isDealer = dealerSeat === index;
 
         // Memoize seat status checks
         const canJoinThisSeat = useMemo(() => checkCanJoinSeat(index), [checkCanJoinSeat, index]);
@@ -254,9 +248,6 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                     </span>
                     <span className="vacant-seat-title">{seatText.title}</span>
                     <span className="vacant-seat-label">{seatText.subtitle}</span>
-
-                    {/* Dealer Button - TODO: Implement framer motion animation in future iteration */}
-                    {/* Dealer Button — rendered at table level using geometry positions */}
                 </button>
 
                 {/* Buy-in modal - using portal to render at document body */}

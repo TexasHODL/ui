@@ -131,8 +131,6 @@ import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getViewportMode, COMPONENT_SCALE, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
-import CustomDealer from "../../assets/CustomDealer.svg";
-import { useDealerPosition } from "../../hooks/game/useDealerPosition";
 
 // Turn Notification
 import { useTurnNotification } from "../../hooks/notifications/useTurnNotification";
@@ -679,9 +677,6 @@ const Table = React.memo(() => {
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
     const isWatchMode = searchParams.get("watch") === "1";
-    // Preview-only. Production builds drop this: import.meta.env.DEV is false,
-    // and a real table always has an :id so the query cannot turn it on.
-    const showEveryDealer = import.meta.env.DEV && id === undefined && searchParams.get("dealer") === "all";
     // Game state context and subscription
     const {
         subscribeToTable,
@@ -862,7 +857,6 @@ const Table = React.memo(() => {
     // fabricated board from being PAINTED until tableSize is real (#466), so this
     // computed-but-unrendered layout causes no flash.
     const tableLayout = useTableLayout((tableSize || 9) as 2 | 4 | 6 | 9, tableContainerRef);
-    const { dealerSeat } = useDealerPosition();
 
     // Portrait phones get a decluttered UI + the vertical portrait stage —
     // the old "Rotate to Play" gate (#200) is gone.
@@ -1533,29 +1527,7 @@ const Table = React.memo(() => {
                                     })}
                             </div>
 
-                            {/* Dealer Button — convert seat number to rotated screen position.
-                                The preview's dealer=all query draws that same point for every seat. */}
-                            {showEveryDealer
-                                ? tableLayout.positions.dealers.map((dPos, positionIndex) => {
-                                    const seatNumber = ((positionIndex - startIndex + tableSize) % tableSize) + 1;
-                                    return (
-                                        <div key={`dealer-${positionIndex}`} className="absolute w-12 h-12 z-[25]" data-preview-dealer={seatNumber} style={{ left: dPos.left, top: dPos.top, transform: "translate(-50%, -50%)" }}>
-                                            <img src={CustomDealer} alt="Dealer Button" className="w-full h-full" />
-                                        </div>
-                                    );
-                                })
-                                : (() => {
-                                    const dIdx = dealerSeat != null && dealerSeat > 0 ? (dealerSeat - 1 + startIndex) % tableSize : -1;
-                                    const dPos = dIdx >= 0 ? tableLayout.positions.dealers[dIdx] : null;
-                                    if (!dPos) return null;
-                                    return (
-                                        <div className="absolute w-12 h-12 z-[25]" style={{ left: dPos.left, top: dPos.top, transform: "translate(-50%, -50%)" }}>
-                                            <img src={CustomDealer} alt="Dealer Button" className="w-full h-full" />
-                                        </div>
-                                    );
-                                })()}
-
-                            {/* Player seats */}
+                            {/* Player seats. The dealer button is part of the seat badge. */}
                             <PlayerSeating
                                 tableLayout={tableLayout}
                                 tableSize={tableSize}

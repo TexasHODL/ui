@@ -26,7 +26,7 @@ export interface PreviewOptions {
     seats: PreviewSeatCount;
     /** Single dealer seat, 1-based. Ignored visually while allDealers is set. */
     dealer: number;
-    /** Draw the real dealer-button position at every seat at once. */
+    /** Draw the badge-anchored dealer button on every occupied seat at once. */
     allDealers: boolean;
     /** Pin the real action badge on every seat at once. */
     allActions: boolean;
