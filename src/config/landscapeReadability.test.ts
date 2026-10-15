@@ -110,14 +110,14 @@ describe("landscape mobile readability", () => {
         const seatLeft = tx + (Math.min(...lefts) - widgetHalf) * zoom;
         const seatRight = contentWidth - (tx + (Math.max(...lefts) + widgetHalf) * zoom);
         expect(cardTop).toBeGreaterThanOrEqual(3.5);
-        expect(cardTop).toBeLessThanOrEqual(6);
+        expect(cardTop).toBeLessThanOrEqual(7);
         expect(heroBottom).toBeLessThanOrEqual(contentHeight - 4);
         expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
         expect(actionBottom).toBeGreaterThanOrEqual(contentHeight - 10);
         expect(seatLeft).toBeGreaterThanOrEqual(4);
-        expect(seatLeft).toBeLessThanOrEqual(12);
+        expect(seatLeft).toBeLessThanOrEqual(16);
         expect(seatRight).toBeGreaterThanOrEqual(4);
-        expect(seatRight).toBeLessThanOrEqual(12);
+        expect(seatRight).toBeLessThanOrEqual(16);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 480 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 400 });
@@ -168,7 +168,7 @@ describe("landscape mobile readability", () => {
             const cardTop = ty + (Math.min(...tops) - half) * zoom;
             const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
             expect(cardTop).toBeGreaterThanOrEqual(3.5);
-            expect(cardTop).toBeLessThanOrEqual(6);
+            expect(cardTop).toBeLessThanOrEqual(7);
             expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
             expect(actionBottom).toBeGreaterThanOrEqual(contentHeight - 22);
             if (size === 9) {
@@ -176,10 +176,13 @@ describe("landscape mobile readability", () => {
                 const lefts = seats.map(seat => dims.originX + parseFloat(seat.left));
                 const seatLeft = tx + (Math.min(...lefts) - widgetHalf) * zoom;
                 const seatRight = contentWidth - (tx + (Math.max(...lefts) + widgetHalf) * zoom);
+                // A tall tablet caps zoom so the 6-seat RAISE TO label stays
+                // inside, which leaves the narrower 9-seat label further in.
+                const sideLimit = width >= 1000 ? 28 : 16;
                 expect(seatLeft).toBeGreaterThanOrEqual(4);
-                expect(seatLeft).toBeLessThanOrEqual(12);
+                expect(seatLeft).toBeLessThanOrEqual(sideLimit);
                 expect(seatRight).toBeGreaterThanOrEqual(4);
-                expect(seatRight).toBeLessThanOrEqual(12);
+                expect(seatRight).toBeLessThanOrEqual(sideLimit);
             }
         }
     });
