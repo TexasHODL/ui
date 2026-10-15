@@ -121,11 +121,13 @@ const MOBILE_LANDSCAPE_BOTTOM_GAP = 6;
 const MOBILE_LANDSCAPE_SIDE_MARGIN = 8;
 
 /**
- * Half-width, in stage pixels, of a wide landscape action label (SITTING OUT
- * measures about 201). The box is laid out at 30px and then scaled with the
- * stage, so this stays constant while the seat widget does not.
+ * Half-width, in stage pixels, of the wide labels that sit on the outer
+ * seats. SITTING OUT on a 9-seat edge measures about 201. RAISE TO $1250 on
+ * a 6-seat edge measures about 289. The box is laid out at 30px and then
+ * scaled with the stage, so these stay constant while the seat widget does not.
  */
 export const MOBILE_LANDSCAPE_BANNER_HALF = 104;
+const MOBILE_LANDSCAPE_WIDE_BANNER_HALF = 152;
 
 /**
  * The landscape hand-strength chip used to be a row above the stage. It now
@@ -230,22 +232,33 @@ function ringContentHeight(size: 2 | 4 | 6 | 9): number {
     return (botY - topY) + pad.top + pad.bottom;
 }
 
-/** Distance from the table centre to the leftmost 9-seat point, after the inward spread. */
-function widestSideOffset(): number {
+/** Distance from the table centre to the leftmost seat, after the inward spread. */
+function sideOffset(size: 2 | 4 | 6 | 9): number {
     let minX = Infinity;
-    for (const [x, y] of SEAT_COORDS[9]) {
+    for (const [x, y] of SEAT_COORDS[size]) {
         const [sx] = spreadForWidthCap(x, y);
         minX = Math.min(minX, sx);
     }
     return TABLE_CENTER_X - minX;
 }
 
-/** Zoom at which a wide action label on the outer 9-seat still clears the stage side. */
+/** Outer rings and the wide label that hangs off them. 2-seat labels are centred. */
+const OUTER_LABELS: ReadonlyArray<readonly [2 | 4 | 6 | 9, number]> = [
+    [6, MOBILE_LANDSCAPE_WIDE_BANNER_HALF],
+    [9, MOBILE_LANDSCAPE_BANNER_HALF]
+];
+
+/** Zoom at which the widest outer label still clears the stage side. */
 function bannerZoomCap(containerW: number): number {
     const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN;
-    const side = widestSideOffset();
-    if (room <= 0 || side <= 0) return Number.POSITIVE_INFINITY;
-    return room / (side + MOBILE_LANDSCAPE_BANNER_HALF);
+    if (room <= 0) return Number.POSITIVE_INFINITY;
+    let cap = Number.POSITIVE_INFINITY;
+    for (const [size, half] of OUTER_LABELS) {
+        const side = sideOffset(size);
+        if (side <= 0) continue;
+        cap = Math.min(cap, room / (side + half));
+    }
+    return cap;
 }
 
 /**
@@ -266,18 +279,22 @@ export function mobileLandscapeWidthStretch(): number {
     // computed against a zoom the stage never uses.
     const usableH = containerH - params.paddingV - MOBILE_LANDSCAPE_ZOOM_RESERVE;
     if (containerW <= 0 || usableH <= 0) return 1;
-    // 9-seat is the widest ring. Its zoom is what places seats 3 and 8.
-    // A wide label cannot use a zoom that would carry it into the action column.
+    // 9-seat is the widest ring. 6-seat sits further in, but its RAISE TO
+    // label is wider, so both rings limit the stretch. A label cannot use a
+    // zoom that would carry it into the action column.
     let zoom = usableH / ringContentHeight(9);
     zoom = Math.min(zoom, bannerZoomCap(containerW));
     if (zoom <= 0) return 1;
     const factor = Math.min(1, containerW / 600, containerH / 263, zoom / 0.5125);
-    // The seat is 96 units. A long label is wider, and it scales with zoom.
-    const widgetHalf = Math.max((96 * factor) / 2, MOBILE_LANDSCAPE_BANNER_HALF * zoom);
-    const side = widestSideOffset();
-    const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN - widgetHalf;
-    if (room <= 0 || side <= 0) return 1;
-    const fill = room / (side * zoom);
+    const seatHalf = (96 * factor) / 2;
+    let fill = requested;
+    for (const [size, half] of OUTER_LABELS) {
+        const widgetHalf = Math.max(seatHalf, half * zoom);
+        const side = sideOffset(size);
+        const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN - widgetHalf;
+        if (room <= 0 || side <= 0) return 1;
+        fill = Math.min(fill, room / (side * zoom));
+    }
     return Math.min(requested, Math.max(1, fill));
 }
 
