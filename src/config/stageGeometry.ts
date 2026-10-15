@@ -172,7 +172,7 @@ function spreadForWidthCap(sx: number, sy: number): [number, number] {
     const dx = sx - TABLE_CENTER_X;
     const dy = sy - TABLE_CENTER_Y;
     const dist = Math.hypot(dx, dy);
-    if (dist === 0 || SEAT_SPREAD === 0) return [sx, sy];
+    if (dist === 0 || (SEAT_SPREAD as number) === 0) return [sx, sy];
     return [sx + (dx / dist) * SEAT_SPREAD, sy + (dy / dist) * SEAT_SPREAD];
 }
 
