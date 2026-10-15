@@ -95,7 +95,10 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     const allStacks = decomposeAmount(dollarAmount);
 
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
-    // A short landscape felt has no room for the 36px label between the rail and the pot.
+    // Phone-width viewports use the 36px label. A short or wide landscape window
+    // would otherwise drop to 24px, and the stage zoom then paints that smaller
+    // still. mobileReadability.css overrides both classes on mobile landscape so
+    // every seat paints at the same 17px on screen.
     const compactLabel = !isMobile || (window.innerWidth > window.innerHeight && window.innerHeight <= 500);
     const chipSize = isMobile ? CHIP_SIZE_MOBILE : CHIP_SIZE;
 

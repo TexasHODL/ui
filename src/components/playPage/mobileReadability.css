@@ -124,6 +124,19 @@
     height: min(230px, 40dvh);
 }
 
+/* Bet amounts share one on-screen size. The pill is inside the stage zoom, so a
+   fixed CSS size paints smaller on a short phone (zoom ~0.42) than on a wider
+   landscape table (zoom ~0.71). 17px is the size the 24px label already has at
+   that wider zoom — the most legible size already on a landscape table. */
+[data-mobile-readable="landscape"] .chip-position > div {
+    height: calc(22.67px / var(--table-zoom));
+    padding-right: calc(7px / var(--table-zoom));
+}
+[data-mobile-readable="landscape"] .chip-position span {
+    font-size: calc(17px / var(--table-zoom));
+    line-height: calc(22.67px / var(--table-zoom));
+}
+
 /* Centre the five-card row itself, irrespective of one or two pot labels. */
 [data-mobile-readable="landscape"] .community-card-row { margin-top: 0; }
 [data-mobile-readable="landscape"] .community-pots {

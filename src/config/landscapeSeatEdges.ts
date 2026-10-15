@@ -155,12 +155,12 @@ export function placeMobileRailMarkers(
         [[-hw, -hy], [hw, -hy], [-hw, hy], [hw, hy]].every(([dx, dy]) => mobileFeltContains(x + dx, y + dy, feltScaleY, centerYShift));
     const unitStage = screenUnit / z;
     // Seat box is 96×71 mobile units. Chip width covers the pill plus a "$0.18"
-    // label; short landscape uses the compact label from Chip.tsx. The dealer
-    // button is the 48px element centred on its point.
+    // label. The dealer button is the 48px element centred on its point.
     const seatHX = 48 * unitStage;
     const seatHY = 35.5 * unitStage;
-    // Chip.tsx uses the large pill only when the viewport is phone-sized. A
-    // 1024×650 landscape window fails that test and renders the smaller label.
+    // Half-width of the pile used while placing it. Short landscape keeps the
+    // 72px box. The amount text itself is pinned to one on-screen size in
+    // mobileReadability.css and does not move this point.
     const shortLandscape = typeof window !== "undefined" && window.innerWidth > window.innerHeight && window.innerHeight <= 500;
     const bigChips = typeof window !== "undefined" && (window.innerWidth <= 768 || window.innerHeight <= 500) && !shortLandscape;
     const chipHX = bigChips ? 86 : shortLandscape ? 72 : 54;
