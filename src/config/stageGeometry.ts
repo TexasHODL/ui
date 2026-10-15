@@ -89,25 +89,41 @@ export const TABLE_WIDTH = 1000;
 export const TABLE_HEIGHT = 500;
 
 /**
- * How much wider the mobile-landscape felt is than the desktop 2:1 stadium.
- * Tune this one number: 1 keeps 1000×500 (aspect 2:1), 1.15 paints 1150×500
- * (aspect 2.3:1). `mobileLandscapeWidthStretch` may lower it when the window
- * is too narrow to keep the zoom height-limited. It never raises it and never
- * goes below 1, so the felt cannot become the old very-wide shape.
+ * Ceiling on how much wider the mobile-landscape felt may be than the desktop
+ * 2:1 stadium. `mobileLandscapeWidthStretch` uses less when the outer seats
+ * would leave the stage, and never goes below 1. A short phone may exceed the
+ * old 2.4:1 shape so seats 3 and 8 sit near the stage edges.
  */
-export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.15;
+export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.7;
 
 /**
  * How much taller the mobile-landscape felt and seat ring are than the
  * desktop 500px stadium. 1 keeps that height. `mobileLandscapeHeightStretch`
  * may lower this so the top hole cards stay a few pixels under the header
  * and the lowest action box stays a few pixels above the bottom edge. It
- * never goes below 1, and it does not give back the width stretch.
+ * never goes below 1, and it does not give back the width stretch. The room
+ * between those two edges goes to the felt.
  */
-export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.08;
+export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.4;
 
-/** Screen pixels kept between the stage edge and the top cards or the lowest action box. */
-const MOBILE_LANDSCAPE_EDGE_GAP = 6;
+/** One-row mobile header. The hand-strength chip overlays, so it is not in this. */
+const MOBILE_LANDSCAPE_CHROME = 48;
+
+/** Screen pixels between the stage top and the top hole cards. */
+const MOBILE_LANDSCAPE_TOP_GAP = 4;
+
+/** Screen pixels between the lowest action box and the stage bottom. */
+const MOBILE_LANDSCAPE_BOTTOM_GAP = 6;
+
+/** Screen pixels between an outer seat's cards or action box and the stage side. */
+const MOBILE_LANDSCAPE_SIDE_MARGIN = 8;
+
+/**
+ * The landscape hand-strength chip used to be a row above the stage. It now
+ * overlays, and these pixels stay out of the zoom so the height stretch can
+ * spend them on the felt.
+ */
+const MOBILE_LANDSCAPE_ZOOM_RESERVE = 34;
 
 /**
  * Stage pixels the action banner hangs below the hole-card bottom. The banner
@@ -198,42 +214,53 @@ function spreadForWidthCap(sx: number, sy: number): [number, number] {
     return [sx + (dx / dist) * SEAT_SPREAD, sy + (dy / dist) * SEAT_SPREAD];
 }
 
-/** Shortest mobile-landscape content height (2/4/6/9). The short ring binds first. */
-function mobileLandscapeContentHeight(): number {
+/** Unscaled vertical extent of one ring, plus the player-UI padding above and below. */
+function ringContentHeight(size: 2 | 4 | 6 | 9): number {
     const pad = PLAYER_UI_PADDING["mobile-landscape"];
-    let shortest = Infinity;
-    for (const size of [2, 4, 6, 9] as const) {
-        let minY = Infinity;
-        let maxY = -Infinity;
-        for (const [x, y] of SEAT_COORDS[size]) {
-            const [, sy] = spreadForWidthCap(x, y);
-            minY = Math.min(minY, sy);
-            maxY = Math.max(maxY, sy);
-        }
-        shortest = Math.min(shortest, (maxY - minY) + pad.top + pad.bottom);
+    const { topY, botY } = spreadSeatExtent(size);
+    return (botY - topY) + pad.top + pad.bottom;
+}
+
+/** Distance from the table centre to the leftmost 9-seat point, after the inward spread. */
+function widestSideOffset(): number {
+    let minX = Infinity;
+    for (const [x, y] of SEAT_COORDS[9]) {
+        const [sx] = spreadForWidthCap(x, y);
+        minX = Math.min(minX, sx);
     }
-    return shortest;
+    return TABLE_CENTER_X - minX;
 }
 
 /**
- * Stretch actually applied on mobile landscape. Equals
- * {@link MOBILE_LANDSCAPE_WIDTH_STRETCH} when the window can spare the width,
- * otherwise a smaller factor down to 1 (the 2:1 felt). The estimate reserves
- * the 124px action column and the ~70px header the stage sits under.
+ * Stretch actually applied on mobile landscape. Wide enough that the outer
+ * seats' cards sit {@link MOBILE_LANDSCAPE_SIDE_MARGIN}px inside the stage,
+ * and short of the action column. Zoom stays the height fit, so the cards do
+ * not shrink to buy width. Never below 1, never above
+ * {@link MOBILE_LANDSCAPE_WIDTH_STRETCH}.
  */
 export function mobileLandscapeWidthStretch(): number {
     const requested = Math.max(1, MOBILE_LANDSCAPE_WIDTH_STRETCH);
-    if (requested === 1 || typeof window === "undefined") return 1;
+    if (typeof window === "undefined") return 1;
+    if (getStageOrientation() !== "mobile-landscape") return 1;
     const params = VIEWPORT_PARAMS["mobile-landscape"];
-    const usableW = window.innerWidth - 124 - params.paddingH;
-    const usableH = window.innerHeight - 70 - params.paddingV;
-    if (usableW <= 0 || usableH <= 0) return 1;
-    const scaleByHeight = usableH / mobileLandscapeContentHeight();
-    if (scaleByHeight <= 0) return 1;
-    const padX = PLAYER_UI_PADDING["mobile-landscape"].x * 2;
-    const maxContentWidth = usableW / scaleByHeight;
-    const maxStretch = (maxContentWidth - 60 - padX) / TABLE_WIDTH;
-    return Math.min(requested, Math.max(1, maxStretch));
+    const containerW = window.innerWidth - 124;
+    const containerH = window.innerHeight - MOBILE_LANDSCAPE_CHROME;
+    // Same usable height calculateZoom paints with, so the stretch is not
+    // computed against a zoom the stage never uses.
+    const usableH = containerH - params.paddingV - MOBILE_LANDSCAPE_ZOOM_RESERVE;
+    if (containerW <= 0 || usableH <= 0) return 1;
+    // 9-seat is the widest ring. Its zoom is what places seats 3 and 8.
+    const zoom = usableH / ringContentHeight(9);
+    if (zoom <= 0) return 1;
+    const factor = Math.min(1, containerW / 600, containerH / 263, zoom / 0.5125);
+    // Action boxes are at least the seat wide (96 units). A longer label
+    // grows a few pixels past that; the side margin absorbs it.
+    const widgetHalf = (96 * factor) / 2;
+    const side = widestSideOffset();
+    const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN - widgetHalf;
+    if (room <= 0 || side <= 0) return 1;
+    const fill = room / (side * zoom);
+    return Math.min(requested, Math.max(1, fill));
 }
 
 /** Felt dimensions for one orientation. Mobile landscape is the only stretched stage. */
@@ -946,13 +973,17 @@ export function getContentBounds(tableSize: TableSize): ContentBounds {
     }
     // Heads-up seats have no horizontal span; include the actual felt/rail so
     // auto-fit cannot make a wide landscape table spill outside a short phone.
+    // The width stretch already places the seat widgets inside the stage, so
+    // the old 100px side pad is not added again (it left the dead space).
+    let sidePad = pad.x;
     if (mode === "mobile-landscape") {
         const dims = getStageDims();
         minX = Math.min(minX, dims.originX - 30);
         maxX = Math.max(maxX, dims.originX + dims.tableWidth + 30);
+        sidePad = 0;
     }
     return {
-        width: (maxX - minX) + pad.x * 2,
+        width: (maxX - minX) + sidePad * 2,
         height: (maxY - minY) + pad.top + pad.bottom,
         // Center of the PADDED bounds (not just seats). Accounts for asymmetric
         // padding — more above (cards) than below (badges). Without this offset,
@@ -980,7 +1011,8 @@ export function calculateZoom(
     // Portrait needs no axis swap: the portrait stage is already vertical, so
     // its content bounds are taller than wide and fit the viewport directly.
     const usableWidth = containerWidth - params.paddingH;
-    const usableHeight = containerHeight - params.footerOverlay - params.paddingV;
+    let usableHeight = containerHeight - params.footerOverlay - params.paddingV;
+    if (mode === "mobile-landscape") usableHeight -= MOBILE_LANDSCAPE_ZOOM_RESERVE;
 
     const scaleByWidth = usableWidth / bounds.width;
     const scaleByHeight = usableHeight / bounds.height;
@@ -1010,31 +1042,30 @@ function spreadSeatExtent(tableSize: TableSize): { topY: number; botY: number } 
  * Height scale actually applied on mobile landscape. Equals
  * {@link MOBILE_LANDSCAPE_HEIGHT_STRETCH} when the window has vertical room
  * under the header. Otherwise a smaller factor down to 1, so the top hole
- * cards keep {@link MOBILE_LANDSCAPE_EDGE_GAP}px of air and the lowest action
- * box stays that far above the bottom edge. Zoom stays the width-stretch fit:
- * this does not shrink the table to buy height.
+ * cards keep {@link MOBILE_LANDSCAPE_TOP_GAP}px of air and the lowest action
+ * box stays {@link MOBILE_LANDSCAPE_BOTTOM_GAP}px above the bottom edge. Zoom
+ * stays the width-stretch fit: this does not shrink the table to buy height.
  */
 export function mobileLandscapeHeightStretch(): number {
     const requested = Math.max(1, MOBILE_LANDSCAPE_HEIGHT_STRETCH);
     if (requested === 1 || typeof window === "undefined") return 1;
     if (getStageOrientation() !== "mobile-landscape") return 1;
     const params = VIEWPORT_PARAMS["mobile-landscape"];
-    const pad = PLAYER_UI_PADDING["mobile-landscape"];
     const containerW = window.innerWidth - 124;
-    const containerH = window.innerHeight - 70;
+    const containerH = window.innerHeight - MOBILE_LANDSCAPE_CHROME;
     const usableW = containerW - params.paddingH;
-    const usableH = containerH - params.paddingV;
+    const usableH = containerH - params.paddingV - MOBILE_LANDSCAPE_ZOOM_RESERVE;
     if (usableW <= 0 || usableH <= 0) return 1;
-    const contentW = TABLE_WIDTH * mobileLandscapeWidthStretch() + 60 + pad.x * 2;
+    const contentW = TABLE_WIDTH * mobileLandscapeWidthStretch() + 60;
     let allowed = requested;
     for (const size of [2, 4, 6, 9] as const) {
         const { topY, botY } = spreadSeatExtent(size);
         const span = botY - topY;
-        const contentH = span + pad.top + pad.bottom;
+        const contentH = ringContentHeight(size);
         const zoom = Math.min(usableW / contentW, usableH / contentH);
         if (zoom <= 0) return 1;
         const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerW, containerH));
-        const limit = (containerH - 2 * MOBILE_LANDSCAPE_EDGE_GAP) / zoom;
+        const limit = (containerH - MOBILE_LANDSCAPE_TOP_GAP - MOBILE_LANDSCAPE_BOTTOM_GAP) / zoom;
         // The banner hangs below the cards. Reserving it shortens the felt and
         // pulls the bottom seats up; the nudge then keeps the top cards put.
         const maxH = (limit - 2 * half - MOBILE_LANDSCAPE_ACTION_BELOW_CARDS) / span;
@@ -1048,7 +1079,7 @@ export function mobileLandscapeHeightStretch(): number {
  * Centers the content within the measured container.
  * CSS wrapper must have: top:0; left:0; transform-origin: 0 0;
  * Mobile landscape then slides the ring so the top hole cards sit
- * {@link MOBILE_LANDSCAPE_EDGE_GAP}px under the stage top, unless that would
+ * {@link MOBILE_LANDSCAPE_TOP_GAP}px under the stage top, unless that would
  * push the lowest action box past the bottom edge.
  */
 export function getTableTransform(
@@ -1102,9 +1133,9 @@ function mobileLandscapeVerticalNudge(
         cardTop = Math.min(cardTop, stageY - half);
         actionBottom = Math.max(actionBottom, stageY + half + MOBILE_LANDSCAPE_ACTION_BELOW_CARDS);
     }
-    let nudge = MOBILE_LANDSCAPE_EDGE_GAP - (ty + cardTop * zoom);
+    let nudge = MOBILE_LANDSCAPE_TOP_GAP - (ty + cardTop * zoom);
     const actionAfter = ty + nudge + actionBottom * zoom;
-    const limit = containerHeight - MOBILE_LANDSCAPE_EDGE_GAP;
+    const limit = containerHeight - MOBILE_LANDSCAPE_BOTTOM_GAP;
     if (actionAfter > limit) nudge -= actionAfter - limit;
     return nudge;
 }
