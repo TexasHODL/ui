@@ -109,14 +109,23 @@ export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.4;
 /** One-row mobile header. The hand-strength chip overlays, so it is not in this. */
 const MOBILE_LANDSCAPE_CHROME = 48;
 
-/** Screen pixels between the stage top and the top hole cards. */
-const MOBILE_LANDSCAPE_TOP_GAP = 4;
+/** Screen pixels between the stage top and the top hole cards.
+ *  The painted card sits about 2px above this model, so 6 lands the art ~4px
+ *  under the header. */
+const MOBILE_LANDSCAPE_TOP_GAP = 6;
 
 /** Screen pixels between the lowest action box and the stage bottom. */
 const MOBILE_LANDSCAPE_BOTTOM_GAP = 6;
 
 /** Screen pixels between an outer seat's cards or action box and the stage side. */
 const MOBILE_LANDSCAPE_SIDE_MARGIN = 8;
+
+/**
+ * Half-width, in stage pixels, of a wide landscape action label (SITTING OUT
+ * measures about 201). The box is laid out at 30px and then scaled with the
+ * stage, so this stays constant while the seat widget does not.
+ */
+export const MOBILE_LANDSCAPE_BANNER_HALF = 104;
 
 /**
  * The landscape hand-strength chip used to be a row above the stage. It now
@@ -231,6 +240,14 @@ function widestSideOffset(): number {
     return TABLE_CENTER_X - minX;
 }
 
+/** Zoom at which a wide action label on the outer 9-seat still clears the stage side. */
+function bannerZoomCap(containerW: number): number {
+    const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN;
+    const side = widestSideOffset();
+    if (room <= 0 || side <= 0) return Number.POSITIVE_INFINITY;
+    return room / (side + MOBILE_LANDSCAPE_BANNER_HALF);
+}
+
 /**
  * Stretch actually applied on mobile landscape. Wide enough that the outer
  * seats' cards sit {@link MOBILE_LANDSCAPE_SIDE_MARGIN}px inside the stage,
@@ -250,12 +267,13 @@ export function mobileLandscapeWidthStretch(): number {
     const usableH = containerH - params.paddingV - MOBILE_LANDSCAPE_ZOOM_RESERVE;
     if (containerW <= 0 || usableH <= 0) return 1;
     // 9-seat is the widest ring. Its zoom is what places seats 3 and 8.
-    const zoom = usableH / ringContentHeight(9);
+    // A wide label cannot use a zoom that would carry it into the action column.
+    let zoom = usableH / ringContentHeight(9);
+    zoom = Math.min(zoom, bannerZoomCap(containerW));
     if (zoom <= 0) return 1;
     const factor = Math.min(1, containerW / 600, containerH / 263, zoom / 0.5125);
-    // Action boxes are at least the seat wide (96 units). A longer label
-    // grows a few pixels past that; the side margin absorbs it.
-    const widgetHalf = (96 * factor) / 2;
+    // The seat is 96 units. A long label is wider, and it scales with zoom.
+    const widgetHalf = Math.max((96 * factor) / 2, MOBILE_LANDSCAPE_BANNER_HALF * zoom);
     const side = widestSideOffset();
     const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN - widgetHalf;
     if (room <= 0 || side <= 0) return 1;
@@ -1021,7 +1039,10 @@ export function calculateZoom(
     // Short landscape screens (including browser chrome / keyboard) must still
     // fit the complete seat ring. A 0.3 floor previously forced it into controls.
     const minimum = mode.startsWith("mobile") ? 0.01 : MIN_SCALE;
-    const result = Math.max(minimum, Math.min(fitScale, MAX_GLOBAL_SCALE));
+    let result = Math.max(minimum, Math.min(fitScale, MAX_GLOBAL_SCALE));
+    if (mode === "mobile-landscape") {
+        result = Math.min(result, bannerZoomCap(containerWidth));
+    }
 
     return result;
 }
@@ -1062,7 +1083,7 @@ export function mobileLandscapeHeightStretch(): number {
         const { topY, botY } = spreadSeatExtent(size);
         const span = botY - topY;
         const contentH = ringContentHeight(size);
-        const zoom = Math.min(usableW / contentW, usableH / contentH);
+        const zoom = Math.min(usableW / contentW, usableH / contentH, bannerZoomCap(containerW));
         if (zoom <= 0) return 1;
         const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerW, containerH));
         const limit = (containerH - MOBILE_LANDSCAPE_TOP_GAP - MOBILE_LANDSCAPE_BOTTOM_GAP) / zoom;

@@ -1,6 +1,6 @@
 import { mobileCardUnit } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -106,7 +106,7 @@ describe("landscape mobile readability", () => {
         const heroBottom = ty + (Math.max(...tops) + half) * zoom;
         // 33 stage px is the action banner below the hole cards (55px box, 22px tuck).
         const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
-        const widgetHalf = (96 * unit) / 2;
+        const widgetHalf = Math.max((96 * unit) / 2, MOBILE_LANDSCAPE_BANNER_HALF);
         const seatLeft = tx + (Math.min(...lefts) - widgetHalf) * zoom;
         const seatRight = contentWidth - (tx + (Math.max(...lefts) + widgetHalf) * zoom);
         expect(cardTop).toBeGreaterThanOrEqual(3.5);
@@ -121,11 +121,11 @@ describe("landscape mobile readability", () => {
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 480 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 400 });
-        expect(mobileLandscapeWidthStretch()).toBe(1);
+        expect(mobileLandscapeWidthStretch()).toBeCloseTo(1, 5);
         expect(mobileLandscapeHeightStretch()).toBeGreaterThanOrEqual(1);
         expect(mobileLandscapeHeightStretch()).toBeLessThanOrEqual(MOBILE_LANDSCAPE_HEIGHT_STRETCH);
         const narrow = getStageDims();
-        expect(narrow.tableWidth).toBe(TABLE_WIDTH);
+        expect(narrow.tableWidth).toBeCloseTo(TABLE_WIDTH, 4);
         expect(narrow.tableHeight).toBeCloseTo(TABLE_HEIGHT * mobileLandscapeHeightStretch(), 5);
         const narrowHeight = 400 - 48;
         const narrowZoom = calculateZoom(9, 480 - 124, narrowHeight);
@@ -170,9 +170,9 @@ describe("landscape mobile readability", () => {
             expect(cardTop).toBeGreaterThanOrEqual(3.5);
             expect(cardTop).toBeLessThanOrEqual(6);
             expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
-            expect(actionBottom).toBeGreaterThanOrEqual(contentHeight - 14);
+            expect(actionBottom).toBeGreaterThanOrEqual(contentHeight - 22);
             if (size === 9) {
-                const widgetHalf = (96 * unit) / 2;
+                const widgetHalf = Math.max((96 * unit) / 2, MOBILE_LANDSCAPE_BANNER_HALF);
                 const lefts = seats.map(seat => dims.originX + parseFloat(seat.left));
                 const seatLeft = tx + (Math.min(...lefts) - widgetHalf) * zoom;
                 const seatRight = contentWidth - (tx + (Math.max(...lefts) + widgetHalf) * zoom);
