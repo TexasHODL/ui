@@ -90,7 +90,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                 return (
                     <div
                         key={`${idx}-${card}`}
-                        className={`card animate-fall${isWinCard ? " animate-win-card" : ""}${shouldMute ? " opacity-40" : ""}`}
+                        className={`card animate-fall${isWinCard ? " animate-win-card" : ""}${shouldMute ? " community-card-muted" : ""}`}
                     >
                         <OppositePlayerCards frontSrc={getCardImageUrl(card)} backSrc={getCardBackUrl(cardBackStyle)} flipped />
                     </div>
