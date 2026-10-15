@@ -145,4 +145,40 @@ describe("landscape mobile readability", () => {
             expect(placed.players.map(seat => seat.top)).toEqual(seats.players.map(seat => seat.top));
         }
     });
+
+    test("centres the bottom flank bets on their hole cards in mobile landscape", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 844 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 390 });
+        const assertCentred = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const contentWidth = width - 124;
+            const contentHeight = height - 70;
+            const zoom = calculateZoom(9, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(false, zoom, contentWidth, contentHeight)) * zoom;
+            const placed = placeMobileRailMarkers(getAllPositions(9), zoom, 0, screenUnit, 9);
+            for (const index of [1, 8]) {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const seatY = parseFloat(placed.players[index].top);
+                expect(chipX).toBe(Math.round(seatX));
+                expect(chipY).toBeLessThan(seatY);
+            }
+        };
+        assertCentred(844, 390);
+        assertCentred(1024, 650);
+
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+        const portraitZoom = calculateZoom(9, 390, 714);
+        const portraitUnit = parseFloat(mobileCardUnit(true, portraitZoom, 390, 714)) * portraitZoom;
+        const portrait = placeMobileRailMarkers(getAllPositions(9), portraitZoom, 0, portraitUnit, 9);
+        for (const index of [1, 8]) {
+            const seatX = parseFloat(portrait.players[index].left);
+            const chipX = parseFloat(portrait.chips[index].left);
+            expect(Math.abs(chipX - seatX)).toBeGreaterThan(20);
+        }
+    });
 });

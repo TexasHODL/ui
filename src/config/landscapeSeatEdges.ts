@@ -451,6 +451,30 @@ export function placeMobileRailMarkers(
             remember(index, best.x, best.y);
         }
     });
+    // Seats 2 and 9 flank the hero on the bottom of a 9-seat ring. The inward
+    // search parks both bets beside the hero's chip. Slide each one sideways
+    // onto its own hole cards and keep the height it already has. Portrait
+    // hole cards sit outside the rail, so a sideways slide there would leave
+    // the felt; those bets stay where the search put them.
+    if (tableSize === 9 && dims.tableWidth > dims.tableHeight) {
+        for (const index of [1, 8]) {
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            if (!point || !seat) continue;
+            const x = seat.x;
+            const y = point.y;
+            // The wide label has to stay on the felt and off the seat widget.
+            // Card clearance uses the pill itself: the search gap would reject
+            // a bet that sits above its own cards without covering them.
+            if (!boxOnFelt(x, y, pileHX, feltHY)) continue;
+            const box = { x, y, hw: feltHX, hy: feltHY };
+            if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) continue;
+            if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: 16 }, card, 0))) continue;
+            if (seatBoxes.some(other => boxesOverlap({ x, y, hw: pileHX, hy: pileHY }, other, 4))) continue;
+            point.x = x;
+            remember(index, x, y);
+        }
+    }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
