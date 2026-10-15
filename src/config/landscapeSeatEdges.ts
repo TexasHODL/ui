@@ -735,7 +735,26 @@ export function placeMobileRailMarkers(
         const minGap = Math.min(12 / z, 28);
         seatBoxes.forEach((seat, index) => {
             const point = chipCenters[index];
-            if (!point || chipClear(index, point.x, point.y, minGap)) return;
+            if (!point) return;
+            // Flank and top bets stay on the seat's column. A sideways step
+            // taken on the narrow curved rail can stick after the pile moves
+            // up; walking toward the centre puts the label back on the felt.
+            // Top bets also keep a band of felt under the action box. 12/zoom
+            // shrinks that band on a tall tablet until the pile touches the box.
+            const gap = index === 4 || index === 5 ? Math.max(minGap, 21) : minGap;
+            const centred = index === 1 || index === 8 || index === 4 || index === 5;
+            if (centred && Math.abs(point.x - seat.x) > 1) {
+                const yDir = Math.sign(cy - point.y) || Math.sign(cy - seat.y) || 1;
+                for (let step = 0; step <= 48; step++) {
+                    const y = point.y + yDir * step;
+                    if (!chipClear(index, seat.x, y, gap)) continue;
+                    point.x = Math.round(seat.x);
+                    point.y = Math.round(y);
+                    remember(index, point.x, point.y);
+                    return;
+                }
+            }
+            if (chipClear(index, point.x, point.y, gap)) return;
             const toCentre = Math.hypot(cx - seat.x, cy - seat.y) || 1;
             // Top seats sit above the felt, so the first clear spot under the
             // banner is a little over halfway to the centre. Still in front of
@@ -752,7 +771,7 @@ export function placeMobileRailMarkers(
             const yDir = Math.sign(cy - seat.y) || 1;
             for (let step = 36; step <= maxDist; step += 4) {
                 const y = seat.y + yDir * step;
-                if (!chipClear(index, seat.x, y, minGap)) continue;
+                if (!chipClear(index, seat.x, y, gap)) continue;
                 best = { x: seat.x, y, score: 100_000 - step };
                 break;
             }
@@ -763,7 +782,7 @@ export function placeMobileRailMarkers(
                     const dirY = uy * Math.cos(ang) + ux * Math.sin(ang);
                     const x = seat.x + dirX * dist;
                     const y = seat.y + dirY * dist;
-                    if (!chipClear(index, x, y, minGap)) continue;
+                    if (!chipClear(index, x, y, gap)) continue;
                     const centred = Math.abs(x - seat.x) <= 1.5;
                     // Centred and close: directly in front of this seat.
                     const score = (centred ? 10_000 : 0) - dist - Math.abs(deg) * 2;
