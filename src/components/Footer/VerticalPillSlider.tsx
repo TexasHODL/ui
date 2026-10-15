@@ -81,7 +81,7 @@ export const VerticalPillSlider: React.FC<VerticalPillSliderProps> = ({
                         }}
                     />
                 </div>
-                <div className="pill-thumb" data-testid="pill-thumb" style={{ bottom: `calc(11px + (100% - 22px) * ${pct})`, background: sliderTravelColor(pct) }} />
+                <div className="pill-thumb" data-testid="pill-thumb" style={{ bottom: `calc(var(--pill-thumb-inset, 11px) + (100% - 22px) * ${pct})`, background: sliderTravelColor(pct) }} />
                 <div className="pill-value">{label}</div>
             </div>
             <button type="button" className="pill-cap pill-cap-minus" aria-label="Decrease bet" disabled={disabled} onClick={onDecrement}>

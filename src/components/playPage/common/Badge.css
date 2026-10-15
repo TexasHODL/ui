@@ -125,6 +125,18 @@
   pointer-events: none;
 }
 
+/* Action labels grow past the stack pill when the line is long. The
+   horizontal shift is the `translate` property so the drop animation, which
+   writes `transform`, still keeps the banner centred. */
+.seat-banner-shell[data-banner-mode="action"],
+.seat-banner-shell[data-banner-mode="seat-join"] {
+  left: 50%;
+  right: auto;
+  width: max-content;
+  min-width: 100%;
+  translate: -50% 0;
+}
+
 .seat-banner-box {
   width: 100%;
   min-height: 55px;
@@ -223,6 +235,23 @@
   transition: opacity 0.15s ease-out, transform 0.15s ease-out, max-height 0.15s ease-out;
 }
 
+/* The banner is 55px and tucks 22px under the stack pill. 30px is the line
+   that fills the part still on screen, on every format, without growing the
+   box. The box widens instead of wrapping or clipping a long label. */
+[data-banner-mode="action"] .seat-banner-box,
+[data-banner-mode="seat-join"] .seat-banner-box {
+  width: max-content;
+  min-width: 100%;
+  white-space: nowrap;
+  padding: 0 0.5rem 2px;
+}
+
+[data-banner-mode="action"] .action-display-content,
+[data-banner-mode="seat-join"] .action-display-content {
+  margin-bottom: 2px;
+  max-height: none;
+}
+
 .action-display-content-hide {
   opacity: 0;
   transform: translateY(-4px);
@@ -230,14 +259,17 @@
 }
 
 .action-display-text {
-  font-size: 0.875rem;
+  font-size: 30px;
+  line-height: 30px;
   font-weight: 800;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .action-display-amount {
-  font-size: 0.875rem;
+  font-size: 30px;
+  line-height: 30px;
   font-weight: 500;
+  letter-spacing: 0.02em;
   opacity: 0.9;
 }
 
