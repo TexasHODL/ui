@@ -340,16 +340,16 @@ describe("landscape mobile readability", () => {
             // keeps 2–4 screen px of air and does not change x.
             const unit = screenUnit / zoom;
             const pillHalf = (22.67 / zoom) / 2;
-            const visualHalf = Math.max(pillHalf, 16);
+            const visualHalf = Math.max(pillHalf, 20);
             for (const index of [3, 4, 5, 6]) {
                 const seatY = parseFloat(placed.players[index].top);
                 const chipY = parseFloat(placed.chips[index].top ?? "0");
                 const bannerBottom = seatY + 35.5 * unit + 33;
                 const gap = (chipY - visualHalf - bannerBottom) * zoom;
-                expect(gap).toBeGreaterThanOrEqual(2);
+                expect(gap).toBeGreaterThanOrEqual(4);
                 // On a tall tablet the curved rail already stops seats 4 and 7,
                 // so those two piles cannot rise to the box without leaving the felt.
-                if (height <= 500 || index === 4 || index === 5) expect(gap).toBeLessThanOrEqual(4);
+                if (height <= 500 || index === 4 || index === 5) expect(gap).toBeLessThanOrEqual(6);
             }
             for (const index of [2, 7]) {
                 const seatX = parseFloat(placed.players[index].left);

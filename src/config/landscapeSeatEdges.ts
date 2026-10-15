@@ -771,13 +771,16 @@ export function placeMobileRailMarkers(
         // about 12 screen px of air. Pull each pile straight up, keeping its
         // x, until the pile top is 3 screen px under that box. Stop if the
         // next pixel would leave the felt or cover a card.
-        const visualHalf = Math.max(pillHalf, 16);
+        // 20 table px covers a two-denomination cluster. One chip is 16.
+        // The pill is taller than that on a short phone, so the phone gap
+        // stays the 5px screen target. A tall tablet uses the cluster.
+        const visualHalf = Math.max(pillHalf, 20);
         const tuckUnderBanner = (index: number) => {
             const point = chipCenters[index];
             const seat = seatBoxes[index];
             if (!point || !seat) return;
             const bannerBottom = seat.y + seatHY + 33;
-            const targetY = Math.round(bannerBottom + 3 / z + visualHalf);
+            const targetY = Math.round(bannerBottom + 5 / z + visualHalf);
             const x = point.x;
             let best = Math.round(point.y);
             if (targetY >= best) return;
