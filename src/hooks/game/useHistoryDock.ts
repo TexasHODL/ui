@@ -18,8 +18,9 @@ export const useHistoryDock = (
         const logWidth = 240;
         const top = stage.top + 8;
         const logLeft = stage.right - 16 - logWidth;
+        const availableHeight = Math.max(36, Math.min(window.innerHeight, stage.top + height) - top - 16);
         // Include the outer rail AND seat/card bounds, not just the felt edge.
-        let limit = felt.right + 30 * zoom >= logLeft ? felt.top - 30 * zoom - top - 8 : 220;
+        let limit = felt.right + 30 * zoom >= logLeft ? felt.top - 30 * zoom - top - 8 : availableHeight;
         stageRef.current.querySelectorAll(".player-seat, .vacant-seat").forEach(seat => {
             const bounds = seat.getBoundingClientRect();
             if (bounds.right + 40 * zoom >= logLeft && bounds.bottom > top) {
@@ -27,7 +28,7 @@ export const useHistoryDock = (
             }
         });
         limit = Math.max(36, limit);
-        const logHeight = Math.floor(Math.min(220, window.innerHeight * 0.26, limit));
+        const logHeight = Math.floor(Math.min(availableHeight, limit));
         setStyle(previous => {
             const values = previous as Record<string, string>;
             if (values["--history-top"] === `${top}px` && values["--history-height"] === `${logHeight}px`) return previous;
