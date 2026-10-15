@@ -803,20 +803,20 @@ export function placeMobileRailMarkers(
             remember(index, x, best);
         };
         [3, 4, 5, 6].forEach(tuckUnderBanner);
-        // Seat 3's bet sits on top of its hole cards, and the chip icon is
-        // covered by the fan. Park that pile with its top level with the top
-        // of those cards and its icon just past their right edge. X of every
-        // other seat stays where the passes above left it.
-        const besideOwnCards = (index: number) => {
+        // Seats 3 and 8 sit on the hole cards, and the fan covers the chip.
+        // Park each pile with its top level with the top of its own cards.
+        // Seat 3 starts just past the right edge. Seat 8 ends just before
+        // the left edge. Every other seat stays where the passes above left it.
+        const besideOwnCards = (index: number, side: 1 | -1) => {
             const point = chipCenters[index];
             const seat = seatBoxes[index];
             const card = holeCards[index];
             if (!point || !seat || !card) return;
             const half = labelHalf;
             const topHalf = pillHalf;
-            const cardRight = card.x + card.hw;
+            const cardEdge = side > 0 ? card.x + card.hw : card.x - card.hw;
             const cardTop = card.y - card.hy;
-            const targetX = Math.round(cardRight + 3 / z + half);
+            const targetX = Math.round(cardEdge + side * (3 / z + half));
             const targetY = Math.round(cardTop + topHalf);
             const clear = (x: number, y: number) => {
                 if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
@@ -836,14 +836,14 @@ export function placeMobileRailMarkers(
                 return;
             }
             // The curved rail or a neighbour can block the ideal corner.
-            // Step right, then down, and stop at the first spot that still
-            // reads as this seat.
+            // Step away from the cards, then down, and stop at the first
+            // spot that still reads as this seat.
             let best: { x: number; y: number } | null = null;
             for (let step = 0; step <= 80 && !best; step += 4) {
                 const tries = [
-                    { x: targetX + step, y: targetY },
+                    { x: targetX + side * step, y: targetY },
                     { x: targetX, y: targetY + step },
-                    { x: targetX + step, y: targetY + step }
+                    { x: targetX + side * step, y: targetY + step }
                 ];
                 for (const candidate of tries) {
                     if (!clear(candidate.x, candidate.y)) continue;
@@ -856,7 +856,8 @@ export function placeMobileRailMarkers(
             point.y = best.y;
             remember(index, best.x, best.y);
         };
-        besideOwnCards(2);
+        besideOwnCards(2, 1);
+        besideOwnCards(7, -1);
     }
     // 2-seat and 6-seat. A label wider than the badge, or a pill wider than
     // the search box, still clips the action banner after the passes above.
