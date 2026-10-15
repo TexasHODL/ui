@@ -1,4 +1,5 @@
 import {
+    NonPlayerActionType,
     PlayerActionType,
     PlayerStatus,
     TexasHoldemRound,
@@ -6,6 +7,8 @@ import {
     type PlayerDTO,
     type TexasHoldemStateDTO
 } from "@block52/poker-vm-sdk";
+import type { PinnedSeatAction } from "../../context/PreviewSeatActionsContext";
+import { getActionBadgeDisplay } from "../../hooks/player/usePlayerActionDropBox";
 
 /** Seat 1 when the browser has no wallet yet. Matches the local stub hero. */
 export const PREVIEW_HERO_ADDRESS = "b521avgyh77ycn997ja45q5q8ss8y9mr424jsnxx93";
@@ -24,6 +27,8 @@ export interface PreviewOptions {
     dealer: number;
     /** Draw the real dealer-button position at every seat at once. */
     allDealers: boolean;
+    /** Pin the real action badge on every seat at once. */
+    allActions: boolean;
     holeCards: boolean;
     board: PreviewBoardCount;
 }
@@ -37,8 +42,10 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
 /**
  * Read the preview from the query string.
  * seats=2|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
- * holes=0|1 (default on), board=0|3|4|5 (default a full board).
- * dealer=all is preview-only: the table still has one dealer seat in the snapshot.
+ * holes=0|1 (default on), board=0|3|4|5 (default a full board),
+ * actions=all to pin an action badge on every seat.
+ * dealer=all and actions=all are preview-only: the snapshot still has one
+ * dealer and one newest action.
  */
 export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const requestedSeats = Number(params.get("seats"));
@@ -54,7 +61,8 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const boardParam = params.get("board");
     const requestedBoard = boardParam === null ? Number.NaN : Number(boardParam);
     const board: PreviewBoardCount = isBoardCount(requestedBoard) ? requestedBoard : 5;
-    return { seats, dealer, allDealers, holeCards, board };
+    const allActions = params.get("actions") === "all";
+    return { seats, dealer, allDealers, allActions, holeCards, board };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -63,6 +71,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     params.set("dealer", options.allDealers ? "all" : String(options.dealer));
     params.set("holes", options.holeCards ? "1" : "0");
     params.set("board", String(options.board));
+    if (options.allActions) params.set("actions", "all");
     return params;
 };
 
@@ -78,6 +87,48 @@ export const previewSeatAddress = (seat: number, heroAddress: string): string =>
     if (seat === 1) return heroAddress;
     return `b521preview${String(seat).padStart(2, "0")}seat0000000000000000`.slice(0, 44);
 };
+
+const pinnedAction = (
+    seat: number,
+    action: ActionDTO["action"],
+    amount: string,
+    round: TexasHoldemRound = TexasHoldemRound.FLOP
+): PinnedSeatAction => {
+    const dto: ActionDTO = {
+        playerId: previewSeatAddress(seat, PREVIEW_HERO_ADDRESS),
+        seat,
+        action,
+        amount,
+        round,
+        index: 1,
+        timestamp: 0
+    };
+    const label = getActionBadgeDisplay(dto, [dto], false);
+    return {
+        action: label.action,
+        amount: label.amount,
+        isVisible: true,
+        isTextHiding: false,
+        isAnimatingOut: false
+    };
+};
+
+/**
+ * One real badge label per seat, in seat order. Includes the long labels
+ * (ALL IN with an amount, and RAISE TO with the widest amount) so a layout
+ * check sees the biggest box the component paints.
+ */
+export const PREVIEW_SEAT_ACTIONS: readonly PinnedSeatAction[] = [
+    pinnedAction(1, PlayerActionType.ALL_IN, "500000000"),
+    pinnedAction(2, PlayerActionType.RAISE, "1250000000"),
+    pinnedAction(3, PlayerActionType.CALL, "400000"),
+    pinnedAction(4, PlayerActionType.BET, "2000000"),
+    pinnedAction(5, PlayerActionType.FOLD, "0"),
+    pinnedAction(6, PlayerActionType.CHECK, "0"),
+    pinnedAction(7, PlayerActionType.BIG_BLIND, "20000", TexasHoldemRound.ANTE),
+    pinnedAction(8, NonPlayerActionType.SIT_OUT, "0"),
+    pinnedAction(9, PlayerActionType.SHOW, "0")
+];
 
 /**
  * Cash-table snapshot: every seat filled, every player with a bet of a

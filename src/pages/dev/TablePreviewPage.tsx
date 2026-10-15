@@ -8,12 +8,14 @@ import { GameEventsProvider } from "../../context/gameState/GameEventsContext";
 import { GameMetaProvider } from "../../context/gameState/GameMetaContext";
 import { GameUIProvider } from "../../context/gameState/GameUIContext";
 import { IDLE_CONNECTION } from "../../context/gameState/connection";
+import { PreviewSeatActionsContext } from "../../context/PreviewSeatActionsContext";
 import { ReplayProvider } from "../../context/gameState/ReplayContext";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { getCosmosAddressSync } from "../../utils/cosmosAccountUtils";
 import {
     PREVIEW_BOARD_COUNTS,
     PREVIEW_HERO_ADDRESS,
+    PREVIEW_SEAT_ACTIONS,
     PREVIEW_SEAT_COUNTS,
     type PreviewOptions,
     buildPreviewState,
@@ -102,7 +104,9 @@ const TablePreviewPage = () => {
                         >
                             <GameEventsProvider latestItem={null} ackAnimation={ackAnimation}>
                                 <GameDataProvider gameState={gameState} isOptimistic={false}>
-                                    <Table />
+                                    <PreviewSeatActionsContext.Provider value={options.allActions ? PREVIEW_SEAT_ACTIONS : null}>
+                                        <Table />
+                                    </PreviewSeatActionsContext.Provider>
                                 </GameDataProvider>
                             </GameEventsProvider>
                         </GameUIProvider>
@@ -160,6 +164,14 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
                 style={buttonStyle(options.allDealers)}
             >
                 All dealers
+            </button>
+            <button
+                type="button"
+                aria-pressed={options.allActions}
+                onClick={() => onChange({ allActions: !options.allActions })}
+                style={buttonStyle(options.allActions)}
+            >
+                All actions
             </button>
             <button
                 type="button"

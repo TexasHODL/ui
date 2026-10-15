@@ -1,6 +1,7 @@
 import { PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import {
     PREVIEW_HERO_ADDRESS,
+    PREVIEW_SEAT_ACTIONS,
     buildPreviewState,
     parsePreviewSearch,
     previewSearchParams
@@ -12,6 +13,7 @@ describe("parsePreviewSearch", () => {
             seats: 9,
             dealer: 1,
             allDealers: false,
+            allActions: false,
             holeCards: true,
             board: 5
         });
@@ -45,6 +47,37 @@ describe("parsePreviewSearch", () => {
         expect(state.dealer).toBe(1);
         expect(state.players.filter(player => player.isDealer)).toHaveLength(1);
         expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+    });
+
+    it("reads actions=all without changing the snapshot", () => {
+        const options = parsePreviewSearch(new URLSearchParams("seats=9&actions=all&dealer=all"));
+        expect(options.allActions).toBe(true);
+        expect(options.allDealers).toBe(true);
+        expect(previewSearchParams(options).get("actions")).toBe("all");
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.players).toHaveLength(9);
+        expect(state.previousActions).toHaveLength(9);
+    });
+
+    it("pins a different real badge on every seat, including the long labels", () => {
+        expect(PREVIEW_SEAT_ACTIONS).toHaveLength(9);
+        expect(PREVIEW_SEAT_ACTIONS.map(label => `${label.action}${label.amount}`)).toEqual([
+            "ALL IN $500.00",
+            "RAISE TO $1250.00",
+            "CALL $0.40",
+            "BET $2.00",
+            "FOLD",
+            "CHECK",
+            "POST BB $0.02",
+            "SITTING OUT",
+            "SHOW"
+        ]);
+        const texts = PREVIEW_SEAT_ACTIONS.map(label => `${label.action}${label.amount}`);
+        const longest = texts.reduce((best, text) => text.length > best.length ? text : best, "");
+        expect(longest).toBe("RAISE TO $1250.00");
+        expect(PREVIEW_SEAT_ACTIONS.every(label => label.isVisible && !label.isTextHiding && !label.isAnimatingOut)).toBe(true);
+        expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("seats=6"))).has("actions")).toBe(false);
     });
 
     it("reads hole cards and community-card count", () => {
