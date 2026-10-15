@@ -232,3 +232,103 @@ test.describe("dealer button on the seat badge", () => {
         }
     }
 });
+
+/**
+ * 9-seat mobile landscape. Seats 2 and 9 are centred between the neighbouring
+ * widgets. Landscape cards are 2px taller than the portrait box, width scaled.
+ */
+test.describe("landscape wing seats and card size", () => {
+    const viewports = [
+        { width: 844, height: 390 },
+        { width: 915, height: 412 },
+        { width: 1024, height: 650 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        test(`9 seats at ${viewport.width}x${viewport.height} centre the wings and grow the cards`, async ({ page }) => {
+            await page.setViewportSize({ width: viewport.width, height: viewport.height });
+            await page.addInitScript(() => {
+                const original = window.matchMedia.bind(window);
+                window.matchMedia = (query: string) => {
+                    if (query.includes("pointer") && query.includes("coarse")) {
+                        return {
+                            matches: true,
+                            media: query,
+                            onchange: null,
+                            addListener() {},
+                            removeListener() {},
+                            addEventListener() {},
+                            removeEventListener() {},
+                            dispatchEvent() { return false; }
+                        } as MediaQueryList;
+                    }
+                    return original(query);
+                };
+            });
+            await page.goto("/table-preview?seats=9&dealer=1&actions=all&holes=1&board=5");
+            await page.waitForSelector(".player-seat");
+            await page.waitForSelector(".community-card-row .card");
+            await page.addStyleTag({
+                content: "*, *::before, *::after { animation: none !important; transition: none !important; }"
+            });
+
+            const problems = await page.evaluate(() => {
+                const found: string[] = [];
+                const seats: Record<string, { cx: number; left: number; right: number; top: number }> = {};
+                document.querySelectorAll(".player-seat").forEach(el => {
+                    const badge = el.querySelector(".badge-number");
+                    const label = badge ? (badge.childNodes[0]?.textContent || "").trim() : "";
+                    const r = el.getBoundingClientRect();
+                    if (r.width < 1) return;
+                    seats[label] = { cx: r.x + r.width / 2, left: r.x, right: r.right, top: r.y };
+                });
+                const need = ["1", "2", "3", "8", "9"];
+                if (need.some(n => !seats[n])) {
+                    found.push(`missing seats ${need.filter(n => !seats[n]).join(",")}`);
+                    return found;
+                }
+                const mid2 = (seats["3"].right + seats["1"].left) / 2;
+                const mid9 = (seats["1"].right + seats["8"].left) / 2;
+                if (Math.abs(seats["2"].cx - mid2) > 1.5) found.push(`seat 2 centre ${seats["2"].cx.toFixed(1)} is not the midpoint ${mid2.toFixed(1)}`);
+                if (Math.abs(seats["9"].cx - mid9) > 1.5) found.push(`seat 9 centre ${seats["9"].cx.toFixed(1)} is not the midpoint ${mid9.toFixed(1)}`);
+                if (Math.abs(seats["2"].top - seats["9"].top) > 2) found.push("seats 2 and 9 are not level");
+                const wrap = document.querySelector("[data-mobile-readable='landscape']");
+                if (!wrap) {
+                    found.push("table is not mobile landscape");
+                    return found;
+                }
+                const style = getComputedStyle(wrap);
+                const unit = parseFloat(style.getPropertyValue("--mobile-unit"));
+                const zoom = parseFloat(style.getPropertyValue("--table-zoom"));
+                const hole = document.querySelector(".player-cards img");
+                const community = document.querySelector(".community-card-row .card");
+                if (!(hole instanceof HTMLElement) || !(community instanceof HTMLElement)) {
+                    found.push("missing a card");
+                    return found;
+                }
+                // offset* is the layout box. The 8° fan turns getBoundingClientRect
+                // into a larger upright box, so it is the wrong height to check.
+                const holeH = hole.offsetHeight * zoom;
+                const holeW = hole.offsetWidth * zoom;
+                const communityH = community.offsetHeight * zoom;
+                const communityW = community.offsetWidth * zoom;
+                const expectH = 53 * unit * zoom;
+                const expectW = (39 * 53 / 51) * unit * zoom;
+                const expectCommunityH = (39 * 805 / 550 + 2) * unit * zoom;
+                const expectCommunityW = 39 * (39 * 805 / 550 + 2) / (39 * 805 / 550) * unit * zoom;
+                if (Math.abs(holeH - expectH) > 1.5) found.push(`hole height ${holeH.toFixed(1)} expected ${expectH.toFixed(1)}`);
+                if (Math.abs(holeW - expectW) > 1.5) found.push(`hole width ${holeW.toFixed(1)} expected ${expectW.toFixed(1)}`);
+                if (Math.abs(communityH - expectCommunityH) > 1.5) found.push(`community height ${communityH.toFixed(1)} expected ${expectCommunityH.toFixed(1)}`);
+                if (Math.abs(communityW - expectCommunityW) > 1.5) found.push(`community width ${communityW.toFixed(1)} expected ${expectCommunityW.toFixed(1)}`);
+                document.querySelectorAll(".player-cards img").forEach((img, index) => {
+                    if (!(img instanceof HTMLElement)) return;
+                    const height = img.offsetHeight * zoom;
+                    if (Math.abs(height - expectH) > 1.5) found.push(`hole ${index} height ${height.toFixed(1)}`);
+                });
+                return found;
+            });
+
+            expect(problems).toEqual([]);
+        });
+    }
+});
