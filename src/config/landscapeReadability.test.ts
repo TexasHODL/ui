@@ -242,4 +242,40 @@ describe("landscape mobile readability", () => {
             expect(chipY).toBeGreaterThan(corner + 2);
         }
     });
+
+    test("drops the 2-seat top bet below the action banner on mobile landscape", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const place = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const portrait = height > width;
+            const contentWidth = portrait ? width : width - 124;
+            const contentHeight = portrait ? height - 130 : height - 70;
+            const zoom = calculateZoom(2, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(portrait, zoom, contentWidth, contentHeight)) * zoom;
+            const placed = placeMobileRailMarkers(getAllPositions(2), zoom, 0, screenUnit, 2);
+            return { placed, zoom, unit: screenUnit / zoom };
+        };
+        for (const [width, height] of [[844, 390], [1024, 650]] as const) {
+            const { placed, zoom, unit } = place(width, height);
+            const seat = placed.players[1];
+            const chip = placed.chips[1];
+            const seatY = parseFloat(seat.top);
+            const chipY = parseFloat(chip.top ?? "0");
+            const chipX = parseFloat(chip.left);
+            const seatHalf = 35.5 * unit;
+            const pillHalf = (22.67 / zoom) / 2;
+            const bannerBottom = seatY + seatHalf + (55 - 22);
+            expect(chipX).toBe(Math.round(parseFloat(seat.left)));
+            expect(chipY - pillHalf).toBeGreaterThan(bannerBottom + 8 / zoom - 1);
+            const board = mobileCardObstacles(getAllPositions(2), zoom, unit * zoom, 2)[2];
+            expect(chipY + pillHalf).toBeLessThan(board.y - board.hy);
+            expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
+        }
+        const portrait = place(390, 844);
+        expect(portrait.placed.chips.map(chip => `${chip.left},${chip.top}`)).toEqual([
+            "250px,902px",
+            "250px,73px"
+        ]);
+    });
 });

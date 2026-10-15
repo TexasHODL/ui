@@ -568,6 +568,41 @@ export function placeMobileRailMarkers(
             }
         });
     }
+    // 2-seat mobile landscape: the top player's bet lands under the stack
+    // badge, and the action banner (55px, tucked 22px under that badge) covers
+    // it. Drop the pile until the pill is below the banner, still centred in
+    // front of the seat. Portrait is left alone.
+    if (tableSize === 2 && dims.tableWidth > dims.tableHeight) {
+        const index = 1;
+        const point = chipCenters[index];
+        const seat = seatBoxes[index];
+        if (point && seat) {
+            const bannerBelowBadge = 55 - 22;
+            const pillHalf = (22.67 / z) / 2;
+            const goal = Math.round(seat.y + seatHY + bannerBelowBadge + pillHalf + 8 / z);
+            const x = Math.round(point.x);
+            const fits = (y: number) => {
+                if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+                if (railBlockers.some(blocker => boxesOverlap({ x, y, hw: feltHX, hy: feltHY }, blocker, 4))) return false;
+                if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, card, 0))) return false;
+                if (board.some(item => !item.soft && boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, item, 4))) return false;
+                return true;
+            };
+            const y0 = Math.round(point.y);
+            if (goal > y0) {
+                let best = y0;
+                for (let y = y0 + 1; y <= goal; y++) {
+                    if (!fits(y)) break;
+                    best = y;
+                }
+                if (best !== y0) {
+                    point.x = x;
+                    point.y = best;
+                    remember(index, x, best);
+                }
+            }
+        }
+    }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
