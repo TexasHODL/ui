@@ -332,3 +332,96 @@ test.describe("landscape wing seats and card size", () => {
         });
     }
 });
+
+/**
+ * 9-seat mobile landscape. The top four bets sit just under their own
+ * action boxes. Horizontal position stays put.
+ */
+test.describe("top bets sit under the action box", () => {
+    const viewports = [
+        { width: 844, height: 390 },
+        { width: 915, height: 412 },
+        { width: 1024, height: 650 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        test(`9 seats at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+            await page.setViewportSize({ width: viewport.width, height: viewport.height });
+            await page.addInitScript(() => {
+                const original = window.matchMedia.bind(window);
+                window.matchMedia = (query: string) => {
+                    if (query.includes("pointer") && query.includes("coarse")) {
+                        return {
+                            matches: true,
+                            media: query,
+                            onchange: null,
+                            addListener() {},
+                            removeListener() {},
+                            addEventListener() {},
+                            removeEventListener() {},
+                            dispatchEvent() { return false; }
+                        } as MediaQueryList;
+                    }
+                    return original(query);
+                };
+            });
+            await page.goto("/table-preview?seats=9&dealer=1&actions=all&holes=1&board=5");
+            await page.waitForSelector(".chip-position");
+            await page.waitForSelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
+            await page.addStyleTag({
+                content: "*, *::before, *::after { animation: none !important; transition: none !important; }"
+            });
+
+            const problems = await page.evaluate((shortPhone: boolean) => {
+                const found: string[] = [];
+                const banners: Record<string, { top: number; bottom: number; left: number; right: number }> = {};
+                document.querySelectorAll(".player-seat").forEach(el => {
+                    const badge = el.querySelector(".badge-number");
+                    const label = badge ? (badge.childNodes[0]?.textContent || "").trim() : "";
+                    const banner = el.querySelector(".seat-banner-box");
+                    if (!banner) return;
+                    const r = banner.getBoundingClientRect();
+                    banners[label] = { top: r.y, bottom: r.bottom, left: r.x, right: r.right };
+                });
+                const chips = [...document.querySelectorAll(".chip-position")].map(el => {
+                    const r = el.getBoundingClientRect();
+                    let top = r.y;
+                    let bottom = r.bottom;
+                    let left = r.x;
+                    let right = r.right;
+                    el.querySelectorAll("img").forEach(img => {
+                        const box = img.getBoundingClientRect();
+                        top = Math.min(top, box.y);
+                        bottom = Math.max(bottom, box.bottom);
+                        left = Math.min(left, box.x);
+                        right = Math.max(right, box.right);
+                    });
+                    return { top, bottom, left, right, cx: (left + right) / 2 };
+                });
+                // positionIndex 3–6 are seats 4–7 when the hero is seat 1.
+                const seats = ["4", "5", "6", "7"];
+                seats.forEach((seat, offset) => {
+                    const chip = chips[3 + offset];
+                    const banner = banners[seat];
+                    if (!chip || !banner) {
+                        found.push(`missing seat ${seat}`);
+                        return;
+                    }
+                    const gap = chip.top - banner.bottom;
+                    const railLimited = !shortPhone && (seat === "4" || seat === "7");
+                    if (gap < 1) found.push(`seat ${seat} pile covers the box by ${(-gap).toFixed(1)}px`);
+                    // A short phone lands in the 2–4px band. On a tall tablet the
+                    // shorter pile sits a little lower so a two-chip pile still clears.
+                    const maxGap = shortPhone ? 4 : 8;
+                    if (!railLimited && (gap < 2 || gap > maxGap)) found.push(`seat ${seat} gap ${gap.toFixed(1)}px`);
+                    if (chip.top < -1 || chip.bottom > window.innerHeight + 1 || chip.left < -1 || chip.right > window.innerWidth + 1) {
+                        found.push(`seat ${seat} pile outside the viewport`);
+                    }
+                });
+                return found;
+            }, viewport.height <= 500);
+
+            expect(problems).toEqual([]);
+        });
+    }
+});
