@@ -60,4 +60,37 @@ describe("landscape mobile readability", () => {
             }
         }
     });
+
+    test("puts a dealer button beside every seat, clear of cards and action banners", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 844 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 390 });
+        const problems: string[] = [];
+        for (const size of [2, 6, 9] as TableSize[]) {
+            const zoom = calculateZoom(size, 720, 320);
+            const unit = parseFloat(mobileCardUnit(false, zoom, 720, 320));
+            const placed = alignLandscapeSeatEdges(getAllPositions(size), size, 720, 320, zoom);
+            const seatHY = 35.5 * unit;
+            const seats = placed.players.map(seat => ({ x: parseFloat(seat.left), y: parseFloat(seat.top) }));
+            const blockers = seats.flatMap(seat => {
+                const cardH = 51 * unit;
+                const cardTop = seat.y - seatHY;
+                return [
+                    { x: seat.x, y: cardTop + cardH / 2, hw: Math.min(37 * unit, 48 * unit), hy: cardH / 2 },
+                    { x: seat.x, y: seat.y + seatHY - 22 + 27.5, hw: 44 * unit + 2, hy: 27.5 }
+                ];
+            });
+            placed.dealers.forEach((dealer, index) => {
+                const x = parseFloat(dealer.left);
+                const y = parseFloat(dealer.top);
+                const hit = blockers.some(box => Math.abs(x - box.x) < 24 + box.hw && Math.abs(y - box.y) < 24 + box.hy);
+                if (hit) problems.push(`${size}-seat dealer ${index + 1} covered at ${x},${y}`);
+                const seat = seats[index];
+                if (Math.hypot(x - seat.x, y - seat.y) > 220) {
+                    problems.push(`${size}-seat dealer ${index + 1} left its seat`);
+                }
+            });
+        }
+        expect(problems).toEqual([]);
+    });
 });
