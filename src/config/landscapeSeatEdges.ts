@@ -568,49 +568,180 @@ export function placeMobileRailMarkers(
             }
         });
     }
+    // The action banner is 55px, tucked 22px under the 88-unit stack badge, and
+    // centred on the seat. It paints with the seating layer, above the dealer
+    // button, so a marker inside it is invisible.
+    const pillHalf = (22.67 / z) / 2;
+    const landscapeTable = dims.tableWidth > dims.tableHeight;
+    const actionBanners: KeepOut[] = seatBoxes.map(seat => ({
+        x: seat.x,
+        y: seat.y + seatHY - 22 + 27.5,
+        hw: 44 * unitStage + 2,
+        hy: 27.5
+    }));
+    const hitsBanner = (x: number, y: number, hw: number, hy: number) =>
+        actionBanners.some(banner => boxesOverlap({ x, y, hw, hy }, banner, 2));
     // 2-seat mobile landscape: the top player's bet lands under the stack
-    // badge, and the action banner (55px, tucked 22px under that badge) covers
-    // it. Drop the pile until the pill is below the banner, still centred in
-    // front of the seat. Portrait is left alone.
-    if (tableSize === 2 && dims.tableWidth > dims.tableHeight) {
-        const index = 1;
+    // badge, and the action banner covers it. Drop the pile until the pill is
+    // below the banner, still centred in front of the seat. The same drop
+    // clears any other top bet that is already centred on its seat (6-seat
+    // seat 4, 9-seat seats 5 and 6). Portrait is left alone.
+    const dropBelowBanner = (index: number) => {
         const point = chipCenters[index];
         const seat = seatBoxes[index];
-        if (point && seat) {
-            const bannerBelowBadge = 55 - 22;
-            const pillHalf = (22.67 / z) / 2;
-            const goal = Math.round(seat.y + seatHY + bannerBelowBadge + pillHalf + 8 / z);
-            const x = Math.round(point.x);
-            const fits = (y: number) => {
+        if (!point || !seat) return;
+        const goal = Math.round(seat.y + seatHY + (55 - 22) + pillHalf + 8 / z);
+        const x = Math.round(seat.x);
+        const fits = (y: number) => {
+            if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+            if (railBlockers.some(blocker => boxesOverlap({ x, y, hw: feltHX, hy: feltHY }, blocker, 4))) return false;
+            if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, card, 0))) return false;
+            if (board.some(item => !item.soft && boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, item, 4))) return false;
+            if (seatBoxes.some((other, otherIndex) => otherIndex !== index && boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, other, 2))) return false;
+            return true;
+        };
+        const y0 = Math.round(point.y);
+        if (goal <= y0) return;
+        let best = y0;
+        for (let y = y0 + 1; y <= goal; y++) {
+            if (!fits(y)) break;
+            best = y;
+        }
+        if (best !== y0) {
+            point.x = x;
+            point.y = best;
+            remember(index, x, best);
+        }
+    };
+    if (landscapeTable && tableSize === 2) dropBelowBanner(1);
+    // 6-seat side bets keep the height set above and step toward their own
+    // seat, freeing the middle of the felt. Stop at the rail, the cards, the
+    // badge, or the action banner.
+    if (landscapeTable && tableSize === 6) {
+        const slideOutward = (index: number) => {
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            if (!point || !seat) return;
+            const y = Math.round(point.y);
+            const goal = Math.round(seat.x);
+            const dir = Math.sign(goal - point.x);
+            if (dir === 0) return;
+            const badge = { x: seat.x, y: seat.y + 23 * unitStage, hw: 44 * unitStage, hy: 12.5 * unitStage };
+            const fits = (x: number) => {
                 if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
                 if (railBlockers.some(blocker => boxesOverlap({ x, y, hw: feltHX, hy: feltHY }, blocker, 4))) return false;
-                if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, card, 0))) return false;
-                if (board.some(item => !item.soft && boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, item, 4))) return false;
+                if (holeCards.some(card => boxesOverlap({ x, y, hw: pileHX, hy: pillHalf }, card, 2))) return false;
+                if (boxesOverlap({ x, y, hw: pileHX, hy: pillHalf }, badge, 2)) return false;
+                if (hitsBanner(x, y, pileHX, pillHalf)) return false;
+                if (paintedLogo && boxesOverlap({ x, y, hw: pileHX, hy: pileHY }, paintedLogo, 2)) return false;
+                const pile = { x, y, hw: chipHX, hy: pillHalf };
+                if (chipCenters.some((other, otherIndex) => otherIndex !== index && !!other && boxesOverlap(pile, { x: other.x, y: other.y, hw: chipHX, hy: pillHalf }, 4))) return false;
                 return true;
             };
-            const y0 = Math.round(point.y);
-            if (goal > y0) {
-                let best = y0;
-                for (let y = y0 + 1; y <= goal; y++) {
-                    if (!fits(y)) break;
-                    best = y;
-                }
-                if (best !== y0) {
-                    point.x = x;
-                    point.y = best;
-                    remember(index, x, best);
-                }
+            let best = Math.round(point.x);
+            if (!fits(best)) return;
+            for (let x = best + dir; dir > 0 ? x <= goal : x >= goal; x += dir) {
+                if (!fits(x)) break;
+                best = x;
             }
-        }
+            if (best !== Math.round(point.x)) {
+                point.x = best;
+                remember(index, best, y);
+            }
+        };
+        [1, 2, 4, 5].forEach(slideOutward);
+        dropBelowBanner(3);
+    }
+    // Any bet still inside an action banner steps off it. A centred top bet
+    // drops onto the felt. A side bet steps inward, then down, and stops on
+    // the felt clear of the cards.
+    if (landscapeTable) {
+        seatBoxes.forEach((seat, index) => {
+            const point = chipCenters[index];
+            if (!point || !hitsBanner(point.x, point.y, pileHX, pillHalf)) return;
+            if (seat.y < cy && Math.abs(point.x - seat.x) <= 2) {
+                dropBelowBanner(index);
+                return;
+            }
+            const y = Math.round(point.y);
+            const inward = Math.sign(cx - seat.x) || 1;
+            const clearAt = (x: number, yy: number) => {
+                if (!boxOnFelt(x, yy, pileHX, feltHY)) return false;
+                if (hitsBanner(x, yy, pileHX, pillHalf)) return false;
+                if (holeCards.some(card => boxesOverlap({ x, y: yy, hw: pileHX, hy: pillHalf }, card, 2))) return false;
+                if (railBlockers.some(blocker => boxesOverlap({ x, y: yy, hw: feltHX, hy: feltHY }, blocker, 4))) return false;
+                if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: pileHX, hy: pillHalf }, item, 4))) return false;
+                return true;
+            };
+            let placed = false;
+            for (let step = 1; step <= 160 && !placed; step++) {
+                const x = Math.round(point.x) + inward * step;
+                if (!clearAt(x, y)) continue;
+                point.x = x;
+                remember(index, x, y);
+                placed = true;
+            }
+            if (placed) return;
+            const yDir = Math.sign(cy - seat.y) || 1;
+            for (let step = 1; step <= 160; step++) {
+                const yy = y + yDir * step;
+                if (!clearAt(Math.round(point.x), yy)) continue;
+                point.y = yy;
+                remember(index, point.x, yy);
+                break;
+            }
+        });
     }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
     });
+    const dealerBlocked = (x: number, y: number, seatIndex: number) => {
+        const box = { x, y, hw: dealerHalf, hy: dealerHalf };
+        if (landscapeTable && hitsBanner(x, y, dealerHalf, dealerHalf)) return true;
+        // A button above the curved rail sits in the header and never shows.
+        if (landscapeTable && !mobileFeltContains(x, y, 1, 0, dealerHalf)) return true;
+        if (holeCards.some(card => boxesOverlap(box, card, 1))) return true;
+        if (board.some(item => !item.soft && boxesOverlap(box, item, 2))) return true;
+        if (placedChips.some(chip => boxesOverlap(box, { ...chip, hy: Math.max(chip.hy, pillHalf) }, 2))) return true;
+        if (landscapeTable) {
+            const badge = { x: seatBoxes[seatIndex].x, y: seatBoxes[seatIndex].y + 23 * unitStage, hw: 44 * unitStage, hy: 12.5 * unitStage };
+            if (boxesOverlap(box, badge, 2)) return true;
+        }
+        const own = Math.hypot(x - seatBoxes[seatIndex].x, y - seatBoxes[seatIndex].y);
+        const margin = 8 / z;
+        if (seatBoxes.some((other, otherIndex) => otherIndex !== seatIndex && own + margin >= Math.hypot(x - other.x, y - other.y))) return true;
+        if (x < -20 || x > dims.tableWidth + 20 || y < feltTop - 48 || y > feltBottom + 48) return true;
+        return false;
+    };
     const dealers = seatBoxes.map((seat, index) => {
         // The button may sit in the seat's padding so it stays on this player's
-        // side of the gap. Hole cards are still a hard boundary.
-        const point = choose(seat.x, seat.y, index, dealerHalf, dealerHalf, dealerAngles, 1.2, placedChips, 28);
+        // side of the gap. Hole cards are still a hard boundary. On mobile
+        // landscape the action banner is too, because the seating layer paints
+        // over the button.
+        const obstacles = landscapeTable ? [...placedChips, ...actionBanners] : placedChips;
+        const point = choose(seat.x, seat.y, index, dealerHalf, dealerHalf, dealerAngles, 1.2, obstacles, 28);
+        if (landscapeTable && dealerBlocked(point.x, point.y, index)) {
+            let best: { x: number; y: number; score: number } | null = null;
+            const minDist = 44 / z;
+            const maxDist = 150 / z;
+            for (let dist = minDist; dist <= maxDist; dist += 4) {
+                for (let step = 0; step < 24; step++) {
+                    const ang = (step / 24) * Math.PI * 2;
+                    const x = seat.x + Math.cos(ang) * dist;
+                    const y = seat.y + Math.sin(ang) * dist;
+                    if (dealerBlocked(x, y, index)) continue;
+                    // Beside the seat: level with it, then as close as the
+                    // banner and the cards allow.
+                    const score = Math.abs(y - seat.y) * 3 + dist;
+                    if (!best || score < best.score) best = { x, y, score };
+                }
+            }
+            if (best) {
+                point.x = best.x;
+                point.y = best.y;
+            }
+        }
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px` };
     });
     return { ...positions, chips, dealers };

@@ -284,6 +284,21 @@ describe("landscape mobile readability", () => {
                 expect(chipY).toBeLessThanOrEqual(badge + 2);
                 expect(chipY).toBeGreaterThan(seatY);
             }
+            const centre = getStageDims().tableWidth / 2;
+            for (const index of [1, 2, 4, 5]) {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                expect(Math.sign(chipX - centre)).toBe(Math.sign(seatX - centre));
+                // Stepped toward the seat, and still short of the card fan.
+                expect(Math.abs(chipX - seatX)).toBeLessThan(Math.abs(centre - seatX) * 0.32);
+                expect(Math.abs(chipX - seatX)).toBeGreaterThan(40);
+            }
+            const topSeatY = parseFloat(placed.players[3].top);
+            const topChipY = parseFloat(placed.chips[3].top ?? "0");
+            const pillHalf = (22.67 / zoom) / 2;
+            const bannerBottom = topSeatY + 35.5 * unit + (55 - 22);
+            expect(parseFloat(placed.chips[3].left)).toBe(Math.round(parseFloat(placed.players[3].left)));
+            expect(topChipY - pillHalf).toBeGreaterThan(bannerBottom + 4);
         };
         check(844, 390);
         check(1024, 650);
@@ -342,5 +357,49 @@ describe("landscape mobile readability", () => {
             "250px,902px",
             "250px,73px"
         ]);
+    });
+
+    test("keeps mobile-landscape chips and dealer buttons off every action banner", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const problems: string[] = [];
+        for (const [width, height] of [[844, 390], [1024, 650]] as const) {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            for (const size of [2, 6, 9] as TableSize[]) {
+                const contentWidth = width - 124;
+                const contentHeight = height - 70;
+                const zoom = calculateZoom(size, contentWidth, contentHeight);
+                const screenUnit = parseFloat(mobileCardUnit(false, zoom, contentWidth, contentHeight)) * zoom;
+                const unit = screenUnit / zoom;
+                const placed = placeMobileRailMarkers(getAllPositions(size), zoom, 0, screenUnit, size);
+                const pileHW = height <= 500 ? 72 : 66;
+                const pillHalf = (22.67 / zoom) / 2;
+                const seats = placed.players.map(seat => ({ x: parseFloat(seat.left), y: parseFloat(seat.top) }));
+                const banners = seats.map(seat => ({
+                    x: seat.x,
+                    y: seat.y + 35.5 * unit - 22 + 27.5,
+                    hw: 44 * unit + 2,
+                    hy: 27.5
+                }));
+                const hits = (x: number, y: number, hw: number, hy: number, banner: { x: number; y: number; hw: number; hy: number }) =>
+                    Math.abs(x - banner.x) < hw + banner.hw + 2 && Math.abs(y - banner.y) < hy + banner.hy + 2;
+                seats.forEach((_seat, index) => {
+                    const chip = { x: parseFloat(placed.chips[index].left), y: parseFloat(placed.chips[index].top ?? "0") };
+                    const dealer = { x: parseFloat(placed.dealers[index].left), y: parseFloat(placed.dealers[index].top) };
+                    banners.forEach((banner, bannerIndex) => {
+                        if (hits(chip.x, chip.y, pileHW, pillHalf, banner)) {
+                            problems.push(`${width}x${height} ${size}-seat chip ${index + 1} on banner ${bannerIndex + 1}`);
+                        }
+                        if (hits(dealer.x, dealer.y, 24, 24, banner)) {
+                            problems.push(`${width}x${height} ${size}-seat dealer ${index + 1} on banner ${bannerIndex + 1}`);
+                        }
+                    });
+                    if (!mobileFeltContains(dealer.x, dealer.y, 1, 0, 24)) {
+                        problems.push(`${width}x${height} ${size}-seat dealer ${index + 1} off the felt at ${dealer.x},${dealer.y}`);
+                    }
+                });
+            }
+        }
+        expect(problems).toEqual([]);
     });
 });
