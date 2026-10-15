@@ -1,3 +1,4 @@
+import { landscapeCommunityCardSize, landscapeHoleCardSize } from "./mobileCardSizing";
 import { getStageDims, type PositionArrays, type TableSize } from "./stageGeometry";
 
 interface KeepOut {
@@ -22,8 +23,11 @@ function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolea
     const dims = getStageDims();
     const cx = dims.tableWidth / 2;
     const mid = dims.tableHeight / 2;
-    const rowW = (5 * 39 + 4 * 3) * unitStage;
-    const rowH = (39 * 805 / 550) * unitStage;
+    const community = portrait
+        ? { width: 39, height: 39 * 805 / 550 }
+        : landscapeCommunityCardSize();
+    const rowW = (5 * community.width + 4 * 3) * unitStage;
+    const rowH = community.height * unitStage;
     // The pot label is the 28px (or 20px) pill under or above the cards.
     // Width tracks the measured "Total Pot" label, not the whole card row.
     // Portrait's 28px pill measures taller than the landscape one.
@@ -83,7 +87,7 @@ export function mobileCardObstacles(
     const portrait = dims.tableHeight > dims.tableWidth;
     const seatHX = 48 * unitStage;
     const seatHY = 35.5 * unitStage;
-    const holes = positions.players.map(seat => holeCardBox(parseFloat(seat.left), parseFloat(seat.top), seatHX, seatHY, unitStage));
+    const holes = positions.players.map(seat => holeCardBox(parseFloat(seat.left), parseFloat(seat.top), seatHX, seatHY, unitStage, portrait));
     const board = mobileBoardKeepOut(tableSize, unitStage, portrait, 0).filter(item => !item.soft);
     // The first board entry is the community row; the second is the pot.
     return [...holes, board[0]];
@@ -128,11 +132,13 @@ export function mobileFeltContains(x: number, y: number, scaleY: number, shiftY:
     return localX >= padX && localX <= w - padX && localY >= padY && localY <= h - padY;
 }
 
-function holeCardBox(sx: number, sy: number, seatHX: number, _seatHY: number, unitStage: number): KeepOut {
-    // The fan is the top 51 units of the 71-unit seat. An 8° rotation sticks
-    // a few units past the seat's top edge (toward the felt on a bottom seat).
-    const cardH = 51 * unitStage;
-    const cardW = 74 * unitStage;
+function holeCardBox(sx: number, sy: number, seatHX: number, _seatHY: number, unitStage: number, portrait: boolean): KeepOut {
+    // The fan is the top of the 71-unit seat. An 8° rotation sticks a few
+    // units past the seat's top edge (toward the felt on a bottom seat).
+    // Landscape cards are 2px taller, so the fan they occupy is wider too.
+    const hole = portrait ? { width: 39, height: 51 } : landscapeHoleCardSize();
+    const cardH = hole.height * unitStage;
+    const cardW = (hole.width * 2 - 8 + 4) * unitStage;
     const overflow = 1 * unitStage;
     const top = sy - 35.5 * unitStage - overflow;
     const height = cardH + overflow;
@@ -179,7 +185,7 @@ export function placeMobileRailMarkers(
         hw: seatHX,
         hy: seatHY
     }));
-    const holeCards = seatBoxes.map(seat => holeCardBox(seat.x, seat.y, seatHX, seatHY, unitStage));
+    const holeCards = seatBoxes.map(seat => holeCardBox(seat.x, seat.y, seatHX, seatHY, unitStage, dims.tableHeight > dims.tableWidth));
     const feltTop = Math.min(...seatBoxes.map(seat => seat.y));
     const feltBottom = Math.max(...seatBoxes.map(seat => seat.y));
     const neighborDist = seatBoxes.map((seat, index) => {

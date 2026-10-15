@@ -1,4 +1,4 @@
-import { mobileCardUnit } from "./mobileCardSizing";
+import { landscapeCommunityCardSize, landscapeHoleCardSize, mobileCardUnit, MOBILE_HOLE_CARD_HEIGHT, MOBILE_HOLE_CARD_WIDTH, communityCardHeight } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
 import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
@@ -9,14 +9,15 @@ describe("landscape mobile readability", () => {
         Object.defineProperty(window, "innerWidth", { configurable: true, value: oldWidth });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: oldHeight });
     });
-    test.each([393, 333])("widens the felt toward the stage edges and keeps cards at most 39px at 852x%i", height => {
+    test.each([393, 333])("widens the felt toward the stage edges and keeps cards at the landscape size at 852x%i", height => {
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 852 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
         const stageHeight = height - 48;
+        const hole = landscapeHoleCardSize();
         for (const size of [2, 4, 6, 9] as TableSize[]) {
             const zoom = calculateZoom(size, 728, stageHeight);
-            const card = parseFloat(mobileCardUnit(false, zoom, 728, stageHeight)) * zoom * 39;
-            expect(card).toBeLessThanOrEqual(39);
+            const card = parseFloat(mobileCardUnit(false, zoom, 728, stageHeight)) * zoom * hole.width;
+            expect(card).toBeLessThanOrEqual(hole.width + 0.01);
             expect(card).toBeGreaterThan(20);
             const dims = getStageDims();
             const widthStretch = mobileLandscapeWidthStretch();
@@ -51,6 +52,17 @@ describe("landscape mobile readability", () => {
             expect(scaleX).toBeCloseTo(zoom, 5);
         }
     });
+    test("grows landscape cards by 2px of height and keeps portrait at 39x51", () => {
+        const hole = landscapeHoleCardSize();
+        const community = landscapeCommunityCardSize();
+        expect(hole.height).toBe(MOBILE_HOLE_CARD_HEIGHT + 2);
+        expect(hole.width).toBeCloseTo(MOBILE_HOLE_CARD_WIDTH * hole.height / MOBILE_HOLE_CARD_HEIGHT, 5);
+        const baseCommunity = communityCardHeight(MOBILE_HOLE_CARD_WIDTH);
+        expect(community.height).toBeCloseTo(baseCommunity + 2, 5);
+        expect(community.width).toBeCloseTo(MOBILE_HOLE_CARD_WIDTH * community.height / baseCommunity, 5);
+        expect(parseFloat(mobileCardUnit(true, 0.4, 393, 480))).toBe(2.5);
+    });
+
     test("preserves portrait sizing and desktop dimensions", () => {
         expect(parseFloat(mobileCardUnit(true, 0.4, 393, 480))).toBe(2.5);
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
@@ -143,6 +155,51 @@ describe("landscape mobile readability", () => {
         expect(getStageDims().tableWidth).toBe(500);
         expect(getStageDims().tableHeight).toBe(1000);
         expect(getDeckOrigin()).toEqual({ left: "250px", top: "360px" });
+    });
+
+    test("centres 9-seat wings between the neighbouring widgets on mobile landscape", () => {
+        const half = 48;
+        const check = (width: number, height: number, coarse: boolean) => {
+            window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const raw = getSeatPositions(9);
+            const placed = getAllPositions(9);
+            const x = (seat: { left: string }) => parseFloat(seat.left);
+            const y = (seat: { top: string }) => parseFloat(seat.top);
+            const mid = (right: number, left: number) => (right + left) / 2;
+            expect(Math.abs(x(placed.players[1]) - mid(x(raw[2]) + half, x(raw[0]) - half))).toBeLessThanOrEqual(0.1);
+            expect(Math.abs(x(placed.players[8]) - mid(x(raw[0]) + half, x(raw[7]) - half))).toBeLessThanOrEqual(0.1);
+            expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
+            expect(y(placed.players[8])).toBeCloseTo(y(raw[8]), 5);
+            expect(x(placed.players[1])).toBeLessThan(x(raw[1]));
+            expect(x(placed.players[8])).toBeGreaterThan(x(raw[8]));
+            for (const index of [0, 2, 3, 4, 5, 6, 7]) {
+                expect(x(placed.players[index])).toBeCloseTo(x(raw[index]), 5);
+                expect(y(placed.players[index])).toBeCloseTo(y(raw[index]), 5);
+            }
+            expect(y(placed.vacantPlayers[1])).toBeCloseTo(y(raw[1]), 5);
+            expect(x(placed.vacantPlayers[1])).toBeCloseTo(x(placed.players[1]), 5);
+            expect(x(placed.vacantPlayers[8])).toBeCloseTo(x(placed.players[8]), 5);
+            const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
+            expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[8].second) - x(placed.players[8])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
+            expect(x(placed.winAnimations[8])).toBeCloseTo(x(placed.players[8]), 0);
+        };
+        check(844, 390, false);
+        check(915, 412, false);
+        check(1024, 650, true);
+
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+        const portrait = getAllPositions(9).players.map(seat => seat.left);
+        expect(portrait).toEqual(getSeatPositions(9).map(seat => seat.left));
+
+        window.matchMedia = (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
+        expect(getAllPositions(9).players.map(seat => seat.left)).toEqual(getSeatPositions(9).map(seat => seat.left));
     });
 
     test.each([

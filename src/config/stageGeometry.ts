@@ -803,9 +803,49 @@ export interface PositionArrays {
     deck: Position;
 }
 
+/**
+ * 9-seat mobile landscape only. Seat 2's widget is centred on the midpoint
+ * between the right edge of seat 3 and the left edge of seat 1. Seat 9 is
+ * centred between the right edge of seat 1 and the left edge of seat 8.
+ * Every seat widget has the same width and is centred on its anchor, so
+ * that midpoint is the midpoint of the neighbour anchors. Y stays put.
+ * Portrait and desktop keep the spec ring.
+ */
+function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
+    if (getStageOrientation() !== "mobile-landscape" || tableSize !== 9) return positions;
+    const anchor = positions.players.map(seat => parseFloat(seat.left));
+    const dx = new Map<number, number>([
+        [1, (anchor[2] + anchor[0]) / 2 - anchor[1]],
+        [8, (anchor[0] + anchor[7]) / 2 - anchor[8]]
+    ]);
+    const shift = (pos: Position, index: number): Position => {
+        const delta = dx.get(index);
+        if (!delta) return pos;
+        const left = Math.round((parseFloat(pos.left) + delta) * 10) / 10;
+        return { ...pos, left: `${left}px` };
+    };
+    return {
+        ...positions,
+        players: positions.players.map(shift),
+        vacantPlayers: positions.vacantPlayers.map(shift),
+        turnAnimations: positions.turnAnimations.map(shift),
+        winAnimations: positions.winAnimations.map(shift),
+        holeCards: positions.holeCards.map((slot, index) => ({
+            first: shift(slot.first, index),
+            second: shift(slot.second, index)
+        })),
+        chips: positions.chips.map((chip, index) => {
+            const delta = dx.get(index);
+            if (!delta) return chip;
+            const left = Math.round((parseFloat(chip.left) + delta) * 10) / 10;
+            return { ...chip, left: `${left}px` };
+        })
+    };
+}
+
 /** Get all position arrays for a given table size, with offsets applied */
 export function getAllPositions(tableSize: TableSize): PositionArrays {
-    return {
+    return centerMobileLandscapeWingSeats({
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
         chips: applyChipOffsets(getChipPositions(tableSize), tableSize),
@@ -815,7 +855,7 @@ export function getAllPositions(tableSize: TableSize): PositionArrays {
         winAnimations: applyPositionOffsets(getWinAnimationPositions(tableSize), tableSize, "winAnimations"),
         holeCards: applyHoleCardOffsets(getHoleCardSlotPositions(tableSize), tableSize),
         deck: getDeckOrigin()
-    };
+    }, tableSize);
 }
 
 // ─── Viewport Scaling ────────────────────────────────────────────────
