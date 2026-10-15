@@ -222,6 +222,24 @@ describe("landscape mobile readability", () => {
         };
         check(844, 390);
         check(1024, 650);
-        check(390, 844);
+
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+        const portraitZoom = calculateZoom(6, 390, 714);
+        const portraitUnit = parseFloat(mobileCardUnit(true, portraitZoom, 390, 714)) * portraitZoom;
+        const portrait = placeMobileRailMarkers(getAllPositions(6), portraitZoom, 0, portraitUnit, 6);
+        const portraitHoles = mobileCardObstacles(getAllPositions(6), portraitZoom, portraitUnit, 6).slice(0, 6);
+        const portraitUnitStage = portraitUnit / portraitZoom;
+        for (const index of [2, 4]) {
+            const seatY = parseFloat(portrait.players[index].top);
+            const chipY = parseFloat(portrait.chips[index].top ?? "0");
+            const badge = Math.round(seatY + 23 * portraitUnitStage);
+            expect(chipY).toBeGreaterThan(badge + 2);
+        }
+        for (const index of [1, 5]) {
+            const chipY = parseFloat(portrait.chips[index].top ?? "0");
+            const corner = Math.round(portraitHoles[index].y - portraitHoles[index].hy);
+            expect(chipY).toBeGreaterThan(corner + 2);
+        }
     });
 });

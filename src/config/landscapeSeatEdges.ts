@@ -508,13 +508,12 @@ export function placeMobileRailMarkers(
             slideToSeat(7, false);
         }
     }
-    // A 6-seat side bet gets drawn into the board row. Lower seats (2 and 6)
-    // drop until their centre is level with the inner corner of the hole
-    // cards. Upper seats (3 and 5) rise until their centre is level with the
-    // stack badge. X moves only the few pixels needed to stay off that
-    // landmark. Portrait uses the same landmarks and stops where the felt or
-    // the cards run out.
-    if (tableSize === 6) {
+    // A 6-seat side bet gets drawn into the board row on mobile landscape.
+    // Lower seats (2 and 6) drop until their centre is level with the inner
+    // corner of the hole cards. Upper seats (3 and 5) rise until their centre
+    // is level with the stack badge. X moves only the few pixels needed to
+    // stay off that landmark. Portrait is left alone.
+    if (tableSize === 6 && dims.tableWidth > dims.tableHeight) {
         const fitsSpot = (index: number, x: number, y: number) => {
             if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
             const box = { x, y, hw: feltHX, hy: feltHY };
