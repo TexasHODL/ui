@@ -350,7 +350,8 @@
 /* Tournament Results Styles */
 .badge-tournament-results {
   position: absolute;
-  top: -60px;
+  /* Raise the results within the action-banner area to keep payouts in view. */
+  top: calc(100% - 12px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -359,6 +360,11 @@
   gap: 0.25rem;
   z-index: 40;
   animation: tournamentResultsFadeIn 0.5s ease-in-out;
+}
+
+/* Final placing replaces the action message rather than overlapping its text. */
+.badge-tournament-results ~ .seat-banner-shell {
+  visibility: hidden;
 }
 
 .tournament-place {
@@ -409,7 +415,7 @@
 @keyframes tournamentResultsFadeIn {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(-10px) scale(0.9);
+    transform: translateX(-50%) translateY(4px) scale(0.9);
   }
   to {
     opacity: 1;
