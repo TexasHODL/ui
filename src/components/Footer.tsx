@@ -12,11 +12,11 @@ const Footer: React.FC<FooterProps> = ({ onTransactionSubmitted }) => {
     const { id: tableId } = useParams<{ id: string }>();
     const { currentNetwork } = useNetwork();
 
-    if (!tableId) return null;
-
+    // A missing id is the dev table preview: the panel still paints, and every
+    // submit path no-ops without a table id, so nothing is broadcast.
     return (
         <PokerActionPanel
-            tableId={tableId}
+            tableId={tableId ?? ""}
             network={currentNetwork}
             onTransactionSubmitted={onTransactionSubmitted}
         />
