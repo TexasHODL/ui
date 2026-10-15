@@ -191,4 +191,37 @@ describe("landscape mobile readability", () => {
             expect(Math.abs(chipX - seatX)).toBeGreaterThan(20);
         }
     });
+
+    test("lines 6-seat side bets up with the hole-card corner and the stack badge", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const check = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const portrait = height > width;
+            const contentWidth = portrait ? width : width - 124;
+            const contentHeight = portrait ? height - 130 : height - 70;
+            const zoom = calculateZoom(6, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(portrait, zoom, contentWidth, contentHeight)) * zoom;
+            const placed = placeMobileRailMarkers(getAllPositions(6), zoom, 0, screenUnit, 6);
+            const holes = mobileCardObstacles(getAllPositions(6), zoom, screenUnit, 6).slice(0, 6);
+            const unit = screenUnit / zoom;
+            for (const index of [1, 5]) {
+                const seatY = parseFloat(placed.players[index].top);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const corner = Math.round(holes[index].y - holes[index].hy);
+                expect(chipY).toBeGreaterThanOrEqual(corner - 1);
+                expect(chipY).not.toBe(Math.round(seatY));
+            }
+            for (const index of [2, 4]) {
+                const seatY = parseFloat(placed.players[index].top);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const badge = Math.round(seatY + 23 * unit);
+                expect(chipY).toBeLessThanOrEqual(badge + 2);
+                expect(chipY).toBeGreaterThan(seatY);
+            }
+        };
+        check(844, 390);
+        check(1024, 650);
+        check(390, 844);
+    });
 });

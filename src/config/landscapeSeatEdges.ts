@@ -508,6 +508,67 @@ export function placeMobileRailMarkers(
             slideToSeat(7, false);
         }
     }
+    // A 6-seat side bet gets drawn into the board row. Lower seats (2 and 6)
+    // drop until their centre is level with the inner corner of the hole
+    // cards. Upper seats (3 and 5) rise until their centre is level with the
+    // stack badge. X moves only the few pixels needed to stay off that
+    // landmark. Portrait uses the same landmarks and stops where the felt or
+    // the cards run out.
+    if (tableSize === 6) {
+        const fitsSpot = (index: number, x: number, y: number) => {
+            if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+            const box = { x, y, hw: feltHX, hy: feltHY };
+            if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) return false;
+            if (holeCards.some(card => boxesOverlap({ x, y, hw: chipHX, hy: 16 }, card, 0))) return false;
+            if (seatBoxes.some((other, otherIndex) => otherIndex !== index && boxesOverlap({ x, y, hw: chipHX, hy: pileHY }, other, 0))) return false;
+            if (paintedLogo && boxesOverlap({ x, y, hw: pileHX, hy: pileHY }, paintedLogo, 2)) return false;
+            return true;
+        };
+        const slideToward = (index: number, targetY: number, dir: number, landmarkHalf: number) => {
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            if (!point || !seat) return;
+            const y0 = Math.round(point.y);
+            const goal = Math.round(targetY);
+            if ((dir > 0 && goal <= y0) || (dir < 0 && goal >= y0)) return;
+            const x0 = Math.round(point.x);
+            const away = Math.sign(x0 - seat.x) || Math.sign(cx - seat.x);
+            const minDx = chipHX + landmarkHalf + 1;
+            const xClear = Math.abs(x0 - seat.x) < minDx ? Math.round(seat.x + away * minDx) : x0;
+            const place = (x: number) => {
+                if (fitsSpot(index, x, goal)) {
+                    point.x = x;
+                    point.y = goal;
+                    remember(index, x, goal);
+                    return true;
+                }
+                let best = y0;
+                for (let y = y0 + dir; dir > 0 ? y <= goal : y >= goal; y += dir) {
+                    if (!fitsSpot(index, x, y)) break;
+                    best = y;
+                }
+                if (best === y0) return false;
+                point.x = x;
+                point.y = best;
+                remember(index, x, best);
+                return true;
+            };
+            if (!place(xClear) && xClear !== x0) place(x0);
+        };
+        // The stack badge is the 88-unit pill under the fan, centred 23 units
+        // below the seat point.
+        const badgeHalf = 44 * unitStage;
+        seatBoxes.forEach((seat, index) => {
+            const card = holeCards[index];
+            if (!card) return;
+            if (seat.y > cy && (index === 1 || index === 5)) {
+                slideToward(index, card.y - card.hy, 1, card.hw);
+            }
+            if (seat.y < cy && (index === 2 || index === 4)) {
+                slideToward(index, seat.y + 23 * unitStage, -1, badgeHalf);
+            }
+        });
+    }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
