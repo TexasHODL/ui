@@ -63,10 +63,10 @@ function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolea
 
 
 /**
- * Mobile bet chips sit just inside the rail, in front of their own seat. The
- * dealer button sits on that seat's shoulder, still closer to it than to either
- * neighbour. Both stay off seats, hole cards, community cards and the pot.
- * Desktop keeps the hand-tuned offsets in stageGeometry.
+ * Mobile bet chips sit just inside the rail, in front of their own seat, and
+ * stay off seats, hole cards, community cards and the pot. The dealer button
+ * is drawn on the seat badge, not placed here. Desktop keeps the hand-tuned
+ * chip offsets in stageGeometry.
  *
  * Card rectangles (hole cards and the community row) in table-div pixels, for
  * the same keep-out the placer uses. Tests assert markers miss these boxes.
@@ -155,7 +155,7 @@ export function placeMobileRailMarkers(
         [[-hw, -hy], [hw, -hy], [-hw, hy], [hw, hy]].every(([dx, dy]) => mobileFeltContains(x + dx, y + dy, feltScaleY, centerYShift));
     const unitStage = screenUnit / z;
     // Seat box is 96×71 mobile units. Chip width covers the pill plus a "$0.18"
-    // label. The dealer button is the 48px element centred on its point.
+    // label.
     const seatHX = 48 * unitStage;
     const seatHY = 35.5 * unitStage;
     // Half-width of the pile used while placing it. Short landscape keeps the
@@ -165,7 +165,6 @@ export function placeMobileRailMarkers(
     const bigChips = typeof window !== "undefined" && (window.innerWidth <= 768 || window.innerHeight <= 500) && !shortLandscape;
     const chipHX = bigChips ? 86 : shortLandscape ? 72 : 54;
     const chipHY = 26;
-    const dealerHalf = 24;
     // Preferred air when the rail has room. The minimum matches the overlap
     // check used on the rendered boxes (half a pixel of slack).
     // Tight air: a short felt has only a few pixels between the pot and the
@@ -227,9 +226,7 @@ export function placeMobileRailMarkers(
         let best: { x: number; y: number; score: number } | null = null;
         const consider = (x: number, y: number, score: number) => {
             const progress = (x - sx) * ux + (y - sy) * uy;
-            // Chips stay inward of the seat. The dealer may sit on the
-            // shoulder, including slightly outside the rail, so it can clear
-            // the hole cards when those cards fill the inward gap.
+            // Chips stay inward of the seat.
             const minProgress = preferred === 0 ? 4 / z : -36;
             if (progress < minProgress) return;
             const yPad = preferred === 0 ? 2 / z : 48;
@@ -286,41 +283,13 @@ export function placeMobileRailMarkers(
             }
         }
         if (best) return best;
-        // The inward point is under the hole cards. Step along the seat's
-        // shoulders until the button is beside the seat and still this player's.
-        if (preferred !== 0) {
-            const tx = -uy;
-            const ty = ux;
-            const accept = (x: number, y: number) => {
-                if (!owned(x, y)) return false;
-                const box = { x, y, hw: halfX, hy: halfY };
-                return !hard.some(item => boxesOverlap(box, item, minGap));
-            };
-            // Outside the rail, beside the player. The inward gap is the hole
-            // cards; this side of the seat is clear and still this player's.
-            for (let dist = 16; dist <= 90; dist += 4) {
-                for (const side of [0, 1, -1]) {
-                    const x = sx - ux * dist + tx * side * dist * 0.6;
-                    const y = sy - uy * dist + ty * side * dist * 0.6;
-                    if (accept(x, y)) return { x, y };
-                }
-            }
-            for (let dist = 16; dist <= 150; dist += 4) {
-                for (const sign of [1, -1]) {
-                    const x = sx + tx * sign * dist + ux * (8 / z);
-                    const y = sy + ty * sign * dist + uy * (8 / z);
-                    if (accept(x, y)) return { x, y };
-                }
-            }
-        }
         const fallback = Math.min(clearOf(ux, uy, halfX, halfY), cap);
         return { x: sx + ux * fallback, y: sy + uy * fallback };
     };
 
-    // Chips prefer the straight inward point. The dealer prefers a shoulder
-    // just off that ray so it is not sitting on the chip or the next seat.
+    // Chips prefer the straight inward point, just off that ray when the
+    // neighbour or the cards already own it.
     const chipAngles = [0, 0.18, -0.18, 0.36, -0.36];
-    const dealerAngles = [1.2, -1.2, 1.57, -1.57, 1.45, -1.45, 0.9, -0.9, 0.55, -0.55];
     const order = seatBoxes.map((seat, index) => ({ index, len: Math.hypot(cx - seat.x, cy - seat.y), side: Math.abs(seat.x - cx) }))
         .sort((a, b) => (b.side - a.side) || (b.len - a.len));
     const chipCenters: Array<{ x: number; y: number } | undefined> = [];
@@ -343,7 +312,7 @@ export function placeMobileRailMarkers(
         }
         chipCenters[item.index] = point;
         // Pad the obstacle past the pill so the chip stack, which hangs off the
-        // label, still keeps the dealer button off the bet.
+        // label, stays clear of the next player's bet.
         placedChips.push({ x: point.x, y: point.y, hw: chipHX + 6, hy: chipHY + 6 });
     }
     // The straight-inward spot can leave a wide pile outside the curved rail.
@@ -569,8 +538,7 @@ export function placeMobileRailMarkers(
         });
     }
     // The action banner is 55px, tucked 22px under the 88-unit stack badge, and
-    // centred on the seat. It paints with the seating layer, above the dealer
-    // button, so a marker inside it is invisible.
+    // centred on the seat.
     const pillHalf = (22.67 / z) / 2;
     const landscapeTable = dims.tableWidth > dims.tableHeight;
     const actionBanners: KeepOut[] = seatBoxes.map(seat => ({
@@ -695,9 +663,8 @@ export function placeMobileRailMarkers(
     // 9-seat mobile landscape. The painted action box is as wide as the 30px
     // label (POST BB and RAISE TO run past the stack badge) and the chip pill
     // is wider than the search box, so a pile the model called clear can still
-    // sit under the box. The hole-card fan fills the seat, which hides a dealer
-    // button that only cleared the narrower card box. Re-place those markers
-    // against the painted sizes. 2-seat, 6-seat, portrait and desktop stay put.
+    // sit under the box. Re-place those piles against the painted sizes.
+    // 2-seat, 6-seat, portrait and desktop stay put.
     if (landscapeTable && tableSize === 9) {
         const labelHalf = Math.max(pileHX, 40 / z);
         const bannerHalf = Math.max(44 * unitStage, 146);
@@ -843,78 +810,5 @@ export function placeMobileRailMarkers(
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
     });
-    const dealerBlocked = (x: number, y: number, seatIndex: number) => {
-        const box = { x, y, hw: dealerHalf, hy: dealerHalf };
-        if (landscapeTable && hitsBanner(x, y, dealerHalf, dealerHalf)) return true;
-        // A button above the curved rail sits in the header and never shows.
-        if (landscapeTable && !mobileFeltContains(x, y, 1, 0, dealerHalf)) return true;
-        if (landscapeTable) {
-            // 30px labels run past the stack badge. RAISE TO is the wide one.
-            const bannerHalf = Math.max(44 * unitStage, 146);
-            const wideBanner = seatBoxes.some(seat => boxesOverlap(box, {
-                x: seat.x,
-                y: seat.y + seatHY - 22 + 27.5,
-                hw: bannerHalf,
-                hy: 27.5
-            }, 8 / z));
-            if (wideBanner) return true;
-        }
-        if (landscapeTable && tableSize === 9) {
-            // The fan paints the full seat width and hangs below the model box
-            // on the bottom seats, which is what hides the button.
-            if (holeCards.some(card => boxesOverlap(box, {
-                x: card.x,
-                y: card.y + 10,
-                hw: seatHX + 8,
-                hy: card.hy + 16
-            }, 6))) return true;
-        }
-        if (holeCards.some(card => boxesOverlap(box, card, 1))) return true;
-        if (board.some(item => !item.soft && boxesOverlap(box, item, 2))) return true;
-        if (placedChips.some(chip => boxesOverlap(box, { ...chip, hy: Math.max(chip.hy, pillHalf) }, 2))) return true;
-        if (landscapeTable) {
-            const badge = { x: seatBoxes[seatIndex].x, y: seatBoxes[seatIndex].y + 23 * unitStage, hw: 44 * unitStage, hy: 12.5 * unitStage };
-            if (boxesOverlap(box, badge, 2)) return true;
-        }
-        const own = Math.hypot(x - seatBoxes[seatIndex].x, y - seatBoxes[seatIndex].y);
-        // 9-seat bottom buttons sit in a gap only a few pixels wider than the
-        // button. The usual margin pushes that gap into the neighbour's cell
-        // and the ring then keeps a button that is under the hole cards.
-        const margin = landscapeTable && tableSize === 9 ? 0 : 8 / z;
-        if (seatBoxes.some((other, otherIndex) => otherIndex !== seatIndex && own + margin >= Math.hypot(x - other.x, y - other.y))) return true;
-        if (x < -20 || x > dims.tableWidth + 20 || y < feltTop - 48 || y > feltBottom + 48) return true;
-        return false;
-    };
-    const dealers = seatBoxes.map((seat, index) => {
-        // The button may sit in the seat's padding so it stays on this player's
-        // side of the gap. Hole cards are still a hard boundary. On mobile
-        // landscape the action banner is too, because the seating layer paints
-        // over the button.
-        const obstacles = landscapeTable ? [...placedChips, ...actionBanners] : placedChips;
-        const point = choose(seat.x, seat.y, index, dealerHalf, dealerHalf, dealerAngles, 1.2, obstacles, 28);
-        if (landscapeTable && dealerBlocked(point.x, point.y, index)) {
-            let best: { x: number; y: number; score: number } | null = null;
-            const minDist = 32 / z;
-            const maxDist = 150 / z;
-            const steps = tableSize === 9 ? 48 : 24;
-            for (let dist = minDist; dist <= maxDist; dist += 4) {
-                for (let step = 0; step < steps; step++) {
-                    const ang = (step / steps) * Math.PI * 2;
-                    const x = seat.x + Math.cos(ang) * dist;
-                    const y = seat.y + Math.sin(ang) * dist;
-                    if (dealerBlocked(x, y, index)) continue;
-                    // Beside the seat: level with it, then as close as the
-                    // banner and the cards allow.
-                    const score = Math.abs(y - seat.y) * 3 + dist;
-                    if (!best || score < best.score) best = { x, y, score };
-                }
-            }
-            if (best) {
-                point.x = best.x;
-                point.y = best.y;
-            }
-        }
-        return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px` };
-    });
-    return { ...positions, chips, dealers };
+    return { ...positions, chips };
 }

@@ -18,11 +18,12 @@
  *      Stage (1282.2, 683.5) → Table-relative { left: "932.2px", top: "373.5px" }
  *
  * 3. DERIVED POSITIONS
- *    Chips, dealer buttons, and animations are calculated from seat positions:
+ *    Chips and animations are calculated from seat positions:
  *      - Chips:      40% from seat toward table center (adjust CHIP_DISTANCE)
- *      - Dealer:     30% from seat toward table center (adjust DEALER_DISTANCE)
  *      - Turn anim:  seat position + 80px down (adjust TURN_ANIM_Y_OFFSET)
  *      - Win anim:   same as seat position
+ *    The dealer button is not a table coordinate. It is drawn on the seat
+ *    widget, up and to the left of that seat's number badge.
  *
  * 4. VIEWPORT SCALING
  *    Positions are FIXED on the table. Screen-size adaptation is handled by
@@ -32,8 +33,8 @@
  * HOW TO FINE-TUNE POSITIONS
  * ═══════════════════════════════════════════════════════════════════════
  *
- * To move ALL chips/dealers/animations globally:
- *   → Change the distance constants: CHIP_DISTANCE, DEALER_DISTANCE, TURN_ANIM_Y_OFFSET
+ * To move ALL chips/animations globally:
+ *   → Change the distance constants: CHIP_DISTANCE, TURN_ANIM_Y_OFFSET
  *
  * To nudge ONE specific seat's element by a few pixels:
  *   → Add an entry to GLOBAL_OFFSETS (applies on all screen sizes)
@@ -477,11 +478,6 @@ const SEAT_SPREAD = -30;
 /** How far chips sit from seat toward table center (0 = at seat, 1 = at center) */
 const CHIP_DISTANCE = 0.42;
 
-/** How far dealer button sits from seat toward table center.
- *  0.5 = halfway between seat and center — ensures button is ON the table surface
- *  for all seats including top (5,6) and edge (7,8) positions. */
-const DEALER_DISTANCE = 0.34;
-
 /** How many pixels down the turn animation ring sits below the seat coordinate.
  *  30px puts it on the badge center (player is 140px tall, centered via translate-y-50%). */
 const TURN_ANIM_Y_OFFSET = 30;
@@ -590,27 +586,6 @@ export function getChipPositions(tableSize: TableSize): ChipPosition[] {
 }
 
 /**
- * Get dealer button positions.
- * Placed between seat and table edge, offset toward table center.
- */
-export function getDealerPositions(tableSize: TableSize): Position[] {
-    const dims = getStageDims();
-    const coords = getSeatCoords(tableSize);
-
-    return coords.map(([x, y]) => {
-        const [sx, sy] = applySpread(x, y);
-        const dx = dims.centerX - sx;
-        const dy = dims.centerY - sy;
-
-        // Move DEALER_DISTANCE from seat toward center
-        const dealerX = sx + dx * DEALER_DISTANCE;
-        const dealerY = sy + dy * DEALER_DISTANCE;
-
-        return stageToPosition(dealerX, dealerY);
-    });
-}
-
-/**
  * Get turn animation positions.
  * Placed at the seat with a slight downward offset for the ring animation.
  */
@@ -672,8 +647,6 @@ export function positionDelta(from: Position, to: Position): { dx: number; dy: n
 // 2. Nudge seat 5's chips 8px up on MOBILE PORTRAIT only:
 //    VIEWPORT_OFFSETS["mobile-portrait"] = { 9: { chips: { 5: { dy: -8 } } } }
 //
-// 3. Move dealer button for seat 7 right 10px on tablet:
-//    VIEWPORT_OFFSETS["tablet"] = { 9: { dealers: { 7: { dx: 10 } } } }
 //
 // dx = horizontal (positive = right, negative = left)
 // dy = vertical (positive = down, negative = up)
@@ -687,10 +660,6 @@ type ElementType = "players" | "vacantPlayers" | "chips" | "dealers"
 const GLOBAL_OFFSETS: Partial<Record<TableSize,
     Partial<Record<ElementType, Record<number, Offset>>>>> = {
     2: {
-        dealers: {
-            0: { dx: 95, dy: 63 },
-            1: { dx: 95, dy: -20 }
-        },
         chips: {
             0: { dx: -38, dy: 40 },
             1: { dx: -38, dy: -5 }
@@ -698,12 +667,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     4: {
-        dealers: {
-            0: { dx: 95, dy: 63 },    // seat 1
-            1: { dx: -57, dy: -2 },  // seat 2
-            2: { dx: 95, dy: -20 }, // seat 3
-            3: { dx: 60, dy: 24 },   // seat 4
-            },
         chips: {
             0: { dx: -38, dy: 40 },    // seat 1
             1: { dx: -90, dy: 90 },  // seat 2
@@ -713,14 +676,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     6: {
-        dealers: {
-            0: { dx: 95, dy: 63 },    // seat 1
-            1: { dx: -60, dy: 23 },  // seat 2
-            2: { dx: -60, dy: -73 }, // seat 3
-            3: { dx: 95, dy: -20 },   // seat 4
-            4: { dx: 60, dy: -23 },  // seat 5
-            5: { dx: 60, dy: 73 }    // seat 6
-        },
         chips: {
             0: { dx: -38, dy: 40 },    // seat 1
             1: { dx: -92, dy: 20 },  // seat 2
@@ -732,17 +687,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     9: {
-        dealers: {
-            0: { dx: 95, dy: 65 },   // seat 1
-            1: { dx: 25, dy: 115 },   // seat 2
-            2: { dx: -68, dy: 7},   // seat 3
-            3: { dx: -38, dy: 0 },  // seat 4
-            4: { dx: 58, dy: -19 },  // seat 5
-            5: { dx: 132, dy: -19 }, // seat 6
-            6: { dx: 39, dy: -48 },   // seat 7
-            7: { dx: 68, dy: 57 },    // seat 8
-            8: { dx: 165, dy: 115 }   // seat 9
-        },
         chips: {
             0: { dx: -35, dy: 40 },         // seat 1
             1: { dx: -125, dy: 40 },       // seat 2
@@ -759,24 +703,7 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
 
 
 /** Per-viewport offsets — override for specific screen sizes only */
-const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {
-    "desktop": {
-        9: {
-            dealers: {
-                1: { dy: -50 },  // D2 — move up so it's above the chips
-                8: { dy: -50 },  // D9
-            }
-        }
-    },
-    "mobile-landscape": {
-        9: {
-            dealers: {
-                1: { dy: -40 },  // D2
-                8: { dy: -40 },  // D9
-            }
-        }
-    }
-};
+const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {};
 
 /** Portrait offsets are tuned independently — the landscape GLOBAL_OFFSETS were
  *  hand-fitted to the landscape seat ring and don't transfer. Nudge portrait
@@ -882,7 +809,8 @@ export function getAllPositions(tableSize: TableSize): PositionArrays {
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
         chips: applyChipOffsets(getChipPositions(tableSize), tableSize),
-        dealers: applyPositionOffsets(getDealerPositions(tableSize), tableSize, "dealers"),
+        // The dealer button is anchored to the seat-number badge, not a felt coordinate.
+        dealers: [],
         turnAnimations: applyPositionOffsets(getTurnAnimationPositions(tableSize), tableSize, "turnAnimations"),
         winAnimations: applyPositionOffsets(getWinAnimationPositions(tableSize), tableSize, "winAnimations"),
         holeCards: applyHoleCardOffsets(getHoleCardSlotPositions(tableSize), tableSize),

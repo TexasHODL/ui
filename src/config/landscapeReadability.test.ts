@@ -187,7 +187,7 @@ describe("landscape mobile readability", () => {
         }
     });
 
-    test("places mobile chips and the dealer beside the seat, not at mid-felt", () => {
+    test("places mobile chips beside the seat, not at mid-felt", () => {
         window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 650 });
@@ -202,15 +202,12 @@ describe("landscape mobile readability", () => {
             const sx = parseFloat(seat.left);
             const sy = parseFloat(seat.top);
             const chip = placed.chips[i];
-            const dealer = placed.dealers[i];
             const toCentre = Math.hypot(cx - sx, cy - sy);
             const chipDist = Math.hypot(parseFloat(chip.left) - sx, parseFloat(chip.top ?? "0") - sy);
-            const dealerDist = Math.hypot(parseFloat(dealer.left) - sx, parseFloat(dealer.top) - sy);
             expect(chipDist).toBeLessThan(toCentre * 0.5);
             expect(chipDist * zoom).toBeGreaterThan(40);
-            expect(dealerDist * zoom).toBeLessThan(160);
-            expect(dealerDist * zoom).toBeGreaterThan(40);
         });
+        expect(placed.dealers).toEqual([]);
         expect(placed.players).toEqual(aligned.players);
     });
 
@@ -220,7 +217,7 @@ describe("landscape mobile readability", () => {
         ["1024x650 landscape", 1024, 650, true],
         ["1024x773 landscape", 1024, 773, true],
         ["390x844 portrait", 390, 844, false]
-    ])("keeps every chip and dealer with its seat and off the cards at %s", (_label, width, height, coarse) => {
+    ])("keeps every chip with its seat and off the cards at %s", (_label, width, height, coarse) => {
         window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
@@ -245,31 +242,17 @@ describe("landscape mobile readability", () => {
             const problems: string[] = [];
             centres.forEach((seat, index) => {
                 const chip = { x: parseFloat(placed.chips[index].left), y: parseFloat(placed.chips[index].top ?? "0") };
-                const dealer = { x: parseFloat(placed.dealers[index].left), y: parseFloat(placed.dealers[index].top) };
-                const markers = [
-                    { kind: "chip", ...chip, hw: chipHalf, hy: chipHy },
-                    { kind: "dealer", ...dealer, hw: 24, hy: 24 }
-                ];
-                for (const marker of markers) {
-                    const own = Math.hypot(marker.x - seat.x, marker.y - seat.y);
-                    centres.forEach((other, otherIndex) => {
-                        if (otherIndex === index) return;
-                        const next = Math.hypot(marker.x - other.x, marker.y - other.y);
-                        if (own >= next) problems.push(`${size} seat ${index + 1} ${marker.kind} closer to seat ${otherIndex + 1} (${own.toFixed(0)} vs ${next.toFixed(0)})`);
-                    });
-                    if (hits(marker.x, marker.y, marker.hw, marker.hy)) problems.push(`${size} seat ${index + 1} ${marker.kind} on a card at ${marker.x},${marker.y}`);
-                    if (marker.kind === "chip") {
-                        const onFelt = [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
-                            mobileFeltContains(marker.x + sx * chipHalf, marker.y + sy * 18, scaleY, shiftY)
-                        );
-                        if (!onFelt) problems.push(`${size} seat ${index + 1} chip off the felt at ${marker.x},${marker.y}`);
-                    }
-                }
-                const sepX = Math.abs(chip.x - dealer.x);
-                const sepY = Math.abs(chip.y - dealer.y);
-                if (sepX < chipHalf + 24 && sepY < chipHy + 24) {
-                    problems.push(`${size} seat ${index + 1} dealer on chip sep ${sepX.toFixed(0)},${sepY.toFixed(0)} chip ${chip.x},${chip.y} dealer ${dealer.x},${dealer.y}`);
-                }
+                const own = Math.hypot(chip.x - seat.x, chip.y - seat.y);
+                centres.forEach((other, otherIndex) => {
+                    if (otherIndex === index) return;
+                    const next = Math.hypot(chip.x - other.x, chip.y - other.y);
+                    if (own >= next) problems.push(`${size} seat ${index + 1} chip closer to seat ${otherIndex + 1} (${own.toFixed(0)} vs ${next.toFixed(0)})`);
+                });
+                if (hits(chip.x, chip.y, chipHalf, chipHy)) problems.push(`${size} seat ${index + 1} chip on a card at ${chip.x},${chip.y}`);
+                const onFelt = [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
+                    mobileFeltContains(chip.x + sx * chipHalf, chip.y + sy * 18, scaleY, shiftY)
+                );
+                if (!onFelt) problems.push(`${size} seat ${index + 1} chip off the felt at ${chip.x},${chip.y}`);
             });
             expect(problems).toEqual([]);
             expect(placed.players.map(seat => seat.top)).toEqual(seats.players.map(seat => seat.top));
@@ -435,7 +418,7 @@ describe("landscape mobile readability", () => {
         ]);
     });
 
-    test("keeps mobile-landscape chips and dealer buttons off every action banner", () => {
+    test("keeps mobile-landscape chips off every action banner", () => {
         window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         const problems: string[] = [];
         for (const [width, height] of [[844, 390], [1024, 650]] as const) {
@@ -461,18 +444,11 @@ describe("landscape mobile readability", () => {
                     Math.abs(x - banner.x) < hw + banner.hw + 2 && Math.abs(y - banner.y) < hy + banner.hy + 2;
                 seats.forEach((_seat, index) => {
                     const chip = { x: parseFloat(placed.chips[index].left), y: parseFloat(placed.chips[index].top ?? "0") };
-                    const dealer = { x: parseFloat(placed.dealers[index].left), y: parseFloat(placed.dealers[index].top) };
                     banners.forEach((banner, bannerIndex) => {
                         if (hits(chip.x, chip.y, pileHW, pillHalf, banner)) {
                             problems.push(`${width}x${height} ${size}-seat chip ${index + 1} on banner ${bannerIndex + 1}`);
                         }
-                        if (hits(dealer.x, dealer.y, 24, 24, banner)) {
-                            problems.push(`${width}x${height} ${size}-seat dealer ${index + 1} on banner ${bannerIndex + 1}`);
-                        }
                     });
-                    if (!mobileFeltContains(dealer.x, dealer.y, 1, 0, 24)) {
-                        problems.push(`${width}x${height} ${size}-seat dealer ${index + 1} off the felt at ${dealer.x},${dealer.y}`);
-                    }
                 });
             }
         }
