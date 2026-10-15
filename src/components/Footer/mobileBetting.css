@@ -92,7 +92,7 @@
 .mobile-actions-stack {
     display: flex;
     flex-direction: column-reverse;
-    gap: 4px;
+    gap: 2px;
     width: 100%;
     flex: 0 0 auto;
 }
@@ -110,7 +110,17 @@
 
 .mobile-actions-stack > button {
     width: 100%;
-    min-height: 44px;
+    min-height: 38px;
+}
+
+/* Landscape buttons stay a short tap target so the pill track can use the
+   column. 12px keeps RAISE TO $40.02 on one line; a longer amount can wrap. */
+.poker-action-dock .mobile-bet-landscape .mobile-actions-stack > button {
+    min-height: 38px;
+    padding: 2px;
+    font-size: 12px;
+    line-height: 1.15;
+    letter-spacing: 0;
 }
 
 .mobile-actions-row > button,
@@ -157,6 +167,49 @@
 .mobile-bet-landscape .pill-slider,
 .mobile-bet-slider .pill-slider {
     width: 48px;
+}
+
+/* Caps sit on the ends of the track so the draggable track is the whole pill.
+   Portrait keeps the caps in the column flow. */
+.mobile-bet-landscape .pill-slider {
+    position: relative;
+}
+
+.mobile-bet-landscape .pill-cap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    height: 28px;
+    flex: 0 0 28px;
+}
+
+.mobile-bet-landscape .pill-cap-plus {
+    top: 0;
+}
+
+.mobile-bet-landscape .pill-cap-minus {
+    bottom: 0;
+}
+
+.mobile-bet-landscape .pill-track {
+    position: absolute;
+    inset: 0;
+    min-height: 0;
+}
+
+.mobile-bet-landscape .pill-rail {
+    top: 32px;
+    bottom: 32px;
+}
+
+.mobile-bet-landscape .pill-slider {
+    --pill-thumb-inset: 32px;
+}
+
+.mobile-bet-landscape .pill-value {
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .pill-slider-invalid {
