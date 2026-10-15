@@ -1443,7 +1443,8 @@ const Table = React.memo(() => {
                     <div className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: tableLayout.tableTransform, ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom) }) }}>
                         {/*//! Table coordinate space — the felt div at its stage origin.
                         Desktop landscape: 1000×500 at (300,285) on the 1600×850 stage.
-                        Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH.
+                        Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH
+                        and heightened by MOBILE_LANDSCAPE_HEIGHT_STRETCH.
                         Portrait: 500×1000 at (175,300) on the 850×1600 stage.
                         Also the root for the card-animation durations (src/bus/timing.ts → CSS custom properties). */}
                         <div
@@ -1458,7 +1459,8 @@ const Table = React.memo(() => {
                             }}
                         >
                             {/* Felt paint. Mobile landscape uses the desktop stadium, widened
-                                horizontally (see MOBILE_LANDSCAPE_WIDTH_STRETCH). Zoom stays uniform. */}
+                                and heightened (MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_LANDSCAPE_HEIGHT_STRETCH).
+                                Zoom stays uniform. */}
                             <div className="absolute inset-0 pointer-events-none">
                             {/* Outer rail — Ignition-style 3D depth (modern and nouns) */}
                             {(tableStyle === "modern" || tableStyle === "nouns") && (

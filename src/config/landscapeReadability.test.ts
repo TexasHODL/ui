@@ -1,6 +1,6 @@
 import { mobileCardUnit } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -17,9 +17,12 @@ describe("landscape mobile readability", () => {
             const card = parseFloat(mobileCardUnit(false, zoom, 728, height - 70)) * zoom * 39;
             expect(card).toBeLessThanOrEqual(39);
             expect(card).toBeGreaterThan(20);
-            expect(getStageDims().tableHeight).toBe(500);
-            expect(getStageDims().tableWidth / getStageDims().tableHeight).toBeCloseTo(2 * MOBILE_LANDSCAPE_WIDTH_STRETCH, 5);
+            const dims = getStageDims();
+            expect(dims.tableHeight).toBeCloseTo(TABLE_HEIGHT * mobileLandscapeHeightStretch(), 5);
+            expect(dims.tableWidth).toBeCloseTo(TABLE_WIDTH * MOBILE_LANDSCAPE_WIDTH_STRETCH, 5);
             expect(mobileLandscapeWidthStretch()).toBe(MOBILE_LANDSCAPE_WIDTH_STRETCH);
+            expect(dims.tableWidth / dims.tableHeight).toBeGreaterThan(2);
+            expect(dims.tableWidth / dims.tableHeight).toBeLessThanOrEqual(2.4);
         }
     });
     test.each([393, 333, 320])("fits the desktop-shaped table in the stage at height %i", height => {
@@ -64,23 +67,53 @@ describe("landscape mobile readability", () => {
         const dims = getStageDims();
         expect(MOBILE_LANDSCAPE_WIDTH_STRETCH).toBeGreaterThanOrEqual(1.1);
         expect(MOBILE_LANDSCAPE_WIDTH_STRETCH).toBeLessThanOrEqual(1.2);
+        expect(MOBILE_LANDSCAPE_HEIGHT_STRETCH).toBeGreaterThan(1);
+        expect(MOBILE_LANDSCAPE_HEIGHT_STRETCH).toBeLessThanOrEqual(1.12);
         expect(dims.tableWidth).toBeCloseTo(TABLE_WIDTH * MOBILE_LANDSCAPE_WIDTH_STRETCH, 5);
-        expect(dims.tableHeight).toBe(TABLE_HEIGHT);
-        expect(dims.tableWidth / dims.tableHeight).toBeGreaterThanOrEqual(2.2);
+        expect(dims.tableHeight).toBeCloseTo(TABLE_HEIGHT * mobileLandscapeHeightStretch(), 5);
+        expect(mobileLandscapeHeightStretch()).toBeGreaterThan(1);
+        expect(mobileLandscapeHeightStretch()).toBeLessThanOrEqual(MOBILE_LANDSCAPE_HEIGHT_STRETCH);
+        expect(dims.tableWidth / dims.tableHeight).toBeGreaterThan(2);
         expect(dims.tableWidth / dims.tableHeight).toBeLessThanOrEqual(2.4);
         expect(dims.originX).toBeCloseTo(dims.centerX - dims.tableWidth / 2, 5);
+        expect(dims.originY).toBeCloseTo(dims.centerY - dims.tableHeight / 2, 5);
         expect(getSeatCoords(9)[0]).toEqual([800, 842]);
         const centre = dims.tableWidth / 2;
         expect(parseFloat(getSeatPositions(9)[0].left)).toBeCloseTo(centre, 0);
-        expect(parseFloat(getSeatPositions(9)[0].top)).toBeCloseTo(527, 0);
         expect(centre - parseFloat(getSeatPositions(9)[2].left)).toBeGreaterThan(500);
-        expect(getDeckOrigin()).toEqual({ left: `${dims.tableWidth / 2}px`, top: "150px" });
+        expect(getDeckOrigin().left).toBe(`${dims.tableWidth / 2}px`);
+        expect(parseFloat(getDeckOrigin().top)).toBeCloseTo(dims.tableHeight / 2 - 100, 5);
+
+        const contentWidth = 844 - 124;
+        const contentHeight = 390 - 66;
+        const zoom = calculateZoom(9, contentWidth, contentHeight);
+        const transform = getTableTransform(zoom, 9, contentWidth, contentHeight);
+        const ty = Number(transform.match(/translate\([^,]+, ([^)]+)px\)/)?.[1]);
+        const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, contentWidth, contentHeight));
+        const tops = getSeatPositions(9).map(seat => dims.originY + parseFloat(seat.top));
+        const cardTop = ty + (Math.min(...tops) - half) * zoom;
+        const heroBottom = ty + (Math.max(...tops) + half) * zoom;
+        expect(cardTop).toBeGreaterThanOrEqual(4);
+        expect(cardTop).toBeLessThanOrEqual(12);
+        expect(heroBottom).toBeLessThanOrEqual(contentHeight - 4);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 480 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 400 });
         expect(mobileLandscapeWidthStretch()).toBe(1);
-        expect(getStageDims().tableWidth).toBe(TABLE_WIDTH);
-        expect(getStageDims().tableHeight).toBe(TABLE_HEIGHT);
+        expect(mobileLandscapeHeightStretch()).toBeGreaterThanOrEqual(1);
+        expect(mobileLandscapeHeightStretch()).toBeLessThanOrEqual(MOBILE_LANDSCAPE_HEIGHT_STRETCH);
+        const narrow = getStageDims();
+        expect(narrow.tableWidth).toBe(TABLE_WIDTH);
+        expect(narrow.tableHeight).toBeCloseTo(TABLE_HEIGHT * mobileLandscapeHeightStretch(), 5);
+        const narrowZoom = calculateZoom(9, 480 - 124, 400 - 70);
+        const narrowTransform = getTableTransform(narrowZoom, 9, 480 - 124, 400 - 70);
+        const narrowTy = Number(narrowTransform.match(/translate\([^,]+, ([^)]+)px\)/)?.[1]);
+        const narrowHalf = 35.5 * parseFloat(mobileCardUnit(false, narrowZoom, 480 - 124, 400 - 70));
+        const narrowTops = getSeatPositions(9).map(seat => narrow.originY + parseFloat(seat.top));
+        const narrowCards = narrowTy + (Math.min(...narrowTops) - narrowHalf) * narrowZoom;
+        const narrowHero = narrowTy + (Math.max(...narrowTops) + narrowHalf) * narrowZoom;
+        expect(narrowCards).toBeGreaterThanOrEqual(4);
+        expect(narrowHero).toBeLessThanOrEqual(400 - 70 - 4);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });

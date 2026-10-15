@@ -51,6 +51,8 @@
  * - Issue #46:  https://github.com/block52/ui/issues/46
  */
 
+import { mobileCardUnit } from "./mobileCardSizing";
+
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface Position {
@@ -94,6 +96,18 @@ export const TABLE_HEIGHT = 500;
  * goes below 1, so the felt cannot become the old very-wide shape.
  */
 export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.15;
+
+/**
+ * How much taller the mobile-landscape felt and seat ring are than the
+ * desktop 500px stadium. 1 keeps that height. `mobileLandscapeHeightStretch`
+ * may lower this so the top hole cards stay a few pixels under the header
+ * and the hero's cards and badge stay above the bottom edge. It never goes
+ * below 1, and it does not give back the width stretch.
+ */
+export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.08;
+
+/** Screen pixels kept between the stage edge and the top cards or the hero badge. */
+const MOBILE_LANDSCAPE_EDGE_GAP = 6;
 export const TABLE_SURFACE_HEIGHT = 500; // Match spec: table surface fills the full table div
 export const TABLE_CENTER_X = 800;
 export const TABLE_CENTER_Y = 535;
@@ -128,8 +142,8 @@ export interface StageDims {
 
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
     // Unstretched base, same 1000×500 stadium as desktop. Mobile landscape
-    // widens it in stageDimsFor (MOBILE_LANDSCAPE_WIDTH_STRETCH) and still
-    // uniform-scales the stage; portrait and desktop read these numbers as-is.
+    // widens and heightens it in stageDimsFor and still uniform-scales the
+    // stage; portrait and desktop read these numbers as-is.
     "mobile-landscape": {
         stageWidth: 1600,
         stageHeight: 850,
@@ -219,10 +233,13 @@ export function stageDimsFor(orientation: StageOrientation): StageDims {
     const base = STAGE_DIMS[orientation];
     if (orientation !== "mobile-landscape") return base;
     const tableWidth = TABLE_WIDTH * mobileLandscapeWidthStretch();
+    const tableHeight = TABLE_HEIGHT * mobileLandscapeHeightStretch();
     return {
         ...base,
         tableWidth,
-        originX: TABLE_CENTER_X - tableWidth / 2
+        tableHeight,
+        originX: TABLE_CENTER_X - tableWidth / 2,
+        originY: TABLE_CENTER_Y - tableHeight / 2
     };
 }
 
@@ -346,18 +363,21 @@ export function getSeatCoords(tableSize: TableSize): [number, number][] {
 // ─── Coordinate Conversion ───────────────────────────────────────────
 
 /** Convert stage coordinates to table-div-relative pixel values.
- *  Mobile landscape scales X about the table centre by the felt stretch, so
- *  seats, chips and dealer buttons spread with the wider stadium. Y is unchanged. */
+ *  Mobile landscape scales X and Y about the table centre by the felt
+ *  stretches, so seats, chips and dealer buttons spread with the stadium. */
 function stageToTable(stageX: number, stageY: number): [number, number] {
     const dims = getStageDims();
     let x = stageX;
+    let y = stageY;
     if (getStageOrientation() === "mobile-landscape") {
-        const stretch = dims.tableWidth / TABLE_WIDTH;
-        x = dims.centerX + (stageX - dims.centerX) * stretch;
+        const widthStretch = dims.tableWidth / TABLE_WIDTH;
+        const heightStretch = dims.tableHeight / TABLE_HEIGHT;
+        x = dims.centerX + (stageX - dims.centerX) * widthStretch;
+        y = dims.centerY + (stageY - dims.centerY) * heightStretch;
     }
     return [
         Math.round((x - dims.originX) * 10) / 10,
-        Math.round((stageY - dims.originY) * 10) / 10
+        Math.round((y - dims.originY) * 10) / 10
     ];
 }
 
@@ -420,7 +440,9 @@ const PORTRAIT_DECK_ORIGIN: Position = { left: "250px", top: "360px" };
 export function getDeckOrigin(): Position {
     if (getStageOrientation() === "portrait") return PORTRAIT_DECK_ORIGIN;
     if (getStageOrientation() === "mobile-landscape") {
-        return { left: `${getStageDims().tableWidth / 2}px`, top: DECK_ORIGIN.top };
+        const dims = getStageDims();
+        // Same nudge above the felt centre as the desktop deck (centre is 250, deck is 150).
+        return { left: `${dims.tableWidth / 2}px`, top: `${dims.tableHeight / 2 - 100}px` };
     }
     return DECK_ORIGIN;
 }
@@ -964,10 +986,60 @@ export function calculateZoom(
     return result;
 }
 
+/** Unscaled vertical extent of one mobile-landscape ring, after the inward seat spread. */
+function spreadSeatExtent(tableSize: TableSize): { topY: number; botY: number } {
+    let topY = Infinity;
+    let botY = -Infinity;
+    for (const [x, y] of SEAT_COORDS[tableSize]) {
+        const [, sy] = spreadForWidthCap(x, y);
+        topY = Math.min(topY, sy);
+        botY = Math.max(botY, sy);
+    }
+    return { topY, botY };
+}
+
+/**
+ * Height scale actually applied on mobile landscape. Equals
+ * {@link MOBILE_LANDSCAPE_HEIGHT_STRETCH} when the window has vertical room
+ * under the header. Otherwise a smaller factor down to 1, so the top hole
+ * cards keep {@link MOBILE_LANDSCAPE_EDGE_GAP}px of air and the hero badge
+ * stays inside the bottom edge. Zoom stays the width-stretch fit: this does
+ * not shrink the table to buy height.
+ */
+export function mobileLandscapeHeightStretch(): number {
+    const requested = Math.max(1, MOBILE_LANDSCAPE_HEIGHT_STRETCH);
+    if (requested === 1 || typeof window === "undefined") return 1;
+    if (getStageOrientation() !== "mobile-landscape") return 1;
+    const params = VIEWPORT_PARAMS["mobile-landscape"];
+    const pad = PLAYER_UI_PADDING["mobile-landscape"];
+    const containerW = window.innerWidth - 124;
+    const containerH = window.innerHeight - 70;
+    const usableW = containerW - params.paddingH;
+    const usableH = containerH - params.paddingV;
+    if (usableW <= 0 || usableH <= 0) return 1;
+    const contentW = TABLE_WIDTH * mobileLandscapeWidthStretch() + 60 + pad.x * 2;
+    let allowed = requested;
+    for (const size of [2, 4, 6, 9] as const) {
+        const { topY, botY } = spreadSeatExtent(size);
+        const span = botY - topY;
+        const contentH = span + pad.top + pad.bottom;
+        const zoom = Math.min(usableW / contentW, usableH / contentH);
+        if (zoom <= 0) return 1;
+        const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerW, containerH));
+        const limit = (containerH - 2 * MOBILE_LANDSCAPE_EDGE_GAP) / zoom;
+        const maxH = (limit - 2 * half) / span;
+        allowed = Math.min(allowed, maxH);
+    }
+    return Math.min(requested, Math.max(1, allowed));
+}
+
 /**
  * Build CSS transform — pixel-based, no percentages.
  * Centers the content within the measured container.
  * CSS wrapper must have: top:0; left:0; transform-origin: 0 0;
+ * Mobile landscape then slides the ring so the top hole cards sit
+ * {@link MOBILE_LANDSCAPE_EDGE_GAP}px under the stage top, unless that would
+ * push the hero badge past the bottom edge.
  */
 export function getTableTransform(
     zoom: number,
@@ -994,7 +1066,35 @@ export function getTableTransform(
     const spareSideSpace = Math.max(0, (containerWidth - bounds.width * zoom) / 2 - 12);
     const safeOffset = Math.max(-spareSideSpace, Math.min(spareSideSpace, horizontalOffset));
     const tx = usableCenterX - scaledCenterX + safeOffset;
-    const ty = usableCenterY - scaledCenterY;
+    let ty = usableCenterY - scaledCenterY;
+    if (mode === "mobile-landscape") {
+        ty += mobileLandscapeVerticalNudge(zoom, containerWidth, containerHeight, tableSize, ty);
+    }
 
     return `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${zoom})`;
+}
+
+/** Slide the centred ring so the top cards sit just under the stage top. */
+function mobileLandscapeVerticalNudge(
+    zoom: number,
+    containerWidth: number,
+    containerHeight: number,
+    tableSize: TableSize,
+    ty: number
+): number {
+    const dims = getStageDims();
+    const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerWidth, containerHeight));
+    const seats = getSeatPositions(tableSize);
+    let cardTop = Infinity;
+    let heroBottom = -Infinity;
+    for (const seat of seats) {
+        const stageY = dims.originY + parseFloat(seat.top);
+        cardTop = Math.min(cardTop, stageY - half);
+        heroBottom = Math.max(heroBottom, stageY + half);
+    }
+    let nudge = MOBILE_LANDSCAPE_EDGE_GAP - (ty + cardTop * zoom);
+    const heroAfter = ty + nudge + heroBottom * zoom;
+    const limit = containerHeight - MOBILE_LANDSCAPE_EDGE_GAP;
+    if (heroAfter > limit) nudge -= heroAfter - limit;
+    return nudge;
 }
