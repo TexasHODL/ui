@@ -49,6 +49,12 @@ const queryClient = new QueryClient();
 // Lazy-load debug modal (dev only)
 const ChipDebugModal = lazy(() => import("./components/ChipDebugModal"));
 
+// Dev-only table preview. import.meta.env.DEV is false in production, so the
+// dynamic import and the route below are both dropped from the bundle.
+const TablePreviewPage = import.meta.env.DEV
+    ? lazy(() => import("./pages/dev/TablePreviewPage"))
+    : null;
+
 // Create modal
 createAppKit({
     adapters: [wagmiAdapter],
@@ -103,6 +109,16 @@ function AppContent() {
             <ErrorBoundary key={location.pathname} showDetails={import.meta.env.DEV}>
             <Routes>
                 <Route path="/test-sdk" element={<TestSdk />} />
+                {import.meta.env.DEV && TablePreviewPage ? (
+                    <Route
+                        path="/table-preview"
+                        element={
+                            <Suspense fallback={null}>
+                                <TablePreviewPage />
+                            </Suspense>
+                        }
+                    />
+                ) : null}
                 <Route path="/table/:id" element={<Table />} />
                 <Route path="/table/admin" element={<TableAdminPage />} /> {/* Legacy - keep for backwards compat */}
                 <Route path="/wallet" element={<CosmosWalletPage />} />
