@@ -361,6 +361,21 @@ describe("landscape mobile readability", () => {
                 expect(Math.abs(chipX - seatX)).toBeGreaterThan(12);
                 expect(Math.abs(chipX - seatX)).toBeLessThan(Math.abs(centre - seatX));
             }
+            // Seat 3's pile sits level with the top of its hole cards, just
+            // past their right edge, so the chip icon is off the fan.
+            const seat3Cards = mobileCardObstacles(getAllPositions(9), zoom, screenUnit, 9)[2];
+            const seat3ChipX = parseFloat(placed.chips[2].left);
+            const seat3ChipY = parseFloat(placed.chips[2].top ?? "0");
+            const seat3Half = Math.max(height <= 500 ? 72 : 66, 40 / zoom);
+            const seat3Pill = (22.67 / zoom) / 2;
+            const cardRight = seat3Cards.x + seat3Cards.hw;
+            const cardTop = seat3Cards.y - seat3Cards.hy;
+            const sideGap = (seat3ChipX - seat3Half - cardRight) * zoom;
+            const topGap = (seat3ChipY - seat3Pill - cardTop) * zoom;
+            expect(sideGap).toBeGreaterThanOrEqual(2);
+            expect(sideGap).toBeLessThanOrEqual(5);
+            expect(topGap).toBeGreaterThanOrEqual(-1);
+            expect(topGap).toBeLessThanOrEqual(2);
         };
         assertCentred(844, 390);
         assertCentred(915, 412);

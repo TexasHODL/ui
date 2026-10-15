@@ -803,6 +803,60 @@ export function placeMobileRailMarkers(
             remember(index, x, best);
         };
         [3, 4, 5, 6].forEach(tuckUnderBanner);
+        // Seat 3's bet sits on top of its hole cards, and the chip icon is
+        // covered by the fan. Park that pile with its top level with the top
+        // of those cards and its icon just past their right edge. X of every
+        // other seat stays where the passes above left it.
+        const besideOwnCards = (index: number) => {
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            const card = holeCards[index];
+            if (!point || !seat || !card) return;
+            const half = labelHalf;
+            const topHalf = pillHalf;
+            const cardRight = card.x + card.hw;
+            const cardTop = card.y - card.hy;
+            const targetX = Math.round(cardRight + 3 / z + half);
+            const targetY = Math.round(cardTop + topHalf);
+            const clear = (x: number, y: number) => {
+                if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+                if (!ownedBy(x, y, index)) return false;
+                const pile = { x, y, hw: half, hy: topHalf };
+                if (boxesOverlap(pile, card, 2 / z)) return false;
+                if (holeCards.some((other, otherIndex) => otherIndex !== index && boxesOverlap(pile, other, 2))) return false;
+                if (board.some(item => !item.soft && boxesOverlap({ x, y, hw: chipHX, hy: topHalf }, item, 2))) return false;
+                if (boxesOverlap(pile, bannerOf(seat), 0)) return false;
+                if (seatBoxes.some((other, otherIndex) => otherIndex !== index && boxesOverlap(pile, bannerOf(other), 2))) return false;
+                return true;
+            };
+            if (clear(targetX, targetY)) {
+                point.x = targetX;
+                point.y = targetY;
+                remember(index, targetX, targetY);
+                return;
+            }
+            // The curved rail or a neighbour can block the ideal corner.
+            // Step right, then down, and stop at the first spot that still
+            // reads as this seat.
+            let best: { x: number; y: number } | null = null;
+            for (let step = 0; step <= 80 && !best; step += 4) {
+                const tries = [
+                    { x: targetX + step, y: targetY },
+                    { x: targetX, y: targetY + step },
+                    { x: targetX + step, y: targetY + step }
+                ];
+                for (const candidate of tries) {
+                    if (!clear(candidate.x, candidate.y)) continue;
+                    best = candidate;
+                    break;
+                }
+            }
+            if (!best) return;
+            point.x = best.x;
+            point.y = best.y;
+            remember(index, best.x, best.y);
+        };
+        besideOwnCards(2);
     }
     // 2-seat and 6-seat. A label wider than the badge, or a pill wider than
     // the search box, still clips the action banner after the passes above.
