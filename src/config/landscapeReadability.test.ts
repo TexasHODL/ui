@@ -1,6 +1,6 @@
 import { mobileCardUnit } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -9,7 +9,7 @@ describe("landscape mobile readability", () => {
         Object.defineProperty(window, "innerWidth", { configurable: true, value: oldWidth });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: oldHeight });
     });
-    test.each([393, 333])("keeps a 2:1 felt and cards no larger than 39px at 852x%i", height => {
+    test.each([393, 333])("keeps a modestly widened felt and cards no larger than 39px at 852x%i", height => {
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 852 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
         for (const size of [2, 4, 6, 9] as TableSize[]) {
@@ -17,8 +17,9 @@ describe("landscape mobile readability", () => {
             const card = parseFloat(mobileCardUnit(false, zoom, 728, height - 70)) * zoom * 39;
             expect(card).toBeLessThanOrEqual(39);
             expect(card).toBeGreaterThan(20);
-            expect(getStageDims().tableWidth / getStageDims().tableHeight).toBe(2);
             expect(getStageDims().tableHeight).toBe(500);
+            expect(getStageDims().tableWidth / getStageDims().tableHeight).toBeCloseTo(2 * MOBILE_LANDSCAPE_WIDTH_STRETCH, 5);
+            expect(mobileLandscapeWidthStretch()).toBe(MOBILE_LANDSCAPE_WIDTH_STRETCH);
         }
     });
     test.each([393, 333, 320])("fits the desktop-shaped table in the stage at height %i", height => {
@@ -55,6 +56,37 @@ describe("landscape mobile readability", () => {
         expect(dims.tableHeight).toBe(500);
         expect(getSeatCoords(9)[0]).toEqual([800, 842]);
         expect(getSeatCoords(6)[0]).toEqual([800, 832]);
+    });
+
+    test("stretches only the mobile-landscape felt, and only as far as the width allows", () => {
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 844 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 390 });
+        const dims = getStageDims();
+        expect(MOBILE_LANDSCAPE_WIDTH_STRETCH).toBeGreaterThanOrEqual(1.1);
+        expect(MOBILE_LANDSCAPE_WIDTH_STRETCH).toBeLessThanOrEqual(1.2);
+        expect(dims.tableWidth).toBeCloseTo(TABLE_WIDTH * MOBILE_LANDSCAPE_WIDTH_STRETCH, 5);
+        expect(dims.tableHeight).toBe(TABLE_HEIGHT);
+        expect(dims.tableWidth / dims.tableHeight).toBeGreaterThanOrEqual(2.2);
+        expect(dims.tableWidth / dims.tableHeight).toBeLessThanOrEqual(2.4);
+        expect(dims.originX).toBeCloseTo(dims.centerX - dims.tableWidth / 2, 5);
+        expect(getSeatCoords(9)[0]).toEqual([800, 842]);
+        const centre = dims.tableWidth / 2;
+        expect(parseFloat(getSeatPositions(9)[0].left)).toBeCloseTo(centre, 0);
+        expect(parseFloat(getSeatPositions(9)[0].top)).toBeCloseTo(527, 0);
+        expect(centre - parseFloat(getSeatPositions(9)[2].left)).toBeGreaterThan(500);
+        expect(getDeckOrigin()).toEqual({ left: `${dims.tableWidth / 2}px`, top: "150px" });
+
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 480 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 400 });
+        expect(mobileLandscapeWidthStretch()).toBe(1);
+        expect(getStageDims().tableWidth).toBe(TABLE_WIDTH);
+        expect(getStageDims().tableHeight).toBe(TABLE_HEIGHT);
+
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
+        expect(getStageDims().tableWidth).toBe(500);
+        expect(getStageDims().tableHeight).toBe(1000);
+        expect(getDeckOrigin()).toEqual({ left: "250px", top: "360px" });
     });
 
     test("places mobile chips and the dealer beside the seat, not at mid-felt", () => {

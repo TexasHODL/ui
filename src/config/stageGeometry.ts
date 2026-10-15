@@ -85,6 +85,15 @@ export const STAGE_WIDTH = 1600;
 export const STAGE_HEIGHT = 850;
 export const TABLE_WIDTH = 1000;
 export const TABLE_HEIGHT = 500;
+
+/**
+ * How much wider the mobile-landscape felt is than the desktop 2:1 stadium.
+ * Tune this one number: 1 keeps 1000×500 (aspect 2:1), 1.15 paints 1150×500
+ * (aspect 2.3:1). `mobileLandscapeWidthStretch` may lower it when the window
+ * is too narrow to keep the zoom height-limited. It never raises it and never
+ * goes below 1, so the felt cannot become the old very-wide shape.
+ */
+export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.15;
 export const TABLE_SURFACE_HEIGHT = 500; // Match spec: table surface fills the full table div
 export const TABLE_CENTER_X = 800;
 export const TABLE_CENTER_Y = 535;
@@ -118,9 +127,9 @@ export interface StageDims {
 }
 
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
-    // Same felt as the desktop table (1000×500). Mobile landscape only
-    // uniform-scales this stage into the area under the header, so the
-    // shape stays 2:1 and spare width is left empty.
+    // Unstretched base, same 1000×500 stadium as desktop. Mobile landscape
+    // widens it in stageDimsFor (MOBILE_LANDSCAPE_WIDTH_STRETCH) and still
+    // uniform-scales the stage; portrait and desktop read these numbers as-is.
     "mobile-landscape": {
         stageWidth: 1600,
         stageHeight: 850,
@@ -158,8 +167,67 @@ export function getStageOrientation(): StageOrientation {
     return mode === "mobile-portrait" ? "portrait" : mode === "mobile-landscape" ? "mobile-landscape" : "landscape";
 }
 
+/** Spread used by the width cap. Inlined so the cap does not call getStageDims. */
+function spreadForWidthCap(sx: number, sy: number): [number, number] {
+    const dx = sx - TABLE_CENTER_X;
+    const dy = sy - TABLE_CENTER_Y;
+    const dist = Math.hypot(dx, dy);
+    if (dist === 0 || SEAT_SPREAD === 0) return [sx, sy];
+    return [sx + (dx / dist) * SEAT_SPREAD, sy + (dy / dist) * SEAT_SPREAD];
+}
+
+/** Shortest mobile-landscape content height (2/4/6/9). The short ring binds first. */
+function mobileLandscapeContentHeight(): number {
+    const pad = PLAYER_UI_PADDING["mobile-landscape"];
+    let shortest = Infinity;
+    for (const size of [2, 4, 6, 9] as const) {
+        let minY = Infinity;
+        let maxY = -Infinity;
+        for (const [x, y] of SEAT_COORDS[size]) {
+            const [, sy] = spreadForWidthCap(x, y);
+            minY = Math.min(minY, sy);
+            maxY = Math.max(maxY, sy);
+        }
+        shortest = Math.min(shortest, (maxY - minY) + pad.top + pad.bottom);
+    }
+    return shortest;
+}
+
+/**
+ * Stretch actually applied on mobile landscape. Equals
+ * {@link MOBILE_LANDSCAPE_WIDTH_STRETCH} when the window can spare the width,
+ * otherwise a smaller factor down to 1 (the 2:1 felt). The estimate reserves
+ * the 124px action column and the ~70px header the stage sits under.
+ */
+export function mobileLandscapeWidthStretch(): number {
+    const requested = Math.max(1, MOBILE_LANDSCAPE_WIDTH_STRETCH);
+    if (requested === 1 || typeof window === "undefined") return 1;
+    const params = VIEWPORT_PARAMS["mobile-landscape"];
+    const usableW = window.innerWidth - 124 - params.paddingH;
+    const usableH = window.innerHeight - 70 - params.paddingV;
+    if (usableW <= 0 || usableH <= 0) return 1;
+    const scaleByHeight = usableH / mobileLandscapeContentHeight();
+    if (scaleByHeight <= 0) return 1;
+    const padX = PLAYER_UI_PADDING["mobile-landscape"].x * 2;
+    const maxContentWidth = usableW / scaleByHeight;
+    const maxStretch = (maxContentWidth - 60 - padX) / TABLE_WIDTH;
+    return Math.min(requested, Math.max(1, maxStretch));
+}
+
+/** Felt dimensions for one orientation. Mobile landscape is the only stretched stage. */
+export function stageDimsFor(orientation: StageOrientation): StageDims {
+    const base = STAGE_DIMS[orientation];
+    if (orientation !== "mobile-landscape") return base;
+    const tableWidth = TABLE_WIDTH * mobileLandscapeWidthStretch();
+    return {
+        ...base,
+        tableWidth,
+        originX: TABLE_CENTER_X - tableWidth / 2
+    };
+}
+
 export function getStageDims(): StageDims {
-    return STAGE_DIMS[getStageOrientation()];
+    return stageDimsFor(getStageOrientation());
 }
 
 // ─── Seat Colors ─────────────────────────────────────────────────────
@@ -267,8 +335,8 @@ const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
 };
 
 /** Seat coordinates for the current orientation's stage.
- *  Mobile landscape uses the desktop ring so seats sit on the same rail;
- *  only the stage zoom changes. */
+ *  Mobile landscape uses the desktop ring (these numbers do not change).
+ *  stageToTable spreads that ring horizontally with the widened felt. */
 export function getSeatCoords(tableSize: TableSize): [number, number][] {
     if (getStageOrientation() === "portrait") return PORTRAIT_SEAT_COORDS[tableSize];
     return SEAT_COORDS[tableSize];
@@ -277,11 +345,18 @@ export function getSeatCoords(tableSize: TableSize): [number, number][] {
 
 // ─── Coordinate Conversion ───────────────────────────────────────────
 
-/** Convert stage coordinates to table-div-relative pixel values */
+/** Convert stage coordinates to table-div-relative pixel values.
+ *  Mobile landscape scales X about the table centre by the felt stretch, so
+ *  seats, chips and dealer buttons spread with the wider stadium. Y is unchanged. */
 function stageToTable(stageX: number, stageY: number): [number, number] {
     const dims = getStageDims();
+    let x = stageX;
+    if (getStageOrientation() === "mobile-landscape") {
+        const stretch = dims.tableWidth / TABLE_WIDTH;
+        x = dims.centerX + (stageX - dims.centerX) * stretch;
+    }
     return [
-        Math.round((stageX - dims.originX) * 10) / 10,
+        Math.round((x - dims.originX) * 10) / 10,
         Math.round((stageY - dims.originY) * 10) / 10
     ];
 }
@@ -343,7 +418,11 @@ const PORTRAIT_DECK_ORIGIN: Position = { left: "250px", top: "360px" };
 
 /** The deck origin for the current orientation's felt. */
 export function getDeckOrigin(): Position {
-    return getStageOrientation() === "portrait" ? PORTRAIT_DECK_ORIGIN : DECK_ORIGIN;
+    if (getStageOrientation() === "portrait") return PORTRAIT_DECK_ORIGIN;
+    if (getStageOrientation() === "mobile-landscape") {
+        return { left: `${getStageDims().tableWidth / 2}px`, top: DECK_ORIGIN.top };
+    }
+    return DECK_ORIGIN;
 }
 
 // ─── Position Generators ─────────────────────────────────────────────
