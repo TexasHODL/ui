@@ -361,21 +361,30 @@ describe("landscape mobile readability", () => {
                 expect(Math.abs(chipX - seatX)).toBeGreaterThan(12);
                 expect(Math.abs(chipX - seatX)).toBeLessThan(Math.abs(centre - seatX));
             }
-            // Seat 3's pile sits level with the top of its hole cards, just
-            // past their right edge, so the chip icon is off the fan.
-            const seat3Cards = mobileCardObstacles(getAllPositions(9), zoom, screenUnit, 9)[2];
+            // Seats 3 and 8 sit level with the top of their own hole cards.
+            // Seat 3 starts just past the right edge. Seat 8 ends just before
+            // the left edge. The chip icon and the amount stay off the fan.
+            const obstacles = mobileCardObstacles(getAllPositions(9), zoom, screenUnit, 9);
+            const pileHalf = Math.max(height <= 500 ? 72 : 66, 40 / zoom);
+            const pilePill = (22.67 / zoom) / 2;
+            const seat3Cards = obstacles[2];
             const seat3ChipX = parseFloat(placed.chips[2].left);
             const seat3ChipY = parseFloat(placed.chips[2].top ?? "0");
-            const seat3Half = Math.max(height <= 500 ? 72 : 66, 40 / zoom);
-            const seat3Pill = (22.67 / zoom) / 2;
-            const cardRight = seat3Cards.x + seat3Cards.hw;
-            const cardTop = seat3Cards.y - seat3Cards.hy;
-            const sideGap = (seat3ChipX - seat3Half - cardRight) * zoom;
-            const topGap = (seat3ChipY - seat3Pill - cardTop) * zoom;
-            expect(sideGap).toBeGreaterThanOrEqual(2);
-            expect(sideGap).toBeLessThanOrEqual(5);
-            expect(topGap).toBeGreaterThanOrEqual(-1);
-            expect(topGap).toBeLessThanOrEqual(2);
+            const seat3Side = (seat3ChipX - pileHalf - (seat3Cards.x + seat3Cards.hw)) * zoom;
+            const seat3Top = (seat3ChipY - pilePill - (seat3Cards.y - seat3Cards.hy)) * zoom;
+            expect(seat3Side).toBeGreaterThanOrEqual(2);
+            expect(seat3Side).toBeLessThanOrEqual(5);
+            expect(seat3Top).toBeGreaterThanOrEqual(-1);
+            expect(seat3Top).toBeLessThanOrEqual(2);
+            const seat8Cards = obstacles[7];
+            const seat8ChipX = parseFloat(placed.chips[7].left);
+            const seat8ChipY = parseFloat(placed.chips[7].top ?? "0");
+            const seat8Side = ((seat8Cards.x - seat8Cards.hw) - (seat8ChipX + pileHalf)) * zoom;
+            const seat8Top = (seat8ChipY - pilePill - (seat8Cards.y - seat8Cards.hy)) * zoom;
+            expect(seat8Side).toBeGreaterThanOrEqual(2);
+            expect(seat8Side).toBeLessThanOrEqual(5);
+            expect(seat8Top).toBeGreaterThanOrEqual(-1);
+            expect(seat8Top).toBeLessThanOrEqual(2);
         };
         assertCentred(844, 390);
         assertCentred(915, 412);
