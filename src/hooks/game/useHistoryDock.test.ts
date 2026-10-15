@@ -19,7 +19,22 @@ test("allows a taller log in genuine spare side space", () => {
     stage.getBoundingClientRect = () => rect(119, 1600);
     table.getBoundingClientRect = () => rect(180, 1000);
     const { result } = renderHook(() => useHistoryDock({ current: stage }, { current: table }, 1600, 800, 0.6, false, false));
-    expect(parseFloat((result.current as Record<string, string>)["--history-height"])).toBeGreaterThan(100);
+    expect(parseFloat((result.current as Record<string, string>)["--history-height"])).toBe(Math.floor(Math.min(window.innerHeight, 919) - 127 - 16));
+    expect(parseFloat((result.current as Record<string, string>)["--history-height"])).toBeGreaterThan(220);
+});
+
+test("bounds the side log to the stage when it ends above the viewport bottom", () => {
+    const stage = document.createElement("div");
+    const table = document.createElement("div");
+    stage.getBoundingClientRect = () => rect(119, 1600);
+    table.getBoundingClientRect = () => rect(180, 1000);
+    const { result } = renderHook(() => useHistoryDock({ current: stage }, { current: table }, 1600, 400, 0.6, false, false));
+    expect((result.current as Record<string, string>)["--history-height"]).toBe("376px");
+});
+
+test("leaves compact mobile sizing unchanged", () => {
+    const { result } = renderHook(() => useHistoryDock({ current: document.createElement("div") }, { current: document.createElement("div") }, 393, 600, 0.6, false, true));
+    expect(result.current).toEqual({});
 });
 
 test("stops before a seat even when the felt itself leaves enough room", () => {
