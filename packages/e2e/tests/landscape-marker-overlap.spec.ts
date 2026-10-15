@@ -425,3 +425,99 @@ test.describe("top bets sit under the action box", () => {
         });
     }
 });
+
+/**
+ * 9-seat mobile landscape. Seat 3's bet sits level with the top of its
+ * hole cards and just past their right edge, so the cards do not cover
+ * the chip icon or the amount.
+ */
+test.describe("seat 3 bet sits beside its cards", () => {
+    const viewports = [
+        { width: 844, height: 390 },
+        { width: 915, height: 412 },
+        { width: 1024, height: 650 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        test(`9 seats at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+            await page.setViewportSize({ width: viewport.width, height: viewport.height });
+            await page.addInitScript(() => {
+                const original = window.matchMedia.bind(window);
+                window.matchMedia = (query: string) => {
+                    if (query.includes("pointer") && query.includes("coarse")) {
+                        return {
+                            matches: true,
+                            media: query,
+                            onchange: null,
+                            addListener() {},
+                            removeListener() {},
+                            addEventListener() {},
+                            removeEventListener() {},
+                            dispatchEvent() { return false; }
+                        } as MediaQueryList;
+                    }
+                    return original(query);
+                };
+            });
+            await page.goto("/table-preview?seats=9&dealer=1&actions=all&holes=1&board=5");
+            await page.waitForSelector(".chip-position");
+            await page.waitForSelector(".hole-card-fan img");
+            await page.addStyleTag({
+                content: "*, *::before, *::after { animation: none !important; transition: none !important; }"
+            });
+
+            const problems = await page.evaluate(() => {
+                const found: string[] = [];
+                const seat = [...document.querySelectorAll(".player-seat")].find(el => {
+                    const badge = el.querySelector(".badge-number");
+                    return ((badge?.childNodes[0]?.textContent) || "").trim() === "3";
+                });
+                const chip = document.querySelectorAll(".chip-position")[2];
+                if (!seat || !chip) {
+                    found.push("missing seat 3");
+                    return found;
+                }
+                const cards = [...seat.querySelectorAll(".hole-card-fan img")].map(img => img.getBoundingClientRect());
+                if (cards.length < 2) {
+                    found.push("missing seat 3 cards");
+                    return found;
+                }
+                const card = {
+                    top: Math.min(...cards.map(r => r.y)),
+                    bottom: Math.max(...cards.map(r => r.bottom)),
+                    left: Math.min(...cards.map(r => r.x)),
+                    right: Math.max(...cards.map(r => r.right))
+                };
+                const box = chip.getBoundingClientRect();
+                let top = box.y;
+                let bottom = box.bottom;
+                let left = box.x;
+                let right = box.right;
+                chip.querySelectorAll("img").forEach(img => {
+                    const r = img.getBoundingClientRect();
+                    top = Math.min(top, r.y);
+                    bottom = Math.max(bottom, r.bottom);
+                    left = Math.min(left, r.x);
+                    right = Math.max(right, r.right);
+                });
+                const overlapX = Math.min(right, card.right) - Math.max(left, card.left);
+                const overlapY = Math.min(bottom, card.bottom) - Math.max(top, card.top);
+                if (overlapX > 0.5 && overlapY > 0.5) found.push(`seat 3 pile overlaps the cards by ${overlapX.toFixed(1)}x${overlapY.toFixed(1)}`);
+                const gap = left - card.right;
+                if (gap < 2 || gap > 10) found.push(`seat 3 side gap ${gap.toFixed(1)}px`);
+                const topDelta = top - card.top;
+                if (topDelta < -2 || topDelta > 4) found.push(`seat 3 top delta ${topDelta.toFixed(1)}px`);
+                const felt = document.querySelector(".table-surface-shadow")?.getBoundingClientRect();
+                if (felt && (left < felt.x + 2 || right > felt.right - 2 || top < felt.y + 2 || bottom > felt.bottom - 2)) {
+                    found.push("seat 3 pile outside the rail");
+                }
+                if (top < -1 || bottom > window.innerHeight + 1 || left < -1 || right > window.innerWidth + 1) {
+                    found.push("seat 3 pile outside the viewport");
+                }
+                return found;
+            });
+
+            expect(problems).toEqual([]);
+        });
+    }
+});
