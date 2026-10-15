@@ -7,7 +7,7 @@ import { GameDataProvider } from "../../context/gameState/GameDataContext";
 import { GameEventsProvider } from "../../context/gameState/GameEventsContext";
 import { GameMetaProvider } from "../../context/gameState/GameMetaContext";
 import { GameUIProvider } from "../../context/gameState/GameUIContext";
-import { IDLE_CONNECTION } from "../../context/gameState/connection";
+import { IDLE_CONNECTION, type ConnectionState } from "../../context/gameState/connection";
 import { PreviewSeatActionsContext } from "../../context/PreviewSeatActionsContext";
 import { ReplayProvider } from "../../context/gameState/ReplayContext";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
@@ -24,6 +24,9 @@ import {
 } from "./previewTableState";
 
 const PREVIEW_WALLET_FLAG = "b52_table_preview_wallet";
+
+/** Buttons render only while the socket reads as live. Preview has no socket. */
+const PREVIEW_LIVE_CONNECTION: ConnectionState = { status: "live", attempt: 0 };
 
 const subscribeToTable = () => {};
 const unsubscribeFromTable = () => {};
@@ -79,6 +82,8 @@ const TablePreviewPage = () => {
         return releasePreviewWallet;
     }, []);
 
+    const connection = options.heroTurn ? PREVIEW_LIVE_CONNECTION : IDLE_CONNECTION;
+
     const update = useCallback((patch: Partial<PreviewOptions>) => {
         const next: PreviewOptions = { ...options, ...patch };
         if (!next.allDealers && next.dealer > next.seats) next.dealer = 1;
@@ -100,7 +105,7 @@ const TablePreviewPage = () => {
                             error={null}
                             validationError={null}
                             pendingAction={null}
-                            connection={IDLE_CONNECTION}
+                            connection={connection}
                         >
                             <GameEventsProvider latestItem={null} ackAnimation={ackAnimation}>
                                 <GameDataProvider gameState={gameState} isOptimistic={false}>
@@ -172,6 +177,14 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
                 style={buttonStyle(options.allActions)}
             >
                 All actions
+            </button>
+            <button
+                type="button"
+                aria-pressed={options.heroTurn}
+                onClick={() => onChange({ heroTurn: !options.heroTurn })}
+                style={buttonStyle(options.heroTurn)}
+            >
+                Your turn
             </button>
             <button
                 type="button"

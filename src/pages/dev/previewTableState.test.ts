@@ -1,9 +1,10 @@
-import { PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import {
     PREVIEW_HERO_ADDRESS,
     PREVIEW_SEAT_ACTIONS,
     buildPreviewState,
     parsePreviewSearch,
+    previewHeroLegalActions,
     previewSearchParams
 } from "./previewTableState";
 
@@ -14,6 +15,7 @@ describe("parsePreviewSearch", () => {
             dealer: 1,
             allDealers: false,
             allActions: false,
+            heroTurn: false,
             holeCards: true,
             board: 5
         });
@@ -78,6 +80,32 @@ describe("parsePreviewSearch", () => {
         expect(longest).toBe("RAISE TO $1250.00");
         expect(PREVIEW_SEAT_ACTIONS.every(label => label.isVisible && !label.isTextHiding && !label.isAnimatingOut)).toBe(true);
         expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("seats=6"))).has("actions")).toBe(false);
+    });
+
+    it("reads turn=1 and gives seat 1 fold, check, call, and a sized raise", () => {
+        const options = parsePreviewSearch(new URLSearchParams("seats=6&turn=1"));
+        expect(options.heroTurn).toBe(true);
+        expect(previewSearchParams(options).get("turn")).toBe("1");
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("seats=6"))).has("turn")).toBe(false);
+
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.nextToAct).toBe(1);
+        const hero = state.players[0];
+        expect(hero.seat).toBe(1);
+        expect(hero.legalActions).toEqual(previewHeroLegalActions(7));
+        expect(hero.legalActions.map(action => action.action)).toEqual([
+            PlayerActionType.FOLD,
+            PlayerActionType.CHECK,
+            PlayerActionType.CALL,
+            PlayerActionType.RAISE
+        ]);
+        const raise = hero.legalActions.find(action => action.action === PlayerActionType.RAISE);
+        expect(raise?.min).not.toBe(raise?.max);
+        expect(state.players.slice(1).every(player => player.legalActions.length === 0)).toBe(true);
+
+        const idle = buildPreviewState(parsePreviewSearch(new URLSearchParams("seats=6")), PREVIEW_HERO_ADDRESS);
+        expect(idle.players.every(player => player.legalActions.length === 0)).toBe(true);
     });
 
     it("reads hole cards and community-card count", () => {

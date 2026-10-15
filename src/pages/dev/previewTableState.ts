@@ -4,6 +4,7 @@ import {
     PlayerStatus,
     TexasHoldemRound,
     type ActionDTO,
+    type LegalActionDTO,
     type PlayerDTO,
     type TexasHoldemStateDTO
 } from "@block52/poker-vm-sdk";
@@ -29,6 +30,8 @@ export interface PreviewOptions {
     allDealers: boolean;
     /** Pin the real action badge on every seat at once. */
     allActions: boolean;
+    /** Seat 1's turn: the real fold / check / call / raise controls. */
+    heroTurn: boolean;
     holeCards: boolean;
     board: PreviewBoardCount;
 }
@@ -43,9 +46,10 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * Read the preview from the query string.
  * seats=2|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
  * holes=0|1 (default on), board=0|3|4|5 (default a full board),
- * actions=all to pin an action badge on every seat.
+ * actions=all to pin an action badge on every seat,
+ * turn=1 to make seat 1's turn and show the real action controls.
  * dealer=all and actions=all are preview-only: the snapshot still has one
- * dealer and one newest action.
+ * dealer and one newest action. turn=1 writes seat 1's legal actions.
  */
 export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const requestedSeats = Number(params.get("seats"));
@@ -62,7 +66,8 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const requestedBoard = boardParam === null ? Number.NaN : Number(boardParam);
     const board: PreviewBoardCount = isBoardCount(requestedBoard) ? requestedBoard : 5;
     const allActions = params.get("actions") === "all";
-    return { seats, dealer, allDealers, allActions, holeCards, board };
+    const heroTurn = params.get("turn") === "1";
+    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, board };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -72,6 +77,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     params.set("holes", options.holeCards ? "1" : "0");
     params.set("board", String(options.board));
     if (options.allActions) params.set("actions", "all");
+    if (options.heroTurn) params.set("turn", "1");
     return params;
 };
 
@@ -130,9 +136,27 @@ export const PREVIEW_SEAT_ACTIONS: readonly PinnedSeatAction[] = [
     pinnedAction(9, PlayerActionType.SHOW, "0")
 ];
 
+/** Facing a $20 bet, min raise $40, stack $500. Min differs from max so the slider and pot presets render. */
+const HERO_CALL_MICRO = "20000000";
+const HERO_RAISE_MIN_MICRO = "40000000";
+const HERO_STACK_MICRO = "500000000";
+
+/**
+ * Fold, check, call, and raise on one index, after the posted bets.
+ * A live hand would not offer check and call together; the preview does,
+ * so every control the panel can paint is on screen at once.
+ */
+export const previewHeroLegalActions = (index: number): LegalActionDTO[] => [
+    { action: PlayerActionType.FOLD, min: undefined, max: undefined, index },
+    { action: PlayerActionType.CHECK, min: undefined, max: undefined, index },
+    { action: PlayerActionType.CALL, min: HERO_CALL_MICRO, max: HERO_CALL_MICRO, index },
+    { action: PlayerActionType.RAISE, min: HERO_RAISE_MIN_MICRO, max: HERO_STACK_MICRO, index }
+];
+
 /**
  * Cash-table snapshot: every seat filled, every player with a bet of a
  * different size ($0.02 × seat), dealer on `options.dealer`.
+ * With heroTurn, seat 1 is next and holds the action controls' legal actions.
  */
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
     const round = roundForBoard(options.board);
@@ -157,14 +181,14 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         players.push({
             address,
             seat,
-            stack: "500000000",
+            stack: HERO_STACK_MICRO,
             isSmallBlind: seat === 1,
             isBigBlind: seat === Math.min(2, options.seats),
             isDealer: seat === options.dealer,
             holeCards: options.holeCards ? (seat === 1 ? ["AS", "KD"] : ["??", "??"]) : undefined,
             status: PlayerStatus.ACTIVE,
             lastAction: action,
-            legalActions: [],
+            legalActions: options.heroTurn && seat === 1 ? previewHeroLegalActions(options.seats + 1) : [],
             sumOfBets: amount,
             timeout: 30,
             signature: ""
