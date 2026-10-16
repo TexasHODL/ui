@@ -768,6 +768,18 @@ test.describe("portrait table fit", () => {
                     if (chips.length !== seatCount || seats.length !== seatCount) {
                         found.push(`expected ${seatCount} seats and chips, found ${seats.length} seats and ${chips.length} chips`);
                     }
+                    if (seatCount === 2) {
+                        const raise = banners.find(banner => banner.label.includes("RAISE"));
+                        const pile = chips[1];
+                        const topSeat = seats.find(seat => seat.label === "2");
+                        if (!raise || !pile || !topSeat) found.push("missing the seat 2 bet");
+                        else {
+                            const gap = pile.y - raise.rect.b;
+                            if (gap < 1.5 || gap > 4.5) found.push(`seat 2 pile gap is ${gap.toFixed(1)}px`);
+                            const dx = (pile.x + pile.r) / 2 - (topSeat.rect.x + topSeat.rect.r) / 2;
+                            if (Math.abs(dx) > 2) found.push(`seat 2 pile is ${dx.toFixed(1)}px off centre`);
+                        }
+                    }
                     chips.forEach((chip, index) => {
                         const midX = (chip.x + chip.r) / 2;
                         const midY = (chip.y + chip.b) / 2;

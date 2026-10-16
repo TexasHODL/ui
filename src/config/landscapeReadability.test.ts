@@ -573,11 +573,28 @@ describe("landscape mobile readability", () => {
             expect(chipY + pillHalf).toBeLessThan(board.y - board.hy);
             expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
         }
+        for (const [width, height] of [[390, 844], [375, 667], [412, 915], [360, 800]] as const) {
+            const { placed, zoom, unit } = place(width, height);
+            const seat = placed.players[1];
+            const chip = placed.chips[1];
+            const seatY = parseFloat(seat.top);
+            const chipY = parseFloat(chip.top ?? "0");
+            const chipX = parseFloat(chip.left);
+            const seatHalf = 35.5 * unit;
+            const pillHalfPortrait = 18;
+            const bannerBottom = seatY + seatHalf + (55 - 22);
+            expect(chipX).toBe(Math.round(parseFloat(seat.left)));
+            const chipPx = width <= 768 || height <= 500 ? 32 : 28;
+            const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
+            const air = (chipY - pillHalfPortrait - bannerBottom) * zoom;
+            const expected = 3 + overhang + 3 * zoom;
+            expect(air).toBeGreaterThan(expected - 1.5);
+            expect(air).toBeLessThan(expected + 1.5);
+            expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
+        }
         const portrait = place(390, 844);
-        expect(portrait.placed.chips.map(chip => `${chip.left},${chip.top}`)).toEqual([
-            "250px,1015px",
-            "250px,110px"
-        ]);
+        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "1015px", bottom: "0px" });
+        expect(parseFloat(portrait.placed.chips[1].left)).toBe(250);
     });
 
     test("keeps mobile-landscape chips off every action banner", () => {
