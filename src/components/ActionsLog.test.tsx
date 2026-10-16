@@ -61,13 +61,15 @@ describe("ActionsLog", () => {
     afterEach(() => jest.clearAllMocks());
 
     describe("rendering", () => {
-        it("puts a close control to the right of Expand", () => {
+        it("puts the close control in the header corner and has no expand link", () => {
             withLog([action(1)]);
             const onClose = jest.fn();
             render(<ActionsLog expanded={false} onExpand={() => undefined} onClose={onClose} />);
-            const expand = screen.getByRole("button", { name: "Expand hand history" });
+            expect(screen.queryByRole("button", { name: "Expand hand history" })).not.toBeInTheDocument();
             const close = screen.getByRole("button", { name: "Close history" });
-            expect(expand.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+            expect(close.className).toContain("absolute");
+            expect(close.className).toContain("top-1");
+            expect(close.className).toContain("right-1");
             fireEvent.click(close);
             expect(onClose).toHaveBeenCalledTimes(1);
         });
