@@ -831,3 +831,54 @@ test.describe("portrait table fit", () => {
         }
     }
 });
+
+/**
+ * Portrait bet labels share the large 36px size. The hero (seat 1) and the
+ * 2-seat top (seat 2) must not drop to the compact 24px label.
+ */
+test.describe("portrait chip labels", () => {
+    const viewports = [
+        { width: 390, height: 844 },
+        { width: 375, height: 667 },
+        { width: 412, height: 915 },
+        { width: 360, height: 800 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        test(`every chip label shares one font size at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+            await page.setViewportSize({ width: viewport.width, height: viewport.height });
+            await page.addInitScript(() => {
+                const original = window.matchMedia.bind(window);
+                window.matchMedia = (query: string) => {
+                    if (query.includes("pointer") && query.includes("coarse")) {
+                        return {
+                            matches: true,
+                            media: query,
+                            onchange: null,
+                            addListener() {},
+                            removeListener() {},
+                            addEventListener() {},
+                            removeEventListener() {},
+                            dispatchEvent() { return false; }
+                        } as MediaQueryList;
+                    }
+                    return original(query);
+                };
+            });
+
+            const sizes: number[] = [];
+            for (const seats of [2, 4, 6, 9]) {
+                await page.goto(`/table-preview?seats=${seats}&turn=1&dealer=all&actions=all&holes=1&board=5`);
+                await page.waitForSelector(".chip-position span");
+                const fonts = await page.evaluate(() => {
+                    return [...document.querySelectorAll(".chip-position span")].map(el => parseFloat(getComputedStyle(el).fontSize));
+                });
+                expect(fonts, `${seats} seats`).toHaveLength(seats);
+                sizes.push(...fonts);
+            }
+
+            const unique = [...new Set(sizes.map(size => size.toFixed(2)))];
+            expect(unique).toEqual(["36.00"]);
+        });
+    }
+});

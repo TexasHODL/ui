@@ -142,6 +142,20 @@
     line-height: calc(22.67px / var(--table-zoom));
 }
 
+/* Portrait side seats already use the 36px label. The hero and the 2-seat top
+   must use that same size — the compact 24px label is smaller. One rule, so
+   every seat's computed font-size is the large label. */
+[data-mobile-readable="portrait"] .chip-position > div {
+    height: 36px;
+    padding-right: 12px;
+}
+[data-mobile-readable="portrait"] .chip-position span {
+    font-size: 36px;
+    line-height: 40px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
 /* Landscape cards are 2px taller than the shared mobile box. Width scales
    with that height. Portrait keeps 39×51 and the 550×805 community ratio. */
 [data-mobile-readable="landscape"] .hole-card-fan-slot,

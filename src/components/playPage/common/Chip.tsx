@@ -97,8 +97,8 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
     // Phone-width viewports use the 36px label. A short or wide landscape window
     // would otherwise drop to 24px, and the stage zoom then paints that smaller
-    // still. mobileReadability.css overrides both classes on mobile landscape so
-    // every seat paints at the same 17px on screen.
+    // still. mobileReadability.css overrides both classes: landscape paints every
+    // seat at 17px on screen, and portrait keeps every seat on this 36px label.
     const compactLabel = !isMobile || (window.innerWidth > window.innerHeight && window.innerHeight <= 500);
     const chipSize = isMobile ? CHIP_SIZE_MOBILE : CHIP_SIZE;
 
