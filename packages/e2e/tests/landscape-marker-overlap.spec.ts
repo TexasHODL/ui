@@ -793,7 +793,7 @@ test.describe("portrait table fit", () => {
                             if (Math.abs(dx) > 2) found.push(`seat 3 pile is ${dx.toFixed(1)}px off centre`);
                         }
                         const seatEls = [...document.querySelectorAll(".player-seat")];
-                        const side = (label: string, expectSign: number) => {
+                        const side = (label: string) => {
                             const index = seats.findIndex(seat => seat.label === label);
                             const pile = chips[index];
                             const seat = seats[index];
@@ -811,14 +811,16 @@ test.describe("portrait table fit", () => {
                             const gap = ownTop - pile.b;
                             if (gap < 2 || gap > 6.5) found.push(`seat ${label} pile gap above cards is ${gap.toFixed(1)}px`);
                             const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
-                            if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > 80) {
-                                found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
-                            }
-                            const midY = (pile.y + pile.b) / 2;
-                            if (!onFelt(pile.x, midY) || !onFelt(pile.r, midY)) found.push(`seat ${label} pile leaves the felt`);
+                            if (Math.abs(dx) > 2) found.push(`seat ${label} pile is ${dx.toFixed(1)}px off centre`);
+                            const hit = ownCards.some(card => {
+                                const ix = Math.min(pile.r, card.r) - Math.max(pile.x, card.x);
+                                const iy = Math.min(pile.b, card.b) - Math.max(pile.y, card.y);
+                                return ix > 0.5 && iy > 0.5;
+                            });
+                            if (hit) found.push(`seat ${label} cards cover the pile`);
                         };
-                        side("2", 1);
-                        side("4", -1);
+                        side("2");
+                        side("4");
                     }
                     if (seatCount === 6) {
                         const bet = banners.find(banner => banner.label.includes("BET"));
@@ -941,7 +943,11 @@ test.describe("portrait table fit", () => {
                     chips.forEach((chip, index) => {
                         const midX = (chip.x + chip.r) / 2;
                         const midY = (chip.y + chip.b) / 2;
-                        if (!onFelt(midX, midY)) found.push(`chip ${index + 1} is off the felt`);
+                        const seatLabel = seats[index]?.label;
+                        // 4-seat seats 2 and 4 are centred on the rail, so the
+                        // pile centre sits on the felt edge.
+                        const centredOnRail = seatCount === 4 && (seatLabel === "2" || seatLabel === "4");
+                        if (!centredOnRail && !onFelt(midX, midY)) found.push(`chip ${index + 1} is off the felt`);
                         const seat = seats[index];
                         if (!seat) return;
                         const seatX = (seat.rect.x + seat.rect.r) / 2;

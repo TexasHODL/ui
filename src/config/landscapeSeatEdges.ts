@@ -1222,9 +1222,8 @@ export function placeMobileRailMarkers(
         // 2-seat seat 2. The separation above only walks a pile toward the
         // centre, so the top bet stays several pixels under RAISE TO.
         if (tableSize === 2) underBanner(1);
-        // 4-seat. Seat 3 (top) was under CALL. Seats 2 and 4 were walked into
-        // the middle of the felt. The side piles sit just above their own
-        // cards, shifted toward the centre far enough to stay inside the rail.
+        // 4-seat. Seat 3 (top) sits under CALL. Seats 2 and 4 sit just above
+        // their own cards, on the seat's own centre.
         if (tableSize === 4) {
             underBanner(2);
             [1, 3].forEach(index => {
@@ -1232,26 +1231,8 @@ export function placeMobileRailMarkers(
                 const seat = seatBoxes[index];
                 const card = holeCards[index];
                 if (!point || !seat || !card) return;
-                const inward = Math.sign(cx - seat.x) || 1;
-                const railAir = Math.max(4, 3 / z);
-                const insetX = inward > 0 ? railAir + chipHX : dims.tableWidth - railAir - chipHX;
-                const toward = seat.x + inward * chipHX;
-                const x = Math.round(inward > 0 ? Math.max(toward, insetX) : Math.min(toward, insetX));
-                let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
-                const clear = (yy: number) => {
-                    if (!mobileFeltContains(x, yy, 1, 0)) return false;
-                    if (!mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
-                    if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: stackHalf }, item, 2))) return false;
-                    return true;
-                };
-                if (!clear(y)) {
-                    const limit = y + Math.round(48 / z);
-                    for (let yy = y + 1; yy <= limit; yy++) {
-                        if (!clear(yy)) continue;
-                        y = yy;
-                        break;
-                    }
-                }
+                const x = Math.round(seat.x);
+                const y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
                 point.x = x;
                 point.y = y;
                 remember(index, x, y);
