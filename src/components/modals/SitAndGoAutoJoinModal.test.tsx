@@ -18,7 +18,10 @@ jest.mock("../../utils/numberUtils", () => ({
     formatUSDCToSimpleDollars: (s: string) => (Number(s) / 1e6).toFixed(2),
     formatForSitAndGo: (s: string) => Number(s).toLocaleString("en-US")
 }));
-jest.mock("../../utils/gameFormatUtils", () => ({ getGameTypeMnemonic: () => "6-Max" }));
+jest.mock("../../utils/gameFormatUtils", () => ({
+    getGameTypeMnemonic: () => "6-Max",
+    formatTableGameDisplay: () => "Texas Hold'em"
+}));
 
 beforeEach(() => {
     jest.clearAllMocks();

@@ -17,6 +17,7 @@ describe("parsePreviewSearch", () => {
             allActions: false,
             heroTurn: false,
             holeCards: true,
+            holeCount: 2,
             board: 5
         });
     });
@@ -107,6 +108,7 @@ describe("parsePreviewSearch", () => {
 
         const idle = buildPreviewState(parsePreviewSearch(new URLSearchParams("seats=6")), PREVIEW_HERO_ADDRESS);
         expect(idle.players.every(player => player.legalActions.length === 0)).toBe(true);
+        expect(idle.nextToAct).toBe(2);
     });
 
     it("reads hole cards and community-card count", () => {
@@ -115,6 +117,10 @@ describe("parsePreviewSearch", () => {
             board: 0
         });
         expect(parsePreviewSearch(new URLSearchParams("holes=1&board=3")).board).toBe(3);
+        expect(parsePreviewSearch(new URLSearchParams("holes=4")).holeCount).toBe(4);
+        const omaha = buildPreviewState(parsePreviewSearch(new URLSearchParams("holes=4")), PREVIEW_HERO_ADDRESS);
+        expect(omaha.players[0].holeCards).toEqual(["AS", "KD", "QC", "JH"]);
+        expect(omaha.players[1].holeCards).toHaveLength(4);
         expect(parsePreviewSearch(new URLSearchParams("board=4")).board).toBe(4);
         expect(parsePreviewSearch(new URLSearchParams("board=2")).board).toBe(5);
     });

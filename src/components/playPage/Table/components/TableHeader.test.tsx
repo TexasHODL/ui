@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { GameFormat } from "@block52/poker-vm-sdk";
+import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../../../../utils/generatedTableName";
 import { TableHeader, TableHeaderProps } from "./TableHeader";
 
@@ -14,6 +14,7 @@ const makeProps = (): TableHeaderProps => ({
     tableName: "Friday game",
     isMobileLandscape: false,
     gameFormat: GameFormat.CASH,
+    gameVariant: GameVariant.TEXAS_HOLDEM,
     gameOptions: null,
     tableActivePlayers: [],
     publicKey: "test-address",

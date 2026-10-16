@@ -49,7 +49,7 @@ function Fixture() {
         amount, minAmount: 20, maxAmount: 1330, formattedMaxAmount: "1,330", step: 20, displayOffset: 0, totalPotMicro: 400n,
         callAmountMicro: 0n, isInvalid: false, isMobileLandscape: landscape, isTournament: true, currentRound: TexasHoldemRound.FLOP,
         previousActions: [], disabled: false, onAmountChange: setAmount, onIncrement: () => setAmount(v => Math.min(1330, v + 20)),
-        onDecrement: () => setAmount(v => Math.max(20, v - 20)), onAllIn: () => setAmount(1330)
+        onDecrement: () => setAmount(v => Math.max(20, v - 20)), onAllIn: () => setAmount(1330), maxIsAllIn: true
     };
     return <div className="table-container" data-compact-mobile={portrait || landscape} data-table-theme="modern">
         <header className="table-banner-wrap" style={{ height: 48, flexShrink: 0, padding: 8, background: "#100c17", color: "#fff" }}>

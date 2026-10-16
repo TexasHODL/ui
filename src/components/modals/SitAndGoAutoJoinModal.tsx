@@ -20,8 +20,9 @@ import Modal from "../common/Modal";
 import { microToUsdc } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
-import { getGameTypeMnemonic } from "../../utils/gameFormatUtils";
-import { isEmpty, hasElements, isBlank } from "../../utils/guards";
+import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
+import { isEmpty, hasElements, isBlank, hasValue } from "../../utils/guards";
+import { formatStartsAt, scheduledSngPhase } from "../../utils/scheduledSng";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
 
@@ -38,7 +39,17 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     const { emptySeatIndexes, isUserAlreadyPlaying } = useVacantSeatData();
 
     // Get the game state context to force refresh after joining
-    const { subscribeToTable, gameState } = useGameStateContext();
+    const { subscribeToTable, gameState, gameVariant } = useGameStateContext();
+
+    // Scheduled start (poker-vm#2680): say when it starts, and refuse a seat at
+    // a cancelled table (the chain refuses the join too).
+    const scheduledPhase = scheduledSngPhase({
+        scheduledStartTime: gameOptions?.scheduledStartTime,
+        minPlayers: gameOptions?.minPlayers ?? 2,
+        registered: gameState?.players?.length ?? 0,
+        nowMs: Date.now()
+    });
+    const isCancelled = scheduledPhase === "cancelled";
 
     // Get Cosmos address once
     const publicKey = useMemo(() => localStorage.getItem(STORAGE_KEYS.cosmosAddress) || undefined, []);
@@ -239,7 +250,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     return (
         <Modal isOpen={true} onClose={() => {}} closeOnEscape={false} closeOnBackdropClick={false}
             widthClass="w-full max-w-[420px]" className="tournament-entry" ariaLabel="Sit & Go Tournament" customHeader>
-            <ModalHeader kicker="Take your seat" title="Sit & Go Tournament" subtitle={`Texas Hold’em · ${playerCountLabel}`} />
+            <ModalHeader kicker="Take your seat" title="Sit & Go Tournament" subtitle={`${formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)} · ${playerCountLabel}`} />
 
             <dl className="tournament-facts">
                 <div><dt>Buy-in</dt><dd>${formatMicroUsd(gameOptions?.maxBuyIn ?? 0)}</dd></div>
@@ -264,15 +275,26 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                     {isBalanceLoading ? "Loading…" : `$${formatMicroUsd(accountBalance)}`}
                 </span>
             </div>
+            {isCancelled ? (
+                <p className="tournament-error" data-testid="scheduled-cancelled">
+                    Cancelled: not enough players registered by the start time.
+                </p>
+            ) : scheduledPhase !== "unscheduled" && hasValue(gameOptions?.scheduledStartTime) && (
+                <p className="tournament-note" data-testid="scheduled-start-info">
+                    Starts {formatStartsAt(gameOptions.scheduledStartTime)} with at least {gameOptions.minPlayers} players, or earlier when full
+                </p>
+            )}
             {buyInError && <p className="tournament-error" role="alert">{buyInError}</p>}
             <button onClick={handleTakeSeat}
-                disabled={isJoining || isBalanceLoading || balanceFormatted < parseFloat(maxBuyInFormatted) || isEmpty(emptySeatIndexes)}
+                disabled={isCancelled || isJoining || isBalanceLoading || balanceFormatted < parseFloat(maxBuyInFormatted) || isEmpty(emptySeatIndexes)}
                 className="hodl-primary">
-                {isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
+                {isCancelled ? "Cancelled" : isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
                     ? "Insufficient Balance" : isEmpty(emptySeatIndexes) ? "Table Full" : "Take My Seat"}
             </button>
             <p className="tournament-note">
-                Tournament starts when all players are seated.
+                {scheduledPhase === "unscheduled"
+                    ? "Tournament starts when all players are seated."
+                    : "Starts when the table is full, or at the start time with at least the minimum."}
                 <small>Powered by Block52</small>
             </p>
         </Modal>

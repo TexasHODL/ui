@@ -2,7 +2,8 @@ import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { GameFormat, CosmosClient, getDefaultCosmosConfig, PlayerDTO, computeGameNameFee } from "@block52/poker-vm-sdk";
+import { localDateTimeToUnixSeconds } from "../utils/scheduledSng";
+import { BettingLimit, GameFormat, GameVariant, CosmosClient, getDefaultCosmosConfig, PlayerDTO, computeGameNameFee } from "@block52/poker-vm-sdk";
 import { Link, useNavigate } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { isValidPlayerAddress } from "../utils/addressUtils";
@@ -18,7 +19,7 @@ import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
-import { isTournamentFormat, getGameFormat, toGameFormat } from "../utils/gameFormatUtils";
+import { defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
 import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
@@ -57,8 +58,18 @@ export default function TableAdminPage() {
     // Default table settings for Cash Game, 9 players, Texas Hold'em
     const [gameFormat, setGameFormat] = useState<GameFormat>(GameFormat.CASH);
     const [tableName, setTableName] = useState(""); // Optional paid table name (poker-vm#337)
+    // Variant and betting limit are independent (ui#768); picking a variant
+    // resets the limit to that variant's usual one (PLO, NLHE).
+    const [gameVariant, setGameVariant] = useState<GameVariant>(GameVariant.TEXAS_HOLDEM);
+    const [bettingLimit, setBettingLimit] = useState<BettingLimit>(defaultBettingLimitFor(GameVariant.TEXAS_HOLDEM));
     const [minPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(9);
+    // Scheduled start (poker-vm#2680): the sit-and-go starts when full OR at
+    // the start time with at least sngMinPlayers registered. Off = starts only
+    // when full, as before.
+    const [scheduled, setScheduled] = useState(false);
+    const [scheduledStart, setScheduledStart] = useState(""); // datetime-local value
+    const [sngMinPlayers, setSngMinPlayers] = useState(2);
 
     // Selected blind level (index in BLIND_LEVELS array) — cash games only
     const [selectedBlindLevel, setSelectedBlindLevel] = useState(DEFAULT_BLIND_LEVEL_INDEX);
@@ -84,8 +95,7 @@ export default function TableAdminPage() {
 
     const handleGameFormatChange = (newType: GameFormat) => {
         setGameFormat(newType);
-        // SNG/Tournament only supports chain-defined entrant counts.
-        // Snap an out-of-range maxPlayers to the nearest valid value.
+        // A single table seats 2..9 (every field has a payout curve, poker-vm#2667).
         if (isTournamentFormat(newType)) {
             const validSngCounts = [2, 4, 6, 9];
             if (!validSngCounts.includes(maxPlayers)) {
@@ -221,12 +231,28 @@ export default function TableAdminPage() {
         const finalMinBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMinBuyIn;
         const finalMaxBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMaxBuyIn;
 
+        // A scheduled sit-and-go needs a start time in the future and a
+        // minimum no larger than the table (the chain refuses both).
+        const isScheduled = isTournament && scheduled;
+        const startTime = isScheduled ? localDateTimeToUnixSeconds(scheduledStart) : undefined;
+        if (isScheduled) {
+            if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
+                toast.error("Pick a start time in the future for a scheduled tournament.");
+                return;
+            }
+            if (sngMinPlayers < 2) {
+                toast.error(`Minimum players must be between 2 and ${maxPlayers}.`);
+                return;
+            }
+        }
+
         // Build SNG config if this is a tournament/SNG
         const sngConfig = isTournament
             ? {
                   startingStack,
                   blindLevelDuration,
-                  entryFee: parseFloat(entryFee) || 0
+                  entryFee: parseFloat(entryFee) || 0,
+                  ...(isScheduled && { startTime })
               }
             : undefined;
 
@@ -234,11 +260,14 @@ export default function TableAdminPage() {
         setTableCountBeforeCreation(tables.length);
 
         try {
-            // SNG requires fixed entrant count (min_players == max_players).
-            const finalMinPlayers = isTournament ? maxPlayers : minPlayers;
+            // A sit-and-go's field is fixed (min == max) unless it is scheduled,
+            // when it may start with fewer (poker-vm#2680).
+            const finalMinPlayers = isTournament ? (isScheduled ? Math.min(maxPlayers, Math.max(2, sngMinPlayers)) : maxPlayers) : minPlayers;
 
             const result = await createTable({
                 format: gameFormat,
+                variant: gameVariant,
+                bettingLimit,
                 minBuyIn: finalMinBuyIn,
                 maxBuyIn: finalMaxBuyIn,
                 minPlayers: finalMinPlayers,
@@ -360,8 +389,7 @@ export default function TableAdminPage() {
                             {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
                             <div className="mb-4">
                                 <label className="text-gray-300 text-xs mb-1 block">
-                                    Table Name <span className="text-gray-500">(optional)</span>
-                                </label>
+                                    Table Name <span className="text-gray-500">(optional)</span>                                </label>
                                 <input
                                     type="text"
                                     aria-label="Table name"
@@ -397,8 +425,39 @@ export default function TableAdminPage() {
                                         className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     >
                                         <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
-                                        <option value={GameFormat.TOURNAMENT}>Tournament</option>
                                         <option value={GameFormat.CASH}>Cash Game</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-gray-300 text-xs mb-1 block">Game</label>
+                                    <select
+                                        aria-label="Game"
+                                        value={gameVariant}
+                                        onChange={e => {
+                                            const variant = toGameVariant(e.target.value);
+                                            if (!variant) return;
+                                            setGameVariant(variant);
+                                            setBettingLimit(defaultBettingLimitFor(variant));
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    >
+                                        <option value={GameVariant.TEXAS_HOLDEM}>Texas Hold&apos;em</option>
+                                        <option value={GameVariant.OMAHA}>Omaha</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-gray-300 text-xs mb-1 block">Limit</label>
+                                    <select
+                                        aria-label="Betting limit"
+                                        value={bettingLimit}
+                                        onChange={e => {
+                                            const limit = toCreatableBettingLimit(e.target.value);
+                                            if (limit) setBettingLimit(limit);
+                                        }}
+                                        className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    >
+                                        <option value={BettingLimit.NO_LIMIT}>No-Limit</option>
+                                        <option value={BettingLimit.POT_LIMIT}>Pot-Limit</option>
                                     </select>
                                 </div>
                                 <div>
@@ -416,6 +475,48 @@ export default function TableAdminPage() {
                                     </select>
                                 </div>
                             </div>
+
+                            {isTournamentFormat(gameFormat) && (
+                                <div className="mb-4">
+                                    <label className="flex items-center gap-2 text-gray-300 text-xs cursor-pointer" data-testid="scheduled-start-toggle">
+                                        <input type="checkbox" checked={scheduled} onChange={e => setScheduled(e.target.checked)} className="accent-blue-500" />
+                                        Scheduled start
+                                        <span className="text-gray-500">— starts at a set time with whoever has registered</span>
+                                    </label>
+                                    {scheduled && (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Start time</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    aria-label="Scheduled start time"
+                                                    value={scheduledStart}
+                                                    onChange={e => setScheduledStart(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Minimum players</label>
+                                                <select
+                                                    aria-label="Minimum players"
+                                                    value={Math.min(sngMinPlayers, maxPlayers)}
+                                                    onChange={e => setSngMinPlayers(parseInt(e.target.value))}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                >
+                                                    {Array.from({ length: Math.max(0, maxPlayers - 1) }, (_, i) => i + 2).map(n => (
+                                                        <option key={n} value={n}>
+                                                            {n}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <p className="sm:col-span-2 text-gray-500 text-xs">
+                                                Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Blinds Dropdown - Cash games only */}
                             {gameFormat === GameFormat.CASH && (

@@ -15,7 +15,8 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
     onAmountSelect,
     onAllIn,
     mobilePresets = false,
-    className
+    className,
+    maxIsAllIn
 }) => {
     const potBetOptions: { label: string; variation: PotBetVariation | "min" }[] = mobilePresets
         ? [
@@ -89,8 +90,9 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
                 className="btn-all-in px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[12px] lg:text-xs transition-all duration-200 font-medium transform active:scale-105"
                 onClick={onAllIn}
                 disabled={disabled}
+                title={maxIsAllIn ? undefined : "The most the pot-limit allows"}
             >
-                {mobilePresets ? "All-in" : "ALL-IN"}
+                {!maxIsAllIn ? "MAX" : mobilePresets ? "All-in" : "ALL-IN"}
             </button>
         </div>
     );

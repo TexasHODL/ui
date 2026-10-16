@@ -178,6 +178,8 @@ export interface RaiseBetControlsProps {
     onIncrement: () => void;
     onDecrement: () => void;
     onAllIn: () => void;
+    /** Whether the max commits the whole stack; false at pot-limit when the pot caps it (ui#768). */
+    maxIsAllIn: boolean;
 }
 
 /**
@@ -216,4 +218,6 @@ export interface PotSizedBetButtonsProps {
     /** Mobile set: Min, 1/2, 3/4, Pot, All-in. Desktop keeps 1/4 Pot through Pot. */
     mobilePresets?: boolean;
     className?: string;
+    /** Whether the max commits the whole stack; false at pot-limit when the pot caps it (ui#768). */
+    maxIsAllIn: boolean;
 }

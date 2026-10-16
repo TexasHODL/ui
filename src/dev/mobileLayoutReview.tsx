@@ -38,7 +38,7 @@ function Review() {
         totalPotMicro: 60n, callAmountMicro: 0n, isInvalid: false, isMobileLandscape: false, isTournament: true,
         currentRound: TexasHoldemRound.FLOP, previousActions: [], disabled: false, onAmountChange: setAmount,
         onIncrement: () => setAmount(v => Math.min(1480, v + 20)), onDecrement: () => setAmount(v => Math.max(20, v - 20)),
-        onAllIn: () => setAmount(1480)
+        onAllIn: () => setAmount(1480), maxIsAllIn: true
     };
     return <div className="table-container" style={{ height: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <header style={{ height: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-around" }}>

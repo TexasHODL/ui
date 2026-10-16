@@ -5,9 +5,9 @@ import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { displayTableName } from "../../../../utils/generatedTableName";
-import { formatGameFormatDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { formatGameFormatDisplay, formatTableGameDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
-import { GameFormat, GameOptionsDTO, PlayerDTO } from "@block52/poker-vm-sdk";
+import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import styles from "./TableHeader.module.css";
 import { ThemeToggle } from "../../../ThemeToggle";
@@ -31,6 +31,7 @@ export interface TableHeaderProps {
 
     // Game data
     gameFormat: GameFormat | null;
+    gameVariant: GameVariant | undefined;
     gameOptions: GameOptionsDTO | null;
     tableActivePlayers: PlayerDTO[];
 
@@ -77,6 +78,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     tableName,
     isMobileLandscape,
     gameFormat,
+    gameVariant,
     gameOptions,
     tableActivePlayers,
     publicKey,
@@ -119,6 +121,8 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     <strong>{title}</strong>
                     <span>
                         {gameFormat ? formatGameFormatDisplay(gameFormat) : "Poker"}
+                        {" · "}
+                        {formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)}
                         {gameOptions && " · " + tableActivePlayers.length + "/" + gameOptions.maxPlayers + " seats"}
                     </span>
                 </div>

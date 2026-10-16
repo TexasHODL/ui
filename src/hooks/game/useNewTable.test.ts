@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { GameFormat } from "@block52/poker-vm-sdk";
+import { BettingLimit, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { useNewTable } from "./useNewTable";
 const mockCreate = jest.fn();
 const mockGetTx = jest.fn();
@@ -10,7 +10,17 @@ jest.mock("../../utils/cosmos/client", () => ({
     getSigningClient: async () => ({ signingClient: { createGame: mockCreate }, userAddress: "test-owner" }),
     getCosmosClient: () => mockReadClient
 }));
-const options = { format: GameFormat.CASH, minBuyIn: 1, maxBuyIn: 2, minPlayers: 2, maxPlayers: 6, smallBlind: .01, bigBlind: .02 };
+const options = {
+    format: GameFormat.CASH,
+    variant: GameVariant.TEXAS_HOLDEM,
+    bettingLimit: BettingLimit.NO_LIMIT,
+    minBuyIn: 1,
+    maxBuyIn: 2,
+    minPlayers: 2,
+    maxPlayers: 6,
+    smallBlind: .01,
+    bigBlind: .02
+};
 beforeEach(() => { jest.useFakeTimers(); jest.clearAllMocks(); mockCreate.mockResolvedValue("tx123"); mockReadClient = { getTx: mockGetTx }; });
 afterEach(() => jest.useRealTimers());
 

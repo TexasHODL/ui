@@ -1,6 +1,7 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
 import React, { useEffect, useMemo, useState } from "react";
 import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaEllipsisH } from "react-icons/fa";
+import { formatStartsAt, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
 import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
@@ -33,6 +34,19 @@ interface TableListProps {
     compact?: boolean;
     refreshKey?: number | string;
 }
+
+/** A scheduled sit-and-go's phase at render time (poker-vm#2680). */
+const scheduledPhase = (game: GameWithFormat): ScheduledSngPhase =>
+    scheduledSngPhase({ scheduledStartTime: game.scheduledStartTime, minPlayers: game.minPlayers, registered: game.currentPlayers, nowMs: Date.now() });
+
+/** "Starts 20:30 · min 4" for a scheduled sit-and-go; "" otherwise. */
+const scheduledLabel = (game: GameWithFormat): string => {
+    const phase = scheduledPhase(game);
+    if (phase === "unscheduled" || game.scheduledStartTime === undefined) return "";
+    if (phase === "cancelled") return "Cancelled: not enough players";
+    if (phase === "ready") return "Starting";
+    return `Starts ${formatStartsAt(game.scheduledStartTime)} · min ${game.minPlayers}`;
+};
 
 const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, refreshKey = 0 }) => {
     const { games: rawGames, isLoading, error, refetch } = useFindGames();
@@ -225,6 +239,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const tournament = isTournamentFormat(game.gameFormat);
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
+                                const phase = scheduledPhase(game);
+                                const schedule = scheduledLabel(game);
                                 const stakes = tournament
                                     ? "Tournament"
                                     : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
@@ -243,6 +259,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                         {formatGameFormatDisplay(game.gameFormat)} · {game.maxPlayers}-seat ·{" "}
                                                         {formatGameVariantDisplay(game.gameVariant)}
                                                     </span>
+                                                    {schedule && (
+                                                        <span className={styles.scheduledBadge} data-testid="scheduled-start-label">
+                                                            {schedule}
+                                                        </span>
+                                                    )}
                                                     <span className={styles.mobileFacts}>
                                                         {stakes} · {formatBuyIn(game)} buy-in
                                                     </span>
@@ -274,7 +295,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                 <a
                                                     href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
                                                     className={watch ? styles.watchButton : styles.actionButton}
-                                                    aria-label={(seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
+                                                    aria-label={(phase === "cancelled" ? "Cancelled " : seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
                                                 >
                                                     {watch ? (
                                                         <>
@@ -283,7 +304,9 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <span className={seated ? styles.returnLabel : undefined}>{seated ? "Return to table" : "Open table"}</span>
+                                                            <span className={seated ? styles.returnLabel : undefined}>
+                                                                {phase === "cancelled" ? "Cancelled" : seated ? "Return to table" : "Open table"}
+                                                            </span>
                                                             <FaArrowRight aria-hidden="true" />
                                                         </>
                                                     )}
