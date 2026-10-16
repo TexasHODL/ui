@@ -95,6 +95,11 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     const allStacks = decomposeAmount(dollarAmount);
 
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
+    // Phone-width viewports use the 36px label. A short or wide landscape window
+    // would otherwise drop to 24px, and the stage zoom then paints that smaller
+    // still. mobileReadability.css overrides both classes on mobile landscape so
+    // every seat paints at the same 17px on screen.
+    const compactLabel = !isMobile || (window.innerWidth > window.innerHeight && window.innerHeight <= 500);
     const chipSize = isMobile ? CHIP_SIZE_MOBILE : CHIP_SIZE;
 
     const maxVisibleCount = Math.max(1, ...allStacks.map(s => s.visibleCount));
@@ -109,7 +114,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     return (
         <div
             className={`relative flex items-center rounded-full bg-[#00000054] ${
-                isMobile ? "h-[36px] pr-[12px]" : "h-[32px] pr-[10px]"
+                compactLabel ? "h-[32px] pr-[10px]" : "h-[36px] pr-[12px]"
             }`}
             style={{ marginLeft: `${overhang}px`, paddingLeft: `${chipInset + 2}px` }}
         >
@@ -147,7 +152,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
 
             {/* Dollar amount label */}
             <span className={`text-[#dbd3d3] font-bold whitespace-nowrap ${
-                isMobile ? "text-4xl" : "text-2xl"
+                compactLabel ? "text-2xl" : "text-4xl"
             }`}>
                 {isTournament ? formattedAmount : `$${formattedAmount}`}
             </span>

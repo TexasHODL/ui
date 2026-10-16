@@ -9,8 +9,6 @@ import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
 import { useParams } from "react-router-dom";
 import type { PlayerProps } from "../../../types/index";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { useDealerPosition } from "../../../hooks/game/useDealerPosition";
-import CustomDealer from "../../../assets/CustomDealer.svg";
 import { getCardImageUrl } from "../../../utils/cardImages";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
@@ -23,15 +21,14 @@ import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
 
-const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
-    ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
+const Player: React.FC<PlayerProps & { uiPosition?: number; isDealer?: boolean }> = memo(
+    ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition, isDealer = false }) => {
         const { id } = useParams<{ id: string }>();
         const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
         const { winnerInfo, winnerBySeat } = useWinnerInfo();
         const winnerCards = useWinnerCards();
         const { extendTime, canExtend, isCurrentUserTurn, isActive: isTurnTimerActive } = usePlayerTimer(id, index);
 
-        const { dealerSeat } = useDealerPosition();
         const { equities, shouldShow: shouldShowEquity } = useAllInEquity();
         const { getAvatarForAddress } = useProfileAvatar();
         const { currentNetwork } = useNetwork();
@@ -44,9 +41,6 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                 submit({ actionName: "sit-in", run: () => sitIn(id, currentNetwork, SIT_IN_METHOD_POST_NOW) });
             }
         }, [id, currentNetwork, submit]);
-
-        // Check if this seat is the dealer
-        const isDealer = dealerSeat === index;
 
         // Get equity for this player if available
         const playerEquity = useMemo((): number | null => {
@@ -211,10 +205,9 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
                             onSitIn={isSittingOut ? handleSitInFromBadge : undefined}
+                            isDealer={isDealer}
                         />
                     </div>
-
-                    {/* Dealer Button — rendered at table level using geometry positions */}
                 </div>
             </div>
         );
@@ -226,7 +219,8 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
             prevProps.index === nextProps.index &&
             prevProps.currentIndex === nextProps.currentIndex &&
             prevProps.color === nextProps.color &&
-            prevProps.status === nextProps.status
+            prevProps.status === nextProps.status &&
+            prevProps.isDealer === nextProps.isDealer
         );
     }
 );

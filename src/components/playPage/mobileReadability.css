@@ -45,6 +45,11 @@
     height: calc(19 * var(--mobile-unit));
     font-size: calc(12 * var(--mobile-unit));
 }
+/* Match the seat-number disc. A 48px stage button would shrink with zoom
+   while the badge is counter-zoomed, so the gap would not stay put. */
+[data-mobile-readable] .dealer-badge-button {
+    --dealer-size: calc(22 * var(--mobile-unit));
+}
 /* The shell remains absolute: changing turns cannot re-centre a player. */
 [data-mobile-readable] .seat-banner-shell[data-banner-mode="timer"] {
     margin-top: calc(-22 * var(--mobile-unit));
@@ -124,6 +129,33 @@
     height: min(230px, 40dvh);
 }
 
+/* Bet amounts share one on-screen size. The pill is inside the stage zoom, so a
+   fixed CSS size paints smaller on a short phone (zoom ~0.42) than on a wider
+   landscape table (zoom ~0.71). 17px is the size the 24px label already has at
+   that wider zoom — the most legible size already on a landscape table. */
+[data-mobile-readable="landscape"] .chip-position > div {
+    height: calc(22.67px / var(--table-zoom));
+    padding-right: calc(7px / var(--table-zoom));
+}
+[data-mobile-readable="landscape"] .chip-position span {
+    font-size: calc(17px / var(--table-zoom));
+    line-height: calc(22.67px / var(--table-zoom));
+}
+
+/* Landscape cards are 2px taller than the shared mobile box. Width scales
+   with that height. Portrait keeps 39×51 and the 550×805 community ratio. */
+[data-mobile-readable="landscape"] .hole-card-fan-slot,
+[data-mobile-readable="landscape"] .hole-card-fan-slot > img {
+    width: calc(39 * 53 / 51 * var(--mobile-unit));
+    height: calc(53 * var(--mobile-unit));
+    flex-basis: calc(39 * 53 / 51 * var(--mobile-unit));
+}
+[data-mobile-readable="landscape"] .community-card-row > div,
+[data-mobile-readable="landscape"] .community-card-row .card {
+    width: calc(39 * (39 * 805 / 550 + 2) / (39 * 805 / 550) * var(--mobile-unit));
+    height: calc((39 * 805 / 550 + 2) * var(--mobile-unit));
+}
+
 /* Centre the five-card row itself, irrespective of one or two pot labels. */
 [data-mobile-readable="landscape"] .community-card-row { margin-top: 0; }
 [data-mobile-readable="landscape"] .community-pots {
@@ -142,9 +174,12 @@
     font-size: calc(12 * var(--mobile-unit));
     line-height: 1.2;
 }
+/* Portrait's 44% mark reaches the side bets. 26% of the table clears them
+   and still sits in the middle of the felt. */
+.table-container[data-table-theme="modern"] [data-mobile-readable="portrait"] .table-logo {
+    width: 26%;
+}
 @media (max-height: 350px) {
-    [data-mobile-readable="landscape"] .community-board { top: calc(50% - 2 * var(--mobile-unit)); }
-    [data-mobile-readable="landscape"] .community-pots { top: calc(100% + 2 * var(--mobile-unit)); }
     [data-mobile-readable="landscape"] .pot-display,
     [data-mobile-readable="landscape"] .pot-display-secondary {
         font-size: calc(12 * var(--mobile-unit));

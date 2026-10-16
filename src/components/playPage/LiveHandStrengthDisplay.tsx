@@ -22,11 +22,16 @@ const LiveHandStrengthDisplay: React.FC = () => {
         return null;
     }
 
-    // Mobile renders in its own row above the measured stage, never over the felt.
-    const isCompactMobile = viewportMode === "mobile-portrait" || viewportMode === "mobile-landscape";
-    const positionStyle: React.CSSProperties = isCompactMobile
-        ? { position: "relative", alignSelf: "flex-start", flexShrink: 0, margin: "4px 8px", padding: "4px 8px", maxWidth: "calc(100% - 16px)", pointerEvents: "none" }
-        : { position: "fixed", bottom: "168px", right: "16px" };
+    // Portrait keeps its own row above the stage. Landscape overlays the chip
+    // under the header so the felt can start there; the row was a 34px gap.
+    const isPortrait = viewportMode === "mobile-portrait";
+    const isLandscape = viewportMode === "mobile-landscape";
+    const isCompactMobile = isPortrait || isLandscape;
+    const positionStyle: React.CSSProperties = isLandscape
+        ? { position: "fixed", top: "calc(var(--mobile-chrome-end, 48px) + 4px)", left: "max(8px, env(safe-area-inset-left, 0px))", margin: 0, padding: "4px 8px", maxWidth: "calc(100% - 16px)", pointerEvents: "none", zIndex: 30 }
+        : isPortrait
+          ? { position: "relative", alignSelf: "flex-start", flexShrink: 0, margin: "4px 8px", padding: "4px 8px", maxWidth: "calc(100% - 16px)", pointerEvents: "none" }
+          : { position: "fixed", bottom: "168px", right: "16px" };
 
     return (
         <div style={positionStyle} className="live-hand-strength bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50">

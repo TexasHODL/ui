@@ -18,11 +18,12 @@
  *      Stage (1282.2, 683.5) → Table-relative { left: "932.2px", top: "373.5px" }
  *
  * 3. DERIVED POSITIONS
- *    Chips, dealer buttons, and animations are calculated from seat positions:
+ *    Chips and animations are calculated from seat positions:
  *      - Chips:      40% from seat toward table center (adjust CHIP_DISTANCE)
- *      - Dealer:     30% from seat toward table center (adjust DEALER_DISTANCE)
  *      - Turn anim:  seat position + 80px down (adjust TURN_ANIM_Y_OFFSET)
  *      - Win anim:   same as seat position
+ *    The dealer button is not a table coordinate. It is drawn on the seat
+ *    widget, up and to the left of that seat's number badge.
  *
  * 4. VIEWPORT SCALING
  *    Positions are FIXED on the table. Screen-size adaptation is handled by
@@ -32,8 +33,8 @@
  * HOW TO FINE-TUNE POSITIONS
  * ═══════════════════════════════════════════════════════════════════════
  *
- * To move ALL chips/dealers/animations globally:
- *   → Change the distance constants: CHIP_DISTANCE, DEALER_DISTANCE, TURN_ANIM_Y_OFFSET
+ * To move ALL chips/animations globally:
+ *   → Change the distance constants: CHIP_DISTANCE, TURN_ANIM_Y_OFFSET
  *
  * To nudge ONE specific seat's element by a few pixels:
  *   → Add an entry to GLOBAL_OFFSETS (applies on all screen sizes)
@@ -51,6 +52,8 @@
  * - Issue #46:  https://github.com/block52/ui/issues/46
  */
 
+import { mobileCardUnit } from "./mobileCardSizing";
+
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface Position {
@@ -62,6 +65,8 @@ export interface Position {
 export interface ChipPosition {
     left: string;
     bottom: string;
+    /** Set on mobile, where the chip is centred on this table-space point. */
+    top?: string;
 }
 
 /**
@@ -83,6 +88,62 @@ export const STAGE_WIDTH = 1600;
 export const STAGE_HEIGHT = 850;
 export const TABLE_WIDTH = 1000;
 export const TABLE_HEIGHT = 500;
+
+/**
+ * Ceiling on how much wider the mobile-landscape felt may be than the desktop
+ * 2:1 stadium. `mobileLandscapeWidthStretch` uses less when the outer seats
+ * would leave the stage, and never goes below 1. A short phone may exceed the
+ * old 2.4:1 shape so seats 3 and 8 sit near the stage edges.
+ */
+export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.7;
+
+/**
+ * How much taller the mobile-landscape felt and seat ring are than the
+ * desktop 500px stadium. 1 keeps that height. `mobileLandscapeHeightStretch`
+ * may lower this so the top hole cards stay a few pixels under the header
+ * and the lowest action box stays a few pixels above the bottom edge. It
+ * never goes below 1, and it does not give back the width stretch. The room
+ * between those two edges goes to the felt.
+ */
+export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.4;
+
+/** One-row mobile header. The hand-strength chip overlays, so it is not in this. */
+const MOBILE_LANDSCAPE_CHROME = 48;
+
+/** Screen pixels between the stage top and the top hole cards.
+ *  The painted card sits about 2px above this model, so 6 lands the art ~4px
+ *  under the header. */
+const MOBILE_LANDSCAPE_TOP_GAP = 6;
+
+/** Screen pixels between the lowest action box and the stage bottom. */
+const MOBILE_LANDSCAPE_BOTTOM_GAP = 6;
+
+/** Screen pixels between an outer seat's cards or action box and the stage side. */
+const MOBILE_LANDSCAPE_SIDE_MARGIN = 8;
+
+/**
+ * Half-width, in stage pixels, of the wide labels that sit on the outer
+ * seats. SITTING OUT on a 9-seat edge measures about 201. RAISE TO $1250 on
+ * a 6-seat edge measures about 289. The box is laid out at 30px and then
+ * scaled with the stage, so these stay constant while the seat widget does not.
+ */
+export const MOBILE_LANDSCAPE_BANNER_HALF = 104;
+const MOBILE_LANDSCAPE_WIDE_BANNER_HALF = 152;
+
+/**
+ * The landscape hand-strength chip used to be a row above the stage. It now
+ * overlays, and these pixels stay out of the zoom so the height stretch can
+ * spend them on the felt.
+ */
+const MOBILE_LANDSCAPE_ZOOM_RESERVE = 34;
+
+/**
+ * Stage pixels the action banner hangs below the hole-card bottom. The banner
+ * is 55px and tucks 22px under the stack badge; the card-bottom model already
+ * reaches that tuck, so 33px of the box still sits below the cards. Those
+ * pixels are inside the zoomed stage, so they are not multiplied by the card unit.
+ */
+const MOBILE_LANDSCAPE_ACTION_BELOW_CARDS = 33;
 export const TABLE_SURFACE_HEIGHT = 500; // Match spec: table surface fills the full table div
 export const TABLE_CENTER_X = 800;
 export const TABLE_CENTER_Y = 535;
@@ -116,15 +177,18 @@ export interface StageDims {
 }
 
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
+    // Unstretched base, same 1000×500 stadium as desktop. Mobile landscape
+    // widens and heightens it in stageDimsFor and still uniform-scales the
+    // stage; portrait and desktop read these numbers as-is.
     "mobile-landscape": {
         stageWidth: 1600,
         stageHeight: 850,
-        tableWidth: 1000,
-        tableHeight: 320,
-        centerX: 800,
-        centerY: 425,
-        originX: 300,
-        originY: 265
+        tableWidth: TABLE_WIDTH,
+        tableHeight: TABLE_HEIGHT,
+        centerX: TABLE_CENTER_X,
+        centerY: TABLE_CENTER_Y,
+        originX: TABLE_ORIGIN_X,
+        originY: TABLE_ORIGIN_Y
     },
     landscape: {
         stageWidth: STAGE_WIDTH,
@@ -153,8 +217,105 @@ export function getStageOrientation(): StageOrientation {
     return mode === "mobile-portrait" ? "portrait" : mode === "mobile-landscape" ? "mobile-landscape" : "landscape";
 }
 
+/** Spread used by the width cap. Inlined so the cap does not call getStageDims. */
+function spreadForWidthCap(sx: number, sy: number): [number, number] {
+    const dx = sx - TABLE_CENTER_X;
+    const dy = sy - TABLE_CENTER_Y;
+    const dist = Math.hypot(dx, dy);
+    if (dist === 0 || (SEAT_SPREAD as number) === 0) return [sx, sy];
+    return [sx + (dx / dist) * SEAT_SPREAD, sy + (dy / dist) * SEAT_SPREAD];
+}
+
+/** Unscaled vertical extent of one ring, plus the player-UI padding above and below. */
+function ringContentHeight(size: 2 | 4 | 6 | 9): number {
+    const pad = PLAYER_UI_PADDING["mobile-landscape"];
+    const { topY, botY } = spreadSeatExtent(size);
+    return (botY - topY) + pad.top + pad.bottom;
+}
+
+/** Distance from the table centre to the leftmost seat, after the inward spread. */
+function sideOffset(size: 2 | 4 | 6 | 9): number {
+    let minX = Infinity;
+    for (const [x, y] of SEAT_COORDS[size]) {
+        const [sx] = spreadForWidthCap(x, y);
+        minX = Math.min(minX, sx);
+    }
+    return TABLE_CENTER_X - minX;
+}
+
+/** Outer rings and the wide label that hangs off them. 2-seat labels are centred. */
+const OUTER_LABELS: ReadonlyArray<readonly [2 | 4 | 6 | 9, number]> = [
+    [6, MOBILE_LANDSCAPE_WIDE_BANNER_HALF],
+    [9, MOBILE_LANDSCAPE_BANNER_HALF]
+];
+
+/** Zoom at which the widest outer label still clears the stage side. */
+function bannerZoomCap(containerW: number): number {
+    const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN;
+    if (room <= 0) return Number.POSITIVE_INFINITY;
+    let cap = Number.POSITIVE_INFINITY;
+    for (const [size, half] of OUTER_LABELS) {
+        const side = sideOffset(size);
+        if (side <= 0) continue;
+        cap = Math.min(cap, room / (side + half));
+    }
+    return cap;
+}
+
+/**
+ * Stretch actually applied on mobile landscape. Wide enough that the outer
+ * seats' cards sit {@link MOBILE_LANDSCAPE_SIDE_MARGIN}px inside the stage,
+ * and short of the action column. Zoom stays the height fit, so the cards do
+ * not shrink to buy width. Never below 1, never above
+ * {@link MOBILE_LANDSCAPE_WIDTH_STRETCH}.
+ */
+export function mobileLandscapeWidthStretch(): number {
+    const requested = Math.max(1, MOBILE_LANDSCAPE_WIDTH_STRETCH);
+    if (typeof window === "undefined") return 1;
+    if (getStageOrientation() !== "mobile-landscape") return 1;
+    const params = VIEWPORT_PARAMS["mobile-landscape"];
+    const containerW = window.innerWidth - 124;
+    const containerH = window.innerHeight - MOBILE_LANDSCAPE_CHROME;
+    // Same usable height calculateZoom paints with, so the stretch is not
+    // computed against a zoom the stage never uses.
+    const usableH = containerH - params.paddingV - MOBILE_LANDSCAPE_ZOOM_RESERVE;
+    if (containerW <= 0 || usableH <= 0) return 1;
+    // 9-seat is the widest ring. 6-seat sits further in, but its RAISE TO
+    // label is wider, so both rings limit the stretch. A label cannot use a
+    // zoom that would carry it into the action column.
+    let zoom = usableH / ringContentHeight(9);
+    zoom = Math.min(zoom, bannerZoomCap(containerW));
+    if (zoom <= 0) return 1;
+    const factor = Math.min(1, containerW / 600, containerH / 263, zoom / 0.5125);
+    const seatHalf = (96 * factor) / 2;
+    let fill = requested;
+    for (const [size, half] of OUTER_LABELS) {
+        const widgetHalf = Math.max(seatHalf, half * zoom);
+        const side = sideOffset(size);
+        const room = containerW / 2 - MOBILE_LANDSCAPE_SIDE_MARGIN - widgetHalf;
+        if (room <= 0 || side <= 0) return 1;
+        fill = Math.min(fill, room / (side * zoom));
+    }
+    return Math.min(requested, Math.max(1, fill));
+}
+
+/** Felt dimensions for one orientation. Mobile landscape is the only stretched stage. */
+export function stageDimsFor(orientation: StageOrientation): StageDims {
+    const base = STAGE_DIMS[orientation];
+    if (orientation !== "mobile-landscape") return base;
+    const tableWidth = TABLE_WIDTH * mobileLandscapeWidthStretch();
+    const tableHeight = TABLE_HEIGHT * mobileLandscapeHeightStretch();
+    return {
+        ...base,
+        tableWidth,
+        tableHeight,
+        originX: TABLE_CENTER_X - tableWidth / 2,
+        originY: TABLE_CENTER_Y - tableHeight / 2
+    };
+}
+
 export function getStageDims(): StageDims {
-    return STAGE_DIMS[getStageOrientation()];
+    return stageDimsFor(getStageOrientation());
 }
 
 // ─── Seat Colors ─────────────────────────────────────────────────────
@@ -261,30 +422,33 @@ const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
     ]
 };
 
-// Shorter mobile stadium, independent of desktop. Card sizing is in screen
-// pixels, so its vertical footprint must be reserved separately from the felt.
-const MOBILE_LANDSCAPE_SEAT_COORDS: Record<TableSize, [number, number][]> = {
-    2: [[800, 585], [800, 265]],
-    4: [[800, 585], [300, 425], [800, 265], [1300, 425]],
-    6: [[800, 585], [340, 515], [340, 335], [800, 265], [1260, 335], [1260, 515]],
-    9: [[800, 585], [565, 585], [300, 480], [390, 300], [665, 265], [935, 265], [1210, 300], [1300, 480], [1035, 585]]
-};
-
-/** Seat coordinates for the current orientation's stage. */
+/** Seat coordinates for the current orientation's stage.
+ *  Mobile landscape uses the desktop ring (these numbers do not change).
+ *  stageToTable spreads that ring horizontally with the widened felt. */
 export function getSeatCoords(tableSize: TableSize): [number, number][] {
-    if (getStageOrientation() === "mobile-landscape") return MOBILE_LANDSCAPE_SEAT_COORDS[tableSize];
-    return getStageOrientation() === "portrait" ? PORTRAIT_SEAT_COORDS[tableSize] : SEAT_COORDS[tableSize];
+    if (getStageOrientation() === "portrait") return PORTRAIT_SEAT_COORDS[tableSize];
+    return SEAT_COORDS[tableSize];
 }
 
 
 // ─── Coordinate Conversion ───────────────────────────────────────────
 
-/** Convert stage coordinates to table-div-relative pixel values */
+/** Convert stage coordinates to table-div-relative pixel values.
+ *  Mobile landscape scales X and Y about the table centre by the felt
+ *  stretches, so seats, chips and dealer buttons spread with the stadium. */
 function stageToTable(stageX: number, stageY: number): [number, number] {
     const dims = getStageDims();
+    let x = stageX;
+    let y = stageY;
+    if (getStageOrientation() === "mobile-landscape") {
+        const widthStretch = dims.tableWidth / TABLE_WIDTH;
+        const heightStretch = dims.tableHeight / TABLE_HEIGHT;
+        x = dims.centerX + (stageX - dims.centerX) * widthStretch;
+        y = dims.centerY + (stageY - dims.centerY) * heightStretch;
+    }
     return [
-        Math.round((stageX - dims.originX) * 10) / 10,
-        Math.round((stageY - dims.originY) * 10) / 10
+        Math.round((x - dims.originX) * 10) / 10,
+        Math.round((y - dims.originY) * 10) / 10
     ];
 }
 
@@ -314,11 +478,6 @@ const SEAT_SPREAD = -30;
 /** How far chips sit from seat toward table center (0 = at seat, 1 = at center) */
 const CHIP_DISTANCE = 0.42;
 
-/** How far dealer button sits from seat toward table center.
- *  0.5 = halfway between seat and center — ensures button is ON the table surface
- *  for all seats including top (5,6) and edge (7,8) positions. */
-const DEALER_DISTANCE = 0.34;
-
 /** How many pixels down the turn animation ring sits below the seat coordinate.
  *  30px puts it on the badge center (player is 140px tall, centered via translate-y-50%). */
 const TURN_ANIM_Y_OFFSET = 30;
@@ -345,8 +504,13 @@ const PORTRAIT_DECK_ORIGIN: Position = { left: "250px", top: "360px" };
 
 /** The deck origin for the current orientation's felt. */
 export function getDeckOrigin(): Position {
-    if (getStageOrientation() === "mobile-landscape") return { left: "500px", top: "100px" };
-    return getStageOrientation() === "portrait" ? PORTRAIT_DECK_ORIGIN : DECK_ORIGIN;
+    if (getStageOrientation() === "portrait") return PORTRAIT_DECK_ORIGIN;
+    if (getStageOrientation() === "mobile-landscape") {
+        const dims = getStageDims();
+        // Same nudge above the felt centre as the desktop deck (centre is 250, deck is 150).
+        return { left: `${dims.tableWidth / 2}px`, top: `${dims.tableHeight / 2 - 100}px` };
+    }
+    return DECK_ORIGIN;
 }
 
 // ─── Position Generators ─────────────────────────────────────────────
@@ -357,7 +521,8 @@ export type TableSize = 2 | 4 | 6 | 9;
 /** Push a seat position outward from table center by SEAT_SPREAD pixels */
 function applySpread(sx: number, sy: number): [number, number] {
     // Portrait coordinates already include the approved rail/arc spacing.
-    if (getStageOrientation() !== "landscape") return [sx, sy];
+    // Mobile landscape shares the desktop ring, including this spread.
+    if (getStageOrientation() === "portrait") return [sx, sy];
     if ((SEAT_SPREAD as number) === 0) return [sx, sy];
     const dims = getStageDims();
     const dx = sx - dims.centerX;
@@ -417,27 +582,6 @@ export function getChipPositions(tableSize: TableSize): ChipPosition[] {
             left: `${Math.round(chipX)}px`,
             bottom: `${Math.round(chipBottom)}px`
         };
-    });
-}
-
-/**
- * Get dealer button positions.
- * Placed between seat and table edge, offset toward table center.
- */
-export function getDealerPositions(tableSize: TableSize): Position[] {
-    const dims = getStageDims();
-    const coords = getSeatCoords(tableSize);
-
-    return coords.map(([x, y]) => {
-        const [sx, sy] = applySpread(x, y);
-        const dx = dims.centerX - sx;
-        const dy = dims.centerY - sy;
-
-        // Move DEALER_DISTANCE from seat toward center
-        const dealerX = sx + dx * DEALER_DISTANCE;
-        const dealerY = sy + dy * DEALER_DISTANCE;
-
-        return stageToPosition(dealerX, dealerY);
     });
 }
 
@@ -503,8 +647,6 @@ export function positionDelta(from: Position, to: Position): { dx: number; dy: n
 // 2. Nudge seat 5's chips 8px up on MOBILE PORTRAIT only:
 //    VIEWPORT_OFFSETS["mobile-portrait"] = { 9: { chips: { 5: { dy: -8 } } } }
 //
-// 3. Move dealer button for seat 7 right 10px on tablet:
-//    VIEWPORT_OFFSETS["tablet"] = { 9: { dealers: { 7: { dx: 10 } } } }
 //
 // dx = horizontal (positive = right, negative = left)
 // dy = vertical (positive = down, negative = up)
@@ -518,10 +660,6 @@ type ElementType = "players" | "vacantPlayers" | "chips" | "dealers"
 const GLOBAL_OFFSETS: Partial<Record<TableSize,
     Partial<Record<ElementType, Record<number, Offset>>>>> = {
     2: {
-        dealers: {
-            0: { dx: 95, dy: 63 },
-            1: { dx: 95, dy: -20 }
-        },
         chips: {
             0: { dx: -38, dy: 40 },
             1: { dx: -38, dy: -5 }
@@ -529,12 +667,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     4: {
-        dealers: {
-            0: { dx: 95, dy: 63 },    // seat 1
-            1: { dx: -57, dy: -2 },  // seat 2
-            2: { dx: 95, dy: -20 }, // seat 3
-            3: { dx: 60, dy: 24 },   // seat 4
-            },
         chips: {
             0: { dx: -38, dy: 40 },    // seat 1
             1: { dx: -90, dy: 90 },  // seat 2
@@ -544,14 +676,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     6: {
-        dealers: {
-            0: { dx: 95, dy: 63 },    // seat 1
-            1: { dx: -60, dy: 23 },  // seat 2
-            2: { dx: -60, dy: -73 }, // seat 3
-            3: { dx: 95, dy: -20 },   // seat 4
-            4: { dx: 60, dy: -23 },  // seat 5
-            5: { dx: 60, dy: 73 }    // seat 6
-        },
         chips: {
             0: { dx: -38, dy: 40 },    // seat 1
             1: { dx: -92, dy: 20 },  // seat 2
@@ -563,17 +687,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     9: {
-        dealers: {
-            0: { dx: 95, dy: 65 },   // seat 1
-            1: { dx: 25, dy: 115 },   // seat 2
-            2: { dx: -68, dy: 7},   // seat 3
-            3: { dx: -38, dy: 0 },  // seat 4
-            4: { dx: 58, dy: -19 },  // seat 5
-            5: { dx: 132, dy: -19 }, // seat 6
-            6: { dx: 39, dy: -48 },   // seat 7
-            7: { dx: 68, dy: 57 },    // seat 8
-            8: { dx: 165, dy: 115 }   // seat 9
-        },
         chips: {
             0: { dx: -35, dy: 40 },         // seat 1
             1: { dx: -125, dy: 40 },       // seat 2
@@ -590,24 +703,7 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
 
 
 /** Per-viewport offsets — override for specific screen sizes only */
-const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {
-    "desktop": {
-        9: {
-            dealers: {
-                1: { dy: -50 },  // D2 — move up so it's above the chips
-                8: { dy: -50 },  // D9
-            }
-        }
-    },
-    "mobile-landscape": {
-        9: {
-            dealers: {
-                1: { dy: -40 },  // D2
-                8: { dy: -40 },  // D9
-            }
-        }
-    }
-};
+const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {};
 
 /** Portrait offsets are tuned independently — the landscape GLOBAL_OFFSETS were
  *  hand-fitted to the landscape seat ring and don't transfer. Nudge portrait
@@ -707,18 +803,59 @@ export interface PositionArrays {
     deck: Position;
 }
 
+/**
+ * 9-seat mobile landscape only. Seat 2's widget is centred on the midpoint
+ * between the right edge of seat 3 and the left edge of seat 1. Seat 9 is
+ * centred between the right edge of seat 1 and the left edge of seat 8.
+ * Every seat widget has the same width and is centred on its anchor, so
+ * that midpoint is the midpoint of the neighbour anchors. Y stays put.
+ * Portrait and desktop keep the spec ring.
+ */
+function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
+    if (getStageOrientation() !== "mobile-landscape" || tableSize !== 9) return positions;
+    const anchor = positions.players.map(seat => parseFloat(seat.left));
+    const dx = new Map<number, number>([
+        [1, (anchor[2] + anchor[0]) / 2 - anchor[1]],
+        [8, (anchor[0] + anchor[7]) / 2 - anchor[8]]
+    ]);
+    const shift = (pos: Position, index: number): Position => {
+        const delta = dx.get(index);
+        if (!delta) return pos;
+        const left = Math.round((parseFloat(pos.left) + delta) * 10) / 10;
+        return { ...pos, left: `${left}px` };
+    };
+    return {
+        ...positions,
+        players: positions.players.map(shift),
+        vacantPlayers: positions.vacantPlayers.map(shift),
+        turnAnimations: positions.turnAnimations.map(shift),
+        winAnimations: positions.winAnimations.map(shift),
+        holeCards: positions.holeCards.map((slot, index) => ({
+            first: shift(slot.first, index),
+            second: shift(slot.second, index)
+        })),
+        chips: positions.chips.map((chip, index) => {
+            const delta = dx.get(index);
+            if (!delta) return chip;
+            const left = Math.round((parseFloat(chip.left) + delta) * 10) / 10;
+            return { ...chip, left: `${left}px` };
+        })
+    };
+}
+
 /** Get all position arrays for a given table size, with offsets applied */
 export function getAllPositions(tableSize: TableSize): PositionArrays {
-    return {
+    return centerMobileLandscapeWingSeats({
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
         chips: applyChipOffsets(getChipPositions(tableSize), tableSize),
-        dealers: applyPositionOffsets(getDealerPositions(tableSize), tableSize, "dealers"),
+        // The dealer button is anchored to the seat-number badge, not a felt coordinate.
+        dealers: [],
         turnAnimations: applyPositionOffsets(getTurnAnimationPositions(tableSize), tableSize, "turnAnimations"),
         winAnimations: applyPositionOffsets(getWinAnimationPositions(tableSize), tableSize, "winAnimations"),
         holeCards: applyHoleCardOffsets(getHoleCardSlotPositions(tableSize), tableSize),
         deck: getDeckOrigin()
-    };
+    }, tableSize);
 }
 
 // ─── Viewport Scaling ────────────────────────────────────────────────
@@ -839,13 +976,17 @@ export function getContentBounds(tableSize: TableSize): ContentBounds {
     }
     // Heads-up seats have no horizontal span; include the actual felt/rail so
     // auto-fit cannot make a wide landscape table spill outside a short phone.
+    // The width stretch already places the seat widgets inside the stage, so
+    // the old 100px side pad is not added again (it left the dead space).
+    let sidePad = pad.x;
     if (mode === "mobile-landscape") {
         const dims = getStageDims();
         minX = Math.min(minX, dims.originX - 30);
         maxX = Math.max(maxX, dims.originX + dims.tableWidth + 30);
+        sidePad = 0;
     }
     return {
-        width: (maxX - minX) + pad.x * 2,
+        width: (maxX - minX) + sidePad * 2,
         height: (maxY - minY) + pad.top + pad.bottom,
         // Center of the PADDED bounds (not just seats). Accounts for asymmetric
         // padding — more above (cards) than below (badges). Without this offset,
@@ -873,7 +1014,8 @@ export function calculateZoom(
     // Portrait needs no axis swap: the portrait stage is already vertical, so
     // its content bounds are taller than wide and fit the viewport directly.
     const usableWidth = containerWidth - params.paddingH;
-    const usableHeight = containerHeight - params.footerOverlay - params.paddingV;
+    let usableHeight = containerHeight - params.footerOverlay - params.paddingV;
+    if (mode === "mobile-landscape") usableHeight -= MOBILE_LANDSCAPE_ZOOM_RESERVE;
 
     const scaleByWidth = usableWidth / bounds.width;
     const scaleByHeight = usableHeight / bounds.height;
@@ -882,15 +1024,69 @@ export function calculateZoom(
     // Short landscape screens (including browser chrome / keyboard) must still
     // fit the complete seat ring. A 0.3 floor previously forced it into controls.
     const minimum = mode.startsWith("mobile") ? 0.01 : MIN_SCALE;
-    const result = Math.max(minimum, Math.min(fitScale, MAX_GLOBAL_SCALE));
+    let result = Math.max(minimum, Math.min(fitScale, MAX_GLOBAL_SCALE));
+    if (mode === "mobile-landscape") {
+        result = Math.min(result, bannerZoomCap(containerWidth));
+    }
 
     return result;
+}
+
+/** Unscaled vertical extent of one mobile-landscape ring, after the inward seat spread. */
+function spreadSeatExtent(tableSize: TableSize): { topY: number; botY: number } {
+    let topY = Infinity;
+    let botY = -Infinity;
+    for (const [x, y] of SEAT_COORDS[tableSize]) {
+        const [, sy] = spreadForWidthCap(x, y);
+        topY = Math.min(topY, sy);
+        botY = Math.max(botY, sy);
+    }
+    return { topY, botY };
+}
+
+/**
+ * Height scale actually applied on mobile landscape. Equals
+ * {@link MOBILE_LANDSCAPE_HEIGHT_STRETCH} when the window has vertical room
+ * under the header. Otherwise a smaller factor down to 1, so the top hole
+ * cards keep {@link MOBILE_LANDSCAPE_TOP_GAP}px of air and the lowest action
+ * box stays {@link MOBILE_LANDSCAPE_BOTTOM_GAP}px above the bottom edge. Zoom
+ * stays the width-stretch fit: this does not shrink the table to buy height.
+ */
+export function mobileLandscapeHeightStretch(): number {
+    const requested = Math.max(1, MOBILE_LANDSCAPE_HEIGHT_STRETCH);
+    if (requested === 1 || typeof window === "undefined") return 1;
+    if (getStageOrientation() !== "mobile-landscape") return 1;
+    const params = VIEWPORT_PARAMS["mobile-landscape"];
+    const containerW = window.innerWidth - 124;
+    const containerH = window.innerHeight - MOBILE_LANDSCAPE_CHROME;
+    const usableW = containerW - params.paddingH;
+    const usableH = containerH - params.paddingV - MOBILE_LANDSCAPE_ZOOM_RESERVE;
+    if (usableW <= 0 || usableH <= 0) return 1;
+    const contentW = TABLE_WIDTH * mobileLandscapeWidthStretch() + 60;
+    let allowed = requested;
+    for (const size of [2, 4, 6, 9] as const) {
+        const { topY, botY } = spreadSeatExtent(size);
+        const span = botY - topY;
+        const contentH = ringContentHeight(size);
+        const zoom = Math.min(usableW / contentW, usableH / contentH, bannerZoomCap(containerW));
+        if (zoom <= 0) return 1;
+        const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerW, containerH));
+        const limit = (containerH - MOBILE_LANDSCAPE_TOP_GAP - MOBILE_LANDSCAPE_BOTTOM_GAP) / zoom;
+        // The banner hangs below the cards. Reserving it shortens the felt and
+        // pulls the bottom seats up; the nudge then keeps the top cards put.
+        const maxH = (limit - 2 * half - MOBILE_LANDSCAPE_ACTION_BELOW_CARDS) / span;
+        allowed = Math.min(allowed, maxH);
+    }
+    return Math.min(requested, Math.max(1, allowed));
 }
 
 /**
  * Build CSS transform — pixel-based, no percentages.
  * Centers the content within the measured container.
  * CSS wrapper must have: top:0; left:0; transform-origin: 0 0;
+ * Mobile landscape then slides the ring so the top hole cards sit
+ * {@link MOBILE_LANDSCAPE_TOP_GAP}px under the stage top, unless that would
+ * push the lowest action box past the bottom edge.
  */
 export function getTableTransform(
     zoom: number,
@@ -917,7 +1113,35 @@ export function getTableTransform(
     const spareSideSpace = Math.max(0, (containerWidth - bounds.width * zoom) / 2 - 12);
     const safeOffset = Math.max(-spareSideSpace, Math.min(spareSideSpace, horizontalOffset));
     const tx = usableCenterX - scaledCenterX + safeOffset;
-    const ty = usableCenterY - scaledCenterY;
+    let ty = usableCenterY - scaledCenterY;
+    if (mode === "mobile-landscape") {
+        ty += mobileLandscapeVerticalNudge(zoom, containerWidth, containerHeight, tableSize, ty);
+    }
 
     return `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${zoom})`;
+}
+
+/** Slide the centred ring so the top cards sit just under the stage top. */
+function mobileLandscapeVerticalNudge(
+    zoom: number,
+    containerWidth: number,
+    containerHeight: number,
+    tableSize: TableSize,
+    ty: number
+): number {
+    const dims = getStageDims();
+    const half = 35.5 * parseFloat(mobileCardUnit(false, zoom, containerWidth, containerHeight));
+    const seats = getSeatPositions(tableSize);
+    let cardTop = Infinity;
+    let actionBottom = -Infinity;
+    for (const seat of seats) {
+        const stageY = dims.originY + parseFloat(seat.top);
+        cardTop = Math.min(cardTop, stageY - half);
+        actionBottom = Math.max(actionBottom, stageY + half + MOBILE_LANDSCAPE_ACTION_BELOW_CARDS);
+    }
+    let nudge = MOBILE_LANDSCAPE_TOP_GAP - (ty + cardTop * zoom);
+    const actionAfter = ty + nudge + actionBottom * zoom;
+    const limit = containerHeight - MOBILE_LANDSCAPE_BOTTOM_GAP;
+    if (actionAfter > limit) nudge -= actionAfter - limit;
+    return nudge;
 }

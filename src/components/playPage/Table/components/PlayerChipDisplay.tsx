@@ -6,6 +6,7 @@ interface PlayerChipDisplayProps {
     seatIndex: number;
     left: string;
     bottom: string;
+    top?: string;
     isTournament: boolean;
 }
 
@@ -15,11 +16,14 @@ interface PlayerChipDisplayProps {
  * Memoized so prop-stable parent re-renders skip when this seat's chip
  * amount and position haven't changed.
  */
-const PlayerChipDisplay: React.FC<PlayerChipDisplayProps> = React.memo(({ seatIndex, left, bottom, isTournament }) => {
+const PlayerChipDisplay: React.FC<PlayerChipDisplayProps> = React.memo(({ seatIndex, left, bottom, top, isTournament }) => {
     const { chipAmount } = usePlayerChipData(seatIndex);
     if (!chipAmount || chipAmount === "0") return null;
+    // Mobile centres the pile on a table-space point just inside the rail.
+    // Desktop keeps the bottom/left anchor the geometry offsets were tuned for.
+    const centered = top !== undefined;
     return (
-        <div className="chip-position" style={{ left, bottom }}>
+        <div className="chip-position" style={{ left, bottom: centered ? undefined : bottom, top, transform: centered ? "translate(-50%, -50%)" : undefined }}>
             <Chip amount={chipAmount} isTournament={isTournament} />
         </div>
     );

@@ -19,8 +19,6 @@ import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { useShowingCardsByAddress } from "../../../hooks/player/useShowingCardsByAddress";
-import { useDealerPosition } from "../../../hooks/game/useDealerPosition";
-import CustomDealer from "../../../assets/CustomDealer.svg";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
 import { getCardImageUrl, getCardBackUrl, CardBackStyle } from "../../../utils/cardImages";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
@@ -40,9 +38,10 @@ type OppositePlayerProps = {
     status?: string;
     uiPosition?: number;
     cardBackStyle?: CardBackStyle;
+    isDealer?: boolean;
 };
 
-const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle }) => {
+const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle, isDealer = false }) => {
     const { id } = useParams<{ id: string }>();
     const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
     const { winnerInfo, winnerBySeat } = useWinnerInfo();
@@ -57,10 +56,6 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
         return equities.get(index) ?? null;
     }, [shouldShowEquity, equities, index]);
     const { showingBySeat } = useShowingCardsByAddress();
-    const { dealerSeat } = useDealerPosition();
-
-    // Check if this seat is the dealer
-    const isDealer = dealerSeat === index;
 
     // Get tournament results for this seat
     const { getSeatResult, isSitAndGo } = useSitAndGoPlayerResults();
@@ -170,11 +165,9 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                             isSeated={isSeated}
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
+                            isDealer={isDealer}
                         />
                     </div>
-
-                    {/* Dealer Button */}
-                    {/* Dealer Button — rendered at table level using geometry positions */}
                 </div>
             </div>
         </>
@@ -185,7 +178,8 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
         prevProps.left === nextProps.left &&
         prevProps.top === nextProps.top &&
         prevProps.index === nextProps.index &&
-        prevProps.color === nextProps.color
+        prevProps.color === nextProps.color &&
+        prevProps.isDealer === nextProps.isDealer
     );
 });
 

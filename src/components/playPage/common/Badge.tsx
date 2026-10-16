@@ -8,6 +8,7 @@ import { isTournamentFormat } from "../../../utils/gameFormatUtils";
 import { formatForSitAndGo, formatForCashGame } from "../../../utils/numberUtils";
 import ProgressBar from "./ProgressBar";
 import { colors } from "../../../utils/colorConfig";
+import CustomDealer from "../../../assets/CustomDealer.svg";
 import "./Badge.css";
 
 type BadgeProps = {
@@ -32,13 +33,15 @@ type BadgeProps = {
     isSittingOut?: boolean;
     playerEquity?: number | null;
     onSitIn?: () => void;
+    /** This seat has the dealer button, anchored to the seat-number circle. */
+    isDealer?: boolean;
 };
 
 const Badge: React.FC<BadgeProps> = React.memo(({
     count, value, color, canExtend, onExtend,
     tournamentPlace, tournamentPayout,
     isWinner, winnerHandDescription, isTurnTimerActive,
-    round, isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn
+    round,     isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn, isDealer
 }) => {
     // Track previous banner mode so we can detect timer→action transitions
     const prevBannerModeRef = React.useRef<string>("hidden");
@@ -239,6 +242,11 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         <div className="badge-container">
             <div style={{ backgroundColor: color }} className="badge-number">
                 {count}
+                {isDealer && (
+                    <div className="dealer-badge-button" data-dealer-button={count}>
+                        <img src={CustomDealer} alt="Dealer Button" />
+                    </div>
+                )}
             </div>
             <div className="badge-value">
                 {formattedValue}

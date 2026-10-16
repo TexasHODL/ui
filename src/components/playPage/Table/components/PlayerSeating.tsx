@@ -22,6 +22,8 @@ import VacantPlayer from "../../Players/VacantPlayer";
 import TurnAnimation from "../../Animations/TurnAnimation";
 import WinAnimation from "../../Animations/WinAnimation";
 import { CardBackStyle } from "../../../../utils/cardImages";
+import { useDealerPosition } from "../../../../hooks/game/useDealerPosition";
+import { useShowAllDealerButtons } from "../../../../context/ShowAllDealerButtonsContext";
 
 // Memoize TurnAnimation
 const MemoizedTurnAnimation = React.memo(TurnAnimation);
@@ -64,6 +66,8 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
     cardBackStyle,
     updateBalanceOnPlayerJoin
 }) => {
+    const { dealerSeat } = useDealerPosition();
+    const showAllDealerButtons = useShowAllDealerButtons();
     // Seat-indexed lookups built once per update (#2455). The render loop below
     // maps over every UI position and previously called .find()/.some() by seat
     // on these arrays per position — O(n²) per game-state update on a full table.
@@ -144,7 +148,8 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
                 // physical slot's colour. Default gray if the seat has no colour.
                 color: seatColorByNumber.get(seatNumber) || "#6b7280",
                 status: dataPlayerBySeat.get(seatNumber)?.status,
-                onJoin: updateBalanceOnPlayerJoin
+                onJoin: updateBalanceOnPlayerJoin,
+                isDealer: showAllDealerButtons || dealerSeat === seatNumber
             };
 
             // CASE 1: No player at this seat - render vacant position
@@ -168,7 +173,7 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
                 <OppositePlayer {...playerProps} uiPosition={positionIndex} cardBackStyle={cardBackStyle} />
             );
         },
-        [activePlayerBySeat, userWalletAddress, currentIndex, dataPlayerBySeat, tableSize, startIndex, updateBalanceOnPlayerJoin, tableLayout, cardBackStyle, seatColorByNumber]
+        [activePlayerBySeat, userWalletAddress, currentIndex, dataPlayerBySeat, tableSize, startIndex, updateBalanceOnPlayerJoin, tableLayout, cardBackStyle, seatColorByNumber, dealerSeat, showAllDealerButtons]
     );
 
     // Render all player positions
