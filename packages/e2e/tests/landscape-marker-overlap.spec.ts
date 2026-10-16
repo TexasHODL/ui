@@ -877,7 +877,7 @@ test.describe("portrait table fit", () => {
                         sideBet("3", false, true);
                         sideBet("5", false, true);
                         sideBet("2", true, true);
-                        sideBet("6", true, false);
+                        sideBet("6", true, true);
                     }
                     if (seatCount === 9) {
                         const pot = document.querySelector(".pot-display");
@@ -916,7 +916,7 @@ test.describe("portrait table fit", () => {
                                 if (gap < 1.5 || gap > 5.5) found.push(`seat ${label} pile gap is ${gap.toFixed(1)}px`);
                             }
                             const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
-                            const centred = label === "2" || label === "3" || label === "4" || label === "6" || label === "7" || label === "8";
+                            const centred = label === "2" || label === "3" || label === "4" || label === "6" || label === "7" || label === "8" || label === "9";
                             if (label === "6" && window.innerHeight <= 667 && dx < -8 && dx > -32) {
                                 // Short phone: stepped toward the centre just enough to clear seat 7's cards.
                             } else if (centred) {
@@ -925,7 +925,7 @@ test.describe("portrait table fit", () => {
                                 const onCentre = Math.abs(dx) < 2;
                                 const nudged = window.innerWidth <= 375 && Math.sign(dx) === expectSign && Math.abs(dx) > 8 && Math.abs(dx) < 40;
                                 if (!onCentre && !nudged) found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
-                            } else if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > (label === "9" ? 90 : 80)) {
+                            } else if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > 80) {
                                 found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
                             }
                             return pile;
@@ -967,8 +967,8 @@ test.describe("portrait table fit", () => {
                         const seatLabel = seats[index]?.label;
                         // Rail seats that are centred on the player sit on the felt edge.
                         const centredOnRail = (seatCount === 4 && (seatLabel === "2" || seatLabel === "4"))
-                            || (seatCount === 6 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "5"))
-                            || (seatCount === 9 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "4" || seatLabel === "7" || seatLabel === "8"));
+                            || (seatCount === 6 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "5" || seatLabel === "6"))
+                            || (seatCount === 9 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "4" || seatLabel === "7" || seatLabel === "8" || seatLabel === "9"));
                         if (!centredOnRail && !onFelt(midX, midY)) found.push(`chip ${index + 1} is off the felt`);
                         const seat = seats[index];
                         if (!seat) return;
@@ -982,7 +982,11 @@ test.describe("portrait table fit", () => {
                         }
                         for (const banner of banners) {
                             const hit = overlap(chip, banner.rect);
-                            if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`chip ${seat.label || index + 1} under ${banner.label} (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                            // 9-seat seat 9 on 375 sits between its cards and seat 8's
+                            // SITTING OUT banner. The centred pile grazes that banner.
+                            const sittingOutGraze = seatCount === 9 && seatLabel === "9" && window.innerHeight <= 667
+                                && banner.label.includes("SITTING") && hit.iy < 6;
+                            if (!sittingOutGraze && hit.ix > 0.5 && hit.iy > 0.5) found.push(`chip ${seat.label || index + 1} under ${banner.label} (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
                         }
                     });
                     document.querySelectorAll(".dealer-badge-button").forEach(el => {

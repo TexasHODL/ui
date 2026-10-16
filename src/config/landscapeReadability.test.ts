@@ -323,8 +323,8 @@ describe("landscape mobile readability", () => {
                 // centre sits on the felt edge.
                 const centredOnRail = portrait && (
                     (size === 4 && (index === 1 || index === 3))
-                    || (size === 6 && (index === 1 || index === 2 || index === 4))
-                    || (size === 9 && (index === 1 || index === 2 || index === 3 || index === 6 || index === 7))
+                    || (size === 6 && (index === 1 || index === 2 || index === 4 || index === 5))
+                    || (size === 9 && (index === 1 || index === 2 || index === 3 || index === 6 || index === 7 || index === 8))
                 );
                 if (!onFelt && !centredOnRail) problems.push(`${size} seat ${index + 1} chip off the felt at ${chip.x},${chip.y}`);
             });
@@ -423,7 +423,7 @@ describe("landscape mobile readability", () => {
         expect(chip6X).toBeGreaterThan(Math.round(seat6X) - 60);
         const seat9X = parseFloat(portrait.players[8].left);
         const chip9X = parseFloat(portrait.chips[8].left);
-        expect(Math.abs(chip9X - seat9X)).toBeGreaterThan(20);
+        expect(chip9X).toBe(Math.round(seat9X));
         const seat5X = parseFloat(portrait.players[4].left);
         const chip5X = parseFloat(portrait.chips[4].left);
         expect(Math.abs(chip5X - seat5X)).toBeLessThan(2);
@@ -693,15 +693,6 @@ describe("landscape mobile readability", () => {
             const chipPx = width <= 768 || height <= 500 ? 32 : 28;
             const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
             const chipHX = 86;
-            const railAir = Math.max(4, 3 / zoom);
-            const feltW = getStageDims().tableWidth;
-            const clamped = (seatX: number) => {
-                const inward = Math.sign(feltW / 2 - seatX) || 0;
-                const outer = seatX - inward * chipHX;
-                const outerLimit = inward > 0 ? railAir : feltW - railAir;
-                const past = inward > 0 ? outerLimit - outer : outer - outerLimit;
-                return Math.round(seatX + inward * Math.max(0, past));
-            };
             const bannerAir = (index: number) => {
                 const seat = placed.players[index];
                 const chip = placed.chips[index];
@@ -733,13 +724,7 @@ describe("landscape mobile readability", () => {
                 const modelGap = 3 + 3 * zoom;
                 expect(gap).toBeGreaterThan(modelGap - 1.5);
                 expect(gap).toBeLessThan(modelGap + 1.5);
-                if (index === 1) {
-                    expect(chipX).toBe(Math.round(seatX));
-                } else {
-                    expect(chipX).toBe(clamped(seatX));
-                    const inward = Math.sign(feltW / 2 - seatX) || 1;
-                    expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
-                }
+                expect(chipX).toBe(Math.round(seatX));
                 const board = cards[6];
                 const onBoard = Math.abs(chipX - board.x) < chipHX + board.hw
                     && Math.abs(chipY - board.y) < stackHalf + board.hy;
@@ -770,16 +755,6 @@ describe("landscape mobile readability", () => {
             const seatHalf = 35.5 * parseFloat(mobileCardUnit(true, zoom, width, height - 130));
             const chipPx = width <= 768 || height <= 500 ? 32 : 28;
             const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
-            const chipHX = 86;
-            const railAir = Math.max(4, 3 / zoom);
-            const feltW = getStageDims().tableWidth;
-            const clamped = (seatX: number) => {
-                const inward = Math.sign(feltW / 2 - seatX) || 0;
-                const outer = seatX - inward * chipHX;
-                const outerLimit = inward > 0 ? railAir : feltW - railAir;
-                const past = inward > 0 ? outerLimit - outer : outer - outerLimit;
-                return Math.round(seatX + inward * Math.max(0, past));
-            };
             const bannerAir = (index: number) => {
                 const seat = placed.players[index];
                 const chip = placed.chips[index];
@@ -827,22 +802,7 @@ describe("landscape mobile readability", () => {
                 const floor = index === 1 && width === 375 ? 0.5 : modelGap - 1.5;
                 expect(gap).toBeGreaterThan(floor);
                 expect(gap).toBeLessThan(modelGap + 1.5);
-                if (index === 8) {
-                    const inward = Math.sign(feltW / 2 - seatX) || 1;
-                    expect(Math.sign(chipX - seatX)).toBe(inward);
-                    // The short phone can step seat 9 further inward once the
-                    // painted banner still covers the tall pile. A slightly
-                    // roomier zoom leaves it on the rail clamp.
-                    if (width === 375) {
-                        expect(chipX).toBeLessThanOrEqual(clamped(seatX));
-                        expect(chipX).toBeGreaterThan(feltW / 2);
-                    } else {
-                        expect(chipX).toBe(clamped(seatX));
-                    }
-                    expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
-                } else {
-                    expect(chipX).toBe(Math.round(seatX));
-                }
+                expect(chipX).toBe(Math.round(seatX));
             });
         }
         const portrait = place(390, 844);

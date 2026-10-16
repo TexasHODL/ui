@@ -1238,9 +1238,8 @@ export function placeMobileRailMarkers(
                 remember(index, x, y);
             });
         }
-        // 6-seat. Seats 3, 4 and 5 sit under their own banners. Seat 2 sits
-        // above its cards. Those four are on the seat centre. Seat 6 stays
-        // above its cards and clamped onto the felt.
+        // 6-seat. Seats 3, 4 and 5 sit under their own banners. Seats 2 and
+        // 6 sit above their cards. All five are on the seat centre.
         if (tableSize === 6) {
             // Seat 4's preview pile is a second denomination stacked on the
             // cents, so it hangs about 4 stage px below the single-stack model.
@@ -1248,7 +1247,7 @@ export function placeMobileRailMarkers(
             underBanner(2, false);
             underBanner(4, false);
             aboveCards(1, false, 0, false);
-            aboveCards(5);
+            aboveCards(5, false, 0, false);
         }
         // 9-seat. Seats 2, 3, 8 and 9 sit above their own cards. Seats 4–7
         // sit under their own banners. A centred pile is clamped inward only
@@ -1296,9 +1295,9 @@ export function placeMobileRailMarkers(
                     remember(5, rightPile.x, rightPile.y);
                 }
             }
-            // Seats 2, 3, 4, 6, 7 and 8 keep the height above and sit on
-            // the seat centre. Seat 5 and seat 9 stay where they were.
-            [1, 2, 3, 5, 6, 7].forEach(index => {
+            // Seats 2, 3, 4, 6, 7, 8 and 9 keep the height above and sit on
+            // the seat centre. Seat 5 stays where it was.
+            [1, 2, 3, 5, 6, 7, 8].forEach(index => {
                 const point = chipCenters[index];
                 const seat = seatBoxes[index];
                 if (!point || !seat) return;
