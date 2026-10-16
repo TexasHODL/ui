@@ -36,7 +36,7 @@ import type { CreateTableOptions } from "../hooks/game/useNewTable"; // Import t
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
-import { defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
+import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 
 // Password protection utils
@@ -199,7 +199,7 @@ const Dashboard: React.FC = () => {
 
             // A scheduled sit-and-go needs a start time in the future and a
             // minimum no larger than the table (the chain refuses both).
-            const scheduled = isTournament && modalScheduled;
+            const scheduled = isSitAndGoFormat(modalGameFormat) && modalScheduled;
             const startTime = scheduled ? localDateTimeToUnixSeconds(modalScheduledStart) : undefined;
             if (scheduled) {
                 if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
@@ -663,7 +663,7 @@ const Dashboard: React.FC = () => {
                                         </select>
                                     </div>
 
-                                    {isModalTournament && (
+                                    {isSitAndGoFormat(modalGameFormat) && (
                                         <div>
                                             <label className="block text-white text-sm mb-1">Scheduled start</label>
                                             <label className="flex items-center gap-2 text-white text-sm cursor-pointer" data-testid="scheduled-start-toggle">
