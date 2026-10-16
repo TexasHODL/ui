@@ -874,6 +874,13 @@ test.describe("portrait table fit", () => {
                         sideBet("6", -1, true);
                     }
                     if (seatCount === 9) {
+                        const pot = document.querySelector(".pot-display");
+                        const cardRow = document.querySelector(".community-card-row");
+                        if (!pot || !cardRow) found.push("missing the total pot or the community cards");
+                        else {
+                            const gap = cardRow.getBoundingClientRect().top - pot.getBoundingClientRect().bottom;
+                            if (gap < 2.5 || gap > 5.5) found.push(`total pot gap is ${gap.toFixed(1)}px`);
+                        }
                         const seatEls = [...document.querySelectorAll(".player-seat")];
                         const railGap = (pile: { x: number; r: number }, sign: number) =>
                             sign > 0 ? pile.x - feltRect.x : feltRect.right - pile.r;

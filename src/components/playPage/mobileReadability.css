@@ -104,7 +104,8 @@
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-pots {
     position: absolute;
-    bottom: calc(100% + 12 * var(--mobile-unit));
+    /* About 4px above the card tops. 12 units left roughly a 12px gap. */
+    bottom: calc(100% + 4 * var(--mobile-unit));
     white-space: nowrap;
 }
 /* Reserve the dock on every turn, but give its recovered height to the felt. */

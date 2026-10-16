@@ -38,7 +38,8 @@ function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolea
     let potCy = mid + rowH / 2 + 6 * unitStage + potH / 2;
     if (portrait && size === 9) {
         cardCy = mid - 38 * unitStage;
-        potCy = cardCy - rowH / 2 - 12 * unitStage - potH / 2;
+        // Same 4-unit gap as the portrait Total Pot rule in mobileReadability.css.
+        potCy = cardCy - rowH / 2 - 4 * unitStage - potH / 2;
     } else if (portrait && size === 6) {
         const groupTop = mid - 12 * unitStage - (potH + margin + rowH) / 2;
         potCy = groupTop + potH / 2;
