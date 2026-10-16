@@ -2,6 +2,7 @@ import { formatMicroUsd } from "../../../utils/moneyDisplay";
 import React from "react";
 import { hasValue } from "../../../utils/guards";
 import { usePlayerActionDropBox } from "../../../hooks/player/usePlayerActionDropBox";
+import { usePreviewSeatAction } from "../../../context/PreviewSeatActionsContext";
 import { useSeatJoinNotification } from "../../../hooks/notifications/useSeatJoinNotification";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { isTournamentFormat } from "../../../utils/gameFormatUtils";
@@ -41,7 +42,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     count, value, color, canExtend, onExtend,
     tournamentPlace, tournamentPayout,
     isWinner, winnerHandDescription, isTurnTimerActive,
-    round,     isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn, isDealer
+    round, isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn, isDealer
 }) => {
     // Track previous banner mode so we can detect timer→action transitions
     const prevBannerModeRef = React.useRef<string>("hidden");
@@ -55,8 +56,11 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         ? formatForSitAndGo(value)  // Returns "10,000" format (tournament chips)
         : formatForCashGame(value);  // Returns "$100.00" format (cash game)
 
-    // Get action display data for this player
-    const actionDisplay = usePlayerActionDropBox(count);
+    // Live tables show only the newest action. The table preview can pin a
+    // label on every seat; that context is null everywhere else.
+    const liveAction = usePlayerActionDropBox(count);
+    const previewAction = usePreviewSeatAction(count);
+    const actionDisplay = previewAction ?? liveAction;
 
     // Get seat join notification data for this player
     const seatJoinNotification = useSeatJoinNotification(count);
