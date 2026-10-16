@@ -143,10 +143,8 @@ const MOBILE_LANDSCAPE_ZOOM_RESERVE = 34;
  * pixels are inside the zoomed stage, so they are not multiplied by the card unit.
  */
 const MOBILE_LANDSCAPE_ACTION_BELOW_CARDS = 33;
-export const TABLE_SURFACE_HEIGHT = 500; // Match spec: table surface fills the full table div
 export const TABLE_CENTER_X = 800;
 export const TABLE_CENTER_Y = 535;
-export const SEAT_OFFSET = 72;
 
 // Table div origin in stage coordinates
 export const TABLE_ORIGIN_X = TABLE_CENTER_X - TABLE_WIDTH / 2;   // 300
@@ -467,11 +465,6 @@ function stageToPosition(stageX: number, stageY: number, color?: string): Positi
 }
 
 // ─── Derivation Constants (tweak these to move ALL positions globally) ──
-
-/** Scale factor for player components (cards, badges, chips, dealer button).
- *  Applied on top of the auto-fit zoom. 1.0 = default, 1.3 = 30% bigger.
- *  Doesn't affect positioning — just visual size around each element's center. */
-export const COMPONENT_SCALE = 1.2;
 
 /** How many extra pixels to push ALL seats outward from table center.
  *  Positive = further from center (seats spread out, table feels bigger).

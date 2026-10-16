@@ -45,15 +45,6 @@ export const getFormattedCosmosAddress = (length: number = 6): string => {
 };
 
 /**
- * Check if a Cosmos wallet is connected
- * @returns True if Cosmos client is initialized and has an address
- */
-export const hasCosmosWallet = (): boolean => {
-    const address = getCosmosAddressSync();
-    return !!address;
-};
-
-/**
  * Get Cosmos account balance for specific token
  * @param network - The network endpoints to use
  * @param denom The token denomination to query (default: "usdc")

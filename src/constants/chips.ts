@@ -47,9 +47,6 @@ export const CHIP_DENOMINATIONS: ChipDenomination[] = [
     { value: 0.01,   file: "1cent.svg",       color: "red" },
 ];
 
-/** Fallback chip used for amounts < $1 */
-export const DEFAULT_CHIP_FILE = "1chip.svg";
-
 /** Maximum number of action groups (side-by-side chip placements) to display */
 export const MAX_ACTION_GROUPS = 5;
 
@@ -58,9 +55,3 @@ export const MAX_STACKS_PER_GROUP = 8;
 
 /** Maximum number of overlapping chips within a single stack */
 export const MAX_CHIPS_PER_STACK = 6;
-
-/** Horizontal gap between action groups (px) — wider than within-group spacing */
-export const ACTION_GROUP_GAP = 12;
-
-/** Horizontal gap between denomination stacks within one group (px) */
-export const STACK_GAP = 29;

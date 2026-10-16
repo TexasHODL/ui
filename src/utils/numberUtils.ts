@@ -18,16 +18,6 @@ export const formatToFixed = (value: number): string => {
 };
 
 /**
- * Format a USDC value from micro-units (6 decimals) to display format
- * @param value The value in micro-USDC
- * @returns Formatted string with 2 decimal places
- */
-export const formatToFixedFromString = (value: string | number): string => {
-    return formatMicroUsd(value);
-};
-
-
-/**
  * Formats a winning amount with appropriate styling
  * @param amount The winning amount in ETH as a string
  * @returns Formatted string for display
