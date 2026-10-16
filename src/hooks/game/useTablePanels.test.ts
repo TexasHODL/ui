@@ -14,15 +14,27 @@ describe("table panel selection", () => {
         act(() => result.current.closeHistory());
         expect(result.current.openSidebar).toBe(false);
     });
-    it("keeps desktop history visible and restores it after closing settings", () => {
+    it("closes the desktop dock from the history toggle and from the panel close control", () => {
         const { result } = renderHook(() => useTablePanels(true));
         expect(result.current.openSidebar).toBe(true);
+        expect(result.current.expandedHistory).toBe(false);
+        act(() => result.current.closeHistory());
+        expect(result.current.openSidebar).toBe(false);
+        expect(result.current.expandedHistory).toBe(false);
         act(() => result.current.onCloseSideBar());
         expect(result.current.openSidebar).toBe(true);
+        expect(result.current.expandedHistory).toBe(false);
+        act(() => result.current.onCloseSideBar());
+        expect(result.current.openSidebar).toBe(false);
+    });
+    it("restores the desktop dock after closing settings", () => {
+        const { result } = renderHook(() => useTablePanels(true));
         act(() => result.current.onToggleSettings());
         expect(result.current.openSettings).toBe(true);
+        expect(result.current.openSidebar).toBe(false);
         act(() => result.current.onToggleSettings());
         expect(result.current.openSidebar).toBe(true);
+        expect(result.current.expandedHistory).toBe(false);
         expect(result.current.openSettings).toBe(false);
     });
     it("starts closed, swaps history/settings exclusively, and lets the selected button close the panel", () => {

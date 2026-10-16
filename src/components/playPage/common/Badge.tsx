@@ -1,6 +1,7 @@
 import { formatMicroUsd } from "../../../utils/moneyDisplay";
-import React from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import { hasValue } from "../../../utils/guards";
+import { getViewportMode } from "../../../config/stageGeometry";
 import { usePlayerActionDropBox } from "../../../hooks/player/usePlayerActionDropBox";
 import { usePreviewSeatAction } from "../../../context/PreviewSeatActionsContext";
 import { useSeatJoinNotification } from "../../../hooks/notifications/useSeatJoinNotification";
@@ -85,6 +86,36 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     })();
 
     const isBannerVisible = bannerMode !== "hidden";
+    const shellRef = useRef<HTMLDivElement>(null);
+
+    // A wide portrait label centred on a rail seat hangs off the phone.
+    // Slide that shell inward, in stage pixels, until it has 4px of air.
+    // The stylesheet keeps every other banner centred.
+    useLayoutEffect(() => {
+        const shell = shellRef.current;
+        if (!shell) return;
+        const place = () => {
+            shell.style.removeProperty("translate");
+            if (getViewportMode() !== "mobile-portrait") return;
+            const rect = shell.getBoundingClientRect();
+            if (rect.width < 1) return;
+            const zoom = parseFloat(getComputedStyle(shell).getPropertyValue("--table-zoom")) || 1;
+            const overflowLeft = Math.max(0, 4 - rect.left);
+            const overflowRight = Math.max(0, rect.right - (window.innerWidth - 4));
+            const shift = (overflowLeft - overflowRight) / Math.max(zoom, 0.01);
+            if (Math.abs(shift) < 0.5) return;
+            shell.style.translate = `calc(-50% + ${shift.toFixed(1)}px) 0`;
+        };
+        place();
+        const stage = shell.closest(".table-stage");
+        const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(place);
+        if (observer && stage) observer.observe(stage);
+        window.addEventListener("resize", place);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener("resize", place);
+        };
+    }, [bannerMode, isBannerVisible, actionDisplay.action, actionDisplay.amount]);
 
     // Derive transient animation flags for action / seat-join content
     const isTransientAnimatingOut = bannerMode === "action"
@@ -276,8 +307,10 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 </div>
             )}
 
-            {/* Unified seat banner — single animated container for all modes */}
-            <div data-banner-mode={bannerMode} className={`seat-banner-shell ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
+            {/* Unified seat banner — single animated container for all modes.
+                Portrait side seats sit on the rail, so a wide line is slid
+                inward until it clears the viewport. Landscape stays centred. */}
+            <div ref={shellRef} data-banner-mode={bannerMode} className={`seat-banner-shell ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
                 <div
                     className={`seat-banner-box ${
                         (bannerMode === "action" && !isTransientAnimatingOut) ? "action-display-pulse" : ""

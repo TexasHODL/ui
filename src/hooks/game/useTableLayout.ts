@@ -15,7 +15,8 @@ import {
     getViewportMode,
     calculateZoom,
     getTableTransform,
-    getAllPositions
+    getAllPositions,
+    notePortraitSize
 } from "../../config/stageGeometry";
 
 export interface UseTableLayoutReturn {
@@ -126,6 +127,10 @@ export const useTableLayout = (
     // flip must recompute positions even when tableSize/container are unchanged.
 
     const { width: cw, height: ch } = containerSize;
+
+    // The portrait felt height depends on this table's zoom. Set it before the
+    // memos and before Table reads stageDimsFor in the same render.
+    notePortraitSize(tableSize);
 
     const zoom = useMemo(() => calculateZoom(tableSize, cw, ch), [tableSize, cw, ch, viewportMode]);
     const positions = useMemo(() => {

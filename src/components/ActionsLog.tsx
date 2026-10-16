@@ -230,11 +230,9 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
 
     return (
         <div className={`rounded w-full h-full min-h-0 flex flex-col overflow-hidden ${styles.container}`}>
-            <div className={`flex flex-shrink-0 justify-between items-center p-2 border-b ${styles.header}`}>
+            <div className={`relative flex flex-shrink-0 justify-between items-center p-2 border-b ${styles.header}`}>
                 <h3 className="text-sm font-semibold">History</h3>
-                <div className="flex gap-2">
-                    {!expanded && onExpand && <button className="history-panel-control" onClick={onExpand} aria-label="Expand hand history">Expand ↗</button>}
-                    {expanded && <>
+                {expanded && <div className="flex gap-2">
                     <button
                         onClick={handleCopyLog}
                         title="Copy history to clipboard"
@@ -256,9 +254,9 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                     >
                         {copiedShare ? <FaCheck size={12} /> : <FaShare size={12} />}
                     </button>
-                    </>}
                     {onClose && <button className="history-panel-control" onClick={onClose} aria-label="Close history" title="Close history">✕</button>}
-                </div>
+                </div>}
+                {!expanded && onClose && <button className="history-panel-control absolute top-1 right-1" onClick={onClose} aria-label="Close history" title="Close history">✕</button>}
             </div>
 
             <div

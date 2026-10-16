@@ -1,4 +1,4 @@
-import { getSeatCoords, getSeatPositions, calculateZoom, getContentBounds, type TableSize } from "./stageGeometry";
+import { getSeatCoords, getSeatPositions, calculateZoom, getContentBounds, mobilePortraitHeightStretch, type TableSize } from "./stageGeometry";
 
 describe("approved portrait seat rings", () => {
     const width = window.innerWidth;
@@ -21,7 +21,7 @@ describe("approved portrait seat rings", () => {
         expect(bounds.height * zoom).toBeLessThanOrEqual(485);
         expect(bounds.width * zoom).toBeLessThanOrEqual(393);
         // Seat conversion must not reapply the landscape inward spread.
-        expect(parseFloat(getSeatPositions(size)[0].top)).toBe(1000);
+        expect(parseFloat(getSeatPositions(size)[0].top)).toBeCloseTo(1000 * mobilePortraitHeightStretch(), 1);
     });
 
     test("nine-seat sides are symmetric and lower arcs stay clear of the hero", () => {

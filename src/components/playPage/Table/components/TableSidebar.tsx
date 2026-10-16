@@ -14,10 +14,11 @@ export interface TableSidebarProps {
     dockHeight?: number;
     onClose?: () => void;
     onOpen?: () => void;
+    onExpand?: () => void;
     expandedHistory?: boolean;
 }
 
-export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = false, dockHeight = 160, onClose, onOpen, expandedHistory = false }) => {
+export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = false, dockHeight = 160, onClose, onOpen, onExpand, expandedHistory = false }) => {
     const panelRef = useRef<HTMLDivElement>(null);
     const expandRef = useRef<HTMLButtonElement | null>(null);
     const detailed = compact || expandedHistory;
@@ -66,8 +67,8 @@ export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = fa
             {isOpen && (
                 <div className="table-panel-surface h-full bg-[#0b0b10] border-l border-white/10 flex flex-col overflow-hidden">
                     <ActionsLog summary={!detailed && dockHeight < 112} expanded={detailed}
-                        onExpand={() => { expandRef.current = document.activeElement as HTMLButtonElement; onOpen?.(); }}
-                        onClose={detailed ? onClose : undefined} />
+                        onExpand={() => { expandRef.current = document.activeElement as HTMLButtonElement; (onExpand ?? onOpen)?.(); }}
+                        onClose={onClose} />
                 </div>
             )}
         </div>

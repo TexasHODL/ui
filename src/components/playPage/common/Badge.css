@@ -49,11 +49,12 @@
 
 /* Dealer button: same spot on every seat. Its centre sits on the 45° ray
    up and left of the seat-number circle, with --dealer-gap of air between
-   the two discs. 50% is half the badge (the containing block). The graphic
+   the two discs. 50% is half the badge (the containing block). The disc
+   matches that badge. Mobile readability replaces the size. The graphic
    is scaled so the painted disc fills the box; the SVG's own padding would
    otherwise open a much wider visual gap. */
 .dealer-badge-button {
-  --dealer-size: 48px;
+  --dealer-size: 100%;
   --dealer-gap: calc(3px / var(--table-zoom, 1));
   --dealer-shift: calc((50% + var(--dealer-size) / 2 + var(--dealer-gap)) / 1.414213562 - var(--dealer-size) / 2);
   position: absolute;

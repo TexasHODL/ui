@@ -124,7 +124,8 @@
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-pots {
     position: absolute;
-    bottom: calc(100% + 12 * var(--mobile-unit));
+    /* About 4px above the card tops. 12 units left roughly a 12px gap. */
+    bottom: calc(100% + 4 * var(--mobile-unit));
     white-space: nowrap;
 }
 /* Reserve the dock on every turn, but give its recovered height to the felt. */
@@ -160,6 +161,20 @@
 [data-mobile-readable="landscape"] .chip-position span {
     font-size: calc(17px / var(--table-zoom));
     line-height: calc(22.67px / var(--table-zoom));
+}
+
+/* Every portrait bet uses this 36px label, on 2, 4, 6 and 9 seats. Seats 1
+   and 2 used to drop to the compact 24px label. One rule, so every seat's
+   computed font-size is the large label. */
+[data-mobile-readable="portrait"] .chip-position > div {
+    height: 36px;
+    padding-right: 12px;
+}
+[data-mobile-readable="portrait"] .chip-position span {
+    font-size: 36px;
+    line-height: 40px;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 /* Landscape cards are 2px taller than the shared mobile box. Width scales

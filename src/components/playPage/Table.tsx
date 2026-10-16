@@ -870,7 +870,7 @@ const Table = React.memo(() => {
     // the same treatment as portrait: one-row header + hamburger, no persistent
     // banner, no style selector — just with the horizontal stage.
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
-    const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory } = useTablePanels(!isCompactMobile);
+    const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory, expandHistory } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
     const chromeObserver = useRef<ResizeObserver | null>(null);
     const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
@@ -1447,7 +1447,8 @@ const Table = React.memo(() => {
                         Desktop landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH
                         and heightened by MOBILE_LANDSCAPE_HEIGHT_STRETCH.
-                        Portrait: 500×1000 at (175,300) on the 850×1600 stage.
+                        Portrait: 500×1000 at (175,300) on the 850×1600 stage,
+                        heightened by MOBILE_PORTRAIT_HEIGHT_STRETCH. Width stays 500.
                         Also the root for the card-animation durations (src/bus/timing.ts → CSS custom properties). */}
                         <div
                             ref={tableDivRef}
@@ -1589,7 +1590,7 @@ const Table = React.memo(() => {
                 )}
 
                 {/*//! ACTION LOG OVERLAY */}
-                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} />
+                <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} onExpand={expandHistory} />
 
                 {/*//! SETTINGS OVERLAY */}
                 <TableSettingsSidebar isOpen={openSettings} tableStyle={tableStyle} onTableStyleChange={setTableStyle} onClose={onToggleSettings} />

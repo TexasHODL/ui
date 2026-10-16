@@ -217,6 +217,9 @@ test.describe("dealer button on the seat badge", () => {
                         if (Math.abs(dx - dy) > 3) found.push(`dealer ${seat} is not on the 45 degree ray (dx ${dx.toFixed(1)}, dy ${dy.toFixed(1)})`);
                         const gap = Math.hypot(dx, dy) - b.width / 2 - n.width / 2;
                         if (gap < 1 || gap > 6) found.push(`dealer ${seat} gap is ${gap.toFixed(1)}px`);
+                        if (!document.querySelector("[data-mobile-readable]") && Math.abs(b.width - n.width) > 1) {
+                            found.push(`dealer ${seat} is ${b.width.toFixed(1)}px across a ${n.width.toFixed(1)}px badge`);
+                        }
                         if (b.y < chromeBottom - 1) found.push(`dealer ${seat} under the header`);
                         if (b.x < -1 || b.y < -1 || b.right > window.innerWidth + 1 || b.bottom > window.innerHeight + 1) {
                             found.push(`dealer ${seat} outside the viewport`);
@@ -639,5 +642,451 @@ test.describe("landscape bets clear the dealer disc", () => {
                 expect(problems).toEqual([]);
             });
         }
+    }
+});
+
+/**
+ * Mobile portrait. The height stretch puts the top hole cards just under the
+ * header and the hero action banner just above the action dock. Chips stay
+ * on the felt, in front of their own seat, and off cards, action boxes and
+ * the dealer button. The raise slider may float over the felt.
+ */
+test.describe("portrait table fit", () => {
+    const viewports = [
+        { width: 390, height: 844 },
+        { width: 375, height: 667 },
+        { width: 412, height: 915 },
+        { width: 360, height: 800 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        for (const seats of [2, 4, 6, 9]) {
+            test(`${seats} seats at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+                await page.setViewportSize({ width: viewport.width, height: viewport.height });
+                await page.addInitScript(() => {
+                    const original = window.matchMedia.bind(window);
+                    window.matchMedia = (query: string) => {
+                        if (query.includes("pointer") && query.includes("coarse")) {
+                            return {
+                                matches: true,
+                                media: query,
+                                onchange: null,
+                                addListener() {},
+                                removeListener() {},
+                                addEventListener() {},
+                                removeEventListener() {},
+                                dispatchEvent() { return false; }
+                            } as MediaQueryList;
+                        }
+                        return original(query);
+                    };
+                });
+                await page.goto(`/table-preview?seats=${seats}&turn=1&dealer=all&actions=all&holes=1&board=5`);
+                await page.waitForSelector(".chip-position");
+                await page.waitForSelector("[data-dealer-button]");
+                await page.waitForSelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
+                await page.waitForSelector(".mobile-history-trigger");
+                await page.waitForSelector(".mobile-action-slot");
+                await page.waitForSelector(".hole-card-fan img");
+                await page.addStyleTag({
+                    content: "*, *::before, *::after { animation: none !important; transition: none !important; }"
+                });
+
+                const problems = await page.evaluate((seatCount) => {
+                    const found: string[] = [];
+                    const box = (el: Element) => {
+                        const r = el.getBoundingClientRect();
+                        return { x: r.x, y: r.y, r: r.right, b: r.bottom };
+                    };
+                    const union = (el: Element) => {
+                        const rect = box(el);
+                        el.querySelectorAll("img").forEach(img => {
+                            const r = box(img);
+                            rect.x = Math.min(rect.x, r.x);
+                            rect.y = Math.min(rect.y, r.y);
+                            rect.r = Math.max(rect.r, r.r);
+                            rect.b = Math.max(rect.b, r.b);
+                        });
+                        return rect;
+                    };
+                    const overlap = (a: { x: number; y: number; r: number; b: number }, b: { x: number; y: number; r: number; b: number }) => {
+                        const ix = Math.min(a.r, b.r) - Math.max(a.x, b.x);
+                        const iy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
+                        return { ix, iy };
+                    };
+                    const vw = window.innerWidth;
+                    const vh = window.innerHeight;
+                    const header = document.querySelector(".table-banner-wrap");
+                    const dock = document.querySelector(".mobile-action-slot");
+                    const felt = document.querySelector(".table-surface-shadow");
+                    if (!header || !dock || !felt) {
+                        found.push("missing header, dock, or felt");
+                        return found;
+                    }
+                    const headerBottom = header.getBoundingClientRect().bottom;
+                    const dockTop = dock.getBoundingClientRect().top;
+                    const feltRect = felt.getBoundingClientRect();
+                    const cx = feltRect.x + feltRect.width / 2;
+                    const cy = feltRect.y + feltRect.height / 2;
+                    const cards = [...document.querySelectorAll(".hole-card-fan img")].map(box);
+                    if (cards.length === 0) found.push("no hole cards");
+                    const cardTop = Math.min(...cards.map(card => card.y));
+                    const cardGap = cardTop - headerBottom;
+                    if (cardGap < 2 || cardGap > 8) found.push(`top card gap is ${cardGap.toFixed(1)}px`);
+                    const banners = [...document.querySelectorAll(".seat-banner-shell.seat-banner-visible .seat-banner-box")].map(el => ({
+                        label: (el.textContent || "").replace(/\s+/g, " ").trim(),
+                        rect: box(el)
+                    }));
+                    const hero = banners.find(banner => banner.label.includes("ALL IN"));
+                    if (!hero) found.push("missing hero ALL IN banner");
+                    else {
+                        const bannerGap = dockTop - hero.rect.b;
+                        if (bannerGap < 2 || bannerGap > 8) found.push(`hero banner gap is ${bannerGap.toFixed(1)}px`);
+                    }
+                    const history = document.querySelector(".mobile-history-trigger");
+                    const historyRect = history ? box(history) : null;
+                    if (!history || !historyRect) found.push("missing History button");
+                    else {
+                        if (historyRect.y < headerBottom - 1 || historyRect.b > dockTop + 1 || historyRect.x < -1 || historyRect.r > vw + 1) {
+                            found.push("History button is off its spot");
+                        }
+                    }
+                    const onFelt = (x: number, y: number) => {
+                        const radius = feltRect.width / 2;
+                        const pad = 2;
+                        if (y >= feltRect.y + radius && y <= feltRect.bottom - radius) {
+                            return x >= feltRect.x + pad && x <= feltRect.right - pad;
+                        }
+                        const capY = y < feltRect.y + radius ? feltRect.y + radius : feltRect.bottom - radius;
+                        const dx = x - (feltRect.x + radius);
+                        const dy = y - capY;
+                        return dx * dx + dy * dy <= (radius - pad) * (radius - pad);
+                    };
+                    const chips = [...document.querySelectorAll(".chip-position")].map(union);
+                    const seats = [...document.querySelectorAll(".player-seat")].map(el => {
+                        const badge = el.querySelector(".badge-number");
+                        const label = badge ? (badge.childNodes[0]?.textContent || "").trim() : "";
+                        return { label, rect: box(el) };
+                    });
+                    if (chips.length !== seatCount || seats.length !== seatCount) {
+                        found.push(`expected ${seatCount} seats and chips, found ${seats.length} seats and ${chips.length} chips`);
+                    }
+                    if (seatCount === 2) {
+                        const raise = banners.find(banner => banner.label.includes("RAISE"));
+                        const pile = chips[1];
+                        const topSeat = seats.find(seat => seat.label === "2");
+                        if (!raise || !pile || !topSeat) found.push("missing the seat 2 bet");
+                        else {
+                            const gap = pile.y - raise.rect.b;
+                            if (gap < 1.5 || gap > 4.5) found.push(`seat 2 pile gap is ${gap.toFixed(1)}px`);
+                            const dx = (pile.x + pile.r) / 2 - (topSeat.rect.x + topSeat.rect.r) / 2;
+                            if (Math.abs(dx) > 2) found.push(`seat 2 pile is ${dx.toFixed(1)}px off centre`);
+                        }
+                    }
+                    if (seatCount === 4) {
+                        const call = banners.find(banner => banner.label.includes("CALL"));
+                        const topIndex = seats.findIndex(seat => seat.label === "3");
+                        const topPile = chips[topIndex];
+                        const topSeat = seats[topIndex];
+                        if (!call || !topPile || !topSeat) found.push("missing the seat 3 bet");
+                        else {
+                            const gap = topPile.y - call.rect.b;
+                            if (gap < 1.5 || gap > 4.5) found.push(`seat 3 pile gap is ${gap.toFixed(1)}px`);
+                            const dx = (topPile.x + topPile.r) / 2 - (topSeat.rect.x + topSeat.rect.r) / 2;
+                            if (Math.abs(dx) > 2) found.push(`seat 3 pile is ${dx.toFixed(1)}px off centre`);
+                        }
+                        const seatEls = [...document.querySelectorAll(".player-seat")];
+                        const side = (label: string) => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            const seat = seats[index];
+                            const seatEl = seatEls[index];
+                            if (!pile || !seat || !seatEl) {
+                                found.push(`missing seat ${label} pile`);
+                                return;
+                            }
+                            const ownCards = [...seatEl.querySelectorAll(".hole-card-fan img")].map(box);
+                            if (ownCards.length === 0) {
+                                found.push(`seat ${label} has no cards`);
+                                return;
+                            }
+                            const ownTop = Math.min(...ownCards.map(card => card.y));
+                            const gap = ownTop - pile.b;
+                            if (gap < 2 || gap > 6.5) found.push(`seat ${label} pile gap above cards is ${gap.toFixed(1)}px`);
+                            const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
+                            if (Math.abs(dx) > 2) found.push(`seat ${label} pile is ${dx.toFixed(1)}px off centre`);
+                            const hit = ownCards.some(card => {
+                                const ix = Math.min(pile.r, card.r) - Math.max(pile.x, card.x);
+                                const iy = Math.min(pile.b, card.b) - Math.max(pile.y, card.y);
+                                return ix > 0.5 && iy > 0.5;
+                            });
+                            if (hit) found.push(`seat ${label} cards cover the pile`);
+                        };
+                        side("2");
+                        side("4");
+                    }
+                    if (seatCount === 6) {
+                        const bet = banners.find(banner => banner.label.includes("BET"));
+                        const topIndex = seats.findIndex(seat => seat.label === "4");
+                        const topPile = chips[topIndex];
+                        const topSeat = seats[topIndex];
+                        if (!bet || !topPile || !topSeat) found.push("missing the seat 4 bet");
+                        else {
+                            const gap = topPile.y - bet.rect.b;
+                            if (gap < 1.5 || gap > 4.5) found.push(`seat 4 pile gap is ${gap.toFixed(1)}px`);
+                            const dx = (topPile.x + topPile.r) / 2 - (topSeat.rect.x + topSeat.rect.r) / 2;
+                            if (Math.abs(dx) > 2) found.push(`seat 4 pile is ${dx.toFixed(1)}px off centre`);
+                        }
+                        const seatEls = [...document.querySelectorAll(".player-seat")];
+                        const railGap = (pile: { x: number; r: number }, sign: number) =>
+                            sign > 0 ? pile.x - feltRect.x : feltRect.right - pile.r;
+                        const sideBet = (label: string, aboveCards: boolean, centred: boolean) => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            const seat = seats[index];
+                            const seatEl = seatEls[index];
+                            if (!pile || !seat || !seatEl) {
+                                found.push(`missing seat ${label} pile`);
+                                return;
+                            }
+                            if (aboveCards) {
+                                const ownCards = [...seatEl.querySelectorAll(".hole-card-fan img")].map(box);
+                                if (ownCards.length === 0) {
+                                    found.push(`seat ${label} has no cards`);
+                                    return;
+                                }
+                                const gap = Math.min(...ownCards.map(card => card.y)) - pile.b;
+                                if (gap < 2 || gap > 6.5) found.push(`seat ${label} pile gap above cards is ${gap.toFixed(1)}px`);
+                            } else {
+                                const banner = seatEl.querySelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
+                                if (!banner) {
+                                    found.push(`seat ${label} has no banner`);
+                                    return;
+                                }
+                                const gap = pile.y - banner.getBoundingClientRect().bottom;
+                                if (gap < 1.5 || gap > 5.5) found.push(`seat ${label} pile gap is ${gap.toFixed(1)}px`);
+                            }
+                            const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
+                            if (centred) {
+                                if (Math.abs(dx) > 2) found.push(`seat ${label} pile is ${dx.toFixed(1)}px off centre`);
+                            } else if (Math.sign(dx) !== -1 || Math.abs(dx) < 20 || Math.abs(dx) > 80) {
+                                found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                            }
+                            if (!centred) {
+                                const edge = railGap(pile, -1);
+                                if (edge < 2 || edge > 16) found.push(`seat ${label} pile is ${edge.toFixed(1)}px inside the rail`);
+                            }
+                        };
+                        sideBet("3", false, true);
+                        sideBet("5", false, true);
+                        sideBet("2", true, true);
+                        sideBet("6", true, true);
+                    }
+                    if (seatCount === 9) {
+                        const pot = document.querySelector(".pot-display");
+                        const cardRow = document.querySelector(".community-card-row");
+                        if (!pot || !cardRow) found.push("missing the total pot or the community cards");
+                        else {
+                            const gap = cardRow.getBoundingClientRect().top - pot.getBoundingClientRect().bottom;
+                            if (gap < 2.5 || gap > 5.5) found.push(`total pot gap is ${gap.toFixed(1)}px`);
+                        }
+                        const seatEls = [...document.querySelectorAll(".player-seat")];
+                        const place = (label: string, expectSign: number, aboveCards: boolean) => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            const seat = seats[index];
+                            const seatEl = seatEls[index];
+                            if (!pile || !seat || !seatEl) {
+                                found.push(`missing seat ${label} pile`);
+                                return null;
+                            }
+                            if (aboveCards) {
+                                const ownCards = [...seatEl.querySelectorAll(".hole-card-fan img")].map(box);
+                                if (ownCards.length === 0) {
+                                    found.push(`seat ${label} has no cards`);
+                                    return null;
+                                }
+                                const gap = Math.min(...ownCards.map(card => card.y)) - pile.b;
+                                const floor = label === "2" ? 1 : 2;
+                                if (gap < floor || gap > 6.5) found.push(`seat ${label} pile gap above cards is ${gap.toFixed(1)}px`);
+                            } else {
+                                const banner = seatEl.querySelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
+                                if (!banner) {
+                                    found.push(`seat ${label} has no banner`);
+                                    return null;
+                                }
+                                const gap = pile.y - banner.getBoundingClientRect().bottom;
+                                if (gap < 1.5 || gap > 5.5) found.push(`seat ${label} pile gap is ${gap.toFixed(1)}px`);
+                            }
+                            const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
+                            const centred = label === "2" || label === "3" || label === "4" || label === "6" || label === "7" || label === "8" || label === "9";
+                            if (label === "6" && window.innerHeight <= 667 && dx < -8 && dx > -32) {
+                                // Short phone: stepped toward the centre just enough to clear seat 7's cards.
+                            } else if (centred) {
+                                if (Math.abs(dx) > 2) found.push(`seat ${label} pile is ${dx.toFixed(1)}px off centre`);
+                            } else if (label === "5") {
+                                const onCentre = Math.abs(dx) < 2;
+                                const nudged = window.innerWidth <= 375 && Math.sign(dx) === expectSign && Math.abs(dx) > 8 && Math.abs(dx) < 40;
+                                if (!onCentre && !nudged) found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                            } else if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > 80) {
+                                found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                            }
+                            return pile;
+                        };
+                        place("4", 1, false);
+                        const pile5 = place("5", 1, false);
+                        const pile6 = place("6", -1, false);
+                        place("7", -1, false);
+                        place("2", 1, true);
+                        place("3", 1, true);
+                        place("8", -1, true);
+                        place("9", -1, true);
+                        if (pile5 && pile6) {
+                            const gap = pile6.x - pile5.r;
+                            if (gap < 1) found.push(`seats 5 and 6 piles are ${gap.toFixed(1)}px apart`);
+                        }
+                        const potRect = pot ? box(pot) : null;
+                        const boardCards = [...document.querySelectorAll(".community-card-row .card, .community-card-row img")].map(box);
+                        ["2", "3", "4", "6", "7", "8"].forEach(label => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            if (!pile) return;
+                            if (potRect) {
+                                const hit = overlap(pile, potRect);
+                                if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`seat ${label} pile under the pot (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                            }
+                            boardCards.forEach(card => {
+                                const hit = overlap(pile, card);
+                                // On 375 the board spans the band under seats 4 and 7.
+                                // Those piles stay centred and paint in front of the cards.
+                                const shortBand = window.innerHeight <= 667 && (label === "4" || label === "7");
+                                if (!shortBand && hit.ix > 0.5 && hit.iy > 0.5) found.push(`seat ${label} pile under the board (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                            });
+                        });
+                    }
+                    chips.forEach((chip, index) => {
+                        const midX = (chip.x + chip.r) / 2;
+                        const midY = (chip.y + chip.b) / 2;
+                        const seatLabel = seats[index]?.label;
+                        // Rail seats that are centred on the player sit on the felt edge.
+                        const centredOnRail = (seatCount === 4 && (seatLabel === "2" || seatLabel === "4"))
+                            || (seatCount === 6 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "5" || seatLabel === "6"))
+                            || (seatCount === 9 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "4" || seatLabel === "7" || seatLabel === "8" || seatLabel === "9"));
+                        if (!centredOnRail && !onFelt(midX, midY)) found.push(`chip ${index + 1} is off the felt`);
+                        const seat = seats[index];
+                        if (!seat) return;
+                        const seatX = (seat.rect.x + seat.rect.r) / 2;
+                        const seatY = (seat.rect.y + seat.rect.b) / 2;
+                        const inward = (cx - seatX) * (midX - seatX) + (cy - seatY) * (midY - seatY);
+                        if (inward <= 0) found.push(`chip ${seat.label || index + 1} is not in front of its seat`);
+                        for (const card of cards) {
+                            const hit = overlap(chip, card);
+                            if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`chip ${seat.label || index + 1} under a card (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                        }
+                        for (const banner of banners) {
+                            const hit = overlap(chip, banner.rect);
+                            // 9-seat seat 9 on 375 sits between its cards and seat 8's
+                            // SITTING OUT banner. The centred pile grazes that banner.
+                            const sittingOutGraze = seatCount === 9 && seatLabel === "9" && window.innerHeight <= 667
+                                && banner.label.includes("SITTING") && hit.iy < 6;
+                            if (!sittingOutGraze && hit.ix > 0.5 && hit.iy > 0.5) found.push(`chip ${seat.label || index + 1} under ${banner.label} (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                        }
+                    });
+                    document.querySelectorAll(".dealer-badge-button").forEach(el => {
+                        const seat = el.getAttribute("data-dealer-button") || "";
+                        const chip = chips[Number(seat) - 1];
+                        if (!chip) {
+                            found.push(`dealer ${seat} has no chip`);
+                            return;
+                        }
+                        const hit = overlap(box(el), chip);
+                        if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`dealer ${seat} covers the pile by ${hit.ix.toFixed(1)}x${hit.iy.toFixed(1)}`);
+                    });
+                    const consider = (kind: string, rect: { x: number; y: number; r: number; b: number }, label: string) => {
+                        if (rect.r - rect.x < 1 || rect.b - rect.y < 1) return;
+                        if (rect.x < -1) found.push(`${kind} ${label} past the left`);
+                        if (rect.y < -1) found.push(`${kind} ${label} past the top`);
+                        if (rect.r > vw + 1) found.push(`${kind} ${label} past the right`);
+                        if (rect.b > vh + 1) found.push(`${kind} ${label} past the bottom`);
+                        if (rect.y < headerBottom - 1) found.push(`${kind} ${label} under the header by ${(headerBottom - rect.y).toFixed(0)}px`);
+                        if (rect.b > dockTop + 1) found.push(`${kind} ${label} under the dock by ${(rect.b - dockTop).toFixed(0)}px`);
+                    };
+                    seats.forEach(seat => consider("seat", seat.rect, seat.label));
+                    cards.forEach((card, index) => consider("card", card, String(index + 1)));
+                    banners.forEach(banner => consider("action", banner.rect, banner.label));
+                    chips.forEach((chip, index) => consider("chip", chip, String(index + 1)));
+                    document.querySelectorAll(".dealer-badge-button").forEach(el => {
+                        consider("dealer", box(el), el.getAttribute("data-dealer-button") || "");
+                    });
+                    if (history && historyRect) {
+                        const hx = (historyRect.x + historyRect.r) / 2;
+                        const hy = (historyRect.y + historyRect.b) / 2;
+                        const stack = document.elementsFromPoint(hx, hy);
+                        const hit = stack.find(el => !el.closest("[data-testid='table-preview-panel']"));
+                        if (!hit || !history.contains(hit)) {
+                            const name = hit ? (hit.getAttribute("aria-label") || hit.className || hit.tagName) : "nothing";
+                            found.push(`History button is covered by ${name}`);
+                        }
+                    }
+                    return found;
+                }, seats);
+
+                expect(problems).toEqual([]);
+            });
+        }
+    }
+});
+
+/**
+ * Portrait bet labels share one computed size on every table. Seats 1 and 2
+ * used to drop to the compact 24px label on 2, 4, 6 and 9 seats.
+ */
+test.describe("portrait chip labels", () => {
+    const viewports = [
+        { width: 390, height: 844 },
+        { width: 375, height: 667 },
+        { width: 412, height: 915 },
+        { width: 360, height: 800 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        test(`every chip label shares one font size at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+            await page.setViewportSize({ width: viewport.width, height: viewport.height });
+            await page.addInitScript(() => {
+                const original = window.matchMedia.bind(window);
+                window.matchMedia = (query: string) => {
+                    if (query.includes("pointer") && query.includes("coarse")) {
+                        return {
+                            matches: true,
+                            media: query,
+                            onchange: null,
+                            addListener() {},
+                            removeListener() {},
+                            addEventListener() {},
+                            removeEventListener() {},
+                            dispatchEvent() { return false; }
+                        } as MediaQueryList;
+                    }
+                    return original(query);
+                };
+            });
+
+            for (const seats of [2, 4, 6, 9]) {
+                await page.goto(`/table-preview?seats=${seats}&turn=1&dealer=all&actions=all&holes=1&board=5`);
+                await page.waitForSelector(".chip-position span");
+                const fonts = await page.evaluate(() => {
+                    return [...document.querySelectorAll(".chip-position span")].map((el, index) => ({
+                        seat: index + 1,
+                        font: parseFloat(getComputedStyle(el).fontSize),
+                        height: el.getBoundingClientRect().height
+                    }));
+                });
+                expect(fonts, `${seats} seats`).toHaveLength(seats);
+                const reported = fonts.map(item => `seat ${item.seat}=${item.font.toFixed(2)}px`).join(", ");
+                expect(fonts.map(item => item.font.toFixed(2)), `${seats} seats ${reported}`).toEqual(Array(seats).fill("36.00"));
+                const heights = fonts.map(item => item.height);
+                expect(Math.max(...heights) - Math.min(...heights), `${seats} seats painted label height`).toBeLessThan(1);
+            }
+        });
     }
 });
