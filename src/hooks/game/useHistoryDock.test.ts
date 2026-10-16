@@ -54,10 +54,10 @@ test("stops above the action bar, payout structure, and hand strength", () => {
     stage.getBoundingClientRect = () => ({ top: 119, right: 1600, bottom: 900, left: 0, width: 1600, height: 781 }) as DOMRect;
     table.getBoundingClientRect = () => ({ top: 180, right: 1000, bottom: 700, left: 200, width: 800, height: 520 }) as DOMRect;
     bar.getBoundingClientRect = () => box(608, 768, 0, 1600);
-    payout.getBoundingClientRect = () => box(540, 750);
-    strength.getBoundingClientRect = () => box(500, 548);
+    payout.getBoundingClientRect = () => box(470, 750);
+    strength.getBoundingClientRect = () => box(520, 568);
     const { result } = renderHook(() => useHistoryDock({ current: stage }, { current: table }, 1600, 800, 0.6, false, false));
-    expect((result.current as Record<string, string>)["--history-height"]).toBe("365px");
+    expect((result.current as Record<string, string>)["--history-height"]).toBe("335px");
     root.remove();
 });
 
