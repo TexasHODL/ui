@@ -780,6 +780,46 @@ test.describe("portrait table fit", () => {
                             if (Math.abs(dx) > 2) found.push(`seat 2 pile is ${dx.toFixed(1)}px off centre`);
                         }
                     }
+                    if (seatCount === 4) {
+                        const call = banners.find(banner => banner.label.includes("CALL"));
+                        const topIndex = seats.findIndex(seat => seat.label === "3");
+                        const topPile = chips[topIndex];
+                        const topSeat = seats[topIndex];
+                        if (!call || !topPile || !topSeat) found.push("missing the seat 3 bet");
+                        else {
+                            const gap = topPile.y - call.rect.b;
+                            if (gap < 1.5 || gap > 4.5) found.push(`seat 3 pile gap is ${gap.toFixed(1)}px`);
+                            const dx = (topPile.x + topPile.r) / 2 - (topSeat.rect.x + topSeat.rect.r) / 2;
+                            if (Math.abs(dx) > 2) found.push(`seat 3 pile is ${dx.toFixed(1)}px off centre`);
+                        }
+                        const seatEls = [...document.querySelectorAll(".player-seat")];
+                        const side = (label: string, expectSign: number) => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            const seat = seats[index];
+                            const seatEl = seatEls[index];
+                            if (!pile || !seat || !seatEl) {
+                                found.push(`missing seat ${label} pile`);
+                                return;
+                            }
+                            const ownCards = [...seatEl.querySelectorAll(".hole-card-fan img")].map(box);
+                            if (ownCards.length === 0) {
+                                found.push(`seat ${label} has no cards`);
+                                return;
+                            }
+                            const ownTop = Math.min(...ownCards.map(card => card.y));
+                            const gap = ownTop - pile.b;
+                            if (gap < 2 || gap > 6.5) found.push(`seat ${label} pile gap above cards is ${gap.toFixed(1)}px`);
+                            const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
+                            if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > 80) {
+                                found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                            }
+                            const midY = (pile.y + pile.b) / 2;
+                            if (!onFelt(pile.x, midY) || !onFelt(pile.r, midY)) found.push(`seat ${label} pile leaves the felt`);
+                        };
+                        side("2", 1);
+                        side("4", -1);
+                    }
                     chips.forEach((chip, index) => {
                         const midX = (chip.x + chip.r) / 2;
                         const midY = (chip.y + chip.b) / 2;

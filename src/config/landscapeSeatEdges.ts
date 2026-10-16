@@ -1115,33 +1115,68 @@ export function placeMobileRailMarkers(
             }
             remember(index, point.x, point.y);
         });
-        // 2-seat seat 2. The separation above only walks a pile toward the
-        // centre, so the top bet stays several pixels under RAISE TO, and the
-        // chip stack still tucks into the banner. Pull it up until that stack
-        // (four 1¢ chips of a $0.04 bet) sits ~3px under the banner, centred
-        // on the seat. Same placement as mobile landscape. The painted box
-        // hangs ~3 stage px below the 55px model. The portrait pill is the
-        // 36px label, not the counter-zoomed landscape one.
-        if (tableSize === 2) {
-            const index = 1;
+        // Portrait pill is the 36px label. A short stack of cent chips sticks
+        // out of that pill; the painted banner and the painted cards each sit
+        // about 3 stage px off the 55px / fan model.
+        const chipPx = bigChips ? 32 : 28;
+        const stackScreen = (chipPx + 12) * z;
+        const overhang = Math.max(0, (stackScreen - 36 * z) / 2);
+        const pillHalfPortrait = 18;
+        // A second denomination sits up on the cluster, so the painted pile
+        // hangs about 4px lower than a single stack of cent chips.
+        const stackHalf = (chipPx + 12) / 2 + 4;
+        // Centred top bet, ~3px under its action banner.
+        const underBanner = (index: number) => {
             const point = chipCenters[index];
             const seat = seatBoxes[index];
-            if (point && seat) {
-                const chipPx = bigChips ? 32 : 28;
-                const pillScreen = 36 * z;
-                const stackScreen = (chipPx + 12) * z;
-                const overhang = Math.max(0, (stackScreen - pillScreen) / 2);
-                const pillHalfPortrait = 18;
-                const x = Math.round(seat.x);
-                let y = Math.round(seat.y + seatHY + 33 + pillHalfPortrait + (3 + overhang) / z + 3);
+            if (!point || !seat) return;
+            const x = Math.round(seat.x);
+            let y = Math.round(seat.y + seatHY + 33 + pillHalfPortrait + (3 + overhang) / z + 3);
+            const clear = (yy: number) => {
+                if (!mobileFeltContains(x, yy, 1, 0)) return false;
+                if (holeCards.some(card => boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, card, 0))) return false;
+                if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, item, 2))) return false;
+                return true;
+            };
+            if (!clear(y)) {
+                const limit = y + Math.round(40 / z);
+                for (let yy = y + 1; yy <= limit; yy++) {
+                    if (!clear(yy)) continue;
+                    y = yy;
+                    break;
+                }
+            }
+            point.x = x;
+            point.y = y;
+            remember(index, x, y);
+        };
+        // 2-seat seat 2. The separation above only walks a pile toward the
+        // centre, so the top bet stays several pixels under RAISE TO.
+        if (tableSize === 2) underBanner(1);
+        // 4-seat. Seat 3 (top) was under CALL. Seats 2 and 4 were walked into
+        // the middle of the felt. The side piles sit just above their own
+        // cards, shifted toward the centre far enough to stay inside the rail.
+        if (tableSize === 4) {
+            underBanner(2);
+            [1, 3].forEach(index => {
+                const point = chipCenters[index];
+                const seat = seatBoxes[index];
+                const card = holeCards[index];
+                if (!point || !seat || !card) return;
+                const inward = Math.sign(cx - seat.x) || 1;
+                const railAir = Math.max(4, 3 / z);
+                const insetX = inward > 0 ? railAir + chipHX : dims.tableWidth - railAir - chipHX;
+                const toward = seat.x + inward * chipHX;
+                const x = Math.round(inward > 0 ? Math.max(toward, insetX) : Math.min(toward, insetX));
+                let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
                 const clear = (yy: number) => {
                     if (!mobileFeltContains(x, yy, 1, 0)) return false;
-                    if (holeCards.some(card => boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, card, 0))) return false;
-                    if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, item, 2))) return false;
+                    if (!mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
+                    if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: stackHalf }, item, 2))) return false;
                     return true;
                 };
                 if (!clear(y)) {
-                    const limit = y + Math.round(40 / z);
+                    const limit = y + Math.round(48 / z);
                     for (let yy = y + 1; yy <= limit; yy++) {
                         if (!clear(yy)) continue;
                         y = yy;
@@ -1151,7 +1186,7 @@ export function placeMobileRailMarkers(
                 point.x = x;
                 point.y = y;
                 remember(index, x, y);
-            }
+            });
         }
     }
     const chips = seatBoxes.map((_, index) => {

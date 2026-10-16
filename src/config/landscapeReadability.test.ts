@@ -597,6 +597,64 @@ describe("landscape mobile readability", () => {
         expect(parseFloat(portrait.placed.chips[1].left)).toBe(250);
     });
 
+    test("places 4-seat portrait side bets above their cards and the top bet under its banner", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const place = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const contentWidth = width;
+            const contentHeight = height - 130;
+            const zoom = calculateZoom(4, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(true, zoom, contentWidth, contentHeight)) * zoom;
+            const positions = getAllPositions(4);
+            const placed = placeMobileRailMarkers(positions, zoom, 0, screenUnit, 4);
+            const cards = mobileCardObstacles(positions, zoom, screenUnit, 4);
+            return { placed, zoom, cards };
+        };
+        for (const [width, height] of [[390, 844], [375, 667], [412, 915], [360, 800]] as const) {
+            const { placed, zoom, cards } = place(width, height);
+            const topSeat = placed.players[2];
+            const topChip = placed.chips[2];
+            const topY = parseFloat(topSeat.top);
+            const topChipY = parseFloat(topChip.top ?? "0");
+            const topChipX = parseFloat(topChip.left);
+            const seatHalf = 35.5 * (parseFloat(mobileCardUnit(true, zoom, width, height - 130)));
+            const bannerBottom = topY + seatHalf + (55 - 22);
+            const chipPx = width <= 768 || height <= 500 ? 32 : 28;
+            const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
+            const air = (topChipY - 18 - bannerBottom) * zoom;
+            const expected = 3 + overhang + 3 * zoom;
+            expect(topChipX).toBe(Math.round(parseFloat(topSeat.left)));
+            expect(air).toBeGreaterThan(expected - 1.5);
+            expect(air).toBeLessThan(expected + 1.5);
+            expect(mobileFeltContains(topChipX, topChipY, 1, 0)).toBe(true);
+            const stackHalf = (chipPx + 12) / 2 + 4;
+            const chipHX = 86;
+            [1, 3].forEach(index => {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const card = cards[index];
+                const cardTop = card.y - card.hy;
+                const gap = (cardTop - chipY - stackHalf) * zoom;
+                const modelGap = 3 + 3 * zoom;
+                expect(gap).toBeGreaterThan(modelGap - 1.5);
+                expect(gap).toBeLessThan(modelGap + 1.5);
+                const inward = Math.sign(250 - seatX) || 1;
+                expect(Math.sign(chipX - seatX)).toBe(inward);
+                expect(Math.abs(chipX - seatX)).toBeGreaterThan(40);
+                expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
+                expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
+                const board = cards[4];
+                const onBoard = Math.abs(chipX - board.x) < chipHX + board.hw
+                    && Math.abs(chipY - board.y) < stackHalf + board.hy;
+                expect(onBoard).toBe(false);
+            });
+        }
+        const portrait = place(390, 844);
+        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "1014px", bottom: "0px" });
+    });
+
     test("keeps mobile-landscape chips off every action banner", () => {
         window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         const problems: string[] = [];
