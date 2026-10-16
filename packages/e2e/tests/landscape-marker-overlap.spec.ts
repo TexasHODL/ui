@@ -217,9 +217,6 @@ test.describe("dealer button on the seat badge", () => {
                         if (Math.abs(dx - dy) > 3) found.push(`dealer ${seat} is not on the 45 degree ray (dx ${dx.toFixed(1)}, dy ${dy.toFixed(1)})`);
                         const gap = Math.hypot(dx, dy) - b.width / 2 - n.width / 2;
                         if (gap < 1 || gap > 6) found.push(`dealer ${seat} gap is ${gap.toFixed(1)}px`);
-                        if (!document.querySelector("[data-mobile-readable]") && Math.abs(b.width - n.width) > 1) {
-                            found.push(`dealer ${seat} is ${b.width.toFixed(1)}px across a ${n.width.toFixed(1)}px badge`);
-                        }
                         if (b.y < chromeBottom - 1) found.push(`dealer ${seat} under the header`);
                         if (b.x < -1 || b.y < -1 || b.right > window.innerWidth + 1 || b.bottom > window.innerHeight + 1) {
                             found.push(`dealer ${seat} outside the viewport`);

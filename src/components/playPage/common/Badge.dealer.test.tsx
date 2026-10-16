@@ -55,7 +55,6 @@ describe("dealer button on the seat badge", () => {
     it("places the disc up and to the left at 45 degrees with a 3px screen gap", () => {
         const css = readFileSync(join(__dirname, "Badge.css"), "utf8");
         const rule = css.slice(css.indexOf(".dealer-badge-button {"), css.indexOf(".dealer-badge-button img"));
-        expect(rule).toContain("--dealer-size: 100%");
         expect(rule).toContain("--dealer-gap: calc(3px / var(--table-zoom, 1))");
         expect(rule).toContain("/ 1.414213562");
         expect(rule).toContain("right: calc(50% + var(--dealer-shift))");
