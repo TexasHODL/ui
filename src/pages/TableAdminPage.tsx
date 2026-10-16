@@ -478,15 +478,16 @@ export default function TableAdminPage() {
 
                             {isTournamentFormat(gameFormat) && (
                                 <div className="mb-4">
+                                    <label className="text-gray-300 text-xs mb-1 block">Start time</label>
                                     <label className="flex items-center gap-2 text-gray-300 text-xs cursor-pointer" data-testid="scheduled-start-toggle">
                                         <input type="checkbox" checked={scheduled} onChange={e => setScheduled(e.target.checked)} className="accent-blue-500" />
-                                        Scheduled start
+                                        Schedule a start
                                         <span className="text-gray-500">— starts at a set time with whoever has registered</span>
                                     </label>
                                     {scheduled && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                             <div>
-                                                <label className="text-gray-300 text-xs mb-1 block">Start time</label>
+                                                <label className="text-gray-300 text-xs mb-1 block">Starts at</label>
                                                 <input
                                                     type="datetime-local"
                                                     aria-label="Scheduled start time"
