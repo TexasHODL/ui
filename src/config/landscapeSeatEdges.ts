@@ -1125,15 +1125,30 @@ export function placeMobileRailMarkers(
         // A second denomination sits up on the cluster, so the painted pile
         // hangs about 4px lower than a single stack of cent chips.
         const stackHalf = (chipPx + 12) / 2 + 4;
-        // Centred top bet, ~3px under its action banner.
-        const underBanner = (index: number) => {
+        // A centred pile whose outer edge would leave the felt moves inward
+        // by just enough for that edge to sit inside the rail.
+        const clampToRail = (seatX: number) => {
+            const inward = Math.sign(cx - seatX) || 0;
+            if (!inward) return Math.round(seatX);
+            const railAir = Math.max(4, 3 / z);
+            const outer = seatX - inward * chipHX;
+            const outerLimit = inward > 0 ? railAir : dims.tableWidth - railAir;
+            const past = inward > 0 ? outerLimit - outer : outer - outerLimit;
+            if (past <= 0) return Math.round(seatX);
+            return Math.round(seatX + inward * past);
+        };
+        // Centred top bet, ~3px under its action banner. Side seats on the
+        // rail clamp inward so the pile stays on the felt.
+        const underBanner = (index: number, clamp = false, extra = 0) => {
             const point = chipCenters[index];
             const seat = seatBoxes[index];
             if (!point || !seat) return;
-            const x = Math.round(seat.x);
-            let y = Math.round(seat.y + seatHY + 33 + pillHalfPortrait + (3 + overhang) / z + 3);
+            const x = clamp ? clampToRail(seat.x) : Math.round(seat.x);
+            let y = Math.round(seat.y + seatHY + 33 + pillHalfPortrait + (3 + overhang) / z + 3 + extra);
+            const inward = Math.sign(cx - seat.x) || 0;
             const clear = (yy: number) => {
                 if (!mobileFeltContains(x, yy, 1, 0)) return false;
+                if (clamp && inward && !mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
                 if (holeCards.some(card => boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, card, 0))) return false;
                 if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, item, 2))) return false;
                 return true;
@@ -1168,6 +1183,43 @@ export function placeMobileRailMarkers(
                 const insetX = inward > 0 ? railAir + chipHX : dims.tableWidth - railAir - chipHX;
                 const toward = seat.x + inward * chipHX;
                 const x = Math.round(inward > 0 ? Math.max(toward, insetX) : Math.min(toward, insetX));
+                let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
+                const clear = (yy: number) => {
+                    if (!mobileFeltContains(x, yy, 1, 0)) return false;
+                    if (!mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
+                    if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: stackHalf }, item, 2))) return false;
+                    return true;
+                };
+                if (!clear(y)) {
+                    const limit = y + Math.round(48 / z);
+                    for (let yy = y + 1; yy <= limit; yy++) {
+                        if (!clear(yy)) continue;
+                        y = yy;
+                        break;
+                    }
+                }
+                point.x = x;
+                point.y = y;
+                remember(index, x, y);
+            });
+        }
+        // 6-seat. Seat 4 (top) was under BET. Seats 3 and 5 sit under their
+        // own banners. Seats 2 and 6 sit above their own cards. Side seats
+        // are on the rail, so a centred pile is clamped inward until it is
+        // on the felt.
+        if (tableSize === 6) {
+            // Seat 4's preview pile is a second denomination stacked on the
+            // cents, so it hangs about 4 stage px below the single-stack model.
+            underBanner(3, false, 4);
+            underBanner(2, true);
+            underBanner(4, true);
+            [1, 5].forEach(index => {
+                const point = chipCenters[index];
+                const seat = seatBoxes[index];
+                const card = holeCards[index];
+                if (!point || !seat || !card) return;
+                const inward = Math.sign(cx - seat.x) || 1;
+                const x = clampToRail(seat.x);
                 let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
                 const clear = (yy: number) => {
                     if (!mobileFeltContains(x, yy, 1, 0)) return false;
