@@ -85,9 +85,7 @@ html[data-theme="light"] .table-container {
         linear-gradient(105deg, #fff4e8, #fff0f6 48%, #f5eefc);
 }
 
-html[data-theme="light"] .sub-header,
-html[data-theme="light"] .bg-custom-header,
-html[data-theme="light"] .bg-custom-footer {
+html[data-theme="light"] .sub-header {
     background: linear-gradient(105deg, #fff4e8, #fff0f6 48%, #f5eefc);
     border-color: #e4c4ea;
     color: #1a0b2e;

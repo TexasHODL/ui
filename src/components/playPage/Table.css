@@ -154,42 +154,8 @@
     border-color: var(--theme-danger, #ff719b);
     background: var(--theme-hover, #321923);
 }
-@keyframes gradient {
-    0% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: 0% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-/*
- * Composited replacements for the two `background-position` animations above.
- *
- * `background-position` is a PAINT property — the compositor cannot run it, so
- * animating it re-rasterizes the element every frame on the main thread. On the
- * full-viewport table backgrounds that was the single most expensive thing on
- * the page. These move an oversized child with `transform` instead, which the
- * compositor handles off-thread, and are geometrically equivalent (see the
- * arithmetic on each rule below).
- *
- * Deliberately NOT named `shimmer`/`gradient`: @keyframes names are GLOBAL, and
- * Dashboard.css defines its own `shimmer` and `gradient` with the old
- * background-position semantics. Reusing the names would let whichever
- * stylesheet loads last silently redefine the other's animation.
- */
+/* Transform instead of background-position, which repaints every frame.
+   Names stay off the global `shimmer` / `gradient` keyframe names. */
 @keyframes table-shimmer-slide {
     0% {
         transform: translate3d(0, 0, 0);
@@ -209,47 +175,6 @@
     100% {
         transform: translate3d(0, 0, 0);
     }
-}
-
-@keyframes float {
-    0% {
-        transform: translateY(0px);
-    }
-    50% {
-        transform: translateY(-10px);
-    }
-    100% {
-        transform: translateY(0px);
-    }
-}
-
-@keyframes pulse {
-    0% {
-        opacity: 0.6;
-    }
-    50% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0.6;
-    }
-}
-
-@keyframes textShine {
-    to {
-        background-position: 200% center;
-    }
-}
-
-/* Custom Table styles */
-.bg-custom-table {
-    position: relative;
-    background-color: transparent;
-}
-
-.bg-custom-footer {
-    background: linear-gradient(to right, var(--table-bg-gradient-start), var(--table-bg-gradient-mid), var(--table-bg-gradient-end));
-    border-top: 1px solid var(--ui-border-color);
 }
 
 /*
@@ -328,34 +253,6 @@
     background-repeat: repeat-x;
     animation: table-shimmer-slide 3s infinite linear;
     will-change: transform;
-}
-
-.text-gradient {
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    background-size: 200% auto;
-    animation: textShine 3s linear infinite;
-}
-
-/* Hexagon pattern for table */
-.hexagon-pattern {
-    background-image:
-        linear-gradient(to right, var(--ui-border-color) 1px, transparent 1px), linear-gradient(to bottom, var(--ui-border-color) 1px, transparent 1px);
-    background-size: 30px 30px;
-}
-
-/* Header specific styles */
-.bg-custom-header {
-    background: linear-gradient(to right, var(--table-bg-gradient-start), var(--table-bg-gradient-mid), var(--table-bg-gradient-end));
-    border-bottom: 1px solid var(--ui-border-color);
-}
-
-/* Enhanced glow effects for text */
-.text-glow {
-    text-shadow:
-        0 0 5px color-mix(in srgb, var(--brand-primary) 50%, transparent),
-        0 0 10px color-mix(in srgb, var(--brand-primary) 30%, transparent);
 }
 
 /* New classes for extracted inline styles */
@@ -507,28 +404,6 @@
     z-index: 50;
 }
 
-.sub-header-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    opacity: 0.3;
-    /* Gradient + motion live on .shimmer-animation::before. */
-}
-
-.sub-header-shadow {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
-    opacity: 0.5;
-}
-
-.body-container {
-    /* no CSS overrides — layout handled by tailwind flex classes */
-}
-
 .background-shimmer {
     position: absolute;
     inset: 0;
@@ -590,16 +465,6 @@
         font-size: 18px;
         padding: 3px 8px;
     }
-}
-
-.dealer-button {
-    position: absolute;
-    z-index: 50;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .chip-position {
@@ -765,47 +630,6 @@
     pointer-events: none;
 }
 
-.powered-by-block52 {
-    position: fixed;
-    bottom: 1rem;
-    left: 1rem;
-    display: flex;
-    align-items: center;
-    z-index: 50;
-    opacity: 0.3;
-}
-
-.powered-by-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    background-color: transparent;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    backdrop-filter: blur(4px);
-    border: 0;
-}
-
-.powered-by-text {
-    text-align: left;
-    margin-bottom: 0.25rem;
-}
-
-.powered-by-logo {
-    height: 1.5rem;
-    width: auto;
-    object-fit: contain;
-    pointer-events: none;
-}
-
-.debug-panel {
-    position: fixed;
-    bottom: 6rem;
-    left: 1rem;
-    width: 16rem;
-    z-index: 50;
-}
-
 .network-display {
     background-color: color-mix(in srgb, var(--ui-bg-dark) 60%, transparent);
     border: 1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent);
@@ -898,38 +722,7 @@
     transition: all 0.3s ease-out;
 }
 
-/* Player Action Drop Box Animations */
-@keyframes dropDown {
-    0% {
-        opacity: 0;
-        transform: translateY(-10px) scale(0.95);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes rollAway {
-    0% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(10px) scale(0.95);
-    }
-}
-
-.action-box-enter {
-    animation: dropDown 0.3s ease-out forwards;
-}
-
-.action-box-exit {
-    animation: rollAway 0.5s ease-in forwards;
-}
-
-/* Action box pulse effect for emphasis */
+/* Seat-banner pulse. The name is global, so this is the animation Badge.css also uses. */
 @keyframes actionPulse {
     0% {
         box-shadow:
@@ -946,10 +739,6 @@
             0 4px 12px color-mix(in srgb, var(--brand-primary) 40%, transparent),
             0 2px 4px color-mix(in srgb, #000000 30%, transparent);
     }
-}
-
-.action-box-pulse {
-    animation: actionPulse 1s ease-in-out;
 }
 
 /* ===== Nouns NFT Theme ===== */
@@ -1041,85 +830,21 @@
         animation: none;
     }
 
-    .text-gradient {
-        animation: none;
-        background: linear-gradient(to right, var(--brand-primary), #60a5fa);
-        background-clip: text;
-        -webkit-background-clip: text;
-        color: transparent;
-    }
-
-    /* Disable action box animations for reduced motion */
-    .action-box-enter,
-    .action-box-exit,
-    .action-box-pulse {
-        animation: none;
-    }
-
     .nouns-glasses-logo {
         animation: none;
         opacity: 0.25;
     }
 }
 
-/* Simplified dealer button positioning */
-.dealer-button-optimized {
-    position: absolute;
-    z-index: 50;
-    width: 48px;
-    height: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.6s ease-in-out;
-}
-
 /* Mobile-specific optimizations */
 @media (max-width: 414px) {
-    /* Reduce animation complexity on mobile */
-    /* The animation is on ::before, not the host — this previously matched an
-       element with no animation and did nothing. */
     .shimmer-animation::before {
-        animation-duration: 6s; /* Slower = less CPU */
+        animation-duration: 6s;
     }
 
-    .text-gradient {
-        animation-duration: 6s; /* Slower = less CPU */
-    }
-
-    /* Simplify blur effects on mobile */
     .background-base-static {
-        filter: blur(30px); /* Less blur = better performance */
+        filter: blur(30px);
     }
-}
-
-/* Professional Sit Out Toggle for Mobile */
-.sit-out-toggle {
-    user-select: none;
-    cursor: pointer;
-}
-
-.sit-out-toggle input[type="checkbox"]:checked ~ div > div:first-child {
-    background-color: #f97316;
-}
-
-.sit-out-toggle input[type="checkbox"]:checked ~ div > div:last-child {
-    transform: translateX(20px);
-}
-
-/* Smooth transitions for toggle */
-.sit-out-toggle div > div {
-    transition: all 0.2s ease-in-out;
-}
-
-/* Hover effect for toggle container */
-.sit-out-toggle:hover {
-    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.3);
-}
-
-/* Active state indicator */
-.sit-out-toggle input[type="checkbox"]:checked ~ span {
-    color: #fb923c;
 }
 
 /* Texas HODL visual system: keep the existing table geometry and gameplay
@@ -1130,8 +855,6 @@
     background: var(--theme-page, #070709);
 }
 
-.bg-custom-header,
-.bg-custom-footer,
 .sub-header {
     background: linear-gradient(105deg, rgba(10, 8, 15, 0.96), rgba(28, 14, 42, 0.92) 52%, rgba(9, 8, 13, 0.96));
     border-color: rgba(255, 255, 255, 0.1);
@@ -1163,13 +886,7 @@
     font-family: "DM Mono", ui-monospace, monospace;
 }
 
-.sub-header-shadow {
-    background: linear-gradient(90deg, transparent, var(--theme-accent, #b14cff) 42%, #f02bc6 58%, transparent);
-    opacity: 0.72;
-}
-
-.network-display,
-.walletInfo {
+.network-display {
     background-color: rgba(14, 15, 20, 0.72);
     border-color: rgba(255, 255, 255, 0.1);
 }
@@ -1177,26 +894,6 @@
 .table-logo img {
     opacity: 0.4;
     filter: none;
-}
-
-/* Table UX surfaces: keep the header readable and make action/status chrome
-   feel like one Texas HODL system instead of unrelated utility widgets. */
-.table-header-root button,
-.table-header-root [role="button"] {
-    transition:
-        border-color 160ms ease,
-        background-color 160ms ease,
-        color 160ms ease,
-        transform 160ms ease;
-}
-
-.table-header-root button:hover,
-.table-header-root [role="button"]:hover {
-    transform: translateY(-1px);
-}
-
-.table-sub-header-root {
-    letter-spacing: 0.015em;
 }
 
 .player-seat,
@@ -1232,11 +929,6 @@
 }
 
 @media (max-width: 700px) {
-    .table-header-root [class*="copyTableButton"] {
-        padding-left: 0.55rem;
-        padding-right: 0.55rem;
-    }
-
     .vacant-seat {
         min-width: 92px;
         padding: 0.35rem 0.45rem 0.45rem;
