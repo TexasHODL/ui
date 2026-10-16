@@ -24,15 +24,6 @@ import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
 import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
 
-/**
- * TableAdminPage - Admin interface for creating and managing poker tables
- *
- * Features:
- * - Create new poker tables (Sit & Go, Texas Hold'em)
- * - View all tables with their settings
- * - Join tables directly from the dashboard
- */
-
 interface TableData {
     gameId: string;
     gameFormat: string;

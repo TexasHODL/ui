@@ -3,58 +3,10 @@ import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { useTablePanels } from "../../hooks/game/useTablePanels";
 import { useHistoryDock } from "../../hooks/game/useHistoryDock";
 import { placeMobileHistory } from "./Table/placeMobileHistory";
-/**
- * Table Component
- *
- * This is the main poker table component that orchestrates the entire game interface.
- * It manages:
- * - Player positions and rotations
- * - Game state and progress
- * - Community cards
- * - Pot amounts
- * - Dealer button
- * - Player actions
- *
- * Key Features:
- * - Dynamic table layout (6 or 9 players)
- * - Real-time game state updates
- * - Player position management
- * - Chip position calculations
- * - Winner animations
- * - Sidebar for game log
- *
- * Player Components:
- * - Player: Current user's view with hole cards and controls
- * - OppositePlayer: Other players' views with seat changing functionality
- * - VacantPlayer: Empty seat views with direct join/seat changing
- *
- * PlayerPopUpCard Integration:
- * - Used by OppositePlayer for seat changing
- * - Used by VacantPlayer for seat changing (only when user is already seated)
- * - Provides consistent UI for player interactions
- *
- * State Management:
- * - Uses multiple hooks for different aspects of the game
- * - Manages player positions and rotations
- * - Handles game progress and round information
- * - Controls UI elements visibility
- *
- * Components Used:
- * - Player: Current user's view
- * - OppositePlayer: Other players' views
- * - VacantPlayer: Empty seat views
- * - PlayerPopUpCard: Popup for player actions
- * - PokerActionPanel: Betting controls
- * - ActionsLog: Game history
- */
-
 import { buildHandShareUrl } from "../../utils/handReplay";
 import { useEffect, useLayoutEffect, useState, useMemo, useCallback, memo, useRef } from "react";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatPotDisplay, formatChipCount } from "../../utils/potDisplayUtils";
-// Position arrays now come from useTableLayout hook
-// // Position arrays now come from useTableLayout hook
-// import { playerPosition, dealerPosition, vacantPlayerPosition } from "../../utils/PositionArray";
 import PokerActionPanel from "../Footer";
 import { MobileActionDock } from "./Table/components/MobileActionDock";
 
@@ -76,7 +28,7 @@ import { CardBackStyle } from "../../utils/cardImages";
 import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
 
-import "./Table.css"; // Import the Table CSS file
+import "./Table.css";
 
 //// TODO get these hooks to subscribe to the wss connection
 

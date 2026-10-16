@@ -5,9 +5,9 @@ import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { localDateTimeToUnixSeconds } from "../utils/scheduledSng";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useNavigate } from "react-router-dom";
 
-import "./Dashboard.css"; // Import the CSS file with animations
+import "./Dashboard.css";
 import styles from "./Dashboard.module.css";
 
 // Ethereum Mainnet imports (for auto-switch to correct chain)
@@ -32,7 +32,7 @@ import { validateTableName, tableNameCharCount, normalizeTableName } from "../ut
 
 // Hook imports from barrel file
 import { useUserWalletConnect, useNewTable, useCosmosWallet } from "../hooks";
-import type { CreateTableOptions } from "../hooks/game/useNewTable"; // Import type separately
+import type { CreateTableOptions } from "../hooks/game/useNewTable";
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
