@@ -6,7 +6,7 @@
  * every WS frame, so without the fingerprint memo the rows would be rebuilt
  * several times a second while the History tab is open.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import ActionsLog from "./ActionsLog";
 import { useGameProgress } from "../hooks/game/useGameProgress";
 import { useWinnerInfo } from "../hooks/game/useWinnerInfo";
@@ -61,6 +61,17 @@ describe("ActionsLog", () => {
     afterEach(() => jest.clearAllMocks());
 
     describe("rendering", () => {
+        it("puts a close control to the right of Expand", () => {
+            withLog([action(1)]);
+            const onClose = jest.fn();
+            render(<ActionsLog expanded={false} onExpand={() => undefined} onClose={onClose} />);
+            const expand = screen.getByRole("button", { name: "Expand hand history" });
+            const close = screen.getByRole("button", { name: "Close history" });
+            expect(expand.compareDocumentPosition(close) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+            fireEvent.click(close);
+            expect(onClose).toHaveBeenCalledTimes(1);
+        });
+
         it("shows a placeholder with no actions", () => {
             withLog([]);
             render(<ActionsLog />);
