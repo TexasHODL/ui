@@ -19,7 +19,7 @@ import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
-import { defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
+import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
 import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
@@ -233,7 +233,7 @@ export default function TableAdminPage() {
 
         // A scheduled sit-and-go needs a start time in the future and a
         // minimum no larger than the table (the chain refuses both).
-        const isScheduled = isTournament && scheduled;
+        const isScheduled = isSitAndGoFormat(gameFormat) && scheduled;
         const startTime = isScheduled ? localDateTimeToUnixSeconds(scheduledStart) : undefined;
         if (isScheduled) {
             if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
@@ -476,12 +476,13 @@ export default function TableAdminPage() {
                                 </div>
                             </div>
 
-                            {isTournamentFormat(gameFormat) && (
+                            {isSitAndGoFormat(gameFormat) && (
                                 <div className="mb-4">
-                                    <label className="flex items-center gap-2 text-gray-300 text-xs cursor-pointer" data-testid="scheduled-start-toggle">
+                                    <label className="text-white text-sm mb-1 block">Scheduled start</label>
+                                    <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer" data-testid="scheduled-start-toggle">
                                         <input type="checkbox" checked={scheduled} onChange={e => setScheduled(e.target.checked)} className="accent-blue-500" />
-                                        Scheduled start
-                                        <span className="text-gray-500">— starts at a set time with whoever has registered</span>
+                                        Start at a set time
+                                        <span className="text-gray-500 text-xs">— with whoever has registered, or earlier when full</span>
                                     </label>
                                     {scheduled && (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
