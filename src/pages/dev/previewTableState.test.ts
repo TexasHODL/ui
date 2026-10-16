@@ -21,16 +21,17 @@ describe("parsePreviewSearch", () => {
         });
     });
 
-    it("accepts seats 2 and 6 and a dealer seat", () => {
+    it("accepts seats 2, 4, and 6 and a dealer seat", () => {
         expect(parsePreviewSearch(new URLSearchParams("seats=6&dealer=4"))).toMatchObject({
             seats: 6,
             dealer: 4
         });
+        expect(parsePreviewSearch(new URLSearchParams("seats=4&dealer=3")).seats).toBe(4);
         expect(parsePreviewSearch(new URLSearchParams("seats=2&dealer=2")).dealer).toBe(2);
     });
 
-    it("ignores a seat count that is not 2, 6, or 9", () => {
-        expect(parsePreviewSearch(new URLSearchParams("seats=4")).seats).toBe(9);
+    it("ignores a seat count the app does not play", () => {
+        expect(parsePreviewSearch(new URLSearchParams("seats=5")).seats).toBe(9);
         expect(parsePreviewSearch(new URLSearchParams("seats=0")).seats).toBe(9);
     });
 

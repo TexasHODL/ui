@@ -14,7 +14,7 @@ import { getActionBadgeDisplay } from "../../hooks/player/usePlayerActionDropBox
 /** Seat 1 when the browser has no wallet yet. Matches the local stub hero. */
 export const PREVIEW_HERO_ADDRESS = "b521avgyh77ycn997ja45q5q8ss8y9mr424jsnxx93";
 
-export const PREVIEW_SEAT_COUNTS = [2, 6, 9] as const;
+export const PREVIEW_SEAT_COUNTS = [2, 4, 6, 9] as const;
 export type PreviewSeatCount = (typeof PREVIEW_SEAT_COUNTS)[number];
 
 export const PREVIEW_BOARD_COUNTS = [0, 3, 4, 5] as const;
@@ -37,14 +37,14 @@ export interface PreviewOptions {
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
-    value === 2 || value === 6 || value === 9;
+    (PREVIEW_SEAT_COUNTS as readonly number[]).includes(value);
 
 const isBoardCount = (value: number): value is PreviewBoardCount =>
     value === 0 || value === 3 || value === 4 || value === 5;
 
 /**
  * Read the preview from the query string.
- * seats=2|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
+ * seats=2|4|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
  * holes=0|1 (default on), board=0|3|4|5 (default a full board),
  * actions=all to pin an action badge on every seat,
  * turn=1 to make seat 1's turn and show the real action controls.

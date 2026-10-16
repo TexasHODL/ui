@@ -8,7 +8,7 @@ import { test, expect } from "./fixtures.js";
 test.describe("landscape action boxes", () => {
     test.use({ viewport: { width: 844, height: 390 } });
 
-    for (const seats of [2, 6, 9]) {
+    for (const seats of [2, 4, 6, 9]) {
         test(`${seats} seats keep chips and dealer buttons off action boxes`, async ({ page }) => {
             await page.goto(`/table-preview?seats=${seats}&dealer=all&actions=all&holes=1&board=5`);
             await page.waitForSelector(".chip-position");
@@ -80,7 +80,7 @@ test.describe("landscape seats stay on screen", () => {
     ] as const;
 
     for (const viewport of viewports) {
-        for (const seats of [2, 6, 9]) {
+        for (const seats of [2, 4, 6, 9]) {
             test(`${seats} seats at ${viewport.width}x${viewport.height} stay inside the viewport`, async ({ page }) => {
                 await page.setViewportSize({ width: viewport.width, height: viewport.height });
                 // 1024×650 is mobile landscape only with a coarse pointer. The
@@ -165,7 +165,7 @@ test.describe("dealer button on the seat badge", () => {
     ] as const;
 
     for (const viewport of viewports) {
-        for (const seats of [2, 6, 9]) {
+        for (const seats of [2, 4, 6, 9]) {
             test(`${seats} seats at ${viewport.width}x${viewport.height} ${viewport.label}`, async ({ page }) => {
                 await page.setViewportSize({ width: viewport.width, height: viewport.height });
                 await page.addInitScript((coarse: boolean) => {
@@ -526,5 +526,118 @@ test.describe("side bets sit beside their cards", () => {
 
             expect(problems).toEqual([]);
         });
+    }
+});
+
+/**
+ * The dealer disc hangs up-left of the seat number. Chips move inward so the
+ * disc never touches the pile. 6-seat seat 3's pile also stays off its own
+ * hole cards, and a 4-seat table follows the same rule for every seat.
+ */
+test.describe("landscape bets clear the dealer disc", () => {
+    const viewports = [
+        { width: 844, height: 390 },
+        { width: 915, height: 412 },
+        { width: 1024, height: 650 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        for (const seats of [2, 4, 6, 9]) {
+            test(`${seats} seats at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+                await page.setViewportSize({ width: viewport.width, height: viewport.height });
+                await page.addInitScript(() => {
+                    const original = window.matchMedia.bind(window);
+                    window.matchMedia = (query: string) => {
+                        if (query.includes("pointer") && query.includes("coarse")) {
+                            return {
+                                matches: true,
+                                media: query,
+                                onchange: null,
+                                addListener() {},
+                                removeListener() {},
+                                addEventListener() {},
+                                removeEventListener() {},
+                                dispatchEvent() { return false; }
+                            } as MediaQueryList;
+                        }
+                        return original(query);
+                    };
+                });
+                await page.goto(`/table-preview?seats=${seats}&dealer=all&holes=1&board=5`);
+                await page.waitForSelector(".chip-position");
+                await page.waitForSelector(".dealer-badge-button");
+                await page.addStyleTag({
+                    content: "*, *::before, *::after { animation: none !important; transition: none !important; }"
+                });
+
+                const problems = await page.evaluate((seatCount) => {
+                    const found: string[] = [];
+                    const box = (el: Element) => {
+                        const r = el.getBoundingClientRect();
+                        return { x: r.x, y: r.y, r: r.right, b: r.bottom };
+                    };
+                    const union = (el: Element) => {
+                        const rect = box(el);
+                        el.querySelectorAll("img").forEach(img => {
+                            const r = box(img);
+                            rect.x = Math.min(rect.x, r.x);
+                            rect.y = Math.min(rect.y, r.y);
+                            rect.r = Math.max(rect.r, r.r);
+                            rect.b = Math.max(rect.b, r.b);
+                        });
+                        return rect;
+                    };
+                    const overlap = (a: { x: number; y: number; r: number; b: number }, b: { x: number; y: number; r: number; b: number }) => {
+                        const ix = Math.min(a.r, b.r) - Math.max(a.x, b.x);
+                        const iy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
+                        return { ix, iy };
+                    };
+                    const chips = [...document.querySelectorAll(".chip-position")].map(union);
+                    const seatCards = new Map<string, { x: number; y: number; r: number; b: number }>();
+                    document.querySelectorAll(".player-seat").forEach(el => {
+                        const badge = el.querySelector(".badge-number");
+                        const label = badge ? (badge.childNodes[0]?.textContent || "").trim() : "";
+                        const cards = [...el.querySelectorAll(".hole-card-fan img")].map(box);
+                        if (!label || cards.length === 0) return;
+                        seatCards.set(label, {
+                            x: Math.min(...cards.map(card => card.x)),
+                            y: Math.min(...cards.map(card => card.y)),
+                            r: Math.max(...cards.map(card => card.r)),
+                            b: Math.max(...cards.map(card => card.b))
+                        });
+                    });
+                    document.querySelectorAll(".dealer-badge-button").forEach(el => {
+                        const seat = el.getAttribute("data-dealer-button") || "";
+                        const chip = chips[Number(seat) - 1];
+                        if (!chip) {
+                            found.push(`dealer ${seat} has no chip`);
+                            return;
+                        }
+                        const hit = overlap(box(el), chip);
+                        if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`dealer ${seat} covers the pile by ${hit.ix.toFixed(1)}x${hit.iy.toFixed(1)}`);
+                    });
+                    const cardSeats = seatCount === 4
+                        ? [...seatCards.keys()]
+                        : seatCount === 6 ? ["3"] : [];
+                    cardSeats.forEach(label => {
+                        const card = seatCards.get(label);
+                        const chip = chips[Number(label) - 1];
+                        if (!card || !chip) {
+                            found.push(`missing seat ${label}`);
+                            return;
+                        }
+                        const hit = overlap(card, chip);
+                        if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`seat ${label} cards cover the pile by ${hit.ix.toFixed(1)}x${hit.iy.toFixed(1)}`);
+                        if (seatCount === 6) {
+                            const gap = chip.x - card.r;
+                            if (gap < 1) found.push(`seat 3 pile gap is ${gap.toFixed(1)}px`);
+                        }
+                    });
+                    return found;
+                }, seats);
+
+                expect(problems).toEqual([]);
+            });
+        }
     }
 });
