@@ -446,8 +446,8 @@ describe("landscape mobile readability", () => {
             const seat3Gap = (seat3X - seat3Half - (seat3Cards.x + seat3Cards.hw)) * zoom;
             expect(seat3Gap).toBeGreaterThanOrEqual(2);
             expect(seat3Gap).toBeLessThanOrEqual(8);
-            // Seat 5's amount steps inward until the dealer disc, up-left of
-            // the seat number, no longer touches it. The button stays put.
+            // Seat 5's painted pill steps right until it is ~3px from the
+            // dealer disc. The wider search box would stop short of that.
             const seat5X = parseFloat(placed.chips[4].left);
             const seat5Y = parseFloat(placed.chips[4].top ?? "0");
             const seat5SeatX = parseFloat(placed.players[4].left);
@@ -455,12 +455,11 @@ describe("landscape mobile readability", () => {
             const dealerR = 11 * unit;
             const dealerShift = (9.5 * unit + dealerR + 3 / zoom) / Math.SQRT2;
             const dealerX = seat5SeatX - 31.5 * unit - dealerShift;
-            const dealerY = seat5SeatY + 23 * unit - dealerShift;
             const chipPx = height <= 500 || width <= 768 ? 32 : 28;
-            const pileHalf = (((chipPx * 0.55 + 2) * zoom + 58 + 7) / 2 + chipPx * 0.45 * zoom / 2) / zoom;
-            const dealerGap = (dealerX - dealerR - (seat5X + pileHalf)) * zoom;
+            const paintedHalf = (chipPx * zoom + 2 * zoom + 51) / 2 / zoom;
+            const dealerGap = (dealerX - dealerR - (seat5X + paintedHalf)) * zoom;
             expect(dealerGap).toBeGreaterThanOrEqual(2);
-            expect(dealerGap).toBeLessThanOrEqual(6);
+            expect(dealerGap).toBeLessThanOrEqual(5);
             expect(seat5Y).toBeGreaterThan(seat5SeatY);
             const topSeatY = parseFloat(placed.players[3].top);
             const topChipY = parseFloat(placed.chips[3].top ?? "0");
@@ -509,7 +508,8 @@ describe("landscape mobile readability", () => {
                 const chipPx = short || width <= 768 ? 32 : 28;
                 const overhang = chipPx * 0.45;
                 const textHalf = ((chipPx * 0.55 + 2) * zoom + 58 + 7) / 2 / zoom;
-                const pileHalf = textHalf + overhang / 2;
+                const wideHalf = textHalf + overhang / 2;
+                const paintedHalf = (chipPx * zoom + 2 * zoom + 51) / 2 / zoom;
                 const pillHalf = (22.67 / zoom) / 2;
                 const dealerR = 11 * unit;
                 const shift = (9.5 * unit + dealerR + 3 / zoom) / Math.SQRT2;
@@ -522,7 +522,10 @@ describe("landscape mobile readability", () => {
                     const y = parseFloat(placed.chips[index].top ?? "0");
                     const crossing = Math.abs(y - dy) < pillHalf;
                     const air = crossing ? 3 / zoom : 0;
-                    const hit = Math.abs(x - dx) < pileHalf + dealerR + air && Math.abs(y - dy) < pillHalf + dealerR + air;
+                    // Seat 5 on a 6-seat table is placed against the painted
+                    // pill. The wider box is what left it ~10px short.
+                    const half = size === 6 && index === 4 ? paintedHalf : wideHalf;
+                    const hit = Math.abs(x - dx) < half + dealerR + air && Math.abs(y - dy) < pillHalf + dealerR + air;
                     if (hit) overlaps.push(`${size}-seat ${width}x${height} seat ${index + 1}`);
                 });
             }
@@ -554,7 +557,13 @@ describe("landscape mobile readability", () => {
             const pillHalf = (22.67 / zoom) / 2;
             const bannerBottom = seatY + seatHalf + (55 - 22);
             expect(chipX).toBe(Math.round(parseFloat(seat.left)));
-            expect(chipY - pillHalf).toBeGreaterThan(bannerBottom + 8 / zoom - 1);
+            const chipPx = height <= 500 || width <= 768 ? 32 : 28;
+            const stackScreen = (chipPx + 12) * zoom;
+            const overhang = Math.max(0, (stackScreen - 22.67) / 2);
+            const air = (chipY - pillHalf - bannerBottom) * zoom;
+            const expected = 3 + overhang + 3 * zoom;
+            expect(air).toBeGreaterThan(expected - 1.5);
+            expect(air).toBeLessThan(expected + 1.5);
             const board = mobileCardObstacles(getAllPositions(2), zoom, unit * zoom, 2)[2];
             expect(chipY + pillHalf).toBeLessThan(board.y - board.hy);
             expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
