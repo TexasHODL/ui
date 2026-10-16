@@ -26,15 +26,15 @@ interface ActionsLogProps {
 const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = true, onExpand, onClose }) => {
     const { id } = useParams<{ id: string }>();
     const { previousActions } = useGameProgress(id);
-    const { gameState, gameFormat } = useGameStateContext();
+    const { gameState, gameFormat, gameVariant } = useGameStateContext();
     const { winnerInfo } = useWinnerInfo();
     const showWinnerSummary = shouldShowWinnerSummary(gameState, winnerInfo);
 
     // The strongest revealed LOSING hand — the "over Pair, Kings" clause on the
     // live winner rows. Evaluated client-side; null when nothing was revealed.
     const beatenDescription = useMemo(
-        () => (showWinnerSummary ? getBeatenHandDescription(gameState, winnerInfo) : null),
-        [showWinnerSummary, gameState, winnerInfo]
+        () => (showWinnerSummary ? getBeatenHandDescription(gameState, winnerInfo, gameVariant) : null),
+        [showWinnerSummary, gameState, winnerInfo, gameVariant]
     );
 
     // The PREVIOUS hand's summary, retained across the hand boundary (and this

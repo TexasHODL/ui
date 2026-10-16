@@ -4,6 +4,7 @@ import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { localDateTimeToUnixSeconds } from "../utils/scheduledSng";
 import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
 import "./Dashboard.css"; // Import the CSS file with animations
@@ -26,7 +27,7 @@ import TransactionPanel from "../components/TransactionPanel";
 
 // Game wallet and SDK imports
 // ...existing code...
-import { GameFormat, generateWallet as generateWalletSDK, computeGameNameFee } from "@block52/poker-vm-sdk";
+import { BettingLimit, GameFormat, GameVariant, generateWallet as generateWalletSDK, computeGameNameFee } from "@block52/poker-vm-sdk";
 import { validateTableName, tableNameCharCount, normalizeTableName } from "../utils/tableName";
 
 // Hook imports from barrel file
@@ -35,7 +36,7 @@ import type { CreateTableOptions } from "../hooks/game/useNewTable"; // Import t
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
-import { isTournamentFormat, toGameFormat } from "../utils/gameFormatUtils";
+import { defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 
 // Password protection utils
@@ -43,6 +44,9 @@ import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as u
 
 // Club branding imports
 import { colors, hexToRgba } from "../utils/colorConfig";
+
+/** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
+const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -80,6 +84,10 @@ const Dashboard: React.FC = () => {
     // Modal game options
     const [modalGameFormat, setModalGameFormat] = useState<GameFormat>(GameFormat.SIT_AND_GO);
     const [modalTableName, setModalTableName] = useState(""); // Optional paid table name (poker-vm#337)
+    // Variant and betting limit are independent (ui#768); picking a variant
+    // resets the limit to that variant's usual one (PLO, NLHE).
+    const [modalGameVariant, setModalGameVariant] = useState<GameVariant>(GameVariant.TEXAS_HOLDEM);
+    const [modalBettingLimit, setModalBettingLimit] = useState<BettingLimit>(defaultBettingLimitFor(GameVariant.TEXAS_HOLDEM));
     const [modalSitAndGoBuyIn, setModalSitAndGoBuyIn] = useState(1); // Single buy-in for Sit & Go
     const [modalPlayerCount, setModalPlayerCount] = useState(4);
     // For Cash Game: min/max players
@@ -94,6 +102,12 @@ const Dashboard: React.FC = () => {
     // "sit-and-go games require an sngConfig"). Same presets as /admin/tables.
     const [modalStartingStack, setModalStartingStack] = useState(1500);
     const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(10);
+    // Scheduled start (poker-vm#2680): the sit-and-go starts when full OR at
+    // the start time with at least modalSngMinPlayers registered. Off = the
+    // table starts only when full, as before.
+    const [modalScheduled, setModalScheduled] = useState(false);
+    const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
+    const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
     const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(1); // 25 / 50
     const [customBlinds, setCustomBlinds] = useState<{ smallBlind: number; bigBlind: number } | null>(null);
     const [entryFee, setEntryFee] = useState(0);
@@ -183,19 +197,42 @@ const Dashboard: React.FC = () => {
             // For Sit & Go/Tournament, use the same value for min and max buy-in
             const isTournament = isTournamentFormat(modalGameFormat);
 
-            // Log the modal values before creating game options
+            // A scheduled sit-and-go needs a start time in the future and a
+            // minimum no larger than the table (the chain refuses both).
+            const scheduled = isTournament && modalScheduled;
+            const startTime = scheduled ? localDateTimeToUnixSeconds(modalScheduledStart) : undefined;
+            if (scheduled) {
+                if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
+                    setCreateGameError("Pick a start time in the future for a scheduled tournament.");
+                    return;
+                }
+                if (modalSngMinPlayers < 2) {
+                    setCreateGameError(`Minimum players must be between 2 and ${modalPlayerCount}.`);
+                    return;
+                }
+            }
 
             const gameOptions: CreateTableOptions = {
                 format: modalGameFormat,
+                variant: modalGameVariant,
+                bettingLimit: modalBettingLimit,
                 minBuyIn: isTournament ? modalSitAndGoBuyIn : calculatedMinBuyIn,
                 maxBuyIn: isTournament ? modalSitAndGoBuyIn : calculatedMaxBuyIn,
-                // Cash tables can start heads-up; tournaments require every seat.
-                minPlayers: modalGameFormat === GameFormat.CASH ? 2 : modalPlayerCount,
+                // Cash tables can start heads-up. A scheduled sit-and-go may start
+                // short; an unscheduled one still requires every seat.
+                minPlayers: modalGameFormat === GameFormat.CASH ? 2 : scheduled ? Math.min(modalPlayerCount, Math.max(2, modalSngMinPlayers)) : modalPlayerCount,
                 maxPlayers: modalGameFormat === GameFormat.CASH ? modalMaxPlayers : modalPlayerCount,
                 smallBlind: modalSmallBlind,
                 bigBlind: modalBigBlind,
                 name: normalizedTableName || undefined,
-                ...(isTournament && { sng: { startingStack: modalStartingStack, blindLevelDuration: modalBlindLevelDuration, entryFee } }),
+                ...(isTournament && {
+                    sng: {
+                        startingStack: modalStartingStack,
+                        blindLevelDuration: modalBlindLevelDuration,
+                        entryFee,
+                        ...(scheduled && { startTime })
+                    }
+                }),
                 ...(modalGameFormat === GameFormat.CASH && enableRake && { rake: {
                     rakeFreeThreshold: rakeThreshold, rakePercentage, rakeCap, owner: cosmosWallet.address
                 } })
@@ -623,8 +660,41 @@ const Dashboard: React.FC = () => {
                                         >
                                             <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
                                             <option value={GameFormat.CASH}>Cash Game</option>
-                                            <option value={GameFormat.TOURNAMENT}>Tournament</option>
                                         </select>
+                                    </div>
+
+                                    {/* Variant and betting limit (ui#768) */}
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className="block text-white text-sm mb-1">Game</label>
+                                            <select
+                                                value={modalGameVariant}
+                                                onChange={e => {
+                                                    const variant = toGameVariant(e.target.value);
+                                                    if (!variant) return;
+                                                    setModalGameVariant(variant);
+                                                    setModalBettingLimit(defaultBettingLimitFor(variant));
+                                                }}
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                <option value={GameVariant.TEXAS_HOLDEM}>Texas Hold&apos;em</option>
+                                                <option value={GameVariant.OMAHA}>Omaha</option>
+                                            </select>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-white text-sm mb-1">Limit</label>
+                                            <select
+                                                value={modalBettingLimit}
+                                                onChange={e => {
+                                                    const limit = toCreatableBettingLimit(e.target.value);
+                                                    if (limit) setModalBettingLimit(limit);
+                                                }}
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                <option value={BettingLimit.NO_LIMIT}>No-Limit</option>
+                                                <option value={BettingLimit.POT_LIMIT}>Pot-Limit</option>
+                                            </select>
+                                        </div>
                                     </div>
 
                                     {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
@@ -678,6 +748,48 @@ const Dashboard: React.FC = () => {
                                                 <option value={6}>6 (Sit & Go)</option>
                                                 <option value={9}>9 (Full Ring)</option>
                                             </select>
+
+                                            {/* Scheduled start (poker-vm#2680) */}
+                                            <label className="flex items-center gap-2 text-white text-sm mt-3 cursor-pointer" data-testid="scheduled-start-toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={modalScheduled}
+                                                    onChange={e => setModalScheduled(e.target.checked)}
+                                                    className="accent-blue-500"
+                                                />
+                                                Scheduled start
+                                                <span className="text-gray-400 text-xs">— starts at a set time with whoever has registered</span>
+                                            </label>
+                                            {modalScheduled && (
+                                                <div className="grid grid-cols-2 gap-3 mt-2">
+                                                    <div>
+                                                        <label className="block text-gray-300 text-xs mb-1">Start time</label>
+                                                        <input
+                                                            type="datetime-local"
+                                                            value={modalScheduledStart}
+                                                            onChange={e => setModalScheduledStart(e.target.value)}
+                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-gray-300 text-xs mb-1">Minimum players</label>
+                                                        <select
+                                                            value={Math.min(modalSngMinPlayers, modalPlayerCount)}
+                                                            onChange={e => setModalSngMinPlayers(Number(e.target.value))}
+                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                        >
+                                                            {SNG_MIN_PLAYER_OPTIONS.filter(n => n <= modalPlayerCount).map(n => (
+                                                                <option key={n} value={n}>
+                                                                    {n}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                    <p className="col-span-2 text-gray-400 text-xs">
+                                                        Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
 
                                     {/* Show different fields based on game format */}

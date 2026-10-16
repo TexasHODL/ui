@@ -33,6 +33,8 @@ export interface PreviewOptions {
     /** Seat 1's turn: the real fold / check / call / raise controls. */
     heroTurn: boolean;
     holeCards: boolean;
+    /** 2 for Hold'em, 4 for Omaha. Ignored while hole cards are off. */
+    holeCount: 2 | 4;
     board: PreviewBoardCount;
 }
 
@@ -45,7 +47,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
 /**
  * Read the preview from the query string.
  * seats=2|4|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
- * holes=0|1 (default on), board=0|3|4|5 (default a full board),
+ * holes=0|1|4 (default two cards; 4 draws Omaha), board=0|3|4|5 (default a full board),
  * actions=all to pin an action badge on every seat,
  * turn=1 to make seat 1's turn and show the real action controls.
  * dealer=all and actions=all are preview-only: the snapshot still has one
@@ -61,20 +63,21 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
         ? requestedDealer
         : 1;
     const holes = params.get("holes");
+    const holeCount: 2 | 4 = holes === "4" ? 4 : 2;
     const holeCards = holes !== "0" && holes !== "false";
     const boardParam = params.get("board");
     const requestedBoard = boardParam === null ? Number.NaN : Number(boardParam);
     const board: PreviewBoardCount = isBoardCount(requestedBoard) ? requestedBoard : 5;
     const allActions = params.get("actions") === "all";
     const heroTurn = params.get("turn") === "1";
-    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, board };
+    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, holeCount, board };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
     const params = new URLSearchParams();
     params.set("seats", String(options.seats));
     params.set("dealer", options.allDealers ? "all" : String(options.dealer));
-    params.set("holes", options.holeCards ? "1" : "0");
+    params.set("holes", !options.holeCards ? "0" : options.holeCount === 4 ? "4" : "1");
     params.set("board", String(options.board));
     if (options.allActions) params.set("actions", "all");
     if (options.heroTurn) params.set("turn", "1");
@@ -185,7 +188,11 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             isSmallBlind: seat === 1,
             isBigBlind: seat === Math.min(2, options.seats),
             isDealer: seat === options.dealer,
-            holeCards: options.holeCards ? (seat === 1 ? ["AS", "KD"] : ["??", "??"]) : undefined,
+            holeCards: options.holeCards
+                ? (seat === 1
+                    ? (options.holeCount === 4 ? ["AS", "KD", "QC", "JH"] : ["AS", "KD"])
+                    : (options.holeCount === 4 ? ["??", "??", "??", "??"] : ["??", "??"]))
+                : undefined,
             status: PlayerStatus.ACTIVE,
             lastAction: action,
             legalActions: options.heroTurn && seat === 1 ? previewHeroLegalActions(options.seats + 1) : [],
@@ -213,7 +220,7 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         deck: "",
         pots: [pot.toString()],
         totalPot: pot.toString(),
-        nextToAct: 1,
+        nextToAct: options.heroTurn ? 1 : Math.min(2, options.seats),
         previousActions,
         actionCount: options.seats,
         handNumber: 1,

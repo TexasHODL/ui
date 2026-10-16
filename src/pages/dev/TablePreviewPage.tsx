@@ -197,6 +197,14 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
             >
                 Hole cards
             </button>
+            <button
+                type="button"
+                aria-pressed={options.holeCount === 4}
+                onClick={() => onChange({ holeCards: true, holeCount: options.holeCount === 4 ? 2 : 4 })}
+                style={buttonStyle(options.holeCount === 4 && options.holeCards)}
+            >
+                Omaha
+            </button>
             <span style={labelStyle}>Board</span>
             {PREVIEW_BOARD_COUNTS.map(count => (
                 <button

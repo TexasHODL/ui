@@ -20,9 +20,9 @@ import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { TopUpModal } from "../../../modals";
 import { displayTableName } from "../../../../utils/generatedTableName";
-import { formatGameFormatDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { formatGameFormatDisplay, formatTableGameDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
-import { GameFormat, GameOptionsDTO, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
+import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { useTableTopUp } from "../../../../hooks/game/useTableTopUp";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
@@ -41,6 +41,7 @@ export interface MobileTableHeaderProps {
 
     // Game data
     gameFormat: GameFormat | null;
+    gameVariant?: GameVariant;
     gameOptions: GameOptionsDTO | null;
     tableActivePlayers: PlayerDTO[];
 
@@ -102,6 +103,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     tableName,
     currentNetwork,
     gameFormat,
+    gameVariant,
     gameOptions,
     tableActivePlayers,
     publicKey,
@@ -336,7 +338,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             <div className="px-4 py-2 border-b border-white/10">
                                 <span className={`text-xs font-semibold ${styles.brandText}`}>
                                     {gameFormat ? `${formatGameFormatDisplay(gameFormat)} • ` : ""}
-                                    Texas Hold'em
+                                    {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
                                     <span className={`ml-1 ${styles.secondaryText}`}>
                                         ({tableActivePlayers.length}/{gameOptions.maxPlayers} Players)
                                     </span>

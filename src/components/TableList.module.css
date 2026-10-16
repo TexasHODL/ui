@@ -273,6 +273,11 @@
 .games tr.seatedRow { background: var(--theme-wash, #be87e50a); }
 .games tr.seatedRow td:first-child { box-shadow: inset 3px 0 var(--theme-accent, #be87e5); }
 .identityText > .seatedBadge { color: var(--theme-ink, #dbb8f5); font-size: 13px; font-weight: 600; }
+.identityText > .scheduledBadge {
+    color: var(--theme-accent, #8eb6ff);
+    font-size: 13px;
+    font-weight: 600;
+}
 .ownerAction { padding: 8px 10px; border: 1px solid var(--theme-wash, #e494a650); border-radius: 8px; color: var(--theme-danger, #eeb0bf); font-size: 13px; white-space: nowrap; }
 .ownerAction:hover:not(:disabled) { background: var(--theme-wash, #e494a612); }
 .ownerAction:disabled { opacity: .45; cursor: not-allowed; }

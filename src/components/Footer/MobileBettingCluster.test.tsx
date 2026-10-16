@@ -53,7 +53,8 @@ const sizing: RaiseBetControlsProps = {
     onAmountChange: jest.fn(),
     onIncrement: jest.fn(),
     onDecrement: jest.fn(),
-    onAllIn: jest.fn()
+    onAllIn: jest.fn(),
+    maxIsAllIn: true
 };
 
 describe("MobileBettingCluster", () => {

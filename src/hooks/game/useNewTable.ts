@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { GameFormat, GameVariant, COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
+import { BettingLimit, GameFormat, GameVariant, COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
 import { getSigningClient, getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
 import {  convertBlindsForBlockchain } from "../../utils/gameFormatUtils";
@@ -20,11 +20,14 @@ export interface SNGOptions {
     startingStack: number;       // Starting chips for each player (in chips, not dollars)
     blindLevelDuration?: number; // Minutes per blind level (default: 10)
     entryFee?: number;           // Flat entry fee in USDC dollars (2dp), skimmed to the creator; omitted/0 = no fee (poker-vm#2118)
+    startTime?: number;          // Scheduled start, unix seconds (poker-vm#2680): starts when full OR then with >= minPlayers; omitted = starts only when full
 }
 
 // Type for creating new table options
 export interface CreateTableOptions {
     format: GameFormat;
+    variant: GameVariant;       // Texas Hold'em or Omaha (ui#768)
+    bettingLimit: BettingLimit; // no-limit or pot-limit; independent of the variant (poker-vm#2652)
     minBuyIn: number;
     maxBuyIn: number;
     minPlayers: number;
@@ -104,14 +107,16 @@ export const useNewTable = (): UseNewTableReturn => {
                     blindLevelDuration: gameOptions.sng.blindLevelDuration ?? 0,
                     // Entry fee is quoted in USDC dollars (like the buy-in) and
                     // converted to micro-units for the chain. Omitted/0 = no fee.
-                    entryFee: hasValue(gameOptions.sng.entryFee) ? usdcToMicroBigInt(gameOptions.sng.entryFee) : 0n
+                    entryFee: hasValue(gameOptions.sng.entryFee) ? usdcToMicroBigInt(gameOptions.sng.entryFee) : 0n,
+                    // Scheduled start (poker-vm#2680). Omitted = unscheduled; the SDK
+                    // then leaves the field out of the tx.
+                    ...(hasValue(gameOptions.sng.startTime) && { startTime: gameOptions.sng.startTime })
                 };
             }
 
             // Game format is already in kebab-case from GameFormat enum
             const gameFormat = gameOptions.format;
-            // Default to Texas Hold'em for now (only variant currently supported)
-            const gameVariant = GameVariant.TEXAS_HOLDEM;
+            const gameVariant = gameOptions.variant;
 
             // Timeout in seconds from centralised timer config
             const timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
@@ -135,7 +140,8 @@ export const useNewTable = (): UseNewTableReturn => {
                 timeoutSeconds,
                 rakeConfig,
                 sngConfig,
-                gameName
+                gameName,
+                gameOptions.bettingLimit
             );
 
             if (txHash) {

@@ -24,6 +24,26 @@
 [data-mobile-readable] .hole-card-fan-slot + .hole-card-fan-slot {
     margin-left: calc(-8 * var(--mobile-unit));
 }
+/* Omaha's four cards share the same seat. Two-card Hold'em keeps the fan above. */
+.hole-card-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+[data-mobile-readable] .hole-card-row[data-count="4"] {
+    width: calc(88 * var(--mobile-unit));
+    height: calc(56 * var(--mobile-unit));
+}
+[data-mobile-readable] .hole-card-row[data-count="4"] img {
+    width: calc(28 * var(--mobile-unit)) !important;
+    height: calc(37 * var(--mobile-unit)) !important;
+    max-width: none;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+[data-mobile-readable] .hole-card-row[data-count="4"] img + img {
+    margin-left: calc(-9 * var(--mobile-unit)) !important;
+}
 [data-mobile-readable] .player-details {
     width: calc(88 * var(--mobile-unit));
     height: calc(25 * var(--mobile-unit));
@@ -149,6 +169,10 @@
     width: calc(39 * 53 / 51 * var(--mobile-unit));
     height: calc(53 * var(--mobile-unit));
     flex-basis: calc(39 * 53 / 51 * var(--mobile-unit));
+}
+[data-mobile-readable="landscape"] .hole-card-row[data-count="4"] img {
+    width: calc(29 * var(--mobile-unit)) !important;
+    height: calc(39 * var(--mobile-unit)) !important;
 }
 [data-mobile-readable="landscape"] .community-card-row > div,
 [data-mobile-readable="landscape"] .community-card-row .card {

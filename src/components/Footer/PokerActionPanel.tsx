@@ -11,6 +11,7 @@ import {
     getTotalPotMicro,
     getUserPlayer,
     isCappedAllInCall,
+    isMaxAllIn,
     isShortShoveRaise,
     shouldShowShowdownBar,
     validRaiseAmount
@@ -30,7 +31,7 @@ import { useAutoDeal } from "../../hooks/playerActions/useAutoDeal";
 import { useAutoPostBlinds } from "../../hooks/playerActions/useAutoPostBlinds";
 import { useAutoNewHand } from "../../hooks/playerActions/useAutoNewHand";
 import { useAutoFold } from "../../hooks/playerActions/useAutoFold";
-import { usePreCheck } from "../../hooks/playerActions/usePreCheck";
+import { usePreAction } from "../../hooks/playerActions/usePreAction";
 import { usePlayerTimer } from "../../hooks/player/usePlayerTimer";
 import { useAutoShowCards } from "../../hooks/playerActions/useAutoShowCards";
 import { useAutoMuck } from "../../hooks/playerActions/useAutoMuck";
@@ -63,8 +64,9 @@ import { BlindButtonGroup } from "./BlindButtonGroup";
 import { MainActionButtons } from "./MainActionButtons";
 import { MobileBettingCluster } from "./MobileBettingCluster";
 import { RaiseBetControls } from "./RaiseBetControls";
-import { PreCheckControl } from "./PreCheckControl";
-import { isCheckFreeForPlayer } from "../../utils/chipUtils";
+import { PreActionControls } from "./PreActionControls";
+import { isCheckFreeForPlayer, hasVoluntarilyCommittedThisRound, amountToCallMicroForPlayer } from "../../utils/chipUtils";
+import { shouldShowPreActions, shouldClearPreAction, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
 
 // Import types
 import type { PokerActionPanelProps } from "./types";
@@ -75,7 +77,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // retry, the confirmation gate (busy stays until the chain advances a signal
     // — ui#364/#440), the 8s escape-hatch, and centralized error toasts.
     // Every submission from this panel — manual buttons AND the automatic hooks
-    // (new-hand / blinds / deal / fold / pre-check / show / muck) — goes through
+    // (new-hand / blinds / deal / fold / pre-action / show / muck) — goes through
     // the one ActionSubmitController (ui#635), so its loadingAction is the single
     // source for every spinner.
     const { submit, loadingAction, isBusy: isSubmitBusy, lastError: submitLastError } = useActionSubmit();
@@ -223,38 +225,39 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     );
     useAutoFold(tableId, network, hasFoldAction, hasCheckAction, isUsersTurn, timeRemaining, submit, isSubmitBusy, handleAutoActionSubmitted, autoFoldEnabled);
 
-    // Pre-select "Check" (ui#388): before it's the player's turn, if checking
-    // would be free, offer a box that auto-checks the instant action reaches them.
-    // Ephemeral per-round intent — NOT a persisted setting.
-    const [preCheckQueued, setPreCheckQueued] = useState(false);
+    // Pre-select "Check/Fold" (ui#388): before it's the player's turn, if checking
+    // would be free, offer a box that checks when action reaches them, or folds if
+    // someone bets first. Ephemeral per-round intent — NOT a persisted setting.
+    // The pre-action bar (ui#388): while it is not the player's turn they arm one of
+    // Check/Fold, Check | Call {amount}, or Call Any, which fires on their turn.
+    const [preAction, setPreAction] = useState<PreAction | null>(null);
+    const [armedCallMicro, setArmedCallMicro] = useState<bigint | null>(null);
 
-    // "Checking is free for me right now": no one has out-committed me this round
-    // (blind-aware — the preflop BB stays check-free until a raise).
-    const facingNoBet = useMemo(
-        () => isCheckFreeForPlayer(players, userAddress, gameState?.round, gameState?.previousActions ?? []),
+    // Whether the player will be able to CHECK when action returns to them: no one has
+    // out-committed them this round AND they have not themselves bet/called this round
+    // (after committing, action only returns via a raise they must answer — ui#388).
+    const canCheckNext = useMemo(() => {
+        const even = isCheckFreeForPlayer(players, userAddress, gameState?.round, gameState?.previousActions ?? []);
+        const committed = hasVoluntarilyCommittedThisRound(userAddress ?? "", gameState?.round ?? "", gameState?.previousActions ?? []);
+        return even && !committed;
+    }, [players, userAddress, gameState?.round, gameState?.previousActions]);
+
+    // Chips owed to call right now (0 when even) — drives the "Call {amount}" button and
+    // is available before the turn, when there is no CALL legal action yet.
+    const preActionCallMicro = useMemo(
+        () => amountToCallMicroForPlayer(players, userAddress, gameState?.round, gameState?.previousActions ?? []),
         [players, userAddress, gameState?.round, gameState?.previousActions]
     );
+    const preActionStackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
 
-    // Offer the control only while the opt-in setting is ON (default OFF, ui#388),
-    // and then only while seated in the hand, not to act, and check-free.
-    const showPreCheck = preSelectCheck && !isUsersTurn && playerStatus === PlayerStatus.ACTIVE && facingNoBet;
-
-    // Clear the queued intent when the box should hide for a reason OTHER than it
-    // becoming the player's turn (a bet landed, or they left ACTIVE). When the turn
-    // arrives we intentionally leave it set so usePreCheck can consume it.
-    useEffect(() => {
-        if (preCheckQueued && !isUsersTurn && (!facingNoBet || playerStatus !== PlayerStatus.ACTIVE)) {
-            setPreCheckQueued(false);
-        }
-    }, [preCheckQueued, isUsersTurn, facingNoBet, playerStatus]);
-
-    // A queued pre-check is scoped to the current betting round only.
-    useEffect(() => {
-        setPreCheckQueued(false);
-    }, [gameState?.round]);
-
-    const clearPreCheck = useCallback(() => setPreCheckQueued(false), []);
-    usePreCheck(tableId, network, preCheckQueued, hasCheckAction, isUsersTurn, submit, isSubmitBusy, onTransactionSubmitted, clearPreCheck);
+    // Which pre-action buttons to show (empty = hide): can check → Check/Fold·Check·Call Any;
+    // owe a bet you can cover → Fold·Call {amount}·Call Any; calling would jam → Fold·All In;
+    // committed with nothing owed → nothing until a raise lands.
+    const preActionBtns = useMemo(() => {
+        const owesBet = preActionCallMicro > BigInt(0);
+        const callIsAllInPre = owesBet && preActionStackMicro > BigInt(0) && preActionCallMicro >= preActionStackMicro;
+        return preActionButtons(canCheckNext, owesBet, callIsAllInPre);
+    }, [canCheckNext, preActionCallMicro, preActionStackMicro]);
 
     // Auto-show-cards hook - automatically shows cards when the action timer expires
     useAutoShowCards(tableId, network, hasShowAction, isUsersTurn, timeRemaining, submit, isSubmitBusy, onTransactionSubmitted);
@@ -302,6 +305,67 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const bigBlindUsdc = useMemo(() => toDisplay(bigBlindMicro), [toDisplay, bigBlindMicro]);
     const formattedCallAmount = useMemo(() => formatDisplayAmount(callAmount, isTournament), [callAmount, isTournament]);
 
+    // ---- Pre-action bar (ui#388) ------------------------------------------------
+    const preActionCallLabel = useMemo(() => formatDisplayAmount(toDisplay(preActionCallMicro), isTournament), [toDisplay, preActionCallMicro, isTournament]);
+
+    // Arm a pre-action (mutually exclusive). "Call this amount" remembers the size it
+    // was armed at, so a later raise (the owed amount changes) invalidates it.
+    const armPreAction = useCallback(
+        (action: PreAction | null) => {
+            setPreAction(action);
+            setArmedCallMicro(action === "call-exact" ? preActionCallMicro : null);
+        },
+        [preActionCallMicro]
+    );
+
+    // Show the bar while it is not the player's turn, they are in the hand, on a betting
+    // street, AND there is at least one applicable button (hidden when committed with
+    // nothing owed). See utils/preActions.
+    const showPreActions =
+        shouldShowPreActions({ enabled: preSelectCheck, isUsersTurn, playerStatus, round: gameState?.round }) && preActionBtns.length > 0;
+
+    // Scope an armed pre-action to the current round.
+    useEffect(() => {
+        setPreAction(null);
+        setArmedCallMicro(null);
+    }, [gameState?.round]);
+
+    // Clear when leaving the hand, or when the armed selection no longer fits the current
+    // button set (the situation changed), or when a "Call {amount}" pick's size changed.
+    useEffect(() => {
+        if (preAction == null) return;
+        const left = shouldClearPreAction({ action: preAction, isUsersTurn, playerStatus });
+        const amountChanged = preAction === "call-exact" && preActionCallMicro !== armedCallMicro;
+        const stale = !isUsersTurn && (!preActionBtns.includes(preAction) || amountChanged);
+        if (left || stale) {
+            setPreAction(null);
+            setArmedCallMicro(null);
+        }
+    }, [preAction, isUsersTurn, playerStatus, preActionBtns, preActionCallMicro, armedCallMicro]);
+
+    // A queued pre-action acts on the player's turn WITHOUT the betting bar appearing:
+    // once it is their turn and the armed action resolves to a real move, usePreAction
+    // submits it, so the action controls are suppressed (no flash of the betting bar).
+    const preActionLegal = { hasCheckAction, hasCallAction, hasFoldAction };
+    const preActionFiring = isUsersTurn && preAction != null && resolvePreAction(preAction, preActionLegal) != null;
+
+    const clearPreAction = useCallback(() => {
+        setPreAction(null);
+        setArmedCallMicro(null);
+    }, []);
+    usePreAction(
+        tableId,
+        network,
+        preAction,
+        preActionLegal,
+        callAmountMicro,
+        isUsersTurn,
+        submit,
+        isSubmitBusy,
+        onTransactionSubmitted,
+        clearPreAction
+    );
+
     // All-in as a FE label (poker-vm#2351/#2353). The engine never advertises an
     // ALL_IN action; a whole-stack commit arrives as a normal legal action whose
     // `max` equals the stack. Two shapes need FE handling:
@@ -313,6 +377,12 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const stackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
     const shortShoveRaise = useMemo(() => isShortShoveRaise(legalActions, stackMicro), [legalActions, stackMicro]);
     const callIsAllIn = useMemo(() => isCappedAllInCall(legalActions, stackMicro), [legalActions, stackMicro]);
+    // Pot-limit (ui#768): the engine caps the bet/raise max at the pot, so for a
+    // deep stack the max is a pot-sized bet, not an all-in.
+    const maxIsAllIn = useMemo(
+        () => isMaxAllIn(hasBetAction ? maxBetMicro : maxRaiseMicro, stackMicro),
+        [hasBetAction, maxBetMicro, maxRaiseMicro, stackMicro]
+    );
     const formattedAllInAmount = useMemo(() => formatDisplayAmount(toDisplay(stackMicro), isTournament), [toDisplay, stackMicro, isTournament]);
     const formattedMaxBetAmount = useMemo(
         () => getFormattedMaxBetAmount(hasBetAction, maxBet, maxRaise, isTournament),
@@ -398,11 +468,11 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
         return {
             canFoldAnytime: hasFoldAction && !hasFoldedOrMucked(playerStatus) && showButtons,
-            showActionButtons: isUsersTurn && hasElements(legalActions) && showButtons && !controlsPending,
+            showActionButtons: isUsersTurn && hasElements(legalActions) && showButtons && !controlsPending && !preActionFiring,
             showSmallBlindButton: shouldShowSmallBlindButton && showButtons && !controlsPending,
             showBigBlindButton: shouldShowBigBlindButton && showButtons && !controlsPending
         };
-    }, [hasSmallBlindAction, hasBigBlindAction, isUsersTurn, userPlayer, hasFoldAction, playerStatus, legalActions, controlsPending]);
+    }, [hasSmallBlindAction, hasBigBlindAction, isUsersTurn, userPlayer, hasFoldAction, playerStatus, legalActions, controlsPending, preActionFiring]);
 
     // Increment/decrement handlers - always step by big blind amount
     const getStep = (): number => {
@@ -426,7 +496,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const newHandVisible = gameState?.round === TexasHoldemRound.END && !autoNewHandEnabled && !controlsPending;
     const dealingVisible = Boolean(autoNewHandEnabled && isDealingNewHand && !controlsPending);
     const blindsVisible = (showSmallBlindButton || showBigBlindButton) && !controlsPending;
-    const dockOpen = showPreCheck || shouldShowDealButton || newHandVisible || dealingVisible || showdownVisible || blindsVisible || showMobileActions;
+    const dockOpen = showPreActions || shouldShowDealButton || newHandVisible || dealingVisible || showdownVisible || blindsVisible || showMobileActions;
     const dockRef = useRef<HTMLDivElement>(null);
 
     useLayoutEffect(() => {
@@ -444,14 +514,15 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
         if (!hasContent(tableId)) return;
         const amountMicro = fromDisplay(maxAmount);
-        if (playerActionSounds) {
+        // A pot-limit max short of the stack is a normal bet/raise: let the
+        // controller play its usual sound rather than announcing an all-in.
+        if (playerActionSounds && maxIsAllIn) {
             playActionSound("all-in");
         }
-        // Sound already played above; skip the controller's default sound.
         submitAction(
             hasRaiseAction ? "raise" : "bet",
             () => (hasRaiseAction ? raiseHand(tableId, amountMicro, network) : betHand(tableId, amountMicro, network)),
-            false
+            !maxIsAllIn
         );
     };
 
@@ -479,7 +550,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         isRaiseAmountInvalid,
         playerStatus: userPlayer?.status || PlayerStatus.SEATED,
         loading: loadingAction,
-        isAllIn: raiseAmount >= (hasBetAction ? maxBet : maxRaise),
+        isAllIn: maxIsAllIn && raiseAmount >= (hasBetAction ? maxBet : maxRaise),
         isMobileLandscape,
         currentRound: gameState?.round || TexasHoldemRound.ANTE,
         previousActions: gameState?.previousActions || [],
@@ -514,7 +585,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         onAmountChange: setRaiseAmount,
         onIncrement: handleRaiseIncrement,
         onDecrement: handleRaiseDecrement,
-        onAllIn: handleAllInAction
+        onAllIn: handleAllInAction,
+        maxIsAllIn
     };
 
     return (
@@ -533,10 +605,19 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                         : "flex flex-col w-full justify-center rounded-lg relative z-10 lg:w-[570px] mx-4 lg:mx-0 space-y-2 lg:space-y-3 max-w-full"
                 }
             >
-                {/* Pre-select "Check" (ui#388) — offered when it's not your turn
-                    and checking is currently free; auto-checks on your turn, and
-                    clears itself the moment a bet lands. */}
-                {showPreCheck && <PreCheckControl checked={preCheckQueued} onChange={setPreCheckQueued} isMobileLandscape={isMobileLandscape} />}
+                {/* Pre-action bar (ui#388) — shown when it's not your turn: Check/Fold,
+                    Check | Call {amount}, and Call Any. Arm one and it fires on your turn
+                    with no betting bar. On a phone it stays inside the action dock. */}
+                {showPreActions && (
+                    <PreActionControls
+                        buttons={preActionBtns}
+                        armed={preAction}
+                        onArm={armPreAction}
+                        callAmountLabel={preActionCallLabel}
+                        isMobileLandscape={isMobileLandscape}
+                        compact={isMobileBetting}
+                    />
+                )}
 
                 {/* Deal Button Group */}
                 {shouldShowDealButton && (

@@ -108,6 +108,7 @@ import { useGameResults } from "../../hooks/game/useGameResults"; // Game result
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { SitOutIntentProvider } from "../../context/SitOutIntentContext";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
+import { hasTournamentStarted } from "../../utils/scheduledSng";
 import { getCosmosBalance, getCosmosAddressSync, getFormattedCosmosAddress } from "../../utils/cosmosAccountUtils";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useGameSettings } from "../../context/GameSettingsContext";
@@ -683,6 +684,7 @@ const Table = React.memo(() => {
         unsubscribeFromTable,
         gameState,
         gameFormat,
+        gameVariant,
         gameName,
         validationError,
         error,
@@ -740,15 +742,17 @@ const Table = React.memo(() => {
     // Update to use the imported hook
     const tableDataValues = useTableData();
     const { isUserAlreadyPlaying, emptySeatIndexes } = useVacantSeatData();
-    // Determine if we're in a Sit & Go waiting for players state
-    // This is true when: it's a sit-and-go, the user is seated, but not all seats are filled
+    // Determine if we're in a Sit & Go waiting for players state: it's a
+    // sit-and-go, the user is seated, seats are still empty, and the tournament
+    // has not started. A scheduled sit-and-go (poker-vm#2680) starts with empty
+    // seats, so "started" is read from the state, not from the seat count.
     const isSitAndGoWaitingForPlayers = useMemo(() => {
         const isSitAndGo = isSitAndGoFormat(gameFormat);
         const hasEmptySeats = hasElements(emptySeatIndexes);
-        const result = isSitAndGo && isUserAlreadyPlaying && hasEmptySeats;
+        const result = isSitAndGo && isUserAlreadyPlaying && hasEmptySeats && !hasTournamentStarted(gameState);
 
         return result;
-    }, [gameFormat, isUserAlreadyPlaying, emptySeatIndexes.length]);
+    }, [gameFormat, isUserAlreadyPlaying, emptySeatIndexes.length, gameState]);
 
     // invoke hook for seat loop
     const { winnerInfo } = useWinnerInfo();
@@ -1357,6 +1361,7 @@ const Table = React.memo(() => {
                         tableName={gameName}
                         currentNetwork={currentNetwork}
                         gameFormat={gameFormat || null}
+                        gameVariant={gameVariant}
                         gameOptions={gameOptions}
                         tableActivePlayers={tableActivePlayers}
                         publicKey={publicKey}
@@ -1385,14 +1390,14 @@ const Table = React.memo(() => {
                         onToggleSettings={onToggleSettings}
                         handleLeaveTableClick={handleLeaveTableClick}
                         handleShareHand={handleShareHand}
-                    />
-                ) : (
+                    />                ) : (
                     <TableHeader
                         onToggleFocus={() => setTableOnly(true)}
                         tableId={id || ""}
                         tableName={gameName}
                         isMobileLandscape={isMobileLandscape}
                         gameFormat={gameFormat || null}
+                        gameVariant={gameVariant}
                         gameOptions={gameOptions}
                         tableActivePlayers={tableActivePlayers}
                         publicKey={publicKey}

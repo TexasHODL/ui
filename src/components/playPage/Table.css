@@ -452,6 +452,40 @@
     width: 100%;
     min-height: 0;
 }
+/* Pre-action Check/Fold stays inside the phone dock. Portrait is one wrapping
+   row in the reserved slot; landscape stacks down the side column. */
+.pre-action-compact {
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+}
+.pre-action-compact button {
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 12px;
+    line-height: 1.15;
+    gap: 4px;
+}
+.table-play-row.is-portrait .pre-action-compact {
+    max-height: 100%;
+}
+.table-play-row.is-landscape .mobile-dock-inner {
+    justify-content: flex-end;
+}
+.table-play-row.is-landscape .pre-action-compact {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    height: 100%;
+}
+.table-play-row.is-landscape .pre-action-compact button {
+    width: 100%;
+    flex: 0 0 auto;
+    padding: 8px 6px;
+}
 .table-play-row.is-landscape .mobile-dock-root,
 .table-play-row.is-landscape .mobile-dock-inner {
     height: 100%;
