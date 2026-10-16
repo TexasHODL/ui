@@ -319,9 +319,12 @@ describe("landscape mobile readability", () => {
                     : [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
                         mobileFeltContains(chip.x + sx * chipHalf, chip.y + sy * 18, scaleY, shiftY)
                     );
-                // 4-seat portrait seats 2 and 4 are centred on the rail, so the
-                // pile centre sits on the felt edge.
-                const centredOnRail = portrait && size === 4 && (index === 1 || index === 3);
+                // 4-seat seats 2 and 4, and 6-seat seats 2, 3 and 5, are centred
+                // on the rail, so the pile centre sits on the felt edge.
+                const centredOnRail = portrait && (
+                    (size === 4 && (index === 1 || index === 3))
+                    || (size === 6 && (index === 1 || index === 2 || index === 4))
+                );
                 if (!onFelt && !centredOnRail) problems.push(`${size} seat ${index + 1} chip off the felt at ${chip.x},${chip.y}`);
             });
             expect(problems).toEqual([]);
@@ -712,10 +715,7 @@ describe("landscape mobile readability", () => {
                 const expected = 3 + overhang + 3 * zoom;
                 expect(bet.air).toBeGreaterThan(expected - 1.5);
                 expect(bet.air).toBeLessThan(expected + 1.5);
-                expect(bet.x).toBe(clamped(bet.seatX));
-                expect(bet.x).not.toBe(Math.round(bet.seatX));
-                const inward = Math.sign(feltW / 2 - bet.seatX) || 1;
-                expect(mobileFeltContains(bet.x - inward * chipHX, parseFloat(placed.chips[index].top ?? "0"), 1, 0)).toBe(true);
+                expect(bet.x).toBe(Math.round(bet.seatX));
             });
             const stackHalf = (chipPx + 12) / 2 + 4;
             [1, 5].forEach(index => {
@@ -727,9 +727,13 @@ describe("landscape mobile readability", () => {
                 const modelGap = 3 + 3 * zoom;
                 expect(gap).toBeGreaterThan(modelGap - 1.5);
                 expect(gap).toBeLessThan(modelGap + 1.5);
-                expect(chipX).toBe(clamped(seatX));
-                const inward = Math.sign(feltW / 2 - seatX) || 1;
-                expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
+                if (index === 1) {
+                    expect(chipX).toBe(Math.round(seatX));
+                } else {
+                    expect(chipX).toBe(clamped(seatX));
+                    const inward = Math.sign(feltW / 2 - seatX) || 1;
+                    expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
+                }
                 const board = cards[6];
                 const onBoard = Math.abs(chipX - board.x) < chipHX + board.hw
                     && Math.abs(chipY - board.y) < stackHalf + board.hy;

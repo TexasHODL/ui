@@ -1164,15 +1164,15 @@ export function placeMobileRailMarkers(
             point.y = y;
             remember(index, x, y);
         };
-        // Centred on the seat, just above that seat's cards. Clamped inward
-        // only when the centred pile would leave the felt.
-        const aboveCards = (index: number, avoidBanners = false, bannerDrop = 0) => {
+        // Just above that seat's cards. Clamped inward only when the pile
+        // would leave the felt, unless the caller asks for the seat centre.
+        const aboveCards = (index: number, avoidBanners = false, bannerDrop = 0, clamp = true) => {
             const point = chipCenters[index];
             const seat = seatBoxes[index];
             const card = holeCards[index];
             if (!point || !seat || !card) return;
             const inward = Math.sign(cx - seat.x) || 1;
-            let x = clampToRail(seat.x);
+            let x = clamp ? clampToRail(seat.x) : Math.round(seat.x);
             let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
             const clear = (yy: number) => {
                 if (!mobileFeltContains(x, yy, 1, 0)) return false;
@@ -1238,17 +1238,17 @@ export function placeMobileRailMarkers(
                 remember(index, x, y);
             });
         }
-        // 6-seat. Seat 4 (top) was under BET. Seats 3 and 5 sit under their
-        // own banners. Seats 2 and 6 sit above their own cards. Side seats
-        // are on the rail, so a centred pile is clamped inward until it is
-        // on the felt.
+        // 6-seat. Seats 3, 4 and 5 sit under their own banners. Seat 2 sits
+        // above its cards. Those four are on the seat centre. Seat 6 stays
+        // above its cards and clamped onto the felt.
         if (tableSize === 6) {
             // Seat 4's preview pile is a second denomination stacked on the
             // cents, so it hangs about 4 stage px below the single-stack model.
             underBanner(3, false, 4);
-            underBanner(2, true);
-            underBanner(4, true);
-            [1, 5].forEach(index => aboveCards(index));
+            underBanner(2, false);
+            underBanner(4, false);
+            aboveCards(1, false, 0, false);
+            aboveCards(5);
         }
         // 9-seat. Seats 2, 3, 8 and 9 sit above their own cards. Seats 4–7
         // sit under their own banners. A centred pile is clamped inward only
