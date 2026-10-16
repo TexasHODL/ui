@@ -1266,7 +1266,7 @@ export function placeMobileRailMarkers(
             underBanner(3, false, 4);
             underBanner(2, true);
             underBanner(4, true);
-            [1, 5].forEach(aboveCards);
+            [1, 5].forEach(index => aboveCards(index));
         }
         // 9-seat. Seats 2, 3, 8 and 9 sit above their own cards. Seats 4–7
         // sit under their own banners. A centred pile is clamped inward only
