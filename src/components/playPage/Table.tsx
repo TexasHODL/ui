@@ -1442,7 +1442,8 @@ const Table = React.memo(() => {
                         Desktop landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH
                         and heightened by MOBILE_LANDSCAPE_HEIGHT_STRETCH.
-                        Portrait: 500×1000 at (175,300) on the 850×1600 stage.
+                        Portrait: 500×1000 at (175,300) on the 850×1600 stage,
+                        heightened by MOBILE_PORTRAIT_HEIGHT_STRETCH. Width stays 500.
                         Also the root for the card-animation durations (src/bus/timing.ts → CSS custom properties). */}
                         <div
                             ref={tableDivRef}

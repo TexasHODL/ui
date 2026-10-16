@@ -1069,6 +1069,53 @@ export function placeMobileRailMarkers(
             }
         }
     }
+    // Portrait. Push any pile that still touches a banner, a hole card or its
+    // dealer button toward the table centre, on the axis where the overlap is
+    // thinner. Landscape passes above do not run on this felt.
+    if (!landscapeTable) {
+        const pileHW = 42 / z;
+        const pileHH = 16 / z;
+        const air = 4 / z;
+        const dealerR = 11 * unitStage;
+        const dealerShift = (9.5 * unitStage + dealerR + 3 / z) / Math.SQRT2;
+        const banners: KeepOut[] = seatBoxes.map(seat => ({
+            x: seat.x,
+            y: seat.y + seatHY - 22 + 27.5,
+            hw: 146,
+            hy: 27.5
+        }));
+        const dealers: KeepOut[] = seatBoxes.map(seat => ({
+            x: seat.x - 31.5 * unitStage - dealerShift,
+            y: seat.y + 23 * unitStage - dealerShift,
+            hw: dealerR,
+            hy: dealerR
+        }));
+        seatBoxes.forEach((seat, index) => {
+            const point = chipCenters[index];
+            if (!point) return;
+            const obstacles = [...banners, ...holeCards, dealers[index]];
+            for (let iter = 0; iter < 12; iter++) {
+                let pushed = false;
+                for (const box of obstacles) {
+                    const overlapX = pileHW + box.hw + air - Math.abs(point.x - box.x);
+                    const overlapY = pileHH + box.hy + air - Math.abs(point.y - box.y);
+                    if (overlapX <= 0 || overlapY <= 0) continue;
+                    const towardX = Math.sign(cx - seat.x) || Math.sign(point.x - box.x) || 1;
+                    const towardY = Math.sign(cy - seat.y) || Math.sign(point.y - box.y) || 1;
+                    const nextX = overlapX <= overlapY ? point.x + towardX * (overlapX + 1) : point.x;
+                    const nextY = overlapX <= overlapY ? point.y : point.y + towardY * (overlapY + 1);
+                    // The centre has to stay on the felt. The wide search box
+                    // would refuse the last few pixels and leave a graze.
+                    if (!mobileFeltContains(nextX, nextY, 1, 0)) continue;
+                    point.x = nextX;
+                    point.y = nextY;
+                    pushed = true;
+                }
+                if (!pushed) break;
+            }
+            remember(index, point.x, point.y);
+        });
+    }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };

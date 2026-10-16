@@ -1,6 +1,6 @@
 import { landscapeCommunityCardSize, landscapeHoleCardSize, mobileCardUnit, MOBILE_HOLE_CARD_HEIGHT, MOBILE_HOLE_CARD_WIDTH, communityCardHeight } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -152,9 +152,14 @@ describe("landscape mobile readability", () => {
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
-        expect(getStageDims().tableWidth).toBe(500);
-        expect(getStageDims().tableHeight).toBe(1000);
-        expect(getDeckOrigin()).toEqual({ left: "250px", top: "360px" });
+        const portraitDims = getStageDims();
+        expect(portraitDims.tableWidth).toBe(500);
+        expect(mobilePortraitHeightStretch()).toBeGreaterThan(1);
+        expect(mobilePortraitHeightStretch()).toBeLessThanOrEqual(MOBILE_PORTRAIT_HEIGHT_STRETCH);
+        expect(portraitDims.tableHeight).toBeCloseTo(1000 * mobilePortraitHeightStretch(), 5);
+        expect(portraitDims.originX).toBe(175);
+        expect(getDeckOrigin().left).toBe("250px");
+        expect(parseFloat(getDeckOrigin().top)).toBeCloseTo(portraitDims.tableHeight / 2 - 140, 5);
     });
 
     test("centres 9-seat wings between the neighbouring widgets on mobile landscape", () => {
@@ -570,8 +575,8 @@ describe("landscape mobile readability", () => {
         }
         const portrait = place(390, 844);
         expect(portrait.placed.chips.map(chip => `${chip.left},${chip.top}`)).toEqual([
-            "250px,902px",
-            "250px,73px"
+            "250px,1015px",
+            "250px,110px"
         ]);
     });
 

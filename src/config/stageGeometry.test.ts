@@ -1,4 +1,5 @@
-import { calculateZoom, VIEWPORT_PARAMS, getSeatPositions, getViewportMode, getTableTransform, getContentBounds, type TableSize } from "./stageGeometry";
+import { calculateZoom, VIEWPORT_PARAMS, getSeatPositions, getSeatCoords, getStageDims, getViewportMode, getTableTransform, getContentBounds, mobilePortraitHeightStretch, MOBILE_PORTRAIT_HEIGHT_STRETCH, type TableSize } from "./stageGeometry";
+import { mobileCardUnit } from "./mobileCardSizing";
 
 describe("getViewportMode", () => {
     const originalMatchMedia = window.matchMedia;
@@ -112,6 +113,49 @@ describe("getViewportMode", () => {
                 expect(Math.max(...xs) - Math.min(...xs)).toBeGreaterThan(Math.max(...ys) - Math.min(...ys));
             }
         });
+    });
+
+    it.each([
+        [390, 844],
+        [375, 667],
+        [412, 915],
+        [360, 800]
+    ])("stretches portrait %dx%d so the top cards and the hero banner fill the stage", (width, height) => {
+        setViewport(width, height, true);
+        const stageH = height - 68 - 86;
+        const stretch = mobilePortraitHeightStretch();
+        expect(MOBILE_PORTRAIT_HEIGHT_STRETCH).toBe(1.35);
+        expect(stretch).toBeGreaterThan(1);
+        expect(stretch).toBeLessThanOrEqual(MOBILE_PORTRAIT_HEIGHT_STRETCH);
+        expect(getStageDims().tableWidth).toBe(500);
+        expect(getStageDims().tableHeight).toBeCloseTo(1000 * stretch, 5);
+        expect(getSeatCoords(2)[0]).toEqual([425, 1300]);
+        expect(Math.min(...getSeatCoords(9).map(point => point[1]))).toBe(275);
+        for (const size of [2, 4, 6, 9] as TableSize[]) {
+            const zoom = calculateZoom(size, width, stageH);
+            const transform = getTableTransform(zoom, size, width, stageH);
+            const ty = Number(transform.match(/translate\([^,]+, ([^)]+)px\)/)?.[1]);
+            const dims = getStageDims();
+            const half = 35.5 * parseFloat(mobileCardUnit(true, zoom, width, stageH));
+            const tops = getSeatPositions(size).map(seat => dims.originY + parseFloat(seat.top));
+            const cardTop = ty + (Math.min(...tops) - half) * zoom;
+            const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
+            expect(cardTop).toBeGreaterThanOrEqual(3.5);
+            expect(cardTop).toBeLessThanOrEqual(8);
+            const bannerGap = stageH - actionBottom;
+            expect(bannerGap).toBeGreaterThanOrEqual(2);
+            expect(bannerGap).toBeLessThanOrEqual(8);
+            expect(parseFloat(getSeatPositions(size)[0].left)).toBeCloseTo(250, 1);
+        }
+    });
+
+    it("leaves landscape and desktop felt sizes on their own stretches", () => {
+        setViewport(844, 390, true);
+        expect(mobilePortraitHeightStretch()).toBe(1);
+        setViewport(1440, 900, false);
+        expect(mobilePortraitHeightStretch()).toBe(1);
+        expect(getStageDims().tableWidth).toBe(1000);
+        expect(getStageDims().tableHeight).toBe(500);
     });
 
     it.each([

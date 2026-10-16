@@ -641,3 +641,193 @@ test.describe("landscape bets clear the dealer disc", () => {
         }
     }
 });
+
+/**
+ * Mobile portrait. The height stretch puts the top hole cards just under the
+ * header and the hero action banner just above the action dock. Chips stay
+ * on the felt, in front of their own seat, and off cards, action boxes and
+ * the dealer button. The raise slider may float over the felt.
+ */
+test.describe("portrait table fit", () => {
+    const viewports = [
+        { width: 390, height: 844 },
+        { width: 375, height: 667 },
+        { width: 412, height: 915 },
+        { width: 360, height: 800 }
+    ] as const;
+
+    for (const viewport of viewports) {
+        for (const seats of [2, 4, 6, 9]) {
+            test(`${seats} seats at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+                await page.setViewportSize({ width: viewport.width, height: viewport.height });
+                await page.addInitScript(() => {
+                    const original = window.matchMedia.bind(window);
+                    window.matchMedia = (query: string) => {
+                        if (query.includes("pointer") && query.includes("coarse")) {
+                            return {
+                                matches: true,
+                                media: query,
+                                onchange: null,
+                                addListener() {},
+                                removeListener() {},
+                                addEventListener() {},
+                                removeEventListener() {},
+                                dispatchEvent() { return false; }
+                            } as MediaQueryList;
+                        }
+                        return original(query);
+                    };
+                });
+                await page.goto(`/table-preview?seats=${seats}&turn=1&dealer=all&actions=all&holes=1&board=5`);
+                await page.waitForSelector(".chip-position");
+                await page.waitForSelector("[data-dealer-button]");
+                await page.waitForSelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
+                await page.waitForSelector(".mobile-history-trigger");
+                await page.waitForSelector(".mobile-action-slot");
+                await page.waitForSelector(".hole-card-fan img");
+                await page.addStyleTag({
+                    content: "*, *::before, *::after { animation: none !important; transition: none !important; }"
+                });
+
+                const problems = await page.evaluate((seatCount) => {
+                    const found: string[] = [];
+                    const box = (el: Element) => {
+                        const r = el.getBoundingClientRect();
+                        return { x: r.x, y: r.y, r: r.right, b: r.bottom };
+                    };
+                    const union = (el: Element) => {
+                        const rect = box(el);
+                        el.querySelectorAll("img").forEach(img => {
+                            const r = box(img);
+                            rect.x = Math.min(rect.x, r.x);
+                            rect.y = Math.min(rect.y, r.y);
+                            rect.r = Math.max(rect.r, r.r);
+                            rect.b = Math.max(rect.b, r.b);
+                        });
+                        return rect;
+                    };
+                    const overlap = (a: { x: number; y: number; r: number; b: number }, b: { x: number; y: number; r: number; b: number }) => {
+                        const ix = Math.min(a.r, b.r) - Math.max(a.x, b.x);
+                        const iy = Math.min(a.b, b.b) - Math.max(a.y, b.y);
+                        return { ix, iy };
+                    };
+                    const vw = window.innerWidth;
+                    const vh = window.innerHeight;
+                    const header = document.querySelector(".table-banner-wrap");
+                    const dock = document.querySelector(".mobile-action-slot");
+                    const felt = document.querySelector(".table-surface-shadow");
+                    if (!header || !dock || !felt) {
+                        found.push("missing header, dock, or felt");
+                        return found;
+                    }
+                    const headerBottom = header.getBoundingClientRect().bottom;
+                    const dockTop = dock.getBoundingClientRect().top;
+                    const feltRect = felt.getBoundingClientRect();
+                    const cx = feltRect.x + feltRect.width / 2;
+                    const cy = feltRect.y + feltRect.height / 2;
+                    const cards = [...document.querySelectorAll(".hole-card-fan img")].map(box);
+                    if (cards.length === 0) found.push("no hole cards");
+                    const cardTop = Math.min(...cards.map(card => card.y));
+                    const cardGap = cardTop - headerBottom;
+                    if (cardGap < 2 || cardGap > 8) found.push(`top card gap is ${cardGap.toFixed(1)}px`);
+                    const banners = [...document.querySelectorAll(".seat-banner-shell.seat-banner-visible .seat-banner-box")].map(el => ({
+                        label: (el.textContent || "").replace(/\s+/g, " ").trim(),
+                        rect: box(el)
+                    }));
+                    const hero = banners.find(banner => banner.label.includes("ALL IN"));
+                    if (!hero) found.push("missing hero ALL IN banner");
+                    else {
+                        const bannerGap = dockTop - hero.rect.b;
+                        if (bannerGap < 2 || bannerGap > 8) found.push(`hero banner gap is ${bannerGap.toFixed(1)}px`);
+                    }
+                    const history = document.querySelector(".mobile-history-trigger");
+                    const historyRect = history ? box(history) : null;
+                    if (!history || !historyRect) found.push("missing History button");
+                    else {
+                        if (historyRect.y < headerBottom - 1 || historyRect.b > dockTop + 1 || historyRect.x < -1 || historyRect.r > vw + 1) {
+                            found.push("History button is off its spot");
+                        }
+                    }
+                    const onFelt = (x: number, y: number) => {
+                        const radius = feltRect.width / 2;
+                        const pad = 2;
+                        if (y >= feltRect.y + radius && y <= feltRect.bottom - radius) {
+                            return x >= feltRect.x + pad && x <= feltRect.right - pad;
+                        }
+                        const capY = y < feltRect.y + radius ? feltRect.y + radius : feltRect.bottom - radius;
+                        const dx = x - (feltRect.x + radius);
+                        const dy = y - capY;
+                        return dx * dx + dy * dy <= (radius - pad) * (radius - pad);
+                    };
+                    const chips = [...document.querySelectorAll(".chip-position")].map(union);
+                    const seats = [...document.querySelectorAll(".player-seat")].map(el => {
+                        const badge = el.querySelector(".badge-number");
+                        const label = badge ? (badge.childNodes[0]?.textContent || "").trim() : "";
+                        return { label, rect: box(el) };
+                    });
+                    if (chips.length !== seatCount || seats.length !== seatCount) {
+                        found.push(`expected ${seatCount} seats and chips, found ${seats.length} seats and ${chips.length} chips`);
+                    }
+                    chips.forEach((chip, index) => {
+                        const midX = (chip.x + chip.r) / 2;
+                        const midY = (chip.y + chip.b) / 2;
+                        if (!onFelt(midX, midY)) found.push(`chip ${index + 1} is off the felt`);
+                        const seat = seats[index];
+                        if (!seat) return;
+                        const seatX = (seat.rect.x + seat.rect.r) / 2;
+                        const seatY = (seat.rect.y + seat.rect.b) / 2;
+                        const inward = (cx - seatX) * (midX - seatX) + (cy - seatY) * (midY - seatY);
+                        if (inward <= 0) found.push(`chip ${seat.label || index + 1} is not in front of its seat`);
+                        for (const card of cards) {
+                            const hit = overlap(chip, card);
+                            if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`chip ${seat.label || index + 1} under a card (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                        }
+                        for (const banner of banners) {
+                            const hit = overlap(chip, banner.rect);
+                            if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`chip ${seat.label || index + 1} under ${banner.label} (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                        }
+                    });
+                    document.querySelectorAll(".dealer-badge-button").forEach(el => {
+                        const seat = el.getAttribute("data-dealer-button") || "";
+                        const chip = chips[Number(seat) - 1];
+                        if (!chip) {
+                            found.push(`dealer ${seat} has no chip`);
+                            return;
+                        }
+                        const hit = overlap(box(el), chip);
+                        if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`dealer ${seat} covers the pile by ${hit.ix.toFixed(1)}x${hit.iy.toFixed(1)}`);
+                    });
+                    const consider = (kind: string, rect: { x: number; y: number; r: number; b: number }, label: string) => {
+                        if (rect.r - rect.x < 1 || rect.b - rect.y < 1) return;
+                        if (rect.x < -1) found.push(`${kind} ${label} past the left`);
+                        if (rect.y < -1) found.push(`${kind} ${label} past the top`);
+                        if (rect.r > vw + 1) found.push(`${kind} ${label} past the right`);
+                        if (rect.b > vh + 1) found.push(`${kind} ${label} past the bottom`);
+                        if (rect.y < headerBottom - 1) found.push(`${kind} ${label} under the header by ${(headerBottom - rect.y).toFixed(0)}px`);
+                        if (rect.b > dockTop + 1) found.push(`${kind} ${label} under the dock by ${(rect.b - dockTop).toFixed(0)}px`);
+                    };
+                    seats.forEach(seat => consider("seat", seat.rect, seat.label));
+                    cards.forEach((card, index) => consider("card", card, String(index + 1)));
+                    banners.forEach(banner => consider("action", banner.rect, banner.label));
+                    chips.forEach((chip, index) => consider("chip", chip, String(index + 1)));
+                    document.querySelectorAll(".dealer-badge-button").forEach(el => {
+                        consider("dealer", box(el), el.getAttribute("data-dealer-button") || "");
+                    });
+                    if (history && historyRect) {
+                        const hx = (historyRect.x + historyRect.r) / 2;
+                        const hy = (historyRect.y + historyRect.b) / 2;
+                        const stack = document.elementsFromPoint(hx, hy);
+                        const hit = stack.find(el => !el.closest("[data-testid='table-preview-panel']"));
+                        if (!hit || !history.contains(hit)) {
+                            const name = hit ? (hit.getAttribute("aria-label") || hit.className || hit.tagName) : "nothing";
+                            found.push(`History button is covered by ${name}`);
+                        }
+                    }
+                    return found;
+                }, seats);
+
+                expect(problems).toEqual([]);
+            });
+        }
+    }
+});
