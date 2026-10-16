@@ -1,10 +1,10 @@
 import { ModalHeader } from "../components/common/ModalHeader";
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { TABLE_SEAT_OPTIONS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { localDateTimeToUnixSeconds } from "../utils/scheduledSng";
+import { localDateTimeToUnixSeconds, scheduledStartRejection } from "../utils/scheduledSng";
 import { useNavigate } from "react-router-dom";
 
 import "./Dashboard.css";
@@ -197,17 +197,12 @@ const Dashboard: React.FC = () => {
             // For Sit & Go/Tournament, use the same value for min and max buy-in
             const isTournament = isTournamentFormat(modalGameFormat);
 
-            // A scheduled sit-and-go needs a start time in the future and a
-            // minimum no larger than the table (the chain refuses both).
             const scheduled = isTournament && modalScheduled;
             const startTime = scheduled ? localDateTimeToUnixSeconds(modalScheduledStart) : undefined;
-            if (scheduled) {
-                if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
-                    setCreateGameError("Pick a start time in the future for a scheduled tournament.");
-                    return;
-                }
-                if (modalSngMinPlayers < 2) {
-                    setCreateGameError(`Minimum players must be between 2 and ${modalPlayerCount}.`);
+            if (scheduled && startTime !== undefined) {
+                const rejection = scheduledStartRejection(startTime, modalSngMinPlayers, modalPlayerCount);
+                if (rejection) {
+                    setCreateGameError(rejection);
                     return;
                 }
             }
@@ -743,10 +738,9 @@ const Dashboard: React.FC = () => {
                                                 }}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             >
-                                                <option value={2}>2 (Heads-Up)</option>
-                                                <option value={4}>4 (Sit & Go)</option>
-                                                <option value={6}>6 (Sit & Go)</option>
-                                                <option value={9}>9 (Full Ring)</option>
+                                                {TABLE_SEAT_OPTIONS.map(option => (
+                                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                                ))}
                                             </select>
 
                                             {/* Scheduled start (poker-vm#2680) */}

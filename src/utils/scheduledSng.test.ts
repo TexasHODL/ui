@@ -1,5 +1,5 @@
 import { NonPlayerActionType, PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledSngPhase } from "./scheduledSng";
+import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledSngPhase, scheduledStartRejection } from "./scheduledSng";
 
 const start = 1_700_000_000_000;
 
@@ -43,6 +43,13 @@ describe("formatting", () => {
         const secs = localDateTimeToUnixSeconds("2026-10-15T20:30");
         expect(secs).toBe(Math.floor(new Date("2026-10-15T20:30").getTime() / 1000));
         expect(Number.isNaN(localDateTimeToUnixSeconds(""))).toBe(true);
+    });
+    it("rejects a scheduled start that is missing, past, or under two players", () => {
+        const now = 1_700_000_000;
+        expect(scheduledStartRejection(Number.NaN, 4, 6, now)).toBe("Pick a start time in the future for a scheduled tournament.");
+        expect(scheduledStartRejection(now, 4, 6, now)).toBe("Pick a start time in the future for a scheduled tournament.");
+        expect(scheduledStartRejection(now + 60, 1, 6, now)).toBe("Minimum players must be between 2 and 6.");
+        expect(scheduledStartRejection(now + 60, 2, 6, now)).toBeNull();
     });
     it("detects a scheduled table from its options", () => {
         expect(isScheduledSng({ scheduledStartTime: start })).toBe(true);

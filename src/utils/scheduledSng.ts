@@ -82,3 +82,19 @@ export const localDateTimeToUnixSeconds = (value: string): number => {
     const ms = new Date(value).getTime();
     return Number.isFinite(ms) ? Math.floor(ms / 1000) : NaN;
 };
+
+/** Why a scheduled sit-and-go cannot be created, or null when the chain would accept it. */
+export const scheduledStartRejection = (
+    startTime: number,
+    minPlayers: number,
+    maxPlayers: number,
+    nowSeconds = Math.floor(Date.now() / 1000)
+): string | null => {
+    if (!Number.isFinite(startTime) || startTime <= nowSeconds) {
+        return "Pick a start time in the future for a scheduled tournament.";
+    }
+    if (minPlayers < 2) {
+        return `Minimum players must be between 2 and ${maxPlayers}.`;
+    }
+    return null;
+};

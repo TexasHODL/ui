@@ -2,7 +2,7 @@ import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { localDateTimeToUnixSeconds } from "../utils/scheduledSng";
+import { localDateTimeToUnixSeconds, scheduledStartRejection } from "../utils/scheduledSng";
 import { BettingLimit, GameFormat, GameVariant, CosmosClient, getDefaultCosmosConfig, PlayerDTO, computeGameNameFee } from "@block52/poker-vm-sdk";
 import { Link, useNavigate } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
@@ -22,7 +22,7 @@ import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevel
 import { defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
 
 interface TableData {
     gameId: string;
@@ -88,7 +88,7 @@ export default function TableAdminPage() {
         setGameFormat(newType);
         // A single table seats 2..9 (every field has a payout curve, poker-vm#2667).
         if (isTournamentFormat(newType)) {
-            const validSngCounts = [2, 4, 6, 9];
+            const validSngCounts: readonly number[] = VALID_SNG_RUNNER_COUNTS;
             if (!validSngCounts.includes(maxPlayers)) {
                 const next = validSngCounts.reduce((a, b) => (Math.abs(b - maxPlayers) < Math.abs(a - maxPlayers) ? b : a));
                 setMaxPlayers(next);
@@ -222,17 +222,12 @@ export default function TableAdminPage() {
         const finalMinBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMinBuyIn;
         const finalMaxBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMaxBuyIn;
 
-        // A scheduled sit-and-go needs a start time in the future and a
-        // minimum no larger than the table (the chain refuses both).
         const isScheduled = isTournament && scheduled;
         const startTime = isScheduled ? localDateTimeToUnixSeconds(scheduledStart) : undefined;
-        if (isScheduled) {
-            if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
-                toast.error("Pick a start time in the future for a scheduled tournament.");
-                return;
-            }
-            if (sngMinPlayers < 2) {
-                toast.error(`Minimum players must be between 2 and ${maxPlayers}.`);
+        if (isScheduled && startTime !== undefined) {
+            const rejection = scheduledStartRejection(startTime, sngMinPlayers, maxPlayers);
+            if (rejection) {
+                toast.error(rejection);
                 return;
             }
         }
@@ -459,10 +454,9 @@ export default function TableAdminPage() {
                                         onChange={e => setMaxPlayers(parseInt(e.target.value))}
                                         className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     >
-                                        <option value={2}>2 (Heads-Up)</option>
-                                        <option value={4}>4 (Sit & Go)</option>
-                                        <option value={6}>6 (Sit & Go)</option>
-                                        <option value={9}>9 (Full Ring)</option>
+                                        {TABLE_SEAT_OPTIONS.map(option => (
+                                            <option key={option.value} value={option.value}>{option.label}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
