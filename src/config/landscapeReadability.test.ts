@@ -319,11 +319,12 @@ describe("landscape mobile readability", () => {
                     : [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
                         mobileFeltContains(chip.x + sx * chipHalf, chip.y + sy * 18, scaleY, shiftY)
                     );
-                // 4-seat seats 2 and 4, and 6-seat seats 2, 3 and 5, are centred
-                // on the rail, so the pile centre sits on the felt edge.
+                // These portrait piles are centred on a rail seat, so the
+                // centre sits on the felt edge.
                 const centredOnRail = portrait && (
                     (size === 4 && (index === 1 || index === 3))
                     || (size === 6 && (index === 1 || index === 2 || index === 4))
+                    || (size === 9 && (index === 1 || index === 2 || index === 3 || index === 6 || index === 7))
                 );
                 if (!onFelt && !centredOnRail) problems.push(`${size} seat ${index + 1} chip off the felt at ${chip.x},${chip.y}`);
             });
@@ -411,16 +412,21 @@ describe("landscape mobile readability", () => {
         const portraitZoom = calculateZoom(9, 390, 714);
         const portraitUnit = parseFloat(mobileCardUnit(true, portraitZoom, 390, 714)) * portraitZoom;
         const portrait = placeMobileRailMarkers(getAllPositions(9), portraitZoom, 0, portraitUnit, 9);
-        for (const index of [1, 2, 7, 8]) {
+        for (const index of [1, 2, 3, 6, 7]) {
             const seatX = parseFloat(portrait.players[index].left);
             const chipX = parseFloat(portrait.chips[index].left);
-            expect(Math.abs(chipX - seatX)).toBeGreaterThan(20);
+            expect(chipX).toBe(Math.round(seatX));
         }
-        for (const index of [4, 5]) {
-            const seatX = parseFloat(portrait.players[index].left);
-            const chipX = parseFloat(portrait.chips[index].left);
-            expect(Math.abs(chipX - seatX)).toBeLessThan(2);
-        }
+        const seat6X = parseFloat(portrait.players[5].left);
+        const chip6X = parseFloat(portrait.chips[5].left);
+        expect(chip6X).toBeLessThanOrEqual(Math.round(seat6X));
+        expect(chip6X).toBeGreaterThan(Math.round(seat6X) - 60);
+        const seat9X = parseFloat(portrait.players[8].left);
+        const chip9X = parseFloat(portrait.chips[8].left);
+        expect(Math.abs(chip9X - seat9X)).toBeGreaterThan(20);
+        const seat5X = parseFloat(portrait.players[4].left);
+        const chip5X = parseFloat(portrait.chips[4].left);
+        expect(Math.abs(chip5X - seat5X)).toBeLessThan(2);
     });
 
     test("lines 6-seat side bets up with the hole-card corner and the stack badge", () => {
@@ -785,16 +791,13 @@ describe("landscape mobile readability", () => {
                     seatX: parseFloat(seat.left)
                 };
             };
-            const expectBanner = (index: number, extra: number, onRail: boolean) => {
+            const expectBanner = (index: number, extra: number, centred: boolean) => {
                 const bet = bannerAir(index);
                 const expected = 3 + overhang + 3 * zoom + extra * zoom;
                 expect(bet.air).toBeGreaterThan(expected - 1.5);
                 expect(bet.air).toBeLessThan(expected + 1.5);
-                if (onRail) {
-                    expect(bet.x).toBe(clamped(bet.seatX));
-                    expect(bet.x).not.toBe(Math.round(bet.seatX));
-                }
-                expect(mobileFeltContains(bet.x, bet.y, 1, 0)).toBe(true);
+                if (centred) expect(bet.x).toBe(Math.round(bet.seatX));
+                if (index === 4 || index === 5) expect(mobileFeltContains(bet.x, bet.y, 1, 0)).toBe(true);
             };
             expectBanner(3, 4, true);
             expectBanner(6, 6, true);
@@ -802,14 +805,15 @@ describe("landscape mobile readability", () => {
             const topRight = bannerAir(5);
             expectBanner(4, 0, false);
             expectBanner(5, 3, false);
+            // Seat 6 stays on its seat unless a neighbour's cards cover the pile.
+            expect(topRight.x).toBeLessThanOrEqual(Math.round(topRight.seatX));
+            expect(topRight.x).toBeGreaterThan(Math.round(topRight.seatX) - 60);
             if (width === 375) {
                 expect(topLeft.x).toBeGreaterThan(topLeft.seatX);
-                expect(topRight.x).toBeLessThan(topRight.seatX);
-                expect(topRight.x - topLeft.x).toBeGreaterThanOrEqual(150);
             } else {
                 expect(Math.abs(topLeft.x - topLeft.seatX)).toBeLessThan(2);
-                expect(Math.abs(topRight.x - topRight.seatX)).toBeLessThan(2);
             }
+            expect(topRight.x - topLeft.x).toBeGreaterThanOrEqual(150);
             const stackHalf = (chipPx + 12) / 2 + 4;
             [1, 2, 7, 8].forEach(index => {
                 const seatX = parseFloat(placed.players[index].left);
@@ -823,18 +827,22 @@ describe("landscape mobile readability", () => {
                 const floor = index === 1 && width === 375 ? 0.5 : modelGap - 1.5;
                 expect(gap).toBeGreaterThan(floor);
                 expect(gap).toBeLessThan(modelGap + 1.5);
-                const inward = Math.sign(feltW / 2 - seatX) || 1;
-                expect(Math.sign(chipX - seatX)).toBe(inward);
-                // The short phone can step seat 9 further inward once the
-                // painted banner still covers the tall pile. A slightly
-                // roomier zoom leaves it on the rail clamp.
-                if (index === 8 && width === 375) {
-                    expect(chipX).toBeLessThanOrEqual(clamped(seatX));
-                    expect(chipX).toBeGreaterThan(feltW / 2);
+                if (index === 8) {
+                    const inward = Math.sign(feltW / 2 - seatX) || 1;
+                    expect(Math.sign(chipX - seatX)).toBe(inward);
+                    // The short phone can step seat 9 further inward once the
+                    // painted banner still covers the tall pile. A slightly
+                    // roomier zoom leaves it on the rail clamp.
+                    if (width === 375) {
+                        expect(chipX).toBeLessThanOrEqual(clamped(seatX));
+                        expect(chipX).toBeGreaterThan(feltW / 2);
+                    } else {
+                        expect(chipX).toBe(clamped(seatX));
+                    }
+                    expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
                 } else {
-                    expect(chipX).toBe(clamped(seatX));
+                    expect(chipX).toBe(Math.round(seatX));
                 }
-                expect(mobileFeltContains(chipX - inward * chipHX, chipY, 1, 0)).toBe(true);
             });
         }
         const portrait = place(390, 844);

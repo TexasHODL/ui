@@ -1296,6 +1296,18 @@ export function placeMobileRailMarkers(
                     remember(5, rightPile.x, rightPile.y);
                 }
             }
+            // Seats 2, 3, 4, 6, 7 and 8 keep the height above and sit on
+            // the seat centre. Seat 5 and seat 9 stay where they were.
+            [1, 2, 3, 5, 6, 7].forEach(index => {
+                const point = chipCenters[index];
+                const seat = seatBoxes[index];
+                if (!point || !seat) return;
+                point.x = Math.round(seat.x);
+                remember(index, point.x, point.y);
+            });
+            // On a short phone the centred seat 6 pile runs into seat 7's
+            // cards. Step toward the table only until those cards are clear.
+            nudgeOffCards(5, -1);
         }
     }
     const chips = seatBoxes.map((_, index) => {

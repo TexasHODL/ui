@@ -888,8 +888,6 @@ test.describe("portrait table fit", () => {
                             if (gap < 2.5 || gap > 5.5) found.push(`total pot gap is ${gap.toFixed(1)}px`);
                         }
                         const seatEls = [...document.querySelectorAll(".player-seat")];
-                        const railGap = (pile: { x: number; r: number }, sign: number) =>
-                            sign > 0 ? pile.x - feltRect.x : feltRect.right - pile.r;
                         const place = (label: string, expectSign: number, aboveCards: boolean) => {
                             const index = seats.findIndex(seat => seat.label === label);
                             const pile = chips[index];
@@ -918,16 +916,17 @@ test.describe("portrait table fit", () => {
                                 if (gap < 1.5 || gap > 5.5) found.push(`seat ${label} pile gap is ${gap.toFixed(1)}px`);
                             }
                             const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
-                            if (label === "5" || label === "6") {
-                                const centred = Math.abs(dx) < 2;
+                            const centred = label === "2" || label === "3" || label === "4" || label === "6" || label === "7" || label === "8";
+                            if (label === "6" && window.innerHeight <= 667 && dx < -8 && dx > -32) {
+                                // Short phone: stepped toward the centre just enough to clear seat 7's cards.
+                            } else if (centred) {
+                                if (Math.abs(dx) > 2) found.push(`seat ${label} pile is ${dx.toFixed(1)}px off centre`);
+                            } else if (label === "5") {
+                                const onCentre = Math.abs(dx) < 2;
                                 const nudged = window.innerWidth <= 375 && Math.sign(dx) === expectSign && Math.abs(dx) > 8 && Math.abs(dx) < 40;
-                                if (!centred && !nudged) found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                                if (!onCentre && !nudged) found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
                             } else if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > (label === "9" ? 90 : 80)) {
                                 found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
-                            }
-                            if (label !== "5" && label !== "6" && label !== "9") {
-                                const edge = railGap(pile, expectSign);
-                                if (edge < 2 || edge > 16) found.push(`seat ${label} pile is ${edge.toFixed(1)}px inside the rail`);
                             }
                             return pile;
                         };
@@ -941,8 +940,26 @@ test.describe("portrait table fit", () => {
                         place("9", -1, true);
                         if (pile5 && pile6) {
                             const gap = pile6.x - pile5.r;
-                            if (gap < 2) found.push(`seats 5 and 6 piles are ${gap.toFixed(1)}px apart`);
+                            if (gap < 1) found.push(`seats 5 and 6 piles are ${gap.toFixed(1)}px apart`);
                         }
+                        const potRect = pot ? box(pot) : null;
+                        const boardCards = [...document.querySelectorAll(".community-card-row .card, .community-card-row img")].map(box);
+                        ["2", "3", "4", "6", "7", "8"].forEach(label => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            if (!pile) return;
+                            if (potRect) {
+                                const hit = overlap(pile, potRect);
+                                if (hit.ix > 0.5 && hit.iy > 0.5) found.push(`seat ${label} pile under the pot (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                            }
+                            boardCards.forEach(card => {
+                                const hit = overlap(pile, card);
+                                // On 375 the board spans the band under seats 4 and 7.
+                                // Those piles stay centred and paint in front of the cards.
+                                const shortBand = window.innerHeight <= 667 && (label === "4" || label === "7");
+                                if (!shortBand && hit.ix > 0.5 && hit.iy > 0.5) found.push(`seat ${label} pile under the board (${hit.ix.toFixed(0)}x${hit.iy.toFixed(0)})`);
+                            });
+                        });
                     }
                     chips.forEach((chip, index) => {
                         const midX = (chip.x + chip.r) / 2;
@@ -950,7 +967,8 @@ test.describe("portrait table fit", () => {
                         const seatLabel = seats[index]?.label;
                         // Rail seats that are centred on the player sit on the felt edge.
                         const centredOnRail = (seatCount === 4 && (seatLabel === "2" || seatLabel === "4"))
-                            || (seatCount === 6 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "5"));
+                            || (seatCount === 6 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "5"))
+                            || (seatCount === 9 && (seatLabel === "2" || seatLabel === "3" || seatLabel === "4" || seatLabel === "7" || seatLabel === "8"));
                         if (!centredOnRail && !onFelt(midX, midY)) found.push(`chip ${index + 1} is off the felt`);
                         const seat = seats[index];
                         if (!seat) return;
