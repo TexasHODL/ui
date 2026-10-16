@@ -1003,8 +1003,8 @@ test.describe("portrait table fit", () => {
 });
 
 /**
- * Portrait bet labels share the large 36px size. The hero (seat 1) and the
- * 2-seat top (seat 2) must not drop to the compact 24px label.
+ * Portrait bet labels share one computed size on every table. Seats 1 and 2
+ * used to drop to the compact 24px label on 2, 4, 6 and 9 seats.
  */
 test.describe("portrait chip labels", () => {
     const viewports = [
@@ -1036,19 +1036,22 @@ test.describe("portrait chip labels", () => {
                 };
             });
 
-            const sizes: number[] = [];
             for (const seats of [2, 4, 6, 9]) {
                 await page.goto(`/table-preview?seats=${seats}&turn=1&dealer=all&actions=all&holes=1&board=5`);
                 await page.waitForSelector(".chip-position span");
                 const fonts = await page.evaluate(() => {
-                    return [...document.querySelectorAll(".chip-position span")].map(el => parseFloat(getComputedStyle(el).fontSize));
+                    return [...document.querySelectorAll(".chip-position span")].map((el, index) => ({
+                        seat: index + 1,
+                        font: parseFloat(getComputedStyle(el).fontSize),
+                        height: el.getBoundingClientRect().height
+                    }));
                 });
                 expect(fonts, `${seats} seats`).toHaveLength(seats);
-                sizes.push(...fonts);
+                const reported = fonts.map(item => `seat ${item.seat}=${item.font.toFixed(2)}px`).join(", ");
+                expect(fonts.map(item => item.font.toFixed(2)), `${seats} seats ${reported}`).toEqual(Array(seats).fill("36.00"));
+                const heights = fonts.map(item => item.height);
+                expect(Math.max(...heights) - Math.min(...heights), `${seats} seats painted label height`).toBeLessThan(1);
             }
-
-            const unique = [...new Set(sizes.map(size => size.toFixed(2)))];
-            expect(unique).toEqual(["36.00"]);
         });
     }
 });

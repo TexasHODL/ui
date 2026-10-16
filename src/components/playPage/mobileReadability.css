@@ -143,9 +143,9 @@
     line-height: calc(22.67px / var(--table-zoom));
 }
 
-/* Portrait side seats already use the 36px label. The hero and the 2-seat top
-   must use that same size — the compact 24px label is smaller. One rule, so
-   every seat's computed font-size is the large label. */
+/* Every portrait bet uses this 36px label, on 2, 4, 6 and 9 seats. Seats 1
+   and 2 used to drop to the compact 24px label. One rule, so every seat's
+   computed font-size is the large label. */
 [data-mobile-readable="portrait"] .chip-position > div {
     height: 36px;
     padding-right: 12px;
