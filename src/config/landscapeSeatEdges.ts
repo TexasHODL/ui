@@ -1005,6 +1005,69 @@ export function placeMobileRailMarkers(
             point.x = best;
             remember(index, best, y);
         });
+        // 2-seat seat 2. The banner passes only walk a pile downward, so a
+        // bet that is already under the box stays where the search left it,
+        // about 11-20px below RAISE TO. Pull it up until the painted pile
+        // (the four 1¢ chips of a $0.04 bet, which stick up once they are
+        // taller than the pill) sits ~3px under the banner. X stays on the
+        // seat. The painted box hangs ~3 table px below the 55px model.
+        if (tableSize === 2) {
+            const index = 1;
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            if (point && seat) {
+                const chipPx = (bigChips || shortLandscape) ? 32 : 28;
+                const stackScreen = (chipPx + 12) * z;
+                const overhang = Math.max(0, (stackScreen - 22.67) / 2);
+                const x = Math.round(seat.x);
+                let y = Math.round(seat.y + seatHY + 33 + pillHalf + (3 + overhang) / z + 3);
+                const clear = (yy: number) => {
+                    if (!boxOnFelt(x, yy, pileHX, feltHY)) return false;
+                    if (holeCards.some(card => boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalf }, card, 0))) return false;
+                    if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalf }, item, 2))) return false;
+                    return true;
+                };
+                if (!clear(y)) {
+                    const limit = y + Math.round(40 / z);
+                    for (let yy = y + 1; yy <= limit; yy++) {
+                        if (!clear(yy)) continue;
+                        y = yy;
+                        break;
+                    }
+                }
+                point.x = x;
+                point.y = y;
+                remember(index, x, y);
+            }
+        }
+        // 6-seat seat 5. The dealer walk stops on a box wider than the
+        // painted $0.10 pill, which leaves the amount ~10px short of the
+        // disc. Step right, at the same height, until that pill is ~3px
+        // from the disc. The button stays on the badge.
+        if (tableSize === 6) {
+            const index = 4;
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            if (point && seat) {
+                const chipPx = (bigChips || shortLandscape) ? 32 : 28;
+                const paintedHalf = (chipPx * z + 2 * z + 51) / 2 / z;
+                const dealer = dealerOf(seat);
+                const y = Math.round(point.y);
+                const target = Math.floor(dealer.x - dealer.hw - 3 / z - paintedHalf);
+                const start = Math.round(point.x);
+                if (target > start) {
+                    let best = start;
+                    for (let x = start + 1; x <= target; x++) {
+                        if (!stillThisSeat(index, x, y)) break;
+                        best = x;
+                    }
+                    if (best !== start) {
+                        point.x = best;
+                        remember(index, best, y);
+                    }
+                }
+            }
+        }
     }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
