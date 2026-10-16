@@ -24,6 +24,16 @@ const LABELS: Record<PreAction, string> = {
     "all-in": "All In"
 };
 
+/** Same faces as the betting buttons, so the row reads on the dark action bar. */
+const BUTTON_CLASS: Record<PreAction, string> = {
+    "check-fold": "btn-fold",
+    check: "btn-check",
+    fold: "btn-fold",
+    "call-exact": "btn-call",
+    "call-any": "btn-call",
+    "all-in": "btn-call"
+};
+
 const TITLES: Record<PreAction, string> = {
     "check-fold": "Checks when your turn comes if checking is free; folds if someone bets first.",
     check: "Checks when your turn comes. Clears if someone bets first.",
@@ -36,16 +46,19 @@ const TITLES: Record<PreAction, string> = {
 /**
  * CoinPoker-style pre-action bar (ui#388): tick-to-arm buttons shown while it is not
  * the player's turn. `buttons` (from preActionButtons) already encodes which options
- * apply — can check, owe a bet, owe an all-in call, or committed (empty → nothing
- * shown). Arming one fires it the instant the player's turn comes (no betting bar).
+ * apply — can check, owe a bet, owe an all-in call, or waiting on a raise (Check/Fold).
+ * Arming one fires it the instant the player's turn comes (no betting bar).
  */
 export const PreActionControls: React.FC<PreActionControlsProps> = ({ buttons, armed, onArm, callAmountLabel, isMobileLandscape, compact = false }) => {
     if (buttons.length === 0) return null;
 
+    // Check/Fold stays armed after a bet replaces it with Fold. The Fold box shows that choice.
+    const shownArmed = armed === "check-fold" && !buttons.includes("check-fold") && buttons.includes("fold") ? "fold" : armed;
+
     return (
         <div className={`pre-action-bar flex justify-center ${compact ? "pre-action-compact" : "gap-2"}`} data-testid="pre-action-bar">
             {buttons.map(action => {
-                const isArmed = armed === action;
+                const isArmed = shownArmed === action;
                 const label = action === "call-exact" ? `Call ${callAmountLabel}` : LABELS[action];
                 return (
                     <button
@@ -55,14 +68,11 @@ export const PreActionControls: React.FC<PreActionControlsProps> = ({ buttons, a
                         aria-checked={isArmed}
                         aria-label={`Pre-select ${label} for your turn`}
                         title={TITLES[action]}
+                        data-action={action}
                         onClick={() => onArm(isArmed ? null : action)}
-                        className={`flex items-center gap-2 rounded-lg border font-semibold transition-colors ${
-                            compact ? "" : isMobileLandscape ? "px-3 py-1 text-xs" : "px-4 py-3 text-sm lg:text-base"
-                        } ${
-                            isArmed
-                                ? "bg-green-600 border-green-500 text-white"
-                                : "bg-gray-800/80 border-gray-600 text-gray-200 hover:bg-gray-700"
-                        }`}
+                        className={`${BUTTON_CLASS[action]} flex items-center gap-2 rounded-lg border font-semibold ${
+                            isArmed ? "pre-action-on" : ""
+                        } ${compact ? "" : isMobileLandscape ? "px-3 py-1 text-xs" : "px-4 py-3 text-sm lg:text-base"}`}
                     >
                         <span
                             className={`flex h-4 w-4 items-center justify-center rounded-sm border text-[10px] leading-none ${

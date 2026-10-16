@@ -454,6 +454,10 @@
 }
 /* Pre-action Check/Fold stays inside the phone dock. Portrait is one wrapping
    row in the reserved slot; landscape stacks down the side column. */
+.poker-action-dock .pre-action-bar button.pre-action-on {
+    border-color: var(--theme-hot, #ff4a83);
+    box-shadow: inset 0 0 0 2px var(--theme-hot, #ff4a83);
+}
 .pre-action-compact {
     flex-wrap: wrap;
     align-items: stretch;
