@@ -434,10 +434,33 @@ describe("landscape mobile readability", () => {
                 const seatX = parseFloat(placed.players[index].left);
                 const chipX = parseFloat(placed.chips[index].left);
                 expect(Math.sign(chipX - centre)).toBe(Math.sign(seatX - centre));
-                // Stepped toward the seat, and still short of the card fan.
-                expect(Math.abs(chipX - seatX)).toBeLessThan(Math.abs(centre - seatX) * 0.32);
+                // Inward of the felt centre, and still this seat's bet.
+                expect(Math.abs(chipX - seatX)).toBeLessThan(Math.abs(centre - seatX) * 0.36);
                 expect(Math.abs(chipX - seatX)).toBeGreaterThan(40);
             }
+            // Seat 3's icon steps inward until it clears that seat's cards.
+            // A tall tablet was already clear, so its gap is a little wider.
+            const seat3Cards = holes[2];
+            const seat3Half = Math.max(height <= 500 ? 72 : 66, 40 / zoom);
+            const seat3X = parseFloat(placed.chips[2].left);
+            const seat3Gap = (seat3X - seat3Half - (seat3Cards.x + seat3Cards.hw)) * zoom;
+            expect(seat3Gap).toBeGreaterThanOrEqual(2);
+            expect(seat3Gap).toBeLessThanOrEqual(8);
+            // Seat 5's amount steps inward until the dealer disc, up-left of
+            // the seat number, no longer touches it. The button stays put.
+            const seat5X = parseFloat(placed.chips[4].left);
+            const seat5Y = parseFloat(placed.chips[4].top ?? "0");
+            const seat5SeatX = parseFloat(placed.players[4].left);
+            const seat5SeatY = parseFloat(placed.players[4].top);
+            const dealerR = 11 * unit;
+            const dealerShift = (9.5 * unit + dealerR + 3 / zoom) / Math.SQRT2;
+            const dealerX = seat5SeatX - 31.5 * unit - dealerShift;
+            const dealerY = seat5SeatY + 23 * unit - dealerShift;
+            const amountHalf = 36 / zoom;
+            const dealerGap = (dealerX - dealerR - (seat5X + amountHalf)) * zoom;
+            expect(dealerGap).toBeGreaterThanOrEqual(0);
+            expect(dealerGap).toBeLessThanOrEqual(8);
+            expect(seat5Y).toBeGreaterThan(seat5SeatY);
             const topSeatY = parseFloat(placed.players[3].top);
             const topChipY = parseFloat(placed.chips[3].top ?? "0");
             const pillHalf = (22.67 / zoom) / 2;
@@ -466,6 +489,46 @@ describe("landscape mobile readability", () => {
             const corner = Math.round(portraitHoles[index].y - portraitHoles[index].hy);
             expect(chipY).toBeGreaterThan(corner + 2);
         }
+    });
+
+    test("keeps every landscape bet off the dealer disc", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const overlaps: string[] = [];
+        for (const size of [2, 4, 6, 9] as TableSize[]) {
+            for (const [width, height] of [[844, 390], [915, 412], [1024, 650]] as const) {
+                Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+                Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+                const contentWidth = width - 124;
+                const contentHeight = height - 70;
+                const zoom = calculateZoom(size, contentWidth, contentHeight);
+                const screenUnit = parseFloat(mobileCardUnit(false, zoom, contentWidth, contentHeight)) * zoom;
+                const placed = placeMobileRailMarkers(getAllPositions(size), zoom, 0, screenUnit, size);
+                const unit = screenUnit / zoom;
+                const short = height <= 500;
+                const chipPx = short || width <= 768 ? 32 : 28;
+                const overhang = chipPx * 0.45;
+                const textHalf = ((chipPx * 0.55 + 2) * zoom + 54 + 7) / 2 / zoom;
+                const amountHalf = textHalf;
+                const iconHalf = textHalf + overhang;
+                const pillHalf = (22.67 / zoom) / 2;
+                const dealerR = 11 * unit;
+                const shift = (9.5 * unit + dealerR + 3 / zoom) / Math.SQRT2;
+                placed.players.forEach((seat, index) => {
+                    const sx = parseFloat(seat.left);
+                    const sy = parseFloat(seat.top);
+                    const dx = sx - 31.5 * unit - shift;
+                    const dy = sy + 23 * unit - shift;
+                    const x = parseFloat(placed.chips[index].left);
+                    const y = parseFloat(placed.chips[index].top ?? "0");
+                    const hw = dx >= x ? amountHalf : iconHalf;
+                    const crossing = Math.abs(y - dy) < pillHalf;
+                    const air = crossing ? 3 / zoom : 0;
+                    const hit = Math.abs(x - dx) < hw + dealerR + air && Math.abs(y - dy) < pillHalf + dealerR + air;
+                    if (hit) overlaps.push(`${size}-seat ${width}x${height} seat ${index + 1}`);
+                });
+            }
+        }
+        expect(overlaps).toEqual([]);
     });
 
     test("drops the 2-seat top bet below the action banner on mobile landscape", () => {

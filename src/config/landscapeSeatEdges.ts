@@ -903,6 +903,111 @@ export function placeMobileRailMarkers(
             remember(index, point.x, point.y);
         });
     }
+    // Mobile landscape only. The chip icon hangs left of the anchor and the
+    // amount sits to the right, and the dealer disc hangs up-left of the
+    // seat number. A symmetric search box is wider than the amount, so it
+    // either refuses to move or shoves a pile that the disc does not touch.
+    if (landscapeTable) {
+        const chipPx = (bigChips || shortLandscape) ? 32 : 28;
+        const overhang = chipPx * 0.45;
+        // "$0.10" at the counter-zoomed 17px label, plus the pill padding.
+        const labelScreen = 54;
+        const textHalf = ((chipPx * 0.55 + 2) * z + labelScreen + 7) / 2 / z;
+        const amountHalf = textHalf;
+        const iconHalf = textHalf + overhang;
+        const badgeR = 9.5 * unitStage;
+        const dealerR = 11 * unitStage;
+        const dealerShift = (badgeR + dealerR + 3 / z) / Math.SQRT2;
+        const dealerOf = (seat: KeepOut): KeepOut => ({
+            x: seat.x - 31.5 * unitStage - dealerShift,
+            y: seat.y + 23 * unitStage - dealerShift,
+            hw: dealerR,
+            hy: dealerR
+        });
+        const stillThisSeat = (index: number, x: number, y: number) => {
+            if (!boxOnFelt(x, y, pileHX, feltHY)) return false;
+            const own = Math.hypot(x - seatBoxes[index].x, y - seatBoxes[index].y);
+            const margin = 8 / z;
+            if (!seatBoxes.every((other, otherIndex) => otherIndex === index || own + margin < Math.hypot(x - other.x, y - other.y))) return false;
+            if (board.some(item => !item.soft && boxesOverlap({ x, y, hw: chipHX, hy: pillHalf }, item, 2))) return false;
+            return true;
+        };
+        // The disc covers the amount when it sits to the right of the anchor,
+        // and the icon when it sits to the left. A disc that only grazes the
+        // pill from above is not covering it: requiring air there shoves the
+        // 9-seat seat 8 pile, which the painted disc does not touch.
+        const hitsDealer = (x: number, y: number, dealer: KeepOut) => {
+            const hw = dealer.x >= x ? amountHalf : iconHalf;
+            const crossing = Math.abs(y - dealer.y) < pillHalf;
+            const air = crossing ? 3 / z : 0;
+            return Math.abs(x - dealer.x) < hw + dealer.hw + air
+                && Math.abs(y - dealer.y) < pillHalf + dealer.hy + air;
+        };
+        const hitsOwnCard = (x: number, y: number, card: KeepOut) => {
+            const left = x - iconHalf;
+            const right = x + amountHalf;
+            const xHit = right > card.x - card.hw && left < card.x + card.hw;
+            const yHit = Math.abs(y - card.y) < pillHalf + card.hy;
+            return xHit && yHit;
+        };
+        // 6-seat seat 3: the hole cards cover the chip icon. Step inward,
+        // keeping the height, until the icon and the amount clear the fan.
+        if (tableSize === 6) {
+            const index = 2;
+            const point = chipCenters[index];
+            const card = holeCards[index];
+            const seat = seatBoxes[index];
+            if (point && card && seat) {
+                const inward = Math.sign(cx - seat.x) || 1;
+                const cardEdge = inward > 0 ? card.x + card.hw : card.x - card.hw;
+                const facing = inward > 0 ? iconHalf : amountHalf;
+                const raw = cardEdge + inward * (4 / z + facing);
+                const targetX = inward > 0 ? Math.ceil(raw) : Math.floor(raw);
+                const y = Math.round(point.y);
+                const start = Math.round(point.x);
+                const clearOfCards = (x: number) => inward > 0
+                    ? x - iconHalf >= cardEdge + 4 / z - 0.5
+                    : x + amountHalf <= cardEdge - 4 / z + 0.5;
+                if ((inward > 0 && targetX > start) || (inward < 0 && targetX < start)) {
+                    let best = start;
+                    for (let x = start + inward; inward > 0 ? x <= targetX : x >= targetX; x += inward) {
+                        if (!stillThisSeat(index, x, y)) break;
+                        best = x;
+                        if (clearOfCards(x)) break;
+                    }
+                    if (best !== start && clearOfCards(best)) {
+                        point.x = best;
+                        remember(index, best, y);
+                    }
+                }
+            }
+        }
+        // Step a pile inward until the dealer disc no longer touches it.
+        // The button stays on the badge.
+        seatBoxes.forEach((seat, index) => {
+            const point = chipCenters[index];
+            if (!point) return;
+            const dealer = dealerOf(seat);
+            const y = Math.round(point.y);
+            const start = Math.round(point.x);
+            if (!hitsDealer(start, y, dealer)) return;
+            const inward = Math.sign(cx - seat.x) || 1;
+            let best = start;
+            for (let step = 1; step <= 180; step++) {
+                const x = start + inward * step;
+                if (!stillThisSeat(index, x, y)) break;
+                const card = holeCards[index];
+                if (card && hitsOwnCard(x, y, card)) continue;
+                best = x;
+                if (!hitsDealer(x, y, dealer)) break;
+            }
+            const card = holeCards[index];
+            if (best === start || hitsDealer(best, y, dealer)) return;
+            if (card && hitsOwnCard(best, y, card)) return;
+            point.x = best;
+            remember(index, best, y);
+        });
+    }
     const chips = seatBoxes.map((_, index) => {
         const point = chipCenters[index] ?? seatBoxes[index];
         return { left: `${Math.round(point.x)}px`, top: `${Math.round(point.y)}px`, bottom: "0px" };
