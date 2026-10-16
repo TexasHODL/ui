@@ -37,6 +37,30 @@ test("leaves compact mobile sizing unchanged", () => {
     expect(result.current).toEqual({});
 });
 
+test("stops above the action bar, payout structure, and hand strength", () => {
+    const root = document.createElement("div");
+    root.className = "table-container";
+    const stage = document.createElement("div");
+    const table = document.createElement("div");
+    const bar = document.createElement("div");
+    bar.className = "table-action-bar";
+    const payout = document.createElement("div");
+    payout.dataset.testid = "sng-payout-structure";
+    const strength = document.createElement("div");
+    strength.className = "live-hand-strength";
+    root.append(stage, table, bar, payout, strength);
+    document.body.append(root);
+    const box = (top: number, bottom: number, left = 1200, right = 1584) => ({ top, bottom, left, right, width: right - left, height: bottom - top }) as DOMRect;
+    stage.getBoundingClientRect = () => ({ top: 119, right: 1600, bottom: 900, left: 0, width: 1600, height: 781 }) as DOMRect;
+    table.getBoundingClientRect = () => ({ top: 180, right: 1000, bottom: 700, left: 200, width: 800, height: 520 }) as DOMRect;
+    bar.getBoundingClientRect = () => box(608, 768, 0, 1600);
+    payout.getBoundingClientRect = () => box(470, 750);
+    strength.getBoundingClientRect = () => box(520, 568);
+    const { result } = renderHook(() => useHistoryDock({ current: stage }, { current: table }, 1600, 800, 0.6, false, false));
+    expect((result.current as Record<string, string>)["--history-height"]).toBe("335px");
+    root.remove();
+});
+
 test("stops before a seat even when the felt itself leaves enough room", () => {
     const stage = document.createElement("div");
     const table = document.createElement("div");
