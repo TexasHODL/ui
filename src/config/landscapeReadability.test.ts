@@ -456,10 +456,11 @@ describe("landscape mobile readability", () => {
             const dealerShift = (9.5 * unit + dealerR + 3 / zoom) / Math.SQRT2;
             const dealerX = seat5SeatX - 31.5 * unit - dealerShift;
             const dealerY = seat5SeatY + 23 * unit - dealerShift;
-            const amountHalf = 36 / zoom;
-            const dealerGap = (dealerX - dealerR - (seat5X + amountHalf)) * zoom;
-            expect(dealerGap).toBeGreaterThanOrEqual(0);
-            expect(dealerGap).toBeLessThanOrEqual(8);
+            const chipPx = height <= 500 || width <= 768 ? 32 : 28;
+            const pileHalf = (((chipPx * 0.55 + 2) * zoom + 58 + 7) / 2 + chipPx * 0.45 * zoom / 2) / zoom;
+            const dealerGap = (dealerX - dealerR - (seat5X + pileHalf)) * zoom;
+            expect(dealerGap).toBeGreaterThanOrEqual(2);
+            expect(dealerGap).toBeLessThanOrEqual(6);
             expect(seat5Y).toBeGreaterThan(seat5SeatY);
             const topSeatY = parseFloat(placed.players[3].top);
             const topChipY = parseFloat(placed.chips[3].top ?? "0");
@@ -507,9 +508,8 @@ describe("landscape mobile readability", () => {
                 const short = height <= 500;
                 const chipPx = short || width <= 768 ? 32 : 28;
                 const overhang = chipPx * 0.45;
-                const textHalf = ((chipPx * 0.55 + 2) * zoom + 54 + 7) / 2 / zoom;
-                const amountHalf = textHalf;
-                const iconHalf = textHalf + overhang;
+                const textHalf = ((chipPx * 0.55 + 2) * zoom + 58 + 7) / 2 / zoom;
+                const pileHalf = textHalf + overhang / 2;
                 const pillHalf = (22.67 / zoom) / 2;
                 const dealerR = 11 * unit;
                 const shift = (9.5 * unit + dealerR + 3 / zoom) / Math.SQRT2;
@@ -520,10 +520,9 @@ describe("landscape mobile readability", () => {
                     const dy = sy + 23 * unit - shift;
                     const x = parseFloat(placed.chips[index].left);
                     const y = parseFloat(placed.chips[index].top ?? "0");
-                    const hw = dx >= x ? amountHalf : iconHalf;
                     const crossing = Math.abs(y - dy) < pillHalf;
                     const air = crossing ? 3 / zoom : 0;
-                    const hit = Math.abs(x - dx) < hw + dealerR + air && Math.abs(y - dy) < pillHalf + dealerR + air;
+                    const hit = Math.abs(x - dx) < pileHalf + dealerR + air && Math.abs(y - dy) < pillHalf + dealerR + air;
                     if (hit) overlaps.push(`${size}-seat ${width}x${height} seat ${index + 1}`);
                 });
             }

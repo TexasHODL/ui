@@ -910,11 +910,11 @@ export function placeMobileRailMarkers(
     if (landscapeTable) {
         const chipPx = (bigChips || shortLandscape) ? 32 : 28;
         const overhang = chipPx * 0.45;
-        // "$0.10" at the counter-zoomed 17px label, plus the pill padding.
-        const labelScreen = 54;
+        // "$0.08" at the counter-zoomed 17px label, plus the pill padding.
+        // The icon's margin sits inside the centred box, so both sides match.
+        const labelScreen = 58;
         const textHalf = ((chipPx * 0.55 + 2) * z + labelScreen + 7) / 2 / z;
-        const amountHalf = textHalf;
-        const iconHalf = textHalf + overhang;
+        const pileHalf = textHalf + overhang / 2;
         const badgeR = 9.5 * unitStage;
         const dealerR = 11 * unitStage;
         const dealerShift = (badgeR + dealerR + 3 / z) / Math.SQRT2;
@@ -937,15 +937,14 @@ export function placeMobileRailMarkers(
         // pill from above is not covering it: requiring air there shoves the
         // 9-seat seat 8 pile, which the painted disc does not touch.
         const hitsDealer = (x: number, y: number, dealer: KeepOut) => {
-            const hw = dealer.x >= x ? amountHalf : iconHalf;
             const crossing = Math.abs(y - dealer.y) < pillHalf;
             const air = crossing ? 3 / z : 0;
-            return Math.abs(x - dealer.x) < hw + dealer.hw + air
+            return Math.abs(x - dealer.x) < pileHalf + dealer.hw + air
                 && Math.abs(y - dealer.y) < pillHalf + dealer.hy + air;
         };
         const hitsOwnCard = (x: number, y: number, card: KeepOut) => {
-            const left = x - iconHalf;
-            const right = x + amountHalf;
+            const left = x - pileHalf;
+            const right = x + pileHalf;
             const xHit = right > card.x - card.hw && left < card.x + card.hw;
             const yHit = Math.abs(y - card.y) < pillHalf + card.hy;
             return xHit && yHit;
@@ -960,14 +959,13 @@ export function placeMobileRailMarkers(
             if (point && card && seat) {
                 const inward = Math.sign(cx - seat.x) || 1;
                 const cardEdge = inward > 0 ? card.x + card.hw : card.x - card.hw;
-                const facing = inward > 0 ? iconHalf : amountHalf;
-                const raw = cardEdge + inward * (4 / z + facing);
+                const raw = cardEdge + inward * (4 / z + pileHalf);
                 const targetX = inward > 0 ? Math.ceil(raw) : Math.floor(raw);
                 const y = Math.round(point.y);
                 const start = Math.round(point.x);
                 const clearOfCards = (x: number) => inward > 0
-                    ? x - iconHalf >= cardEdge + 4 / z - 0.5
-                    : x + amountHalf <= cardEdge - 4 / z + 0.5;
+                    ? x - pileHalf >= cardEdge + 4 / z - 0.5
+                    : x + pileHalf <= cardEdge - 4 / z + 0.5;
                 if ((inward > 0 && targetX > start) || (inward < 0 && targetX < start)) {
                     let best = start;
                     for (let x = start + inward; inward > 0 ? x <= targetX : x >= targetX; x += inward) {
