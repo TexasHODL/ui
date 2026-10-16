@@ -43,7 +43,7 @@ import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/
 import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as utilHandlePasswordSubmit, handlePasswordKeyPress as utilHandlePasswordKeyPress } from "../utils/passwordProtectionUtils";
 
 // Club branding imports
-import { colors, hexToRgba } from "../utils/colorConfig";
+import { colors } from "../utils/colorConfig";
 
 /** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
 const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];

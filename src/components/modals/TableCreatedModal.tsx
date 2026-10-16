@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ModalHeader } from "../common/ModalHeader";
 import { createPortal } from "react-dom";
 import { FaCopy, FaLink } from "react-icons/fa";

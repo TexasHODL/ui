@@ -25,13 +25,6 @@ import { GameEventsProvider } from "./gameState/GameEventsContext";
 import { IDLE_CONNECTION, type ConnectionState } from "./gameState/connection";
 import { RECONNECT_MAX_ATTEMPTS, reconnectDelayMs } from "../utils/reconnectBackoff";
 
-// Feature toggle for REST fallback (debug only - disabled by default per Commandment 7)
-const ENABLE_REST_FALLBACK = false;
-const AVATAR_SYNC_DEBUG =
-    typeof process !== "undefined" &&
-    process.env.NODE_ENV !== "production" &&
-    ["1", "true"].includes((process.env.VITE_DEBUG_AVATAR_SYNC || "").toLowerCase());
-
 /**
  * GameStateProvider — owns the WebSocket and the underlying state.
  *
@@ -130,23 +123,9 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
     // setLatestGameState calls — the logical track is updated by the bus at
     // ingest. setState dispatchers are stable, so this callback never changes
     // identity.
-    const applyRenderTrack = useCallback((classified: ClassifiedMessage, rawMessage?: { gameId?: string; event?: string }) => {
+    const applyRenderTrack = useCallback((classified: ClassifiedMessage) => {
         switch (classified.kind) {
             case "state": {
-                if (AVATAR_SYNC_DEBUG) {
-                    const playersWithAvatars = classified.snapshot.players
-                        .filter(player => Boolean(player.avatar))
-                        .map(player => ({ seat: player.seat, address: player.address, avatar: player.avatar }));
-
-                    if (hasElements(playersWithAvatars)) {
-                        console.info("[ProfileAvatarDebug] Incoming websocket avatars", {
-                            gameId: rawMessage?.gameId,
-                            event: rawMessage?.event,
-                            playersWithAvatars
-                        });
-                    }
-                }
-
                 setGameState(classified.snapshot);
                 setIsOptimistic(classified.optimistic);
                 setGameFormat(classified.format);
@@ -200,7 +179,7 @@ export const GameStateProvider: React.FC<GameStateProviderProps> = ({ children }
             return;
         }
         const unsubscribe = bus.subscribe(item => {
-            applyRenderTrack(item.classified, item.raw as { gameId?: string; event?: string });
+            applyRenderTrack(item.classified);
             // Expose the committed item (with its derived events) to React.
             setLatestStreamItem(item);
         });

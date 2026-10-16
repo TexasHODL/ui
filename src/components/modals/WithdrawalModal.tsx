@@ -3,7 +3,7 @@ import { ModalHeader } from "../common/ModalHeader";
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ethers } from "ethers";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
-import { microToUsdc, usdcToMicroBigInt, parseUsdcToMicro } from "../../constants/currency";
+import { microToUsdc, parseUsdcToMicro } from "../../constants/currency";
 import useUserWalletConnect from "../../hooks/wallet/useUserWalletConnect";
 import { useNetwork } from "../../context/NetworkContext";
 import { getSigningClient } from "../../utils/cosmos/client";

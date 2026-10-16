@@ -1,4 +1,4 @@
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TableBoard } from "./TableBoard";
 import type { PotDisplayValues } from "../../../../utils/potDisplayUtils";

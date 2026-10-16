@@ -1,4 +1,4 @@
-import { COSMOS_CONSTANTS, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { withMoneyMoverRetry } from "../../utils/cosmos/client";
 import { getLatestGameState } from "./transportAction";
 import type { JoinTableOptions } from "./types";

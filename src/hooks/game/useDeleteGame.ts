@@ -28,12 +28,7 @@ export const useDeleteGame = (): UseDeleteGameReturn => {
 
             try {
                 const { signingClient } = await getSigningClient(currentNetwork);
-
-                console.log("🗑️ Deleting game:", gameId);
-
                 const txHash = await signingClient.deleteGame(gameId);
-
-                console.log("✅ Game deleted successfully:", txHash);
                 toast.success("Table deleted successfully!");
 
                 return txHash;

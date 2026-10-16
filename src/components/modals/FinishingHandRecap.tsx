@@ -1,4 +1,4 @@
-import React from "react";
+
 import type { FinishingHand } from "../../utils/finishingHand";
 import { getCardImageUrl } from "../../utils/cardImages";
 import { HoleCardFan } from "../playPage/Card/HoleCardFan";

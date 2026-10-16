@@ -1,6 +1,6 @@
 import React from "react";
 import { LoadingSpinner } from "../common";
-import { TexasHoldemRound, ActionDTO, PlayerStatus } from "@block52/poker-vm-sdk";
+import { PlayerStatus } from "@block52/poker-vm-sdk";
 import { FoldButton } from "./FoldButton";
 import { getRaiseToAmount } from "../../utils/raiseUtils";
 import { formatDisplayAmount } from "../../utils/numberUtils";

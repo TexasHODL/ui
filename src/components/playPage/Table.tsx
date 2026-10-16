@@ -129,7 +129,7 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { getViewportMode, COMPONENT_SCALE, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
+import { getViewportMode, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from "react";
-import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { hasContent, hasElements } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
@@ -19,7 +19,7 @@ import {
 import { formatDisplayAmount } from "../../utils/numberUtils";
 
 // Import hooks
-import { useTableState, useNextToActInfo } from "../../hooks";
+import { useTableState } from "../../hooks";
 import { useActionSounds } from "../../hooks/notifications/useActionSounds";
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { useGameStateContext } from "../../context/GameStateContext";

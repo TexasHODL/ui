@@ -9,7 +9,7 @@ import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { joinTable } from "../../hooks/playerActions/joinTable";
 import { JoinTableOptions } from "../../hooks/playerActions/types";
 import { useCosmosWallet } from "../../hooks";
-import { usdcToMicroBigInt, microToUsdc, parseUsdcToMicro } from "../../constants/currency";
+import { microToUsdc, parseUsdcToMicro } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useNetwork } from "../../context/NetworkContext";
 import { useGameStateContext } from "../../context/GameStateContext";

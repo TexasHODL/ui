@@ -15,9 +15,7 @@
     font-weight: 700;
 }
 
-/* Prevent white background bleed on mobile, foldables, and notched devices.
-   html/body background is set in App.css; here we only ensure the app root
-   div and all viewports have zero margin/padding and correct min-height. */
+/* Prevent white background bleed on mobile, foldables, and notched devices. */
 html,
 body,
 #app {
