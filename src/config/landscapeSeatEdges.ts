@@ -1145,10 +1145,8 @@ export function placeMobileRailMarkers(
             if (!point || !seat) return;
             const x = clamp ? clampToRail(seat.x) : Math.round(seat.x);
             let y = Math.round(seat.y + seatHY + 33 + pillHalfPortrait + (3 + overhang) / z + 3 + extra);
-            const inward = Math.sign(cx - seat.x) || 0;
             const clear = (yy: number) => {
                 if (!mobileFeltContains(x, yy, 1, 0)) return false;
-                if (clamp && inward && !mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
                 if (holeCards.some(card => boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, card, 0))) return false;
                 if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: pillHalfPortrait }, item, 2))) return false;
                 return true;
@@ -1160,6 +1158,61 @@ export function placeMobileRailMarkers(
                     y = yy;
                     break;
                 }
+            }
+            point.x = x;
+            point.y = y;
+            remember(index, x, y);
+        };
+        // Centred on the seat, just above that seat's cards. Clamped inward
+        // only when the centred pile would leave the felt.
+        const aboveCards = (index: number, avoidBanners = false, bannerDrop = 0) => {
+            const point = chipCenters[index];
+            const seat = seatBoxes[index];
+            const card = holeCards[index];
+            if (!point || !seat || !card) return;
+            const inward = Math.sign(cx - seat.x) || 1;
+            let x = clampToRail(seat.x);
+            let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
+            const clear = (yy: number) => {
+                if (!mobileFeltContains(x, yy, 1, 0)) return false;
+                if (!mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
+                if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: stackHalf }, item, 2))) return false;
+                return true;
+            };
+            // The painted action box sits a few stage px below this model.
+            // `bannerDrop` closes that gap for a pile that actually hangs into it.
+            const blocksBanner = (yy: number) => banners.some((banner, bannerIndex) =>
+                bannerIndex !== index && boxesOverlap(
+                    { x, y: yy, hw: chipHX, hy: stackHalf },
+                    bannerDrop ? { ...banner, y: banner.y + bannerDrop } : banner,
+                    2
+                ));
+            let covered = avoidBanners && blocksBanner(y);
+            if (!clear(y) || covered) {
+                const cardLimit = Math.round(card.y - card.hy - stackHalf - 1);
+                const limit = Math.min(cardLimit, y + Math.round(24 / z));
+                for (let yy = y + 1; yy <= limit; yy++) {
+                    if (!clear(yy) || (avoidBanners && blocksBanner(yy))) continue;
+                    y = yy;
+                    covered = false;
+                    break;
+                }
+            }
+            // Dropping onto the cards can still leave a tall pile under the
+            // next seat's banner. The shared banner box is the wide RAISE
+            // label; short labels are about 83px on screen. Slide inward only
+            // until that short box is clear.
+            if (covered) {
+                const shortHW = Math.round(42 / z);
+                const air = Math.round(3 / z);
+                const bannerClose = () => banners.some((banner, bannerIndex) =>
+                    bannerIndex !== index && boxesOverlap(
+                        { x, y, hw: chipHX, hy: stackHalf },
+                        { ...banner, y: banner.y + bannerDrop, hw: shortHW },
+                        air
+                    ));
+                const dir = Math.sign(cx - x) || 1;
+                for (let step = 0; step < 160 && bannerClose(); step++) x += dir;
             }
             point.x = x;
             point.y = y;
@@ -1213,32 +1266,54 @@ export function placeMobileRailMarkers(
             underBanner(3, false, 4);
             underBanner(2, true);
             underBanner(4, true);
-            [1, 5].forEach(index => {
+            [1, 5].forEach(aboveCards);
+        }
+        // 9-seat. Seats 2, 3, 8 and 9 sit above their own cards. Seats 4–7
+        // sit under their own banners. A centred pile is clamped inward only
+        // when it would leave the felt. Seats 5 and 6 stay on their own
+        // centres so the two top piles do not meet.
+        if (tableSize === 9) {
+            // A second denomination hangs below the single-stack model.
+            // Seat 7's pile is the taller of the two.
+            underBanner(3, true, 4);
+            underBanner(4, true);
+            // Seat 6's pile is a cent stack beside a 10¢ chip, so it hangs
+            // a little lower than the single-chip model.
+            underBanner(5, true, 3);
+            underBanner(6, true, 6);
+            [1, 2, 7].forEach(index => aboveCards(index, true));
+            // Seat 9's preview pile is the tall 10¢+5¢ stack. The painted
+            // banner hangs below the model, and on a short phone the cards
+            // are already against the pile, so it steps inward off that banner.
+            aboveCards(8, true, 5);
+            // Seats 5 and 6 stay under their banners. On a short phone those
+            // piles meet the next seat's cards, so each moves toward the
+            // centre only until the cards are clear, and not so far that the
+            // two piles meet.
+            const pileHalf = 74;
+            const nudgeOffCards = (index: number, dir: number) => {
                 const point = chipCenters[index];
-                const seat = seatBoxes[index];
-                const card = holeCards[index];
-                if (!point || !seat || !card) return;
-                const inward = Math.sign(cx - seat.x) || 1;
-                const x = clampToRail(seat.x);
-                let y = Math.round(card.y - card.hy - stackHalf - 3 / z - 3);
-                const clear = (yy: number) => {
-                    if (!mobileFeltContains(x, yy, 1, 0)) return false;
-                    if (!mobileFeltContains(x - inward * chipHX, yy, 1, 0)) return false;
-                    if (board.some(item => !item.soft && boxesOverlap({ x, y: yy, hw: chipHX, hy: stackHalf }, item, 2))) return false;
-                    return true;
-                };
-                if (!clear(y)) {
-                    const limit = y + Math.round(48 / z);
-                    for (let yy = y + 1; yy <= limit; yy++) {
-                        if (!clear(yy)) continue;
-                        y = yy;
-                        break;
-                    }
+                if (!point) return;
+                const hits = () => holeCards.some((card, cardIndex) =>
+                    cardIndex !== index && boxesOverlap({ x: point.x, y: point.y, hw: pileHalf, hy: pillHalfPortrait }, card, 8));
+                for (let step = 0; step < 80 && hits(); step++) point.x += dir;
+                remember(index, point.x, point.y);
+            };
+            nudgeOffCards(4, 1);
+            nudgeOffCards(5, -1);
+            const leftPile = chipCenters[4];
+            const rightPile = chipCenters[5];
+            if (leftPile && rightPile) {
+                const gap = rightPile.x - 78 - (leftPile.x + 70);
+                if (gap < 8) {
+                    const push = 8 - gap;
+                    const rightPush = Math.round(push * 0.35);
+                    leftPile.x -= Math.round(push - rightPush);
+                    rightPile.x += rightPush;
+                    remember(4, leftPile.x, leftPile.y);
+                    remember(5, rightPile.x, rightPile.y);
                 }
-                point.x = x;
-                point.y = y;
-                remember(index, x, y);
-            });
+            }
         }
     }
     const chips = seatBoxes.map((_, index) => {

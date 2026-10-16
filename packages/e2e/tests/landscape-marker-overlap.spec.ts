@@ -873,6 +873,64 @@ test.describe("portrait table fit", () => {
                         sideBet("2", 1, true);
                         sideBet("6", -1, true);
                     }
+                    if (seatCount === 9) {
+                        const seatEls = [...document.querySelectorAll(".player-seat")];
+                        const railGap = (pile: { x: number; r: number }, sign: number) =>
+                            sign > 0 ? pile.x - feltRect.x : feltRect.right - pile.r;
+                        const place = (label: string, expectSign: number, aboveCards: boolean) => {
+                            const index = seats.findIndex(seat => seat.label === label);
+                            const pile = chips[index];
+                            const seat = seats[index];
+                            const seatEl = seatEls[index];
+                            if (!pile || !seat || !seatEl) {
+                                found.push(`missing seat ${label} pile`);
+                                return null;
+                            }
+                            if (aboveCards) {
+                                const ownCards = [...seatEl.querySelectorAll(".hole-card-fan img")].map(box);
+                                if (ownCards.length === 0) {
+                                    found.push(`seat ${label} has no cards`);
+                                    return null;
+                                }
+                                const gap = Math.min(...ownCards.map(card => card.y)) - pile.b;
+                                const floor = label === "2" ? 1 : 2;
+                                if (gap < floor || gap > 6.5) found.push(`seat ${label} pile gap above cards is ${gap.toFixed(1)}px`);
+                            } else {
+                                const banner = seatEl.querySelector(".seat-banner-shell.seat-banner-visible .seat-banner-box");
+                                if (!banner) {
+                                    found.push(`seat ${label} has no banner`);
+                                    return null;
+                                }
+                                const gap = pile.y - banner.getBoundingClientRect().bottom;
+                                if (gap < 1.5 || gap > 5.5) found.push(`seat ${label} pile gap is ${gap.toFixed(1)}px`);
+                            }
+                            const dx = (pile.x + pile.r) / 2 - (seat.rect.x + seat.rect.r) / 2;
+                            if (label === "5" || label === "6") {
+                                const centred = Math.abs(dx) < 2;
+                                const nudged = window.innerWidth <= 375 && Math.sign(dx) === expectSign && Math.abs(dx) > 8 && Math.abs(dx) < 40;
+                                if (!centred && !nudged) found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                            } else if (Math.sign(dx) !== expectSign || Math.abs(dx) < 20 || Math.abs(dx) > (label === "9" ? 90 : 80)) {
+                                found.push(`seat ${label} pile is ${dx.toFixed(1)}px from its seat centre`);
+                            }
+                            if (label !== "5" && label !== "6" && label !== "9") {
+                                const edge = railGap(pile, expectSign);
+                                if (edge < 2 || edge > 16) found.push(`seat ${label} pile is ${edge.toFixed(1)}px inside the rail`);
+                            }
+                            return pile;
+                        };
+                        place("4", 1, false);
+                        const pile5 = place("5", 1, false);
+                        const pile6 = place("6", -1, false);
+                        place("7", -1, false);
+                        place("2", 1, true);
+                        place("3", 1, true);
+                        place("8", -1, true);
+                        place("9", -1, true);
+                        if (pile5 && pile6) {
+                            const gap = pile6.x - pile5.r;
+                            if (gap < 2) found.push(`seats 5 and 6 piles are ${gap.toFixed(1)}px apart`);
+                        }
+                    }
                     chips.forEach((chip, index) => {
                         const midX = (chip.x + chip.r) / 2;
                         const midY = (chip.y + chip.b) / 2;
