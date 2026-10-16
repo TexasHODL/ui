@@ -212,7 +212,7 @@ describe("landscape mobile readability", () => {
         Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
         const contentWidth = width - 124;
         const contentHeight = height - 48;
-        for (const size of [2, 6, 9] as TableSize[]) {
+        for (const size of [2, 4, 6, 9] as TableSize[]) {
             const zoom = calculateZoom(size, contentWidth, contentHeight);
             const transform = getTableTransform(zoom, size, contentWidth, contentHeight);
             const tx = Number(transform.match(/translate\(([-\d.]+)px/)?.[1]);
@@ -281,7 +281,7 @@ describe("landscape mobile readability", () => {
         const portrait = height > width;
         const cw = portrait ? width : width - 124;
         const ch = portrait ? height - 130 : height - 70;
-        for (const size of [2, 6, 9] as TableSize[]) {
+        for (const size of [2, 4, 6, 9] as TableSize[]) {
             const zoom = calculateZoom(size, cw, ch);
             const screenUnit = parseFloat(mobileCardUnit(portrait, zoom, cw, ch)) * zoom;
             const base = getAllPositions(size);
@@ -572,7 +572,7 @@ describe("landscape mobile readability", () => {
         for (const [width, height] of [[844, 390], [1024, 650]] as const) {
             Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
             Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
-            for (const size of [2, 6, 9] as TableSize[]) {
+            for (const size of [2, 4, 6, 9] as TableSize[]) {
                 const contentWidth = width - 124;
                 const contentHeight = height - 70;
                 const zoom = calculateZoom(size, contentWidth, contentHeight);
