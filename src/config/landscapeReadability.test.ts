@@ -1,6 +1,6 @@
 import { landscapeCommunityCardSize, landscapeHoleCardSize, mobileCardUnit, MOBILE_HOLE_CARD_HEIGHT, MOBILE_HOLE_CARD_WIDTH, communityCardHeight } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -152,9 +152,14 @@ describe("landscape mobile readability", () => {
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
-        expect(getStageDims().tableWidth).toBe(500);
-        expect(getStageDims().tableHeight).toBe(1000);
-        expect(getDeckOrigin()).toEqual({ left: "250px", top: "360px" });
+        const portraitDims = getStageDims();
+        expect(portraitDims.tableWidth).toBe(500);
+        expect(mobilePortraitHeightStretch()).toBeGreaterThan(1);
+        expect(mobilePortraitHeightStretch()).toBeLessThanOrEqual(MOBILE_PORTRAIT_HEIGHT_STRETCH);
+        expect(portraitDims.tableHeight).toBeCloseTo(1000 * mobilePortraitHeightStretch(), 5);
+        expect(portraitDims.originX).toBe(175);
+        expect(getDeckOrigin().left).toBe("250px");
+        expect(parseFloat(getDeckOrigin().top)).toBeCloseTo(portraitDims.tableHeight / 2 - 140, 5);
     });
 
     test("centres 9-seat wings between the neighbouring widgets on mobile landscape", () => {
@@ -306,10 +311,22 @@ describe("landscape mobile readability", () => {
                     if (own >= next) problems.push(`${size} seat ${index + 1} chip closer to seat ${otherIndex + 1} (${own.toFixed(0)} vs ${next.toFixed(0)})`);
                 });
                 if (hits(chip.x, chip.y, chipHalf, chipHy)) problems.push(`${size} seat ${index + 1} chip on a card at ${chip.x},${chip.y}`);
-                const onFelt = [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
-                    mobileFeltContains(chip.x + sx * chipHalf, chip.y + sy * 18, scaleY, shiftY)
+                // Portrait top bets sit under the banner, so the wide search
+                // box's outer corner leaves the stadium cap. The centre stays
+                // on the felt; landscape still requires the whole box.
+                const onFelt = portrait
+                    ? mobileFeltContains(chip.x, chip.y, scaleY, shiftY)
+                    : [[-1, -1], [-1, 1], [1, -1], [1, 1]].every(([sx, sy]) =>
+                        mobileFeltContains(chip.x + sx * chipHalf, chip.y + sy * 18, scaleY, shiftY)
+                    );
+                // These portrait piles are centred on a rail seat, so the
+                // centre sits on the felt edge.
+                const centredOnRail = portrait && (
+                    (size === 4 && (index === 1 || index === 3))
+                    || (size === 6 && (index === 1 || index === 2 || index === 4 || index === 5))
+                    || (size === 9 && (index === 1 || index === 2 || index === 3 || index === 6 || index === 7 || index === 8))
                 );
-                if (!onFelt) problems.push(`${size} seat ${index + 1} chip off the felt at ${chip.x},${chip.y}`);
+                if (!onFelt && !centredOnRail) problems.push(`${size} seat ${index + 1} chip off the felt at ${chip.x},${chip.y}`);
             });
             expect(problems).toEqual([]);
             expect(placed.players.map(seat => seat.top)).toEqual(seats.players.map(seat => seat.top));
@@ -395,11 +412,21 @@ describe("landscape mobile readability", () => {
         const portraitZoom = calculateZoom(9, 390, 714);
         const portraitUnit = parseFloat(mobileCardUnit(true, portraitZoom, 390, 714)) * portraitZoom;
         const portrait = placeMobileRailMarkers(getAllPositions(9), portraitZoom, 0, portraitUnit, 9);
-        for (const index of [1, 8, 2, 4, 5, 7]) {
+        for (const index of [1, 2, 3, 6, 7]) {
             const seatX = parseFloat(portrait.players[index].left);
             const chipX = parseFloat(portrait.chips[index].left);
-            expect(Math.abs(chipX - seatX)).toBeGreaterThan(20);
+            expect(chipX).toBe(Math.round(seatX));
         }
+        const seat6X = parseFloat(portrait.players[5].left);
+        const chip6X = parseFloat(portrait.chips[5].left);
+        expect(chip6X).toBeLessThanOrEqual(Math.round(seat6X));
+        expect(chip6X).toBeGreaterThan(Math.round(seat6X) - 60);
+        const seat9X = parseFloat(portrait.players[8].left);
+        const chip9X = parseFloat(portrait.chips[8].left);
+        expect(chip9X).toBe(Math.round(seat9X));
+        const seat5X = parseFloat(portrait.players[4].left);
+        const chip5X = parseFloat(portrait.chips[4].left);
+        expect(Math.abs(chip5X - seat5X)).toBeLessThan(2);
     });
 
     test("lines 6-seat side bets up with the hole-card corner and the stack badge", () => {
@@ -487,7 +514,7 @@ describe("landscape mobile readability", () => {
         for (const index of [1, 5]) {
             const chipY = parseFloat(portrait.chips[index].top ?? "0");
             const corner = Math.round(portraitHoles[index].y - portraitHoles[index].hy);
-            expect(chipY).toBeGreaterThan(corner + 2);
+            expect(chipY).toBeLessThan(corner - 2);
         }
     });
 
@@ -568,11 +595,218 @@ describe("landscape mobile readability", () => {
             expect(chipY + pillHalf).toBeLessThan(board.y - board.hy);
             expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
         }
+        for (const [width, height] of [[390, 844], [375, 667], [412, 915], [360, 800]] as const) {
+            const { placed, zoom, unit } = place(width, height);
+            const seat = placed.players[1];
+            const chip = placed.chips[1];
+            const seatY = parseFloat(seat.top);
+            const chipY = parseFloat(chip.top ?? "0");
+            const chipX = parseFloat(chip.left);
+            const seatHalf = 35.5 * unit;
+            const pillHalfPortrait = 18;
+            const bannerBottom = seatY + seatHalf + (55 - 22);
+            expect(chipX).toBe(Math.round(parseFloat(seat.left)));
+            const chipPx = width <= 768 || height <= 500 ? 32 : 28;
+            const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
+            const air = (chipY - pillHalfPortrait - bannerBottom) * zoom;
+            const expected = 3 + overhang + 3 * zoom;
+            expect(air).toBeGreaterThan(expected - 1.5);
+            expect(air).toBeLessThan(expected + 1.5);
+            expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
+        }
         const portrait = place(390, 844);
-        expect(portrait.placed.chips.map(chip => `${chip.left},${chip.top}`)).toEqual([
-            "250px,902px",
-            "250px,73px"
-        ]);
+        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "1015px", bottom: "0px" });
+        expect(parseFloat(portrait.placed.chips[1].left)).toBe(250);
+    });
+
+    test("places 4-seat portrait side bets above their cards and the top bet under its banner", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const place = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const contentWidth = width;
+            const contentHeight = height - 130;
+            const zoom = calculateZoom(4, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(true, zoom, contentWidth, contentHeight)) * zoom;
+            const positions = getAllPositions(4);
+            const placed = placeMobileRailMarkers(positions, zoom, 0, screenUnit, 4);
+            const cards = mobileCardObstacles(positions, zoom, screenUnit, 4);
+            return { placed, zoom, cards };
+        };
+        for (const [width, height] of [[390, 844], [375, 667], [412, 915], [360, 800]] as const) {
+            const { placed, zoom, cards } = place(width, height);
+            const topSeat = placed.players[2];
+            const topChip = placed.chips[2];
+            const topY = parseFloat(topSeat.top);
+            const topChipY = parseFloat(topChip.top ?? "0");
+            const topChipX = parseFloat(topChip.left);
+            const seatHalf = 35.5 * (parseFloat(mobileCardUnit(true, zoom, width, height - 130)));
+            const bannerBottom = topY + seatHalf + (55 - 22);
+            const chipPx = width <= 768 || height <= 500 ? 32 : 28;
+            const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
+            const air = (topChipY - 18 - bannerBottom) * zoom;
+            const expected = 3 + overhang + 3 * zoom;
+            expect(topChipX).toBe(Math.round(parseFloat(topSeat.left)));
+            expect(air).toBeGreaterThan(expected - 1.5);
+            expect(air).toBeLessThan(expected + 1.5);
+            expect(mobileFeltContains(topChipX, topChipY, 1, 0)).toBe(true);
+            const stackHalf = (chipPx + 12) / 2 + 4;
+            const chipHX = 86;
+            [1, 3].forEach(index => {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const card = cards[index];
+                const cardTop = card.y - card.hy;
+                const gap = (cardTop - chipY - stackHalf) * zoom;
+                const modelGap = 3 + 3 * zoom;
+                expect(gap).toBeGreaterThan(modelGap - 1.5);
+                expect(gap).toBeLessThan(modelGap + 1.5);
+                expect(chipX).toBe(Math.round(seatX));
+                const board = cards[4];
+                const onBoard = Math.abs(chipX - board.x) < chipHX + board.hw
+                    && Math.abs(chipY - board.y) < stackHalf + board.hy;
+                expect(onBoard).toBe(false);
+            });
+        }
+        const portrait = place(390, 844);
+        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "1014px", bottom: "0px" });
+    });
+
+    test("places 6-seat portrait bets under the upper banners and above the lower cards", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const place = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const contentWidth = width;
+            const contentHeight = height - 130;
+            const zoom = calculateZoom(6, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(true, zoom, contentWidth, contentHeight)) * zoom;
+            const positions = getAllPositions(6);
+            const placed = placeMobileRailMarkers(positions, zoom, 0, screenUnit, 6);
+            const cards = mobileCardObstacles(positions, zoom, screenUnit, 6);
+            return { placed, zoom, cards };
+        };
+        for (const [width, height] of [[390, 844], [375, 667], [412, 915], [360, 800]] as const) {
+            const { placed, zoom, cards } = place(width, height);
+            const seatHalf = 35.5 * parseFloat(mobileCardUnit(true, zoom, width, height - 130));
+            const chipPx = width <= 768 || height <= 500 ? 32 : 28;
+            const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
+            const chipHX = 86;
+            const bannerAir = (index: number) => {
+                const seat = placed.players[index];
+                const chip = placed.chips[index];
+                const seatY = parseFloat(seat.top);
+                const chipY = parseFloat(chip.top ?? "0");
+                const bannerBottom = seatY + seatHalf + (55 - 22);
+                return { x: parseFloat(chip.left), air: (chipY - 18 - bannerBottom) * zoom, seatX: parseFloat(seat.left) };
+            };
+            const top = bannerAir(3);
+            expect(top.x).toBe(Math.round(top.seatX));
+            const topExpected = 3 + overhang + 3 * zoom + 4 * zoom;
+            expect(top.air).toBeGreaterThan(topExpected - 1.5);
+            expect(top.air).toBeLessThan(topExpected + 1.5);
+            expect(mobileFeltContains(top.x, parseFloat(placed.chips[3].top ?? "0"), 1, 0)).toBe(true);
+            [2, 4].forEach(index => {
+                const bet = bannerAir(index);
+                const expected = 3 + overhang + 3 * zoom;
+                expect(bet.air).toBeGreaterThan(expected - 1.5);
+                expect(bet.air).toBeLessThan(expected + 1.5);
+                expect(bet.x).toBe(Math.round(bet.seatX));
+            });
+            const stackHalf = (chipPx + 12) / 2 + 4;
+            [1, 5].forEach(index => {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const cardTop = cards[index].y - cards[index].hy;
+                const gap = (cardTop - chipY - stackHalf) * zoom;
+                const modelGap = 3 + 3 * zoom;
+                expect(gap).toBeGreaterThan(modelGap - 1.5);
+                expect(gap).toBeLessThan(modelGap + 1.5);
+                expect(chipX).toBe(Math.round(seatX));
+                const board = cards[6];
+                const onBoard = Math.abs(chipX - board.x) < chipHX + board.hw
+                    && Math.abs(chipY - board.y) < stackHalf + board.hy;
+                expect(onBoard).toBe(false);
+            });
+        }
+        const portrait = place(390, 844);
+        expect(portrait.placed.chips[0].left).toBe("250px");
+    });
+
+    test("places 9-seat portrait bets under the upper banners and above the lower cards", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const place = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            notePortraitSize(9);
+            const contentWidth = width;
+            const contentHeight = height - 130;
+            const zoom = calculateZoom(9, contentWidth, contentHeight);
+            const screenUnit = parseFloat(mobileCardUnit(true, zoom, contentWidth, contentHeight)) * zoom;
+            const positions = getAllPositions(9);
+            const placed = placeMobileRailMarkers(positions, zoom, 0, screenUnit, 9);
+            const cards = mobileCardObstacles(positions, zoom, screenUnit, 9);
+            return { placed, zoom, cards };
+        };
+        for (const [width, height] of [[390, 844], [375, 667], [412, 915], [360, 800]] as const) {
+            const { placed, zoom, cards } = place(width, height);
+            const seatHalf = 35.5 * parseFloat(mobileCardUnit(true, zoom, width, height - 130));
+            const chipPx = width <= 768 || height <= 500 ? 32 : 28;
+            const overhang = Math.max(0, ((chipPx + 12) * zoom - 36 * zoom) / 2);
+            const bannerAir = (index: number) => {
+                const seat = placed.players[index];
+                const chip = placed.chips[index];
+                const bannerBottom = parseFloat(seat.top) + seatHalf + (55 - 22);
+                return {
+                    x: parseFloat(chip.left),
+                    y: parseFloat(chip.top ?? "0"),
+                    air: (parseFloat(chip.top ?? "0") - 18 - bannerBottom) * zoom,
+                    seatX: parseFloat(seat.left)
+                };
+            };
+            const expectBanner = (index: number, extra: number, centred: boolean) => {
+                const bet = bannerAir(index);
+                const expected = 3 + overhang + 3 * zoom + extra * zoom;
+                expect(bet.air).toBeGreaterThan(expected - 1.5);
+                expect(bet.air).toBeLessThan(expected + 1.5);
+                if (centred) expect(bet.x).toBe(Math.round(bet.seatX));
+                if (index === 4 || index === 5) expect(mobileFeltContains(bet.x, bet.y, 1, 0)).toBe(true);
+            };
+            expectBanner(3, 4, true);
+            expectBanner(6, 6, true);
+            const topLeft = bannerAir(4);
+            const topRight = bannerAir(5);
+            expectBanner(4, 0, false);
+            expectBanner(5, 3, false);
+            // Seat 6 stays on its seat unless a neighbour's cards cover the pile.
+            expect(topRight.x).toBeLessThanOrEqual(Math.round(topRight.seatX));
+            expect(topRight.x).toBeGreaterThan(Math.round(topRight.seatX) - 60);
+            if (width === 375) {
+                expect(topLeft.x).toBeGreaterThan(topLeft.seatX);
+            } else {
+                expect(Math.abs(topLeft.x - topLeft.seatX)).toBeLessThan(2);
+            }
+            expect(topRight.x - topLeft.x).toBeGreaterThanOrEqual(150);
+            const stackHalf = (chipPx + 12) / 2 + 4;
+            [1, 2, 7, 8].forEach(index => {
+                const seatX = parseFloat(placed.players[index].left);
+                const chipX = parseFloat(placed.chips[index].left);
+                const chipY = parseFloat(placed.chips[index].top ?? "0");
+                const cardTop = cards[index].y - cards[index].hy;
+                const gap = (cardTop - chipY - stackHalf) * zoom;
+                const modelGap = 3 + 3 * zoom;
+                // Seat 2 on the short phone drops a couple of pixels so the
+                // pile stays under the next seat's banner.
+                const floor = index === 1 && width === 375 ? 0.5 : modelGap - 1.5;
+                expect(gap).toBeGreaterThan(floor);
+                expect(gap).toBeLessThan(modelGap + 1.5);
+                expect(chipX).toBe(Math.round(seatX));
+            });
+        }
+        const portrait = place(390, 844);
+        expect(portrait.placed.chips[0].left).toBe("250px");
     });
 
     test("keeps mobile-landscape chips off every action banner", () => {

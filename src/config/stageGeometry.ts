@@ -107,8 +107,53 @@ export const MOBILE_LANDSCAPE_WIDTH_STRETCH = 1.7;
  */
 export const MOBILE_LANDSCAPE_HEIGHT_STRETCH = 1.4;
 
+/**
+ * Ceiling on how much taller the mobile-portrait felt and seat ring are than
+ * the 1000px stadium. `mobilePortraitHeightStretch` uses less when a short
+ * phone would push the hero's action banner into the dock, and never goes
+ * below 1. Width is not stretched. This is the one knob for that height.
+ */
+export const MOBILE_PORTRAIT_HEIGHT_STRETCH = 1.35;
+
 /** One-row mobile header. The hand-strength chip overlays, so it is not in this. */
 const MOBILE_LANDSCAPE_CHROME = 48;
+
+/** Portrait header (44px row plus the 22px status fallback, including its border). */
+const MOBILE_PORTRAIT_HEADER = 68;
+
+/** Portrait action dock. `mobileReadability.css` reserves 86px under the stage. */
+const MOBILE_PORTRAIT_DOCK = 86;
+
+/**
+ * The hand-strength chip used to be a row above the portrait stage. It now
+ * overlays, and these pixels stay out of the zoom so the height stretch can
+ * spend them on the felt. Taking them back into the zoom would widen the table.
+ */
+const MOBILE_PORTRAIT_ZOOM_RESERVE = 34;
+
+/** Screen pixels between the stage top and the top hole cards.
+ *  The painted card sits about 3px above this model, so 7 lands the art ~4px
+ *  under the header. */
+const MOBILE_PORTRAIT_TOP_GAP = 7;
+
+/** Screen pixels between the hero action banner and the bottom of the stage.
+ *  The painted box sits about 2px below this model, so 6 lands the art ~4px
+ *  above the dock. */
+const MOBILE_PORTRAIT_BOTTOM_GAP = 6;
+
+/** Unstretched portrait seat span: hero at 1300, top seat at 275. */
+const PORTRAIT_SEAT_SPAN = 1025;
+
+/**
+ * The table currently being laid out. Each seat count has its own zoom, so
+ * the height that fills a 2-seat ring is short for a 9-seat ring. The layout
+ * hook and the position helpers set this before reading the felt.
+ */
+let activePortraitSize: TableSize | null = null;
+
+export function notePortraitSize(size: TableSize): void {
+    activePortraitSize = size;
+}
 
 /** Screen pixels between the stage top and the top hole cards.
  *  The painted card sits about 2px above this model, so 6 lands the art ~4px
@@ -178,8 +223,9 @@ export interface StageDims {
 
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
     // Unstretched base, same 1000×500 stadium as desktop. Mobile landscape
-    // widens and heightens it in stageDimsFor and still uniform-scales the
-    // stage; portrait and desktop read these numbers as-is.
+    // widens and heightens it in stageDimsFor. Portrait heightens its own
+    // 500×1000 stadium there. Both still uniform-scale the stage. Desktop
+    // reads these numbers as-is.
     "mobile-landscape": {
         stageWidth: 1600,
         stageHeight: 850,
@@ -299,9 +345,17 @@ export function mobileLandscapeWidthStretch(): number {
     return Math.min(requested, Math.max(1, fill));
 }
 
-/** Felt dimensions for one orientation. Mobile landscape is the only stretched stage. */
+/** Felt dimensions for one orientation. Desktop is the only unstretched stage. */
 export function stageDimsFor(orientation: StageOrientation): StageDims {
     const base = STAGE_DIMS[orientation];
+    if (orientation === "portrait") {
+        const tableHeight = base.tableHeight * mobilePortraitHeightStretch();
+        return {
+            ...base,
+            tableHeight,
+            originY: base.centerY - tableHeight / 2
+        };
+    }
     if (orientation !== "mobile-landscape") return base;
     const tableWidth = TABLE_WIDTH * mobileLandscapeWidthStretch();
     const tableHeight = TABLE_HEIGHT * mobileLandscapeHeightStretch();
@@ -435,15 +489,21 @@ export function getSeatCoords(tableSize: TableSize): [number, number][] {
 
 /** Convert stage coordinates to table-div-relative pixel values.
  *  Mobile landscape scales X and Y about the table centre by the felt
- *  stretches, so seats, chips and dealer buttons spread with the stadium. */
+ *  stretches, so seats, chips and dealer buttons spread with the stadium.
+ *  Portrait scales Y only, about the same centre, so the ring grows taller
+ *  without changing the felt's width. */
 function stageToTable(stageX: number, stageY: number): [number, number] {
     const dims = getStageDims();
     let x = stageX;
     let y = stageY;
-    if (getStageOrientation() === "mobile-landscape") {
+    const orientation = getStageOrientation();
+    if (orientation === "mobile-landscape") {
         const widthStretch = dims.tableWidth / TABLE_WIDTH;
         const heightStretch = dims.tableHeight / TABLE_HEIGHT;
         x = dims.centerX + (stageX - dims.centerX) * widthStretch;
+        y = dims.centerY + (stageY - dims.centerY) * heightStretch;
+    } else if (orientation === "portrait") {
+        const heightStretch = dims.tableHeight / STAGE_DIMS.portrait.tableHeight;
         y = dims.centerY + (stageY - dims.centerY) * heightStretch;
     }
     return [
@@ -498,13 +558,13 @@ const HOLE_CARD_DY = -30;
  */
 export const DECK_ORIGIN: Position = { left: "500px", top: "150px" };
 
-/** Portrait counterpart of {@link DECK_ORIGIN}: felt centre (250) nudged above
- *  the community-card row on the 500×1000 portrait felt. */
-const PORTRAIT_DECK_ORIGIN: Position = { left: "250px", top: "360px" };
-
 /** The deck origin for the current orientation's felt. */
 export function getDeckOrigin(): Position {
-    if (getStageOrientation() === "portrait") return PORTRAIT_DECK_ORIGIN;
+    if (getStageOrientation() === "portrait") {
+        const dims = getStageDims();
+        // Same nudge above the unstretched felt centre (500, deck was 360).
+        return { left: `${dims.tableWidth / 2}px`, top: `${dims.tableHeight / 2 - 140}px` };
+    }
     if (getStageOrientation() === "mobile-landscape") {
         const dims = getStageDims();
         // Same nudge above the felt centre as the desktop deck (centre is 250, deck is 150).
@@ -534,6 +594,7 @@ function applySpread(sx: number, sy: number): [number, number] {
 
 /** Get player seat positions for a given table size (with SEAT_SPREAD applied) */
 export function getSeatPositions(tableSize: TableSize): Position[] {
+    notePortraitSize(tableSize);
     const coords = getSeatCoords(tableSize);
     const colors = SEAT_COLORS[tableSize];
     return coords.map(([x, y], i) => {
@@ -845,6 +906,7 @@ function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: Ta
 
 /** Get all position arrays for a given table size, with offsets applied */
 export function getAllPositions(tableSize: TableSize): PositionArrays {
+    notePortraitSize(tableSize);
     return centerMobileLandscapeWingSeats({
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
@@ -1016,6 +1078,7 @@ export function calculateZoom(
     const usableWidth = containerWidth - params.paddingH;
     let usableHeight = containerHeight - params.footerOverlay - params.paddingV;
     if (mode === "mobile-landscape") usableHeight -= MOBILE_LANDSCAPE_ZOOM_RESERVE;
+    if (mode === "mobile-portrait") usableHeight -= MOBILE_PORTRAIT_ZOOM_RESERVE;
 
     const scaleByWidth = usableWidth / bounds.width;
     const scaleByHeight = usableHeight / bounds.height;
@@ -1081,12 +1144,44 @@ export function mobileLandscapeHeightStretch(): number {
 }
 
 /**
+ * Height scale actually applied on mobile portrait. Equals
+ * {@link MOBILE_PORTRAIT_HEIGHT_STRETCH} when the phone has vertical room.
+ * Otherwise a smaller factor down to 1, so the top hole cards keep
+ * {@link MOBILE_PORTRAIT_TOP_GAP}px of air under the header and the hero's
+ * action banner stays {@link MOBILE_PORTRAIT_BOTTOM_GAP}px above the dock.
+ * Zoom stays the unstretched fit, so the felt does not grow wider. The
+ * factor follows the table currently being laid out, because a wider ring
+ * zooms down and needs a taller felt to meet the same gaps.
+ */
+export function mobilePortraitHeightStretch(): number {
+    const requested = Math.max(1, MOBILE_PORTRAIT_HEIGHT_STRETCH);
+    if (requested === 1 || typeof window === "undefined") return 1;
+    if (getStageOrientation() !== "portrait") return 1;
+    const stageH = window.innerHeight - MOBILE_PORTRAIT_HEADER - MOBILE_PORTRAIT_DOCK;
+    const containerW = window.innerWidth;
+    if (stageH <= 0 || containerW <= 0) return 1;
+    const sizes: readonly TableSize[] = activePortraitSize ? [activePortraitSize] : [2, 4, 6, 9];
+    let allowed = requested;
+    for (const size of sizes) {
+        const zoom = calculateZoom(size, containerW, stageH);
+        if (zoom <= 0) return 1;
+        const half = 35.5 * parseFloat(mobileCardUnit(true, zoom, containerW, stageH));
+        const maxS = ((stageH - MOBILE_PORTRAIT_TOP_GAP - MOBILE_PORTRAIT_BOTTOM_GAP) / zoom
+            - 2 * half
+            - MOBILE_LANDSCAPE_ACTION_BELOW_CARDS) / PORTRAIT_SEAT_SPAN;
+        allowed = Math.min(allowed, maxS);
+    }
+    return Math.min(requested, Math.max(1, allowed));
+}
+
+/**
  * Build CSS transform — pixel-based, no percentages.
  * Centers the content within the measured container.
  * CSS wrapper must have: top:0; left:0; transform-origin: 0 0;
  * Mobile landscape then slides the ring so the top hole cards sit
  * {@link MOBILE_LANDSCAPE_TOP_GAP}px under the stage top, unless that would
- * push the lowest action box past the bottom edge.
+ * push the lowest action box past the bottom edge. Mobile portrait does the
+ * same with its own gaps, so the hero banner stops above the action dock.
  */
 export function getTableTransform(
     zoom: number,
@@ -1095,6 +1190,7 @@ export function getTableTransform(
     containerHeight: number,
     horizontalOffset: number = 0
 ): string {
+    notePortraitSize(tableSize);
     const mode = getViewportMode();
     const params = VIEWPORT_PARAMS[mode];
     const bounds = getContentBounds(tableSize);
@@ -1116,6 +1212,9 @@ export function getTableTransform(
     let ty = usableCenterY - scaledCenterY;
     if (mode === "mobile-landscape") {
         ty += mobileLandscapeVerticalNudge(zoom, containerWidth, containerHeight, tableSize, ty);
+    }
+    if (mode === "mobile-portrait") {
+        ty += mobilePortraitVerticalNudge(zoom, containerWidth, containerHeight, tableSize, ty);
     }
 
     return `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px) scale(${zoom})`;
@@ -1142,6 +1241,31 @@ function mobileLandscapeVerticalNudge(
     let nudge = MOBILE_LANDSCAPE_TOP_GAP - (ty + cardTop * zoom);
     const actionAfter = ty + nudge + actionBottom * zoom;
     const limit = containerHeight - MOBILE_LANDSCAPE_BOTTOM_GAP;
+    if (actionAfter > limit) nudge -= actionAfter - limit;
+    return nudge;
+}
+
+/** Slide the centred portrait ring so the top cards sit just under the stage top. */
+function mobilePortraitVerticalNudge(
+    zoom: number,
+    containerWidth: number,
+    containerHeight: number,
+    tableSize: TableSize,
+    ty: number
+): number {
+    const dims = getStageDims();
+    const half = 35.5 * parseFloat(mobileCardUnit(true, zoom, containerWidth, containerHeight));
+    const seats = getSeatPositions(tableSize);
+    let cardTop = Infinity;
+    let actionBottom = -Infinity;
+    for (const seat of seats) {
+        const stageY = dims.originY + parseFloat(seat.top);
+        cardTop = Math.min(cardTop, stageY - half);
+        actionBottom = Math.max(actionBottom, stageY + half + MOBILE_LANDSCAPE_ACTION_BELOW_CARDS);
+    }
+    let nudge = MOBILE_PORTRAIT_TOP_GAP - (ty + cardTop * zoom);
+    const actionAfter = ty + nudge + actionBottom * zoom;
+    const limit = containerHeight - MOBILE_PORTRAIT_BOTTOM_GAP;
     if (actionAfter > limit) nudge -= actionAfter - limit;
     return nudge;
 }

@@ -22,15 +22,16 @@ const LiveHandStrengthDisplay: React.FC = () => {
         return null;
     }
 
-    // Portrait keeps its own row above the stage. Landscape overlays the chip
-    // under the header so the felt can start there; the row was a 34px gap.
+    // Both phone orientations overlay the chip under the header. A portrait
+    // row above the stage was a 34px gap the felt now uses. The chip stays
+    // off to the left and does not take clicks.
     const isPortrait = viewportMode === "mobile-portrait";
     const isLandscape = viewportMode === "mobile-landscape";
     const isCompactMobile = isPortrait || isLandscape;
     const positionStyle: React.CSSProperties = isLandscape
         ? { position: "fixed", top: "calc(var(--mobile-chrome-end, 48px) + 4px)", left: "max(8px, env(safe-area-inset-left, 0px))", margin: 0, padding: "4px 8px", maxWidth: "calc(100% - 16px)", pointerEvents: "none", zIndex: 30 }
         : isPortrait
-          ? { position: "relative", alignSelf: "flex-start", flexShrink: 0, margin: "4px 8px", padding: "4px 8px", maxWidth: "calc(100% - 16px)", pointerEvents: "none" }
+          ? { position: "fixed", top: "calc(var(--mobile-chrome-end, 68px) + 4px)", left: "max(8px, env(safe-area-inset-left, 0px))", margin: 0, padding: "4px 8px", maxWidth: "40%", pointerEvents: "none", zIndex: 30 }
           : { position: "fixed", bottom: "168px", right: "16px" };
 
     return (
