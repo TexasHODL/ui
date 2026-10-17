@@ -35,12 +35,7 @@ export const useForceCloseGame = (): UseForceCloseGameReturn => {
 
             try {
                 const { signingClient } = await getSigningClient(currentNetwork);
-
-                console.log("🛑 Force-closing game:", gameId);
-
                 const txHash = await signingClient.forceCloseGame(gameId);
-
-                console.log("✅ Game force-closed:", txHash);
                 toast.success("Table closed — all players refunded.");
 
                 return txHash;

@@ -30,9 +30,6 @@ export function roundMicroToCent(microAmount: bigint): bigint {
     return ((microAmount + MICRO_PER_CENT / 2n) / MICRO_PER_CENT) * MICRO_PER_CENT;
 }
 
-/** Conversion factor: 1 micro-USDC = 0.000001 USDC */
-export const MICRO_TO_USDC = 1 / 1_000_000;
-
 /**
  * Parse a decimal USDC string to micro-units, exactly.
  *
@@ -153,15 +150,6 @@ export function parseMicroToBigInt(value: string | number | bigint | undefined):
     // Handle string - remove any decimal places (shouldn't have any for micro-units)
     const parsed = value.includes(".") ? value.split(".")[0] : value;
     return BigInt(parsed || "0");
-}
-
-/**
- * Convert bigint micro-units to string for wire transmission (JSON)
- * @param microAmount Amount in micro-units as bigint
- * @returns String representation for JSON serialization
- */
-export function microBigIntToString(microAmount: bigint): string {
-    return microAmount.toString();
 }
 
 /**

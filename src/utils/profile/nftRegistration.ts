@@ -52,31 +52,6 @@ export const assertNftAuthorizationSigner = (message: string, signature: string,
 export const isEthAddress = (value: string): boolean => /^0x[0-9a-fA-F]{40}$/.test(value.trim());
 
 /**
- * Sign the NFT authorization message using MetaMask (EIP-191 personal_sign).
- *
- * @returns Hex-encoded signature with 0x prefix
- * @throws If MetaMask is not available or user rejects the signature
- */
-export const signNftAuthorization = async (
-    ethAddress: string,
-    cosmosAddress: string,
-    contractAddress: string,
-    tokenId: string
-): Promise<{ message: string; signature: string }> => {
-    if (!(window as any).ethereum) {
-        throw new Error("MetaMask is not available");
-    }
-
-    const message = buildNftAuthorizationMessage(ethAddress, cosmosAddress, contractAddress, tokenId);
-
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
-    const signer = await provider.getSigner(ethAddress);
-    const signature = await signer.signMessage(message);
-
-    return { message, signature };
-};
-
-/**
  * Broadcast the signed NFT registration to the cosmos validator.
  *
  * This sends a cosmos transaction containing:

@@ -1,5 +1,0 @@
-export const CONTRACT_ADDRESSES = {
-    bridgeAddress: "0xE4E22A524f2b104cB71fB154f72736bd02722fF4",
-    vaultAddress: "0x1B0adaf78383A55Ef8444cAf9b27ADb57b4d8402",
-    USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-};

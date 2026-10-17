@@ -287,7 +287,7 @@ describe("ActionSubmitController", () => {
 
         authoritative(mine(PlayerActionType.FOLD));
         await flush();
-        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "superseded", actionName: "call", message: expect.stringContaining('"fold"') }));
+        expect(onError).toHaveBeenCalledWith(expect.objectContaining({ kind: "superseded", actionName: "call", message: expect.stringContaining("\"fold\"") }));
         expect(controller.getSnapshot().status).toBe("idle");
     });
 

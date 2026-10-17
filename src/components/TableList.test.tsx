@@ -1,4 +1,4 @@
-import React from "react";
+
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../utils/generatedTableName";

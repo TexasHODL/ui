@@ -5,19 +5,11 @@
 @tailwind utilities;
 
 /* Muted utility text follows the same bold treatment as secondary component copy. */
-:is(
-    .text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600,
-    .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600,
-    .text-zinc-300, .text-zinc-400, .text-zinc-500, .text-zinc-600,
-    .text-neutral-300, .text-neutral-400, .text-neutral-500, .text-neutral-600,
-    .text-stone-300, .text-stone-400, .text-stone-500, .text-stone-600
-) {
+:is(.text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600) {
     font-weight: 700;
 }
 
-/* Prevent white background bleed on mobile, foldables, and notched devices.
-   html/body background is set in App.css; here we only ensure the app root
-   div and all viewports have zero margin/padding and correct min-height. */
+/* Prevent white background bleed on mobile, foldables, and notched devices. */
 html,
 body,
 #app {

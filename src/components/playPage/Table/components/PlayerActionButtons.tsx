@@ -6,14 +6,14 @@
  * Responsive design for mobile, tablet, and desktop viewports.
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect } from "react";
 import { RxExit } from "react-icons/rx";
 import styles from "./TableHeader.module.css";
 
 import { GameFormat, LegalActionDTO, NonPlayerActionType } from "@block52/poker-vm-sdk";
 // Raw sit-in/out hooks THROW on failure (unlike the swallowing handleSitIn/Out
 // wrappers) so the ActionSubmitController can classify + surface the error.
-import { SIT_IN_METHOD_POST_NOW, sitIn, sitOut, useAutoSitOutNextBB } from "../../../../hooks/playerActions";
+import { SIT_IN_METHOD_POST_NOW, sitIn } from "../../../../hooks/playerActions";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { getPlayerActionDisplay } from "../../../../utils/playerActionDisplayUtils";
 import { toast } from "react-toastify";
@@ -23,7 +23,6 @@ import { useGameStateContext } from "../../../../context/GameStateContext";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useActionSubmit } from "../../../../context/ActionSubmitContext";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
-import { getCosmosAddressSync } from "../../../../utils/cosmosAccountUtils";
 
 export interface PlayerActionButtonsProps {
     isMobile: boolean;

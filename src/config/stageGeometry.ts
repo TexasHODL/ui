@@ -1,55 +1,9 @@
 /**
- * Stage Geometry Engine
- *
- * Calculates all table layout positions from the spec's stadium-intersection model.
- * Replaces ~1700 lines of hardcoded position arrays with calculated positions.
- *
- * ═══════════════════════════════════════════════════════════════════════
- * HOW IT WORKS
- * ═══════════════════════════════════════════════════════════════════════
- *
- * 1. SPEC COORDINATES (from issue #142)
- *    TexasHODL provided exact seat positions on a 1600×850 "stage" using
- *    a stadium-intersection model (radial angles from table center).
- *
- * 2. COORDINATE CONVERSION
- *    stageToTable() converts those absolute stage coordinates into
- *    positions relative to the 900×450 table div:
- *      Stage (1282.2, 683.5) → Table-relative { left: "932.2px", top: "373.5px" }
- *
- * 3. DERIVED POSITIONS
- *    Chips and animations are calculated from seat positions:
- *      - Chips:      40% from seat toward table center (adjust CHIP_DISTANCE)
- *      - Turn anim:  seat position + 80px down (adjust TURN_ANIM_Y_OFFSET)
- *      - Win anim:   same as seat position
- *    The dealer button is not a table coordinate. It is drawn on the seat
- *    widget, up and to the left of that seat's number badge.
- *
- * 4. VIEWPORT SCALING
- *    Positions are FIXED on the table. Screen-size adaptation is handled by
- *    zoom/scale on the table container (calculateZoom + getTableTransform).
- *
- * ═══════════════════════════════════════════════════════════════════════
- * HOW TO FINE-TUNE POSITIONS
- * ═══════════════════════════════════════════════════════════════════════
- *
- * To move ALL chips/animations globally:
- *   → Change the distance constants: CHIP_DISTANCE, TURN_ANIM_Y_OFFSET
- *
- * To nudge ONE specific seat's element by a few pixels:
- *   → Add an entry to GLOBAL_OFFSETS (applies on all screen sizes)
- *     Example: GLOBAL_OFFSETS = { 9: { chips: { 3: { dx: -5, dy: 10 } } } }
- *
- * To nudge ONE specific seat on ONE specific screen size:
- *   → Add an entry to VIEWPORT_OFFSETS
- *     Example: VIEWPORT_OFFSETS["mobile-portrait"] = { 9: { chips: { 5: { dy: -8 } } } }
- *
- * dx = horizontal offset (positive = right, negative = left)
- * dy = vertical offset (positive = down, negative = up)
- *
- * References:
- * - Issue #142: https://github.com/block52/ui/issues/142
- * - Issue #46:  https://github.com/block52/ui/issues/46
+ * Seat, chip and animation positions on the 1600×850 stage.
+ * Screen size changes the zoom (`calculateZoom`), not these coordinates.
+ * Nudge one seat in GLOBAL_OFFSETS (landscape/desktop) or the shared portrait
+ * hero-chip nudge. dx is right, dy is down. The dealer button is drawn on the
+ * seat badge, not placed here.
  */
 
 import { mobileCardUnit } from "./mobileCardSizing";
@@ -189,10 +143,8 @@ const MOBILE_LANDSCAPE_ZOOM_RESERVE = 34;
  * pixels are inside the zoomed stage, so they are not multiplied by the card unit.
  */
 const MOBILE_LANDSCAPE_ACTION_BELOW_CARDS = 33;
-export const TABLE_SURFACE_HEIGHT = 500; // Match spec: table surface fills the full table div
 export const TABLE_CENTER_X = 800;
 export const TABLE_CENTER_Y = 535;
-export const SEAT_OFFSET = 72;
 
 // Table div origin in stage coordinates
 export const TABLE_ORIGIN_X = TABLE_CENTER_X - TABLE_WIDTH / 2;   // 300
@@ -221,31 +173,21 @@ export interface StageDims {
     originY: number;
 }
 
+/** Desktop and the unstretched mobile-landscape base. stageDimsFor widens landscape. */
+const LANDSCAPE_STAGE: StageDims = {
+    stageWidth: STAGE_WIDTH,
+    stageHeight: STAGE_HEIGHT,
+    tableWidth: TABLE_WIDTH,
+    tableHeight: TABLE_HEIGHT,
+    centerX: TABLE_CENTER_X,
+    centerY: TABLE_CENTER_Y,
+    originX: TABLE_ORIGIN_X,
+    originY: TABLE_ORIGIN_Y
+};
+
 export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
-    // Unstretched base, same 1000×500 stadium as desktop. Mobile landscape
-    // widens and heightens it in stageDimsFor. Portrait heightens its own
-    // 500×1000 stadium there. Both still uniform-scale the stage. Desktop
-    // reads these numbers as-is.
-    "mobile-landscape": {
-        stageWidth: 1600,
-        stageHeight: 850,
-        tableWidth: TABLE_WIDTH,
-        tableHeight: TABLE_HEIGHT,
-        centerX: TABLE_CENTER_X,
-        centerY: TABLE_CENTER_Y,
-        originX: TABLE_ORIGIN_X,
-        originY: TABLE_ORIGIN_Y
-    },
-    landscape: {
-        stageWidth: STAGE_WIDTH,
-        stageHeight: STAGE_HEIGHT,
-        tableWidth: TABLE_WIDTH,
-        tableHeight: TABLE_HEIGHT,
-        centerX: TABLE_CENTER_X,
-        centerY: TABLE_CENTER_Y,
-        originX: TABLE_ORIGIN_X,
-        originY: TABLE_ORIGIN_Y
-    },
+    "mobile-landscape": LANDSCAPE_STAGE,
+    landscape: LANDSCAPE_STAGE,
     portrait: {
         stageWidth: 850,
         stageHeight: 1600,
@@ -268,7 +210,7 @@ function spreadForWidthCap(sx: number, sy: number): [number, number] {
     const dx = sx - TABLE_CENTER_X;
     const dy = sy - TABLE_CENTER_Y;
     const dist = Math.hypot(dx, dy);
-    if (dist === 0 || (SEAT_SPREAD as number) === 0) return [sx, sy];
+    if (dist === 0) return [sx, sy];
     return [sx + (dx / dist) * SEAT_SPREAD, sy + (dy / dist) * SEAT_SPREAD];
 }
 
@@ -524,11 +466,6 @@ function stageToPosition(stageX: number, stageY: number, color?: string): Positi
 
 // ─── Derivation Constants (tweak these to move ALL positions globally) ──
 
-/** Scale factor for player components (cards, badges, chips, dealer button).
- *  Applied on top of the auto-fit zoom. 1.0 = default, 1.3 = 30% bigger.
- *  Doesn't affect positioning — just visual size around each element's center. */
-export const COMPONENT_SCALE = 1.2;
-
 /** How many extra pixels to push ALL seats outward from table center.
  *  Positive = further from center (seats spread out, table feels bigger).
  *  Negative = closer to center (seats tighter, table feels smaller).
@@ -577,13 +514,14 @@ export function getDeckOrigin(): Position {
 
 export type TableSize = 2 | 4 | 6 | 9;
 
+const TABLE_SIZES: readonly TableSize[] = [2, 4, 6, 9];
+
 
 /** Push a seat position outward from table center by SEAT_SPREAD pixels */
 function applySpread(sx: number, sy: number): [number, number] {
     // Portrait coordinates already include the approved rail/arc spacing.
     // Mobile landscape shares the desktop ring, including this spread.
     if (getStageOrientation() === "portrait") return [sx, sy];
-    if ((SEAT_SPREAD as number) === 0) return [sx, sy];
     const dims = getStageDims();
     const dx = sx - dims.centerX;
     const dy = sy - dims.centerY;
@@ -592,24 +530,23 @@ function applySpread(sx: number, sy: number): [number, number] {
     return [sx + (dx / dist) * SEAT_SPREAD, sy + (dy / dist) * SEAT_SPREAD];
 }
 
-/** Get player seat positions for a given table size (with SEAT_SPREAD applied) */
-export function getSeatPositions(tableSize: TableSize): Position[] {
-    notePortraitSize(tableSize);
-    const coords = getSeatCoords(tableSize);
-    const colors = SEAT_COLORS[tableSize];
-    return coords.map(([x, y], i) => {
+function mapSpread(tableSize: TableSize, place: (sx: number, sy: number, index: number) => Position): Position[] {
+    return getSeatCoords(tableSize).map(([x, y], index) => {
         const [sx, sy] = applySpread(x, y);
-        return stageToPosition(sx, sy, colors[i]);
+        return place(sx, sy, index);
     });
 }
 
-/** Get vacant seat positions (with SEAT_SPREAD applied) */
+/** Player seats for a table size, with SEAT_SPREAD applied. */
+export function getSeatPositions(tableSize: TableSize): Position[] {
+    notePortraitSize(tableSize);
+    const colors = SEAT_COLORS[tableSize];
+    return mapSpread(tableSize, (sx, sy, index) => stageToPosition(sx, sy, colors[index]));
+}
+
+/** Vacant seats, with SEAT_SPREAD applied. */
 export function getVacantPositions(tableSize: TableSize): Position[] {
-    const coords = getSeatCoords(tableSize);
-    return coords.map(([x, y]) => {
-        const [sx, sy] = applySpread(x, y);
-        return stageToPosition(sx, sy);
-    });
+    return mapSpread(tableSize, (sx, sy) => stageToPosition(sx, sy));
 }
 
 /**
@@ -651,24 +588,12 @@ export function getChipPositions(tableSize: TableSize): ChipPosition[] {
  * Placed at the seat with a slight downward offset for the ring animation.
  */
 export function getTurnAnimationPositions(tableSize: TableSize): Position[] {
-    const coords = getSeatCoords(tableSize);
-
-    return coords.map(([x, y]) => {
-        const [sx, sy] = applySpread(x, y);
-        return stageToPosition(sx, sy + TURN_ANIM_Y_OFFSET);
-    });
+    return mapSpread(tableSize, (sx, sy) => stageToPosition(sx, sy + TURN_ANIM_Y_OFFSET));
 }
 
-/**
- * Get win animation positions.
- * Same as seat positions (animation overlays the player).
- */
+/** Win animation sits on the seat. */
 export function getWinAnimationPositions(tableSize: TableSize): Position[] {
-    const coords = getSeatCoords(tableSize);
-    return coords.map(([x, y]) => {
-        const [sx, sy] = applySpread(x, y);
-        return stageToPosition(sx, sy);
-    });
+    return mapSpread(tableSize, (sx, sy) => stageToPosition(sx, sy));
 }
 
 /**
@@ -677,8 +602,7 @@ export function getWinAnimationPositions(tableSize: TableSize): Position[] {
  * HOLE_CARD_DX / HOLE_CARD_DY. Same seat order as {@link getSeatPositions}.
  */
 export function getHoleCardSlotPositions(tableSize: TableSize): HoleCardSlotPosition[] {
-    const coords = getSeatCoords(tableSize);
-    return coords.map(([x, y]) => {
+    return getSeatCoords(tableSize).map(([x, y]) => {
         const [sx, sy] = applySpread(x, y);
         return {
             first: stageToPosition(sx - HOLE_CARD_DX, sy + HOLE_CARD_DY),
@@ -695,22 +619,7 @@ export function positionDelta(from: Position, to: Position): { dx: number; dy: n
     };
 }
 
-// ─── Fine-Tuning Offsets ─────────────────────────────────────────────
-//
-// Add entries here to nudge individual elements by a few pixels after
-// visual QA. Leave empty by default — only add what needs adjustment.
-//
-// HOW TO USE:
-//
-// 1. Nudge seat 3's chips 5px left, 10px down on ALL screens:
-//    GLOBAL_OFFSETS = { 9: { chips: { 3: { dx: -5, dy: 10 } } } }
-//
-// 2. Nudge seat 5's chips 8px up on MOBILE PORTRAIT only:
-//    VIEWPORT_OFFSETS["mobile-portrait"] = { 9: { chips: { 5: { dy: -8 } } } }
-//
-//
-// dx = horizontal (positive = right, negative = left)
-// dy = vertical (positive = down, negative = up)
+// Per-seat nudges. dx is right, dy is down. Chips use `bottom`, so dy flips.
 
 interface Offset { dx?: number; dy?: number; }
 
@@ -763,20 +672,13 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
 };
 
 
-/** Per-viewport offsets — override for specific screen sizes only */
-const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {};
-
-/** Portrait offsets are tuned independently — the landscape GLOBAL_OFFSETS were
- *  hand-fitted to the landscape seat ring and don't transfer. Nudge portrait
- *  elements here after visual QA (dy negative = up for chips too — the sign is
- *  normalized by applyChipOffsets). */
+/** Portrait hero bet, pulled up off the bottom rail. Same nudge at every seat count. */
+const PORTRAIT_HERO_CHIPS = { chips: { 0: { dy: -60 } } };
 const PORTRAIT_GLOBAL_OFFSETS: typeof GLOBAL_OFFSETS = {
-    // Hero (seat 1) bet chip was landing on the felt's bottom boundary — pull
-    // it up toward the centre so it reads as "inside the felt, near the seat".
-    2: { chips: { 0: { dy: -60 } } },
-    4: { chips: { 0: { dy: -60 } } },
-    6: { chips: { 0: { dy: -60 } } },
-    9: { chips: { 0: { dy: -60 } } }
+    2: PORTRAIT_HERO_CHIPS,
+    4: PORTRAIT_HERO_CHIPS,
+    6: PORTRAIT_HERO_CHIPS,
+    9: PORTRAIT_HERO_CHIPS
 };
 
 function globalOffsetsForOrientation(): typeof GLOBAL_OFFSETS {
@@ -790,24 +692,16 @@ function applyPositionOffsets(
     tableSize: TableSize,
     element: ElementType
 ): Position[] {
-    const mode = getViewportMode();
-    const globalOffs = globalOffsetsForOrientation()[tableSize]?.[element];
-    const vpOffs = VIEWPORT_OFFSETS[mode]?.[tableSize]?.[element];
-
-    if (!globalOffs && !vpOffs) return positions;
+    const offsets = globalOffsetsForOrientation()[tableSize]?.[element];
+    if (!offsets) return positions;
 
     return positions.map((pos, i) => {
-        const g = globalOffs?.[i];
-        const v = vpOffs?.[i];
-        if (!g && !v) return pos;
-
-        const dx = (g?.dx ?? 0) + (v?.dx ?? 0);
-        const dy = (g?.dy ?? 0) + (v?.dy ?? 0);
-
+        const offset = offsets[i];
+        if (!offset) return pos;
         return {
             ...pos,
-            left: `${parseFloat(pos.left) + dx}px`,
-            top: `${parseFloat(pos.top) + dy}px`
+            left: `${parseFloat(pos.left) + (offset.dx ?? 0)}px`,
+            top: `${parseFloat(pos.top) + (offset.dy ?? 0)}px`
         };
     });
 }
@@ -817,24 +711,16 @@ function applyChipOffsets(
     positions: ChipPosition[],
     tableSize: TableSize
 ): ChipPosition[] {
-    const mode = getViewportMode();
-    const globalOffs = globalOffsetsForOrientation()[tableSize]?.["chips"];
-    const vpOffs = VIEWPORT_OFFSETS[mode]?.[tableSize]?.["chips"];
-
-    if (!globalOffs && !vpOffs) return positions;
+    const offsets = globalOffsetsForOrientation()[tableSize]?.chips;
+    if (!offsets) return positions;
 
     return positions.map((pos, i) => {
-        const g = globalOffs?.[i];
-        const v = vpOffs?.[i];
-        if (!g && !v) return pos;
-
-        const dx = (g?.dx ?? 0) + (v?.dx ?? 0);
-        const dy = (g?.dy ?? 0) + (v?.dy ?? 0);
-
-        // Chips use "bottom" not "top", so dy inverts: positive dy = down = decrease bottom
+        const offset = offsets[i];
+        if (!offset) return pos;
+        // Chips use "bottom", so positive dy (down) decreases bottom.
         return {
-            left: `${parseFloat(pos.left) + dx}px`,
-            bottom: `${parseFloat(pos.bottom) - dy}px`
+            left: `${parseFloat(pos.left) + (offset.dx ?? 0)}px`,
+            bottom: `${parseFloat(pos.bottom) - (offset.dy ?? 0)}px`
         };
     });
 }
@@ -885,12 +771,13 @@ function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: Ta
         const left = Math.round((parseFloat(pos.left) + delta) * 10) / 10;
         return { ...pos, left: `${left}px` };
     };
+    const shiftAll = (list: Position[]) => list.map(shift);
     return {
         ...positions,
-        players: positions.players.map(shift),
-        vacantPlayers: positions.vacantPlayers.map(shift),
-        turnAnimations: positions.turnAnimations.map(shift),
-        winAnimations: positions.winAnimations.map(shift),
+        players: shiftAll(positions.players),
+        vacantPlayers: shiftAll(positions.vacantPlayers),
+        turnAnimations: shiftAll(positions.turnAnimations),
+        winAnimations: shiftAll(positions.winAnimations),
         holeCards: positions.holeCards.map((slot, index) => ({
             first: shift(slot.first, index),
             second: shift(slot.second, index)
@@ -1127,7 +1014,7 @@ export function mobileLandscapeHeightStretch(): number {
     if (usableW <= 0 || usableH <= 0) return 1;
     const contentW = TABLE_WIDTH * mobileLandscapeWidthStretch() + 60;
     let allowed = requested;
-    for (const size of [2, 4, 6, 9] as const) {
+    for (const size of TABLE_SIZES) {
         const { topY, botY } = spreadSeatExtent(size);
         const span = botY - topY;
         const contentH = ringContentHeight(size);
@@ -1160,7 +1047,7 @@ export function mobilePortraitHeightStretch(): number {
     const stageH = window.innerHeight - MOBILE_PORTRAIT_HEADER - MOBILE_PORTRAIT_DOCK;
     const containerW = window.innerWidth;
     if (stageH <= 0 || containerW <= 0) return 1;
-    const sizes: readonly TableSize[] = activePortraitSize ? [activePortraitSize] : [2, 4, 6, 9];
+    const sizes: readonly TableSize[] = activePortraitSize ? [activePortraitSize] : TABLE_SIZES;
     let allowed = requested;
     for (const size of sizes) {
         const zoom = calculateZoom(size, containerW, stageH);

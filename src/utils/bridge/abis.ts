@@ -6,14 +6,6 @@
  */
 
 /**
- * Bridge contract ABI for withdrawal operations
- * Used to complete withdrawals by calling the withdraw function on the bridge contract
- */
-export const BRIDGE_WITHDRAWAL_ABI = [
-    "function withdraw(uint256 amount, address receiver, bytes32 nonce, bytes calldata signature) external"
-];
-
-/**
  * Bridge contract ABI for deposit operations
  * Used to query deposit information from the bridge contract
  */

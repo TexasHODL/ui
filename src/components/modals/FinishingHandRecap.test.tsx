@@ -1,4 +1,4 @@
-import React from "react";
+
 import { render, screen } from "@testing-library/react";
 import { FinishingHandRecap } from "./FinishingHandRecap";
 import type { FinishingHand } from "../../utils/finishingHand";

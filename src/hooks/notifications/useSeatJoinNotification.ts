@@ -82,7 +82,7 @@ export function useSeatJoinNotification(seatNumber: number): SeatJoinNotificatio
 
   // Fire only for the LOCAL player's own join at this seat (preserves the
   // previous self-join-only behavior; other players' joins show nothing).
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     if (!localAddress) return;
     const selfJoined = joinedEvents.some(
@@ -92,7 +92,7 @@ export function useSeatJoinNotification(seatNumber: number): SeatJoinNotificatio
       showNotification();
     }
   }, [joinedEvents, seatNumber, localAddress, showNotification]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   // Cleanup timers on unmount
   useEffect(() => {

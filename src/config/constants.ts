@@ -15,6 +15,3 @@ export const COSMOS_BRIDGE_ADDRESS = "0xE4E22A524f2b104cB71fB154f72736bd02722fF4
 // "feature not yet live" error in the UI rather than dispatching a
 // transaction to the zero address.
 export const SNG_WIN_NFT_ADDRESS = "0x0000000000000000000000000000000000000000";
-
-// Hot wallet deposit address (QR deposit flow)
-export const DEPOSIT_ADDRESS = "0xADB8401D85E203F101aC715D5Aa7745a0ABcd42C";

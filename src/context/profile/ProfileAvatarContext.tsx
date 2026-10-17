@@ -135,7 +135,7 @@ export const ProfileAvatarProvider: React.FC<{ children: React.ReactNode }> = ({
     // NFT contract so we never depend on the ETH wallet being connected.
     useEffect(() => {
         if (!cosmosAddress) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+             
             setSelectedAvatar(null);
             setLinkedEthAddress(null);
             return;

@@ -154,7 +154,7 @@ export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay =
     return newest;
   }, [playerActedEvents]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+   
   useEffect(() => {
     // No new action this commit (duplicate frame, no-op frame, or filtered): do
     // not disturb an in-progress badge — it follows its own timeout.
@@ -195,7 +195,7 @@ export const usePlayerActionDropBox = (seatIndex: number): PlayerActionDisplay =
     // playerActed events, so latestAction is null and the effect early-returns
     // before it could disturb an in-progress badge.
   }, [latestAction, seatIndex, isTournament, gameState?.previousActions]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+   
 
   // Cleanup timeouts on unmount
   useEffect(() => () => clearTimers(), []);

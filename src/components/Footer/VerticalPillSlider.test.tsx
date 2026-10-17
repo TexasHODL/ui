@@ -1,4 +1,4 @@
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { VerticalPillSlider } from "./VerticalPillSlider";
 import { SLIDER_TRAVEL_GRADIENT } from "./sliderTravel";

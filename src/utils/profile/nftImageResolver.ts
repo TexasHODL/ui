@@ -73,12 +73,6 @@ const writeCache = (key: string, url: string | null, now: number): void => {
     }
 };
 
-/** Test hook: forget every cached and in-flight lookup. */
-export const clearNftImageCache = (): void => {
-    memoryCache.clear();
-    inFlight.clear();
-};
-
 /**
  * Fetch the image URL for an NFT. Returns null when no source can resolve it;
  * never rejects, so a caller's render can never be broken by a failed lookup.
