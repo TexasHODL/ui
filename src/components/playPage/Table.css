@@ -408,6 +408,24 @@
     z-index: 50;
 }
 
+.sub-header-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.3;
+    /* Gradient + motion live on .shimmer-animation::before. */
+}
+
+.sub-header-shadow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--brand-primary), transparent);
+    opacity: 0.5;
+}
+
 .background-shimmer {
     position: absolute;
     inset: 0;
@@ -888,6 +906,11 @@
     background: rgba(7, 7, 9, 0.78);
     box-shadow: 0 0 22px rgba(177, 76, 255, 0.16);
     font-family: "DM Mono", ui-monospace, monospace;
+}
+
+.sub-header-shadow {
+    background: linear-gradient(90deg, transparent, var(--theme-accent, #b14cff) 42%, #f02bc6 58%, transparent);
+    opacity: 0.72;
 }
 
 .network-display {

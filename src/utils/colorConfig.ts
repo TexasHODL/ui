@@ -98,6 +98,17 @@ export const generateCSSVariables = (): string => {
   `;
 };
 
+// Animation background gradients
+export const getAnimationGradient = (mouseX: number, mouseY: number): string => {
+  return `
+    radial-gradient(circle at ${mouseX}% ${mouseY}%, ${hexToRgba(colors.animation.color1, 0.8)} 0%, transparent 60%),
+    radial-gradient(circle at 0% 0%, ${hexToRgba(colors.animation.color2, 0.7)} 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, ${hexToRgba(colors.animation.color3, 0.7)} 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, ${hexToRgba(colors.animation.color4, 0.7)} 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, ${hexToRgba(colors.animation.color5, 0.7)} 0%, transparent 50%)
+  `;
+};
+
 // Hexagon pattern stroke color
 export const getHexagonStroke = (): string => {
   return hexToRgba(colors.brand.primary, 0.5);
