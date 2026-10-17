@@ -73,6 +73,6 @@ export const getCosmosBalance = async (network: NetworkEndpoints, denom: string 
         return balance.toString();
     } catch (error) {
         console.error("❌ Error fetching Cosmos balance:", error);
-        throw new Error(`Failed to fetch Block52 balance: ${error instanceof Error ? error.message : "Unknown error"}`, { cause: error });
+        throw new Error(`Failed to fetch Block52 balance: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
 };

@@ -138,7 +138,7 @@ export async function executeTransportAction(
         // (ui#530). A rejected action was NOT applied, so re-submitting is safe.
         // Every other error propagates unchanged.
         if (isStaleIndexError(err)) {
-            throw new Error(STALE_INDEX_MESSAGE, { cause: err });
+            throw new Error(STALE_INDEX_MESSAGE);
         }
         throw err;
     }

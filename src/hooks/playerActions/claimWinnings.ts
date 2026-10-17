@@ -61,7 +61,7 @@ export async function claimWinnings(tableId: string, network: NetworkEndpoints):
         } catch (err) {
             if (!resultsAlreadyOnChain(err)) {
                 const detail = err instanceof Error ? err.message : String(err);
-                throw new Error(`Could not record the finished hand on-chain — the prize cannot be settled yet. ${detail}`, { cause: err });
+                throw new Error(`Could not record the finished hand on-chain — the prize cannot be settled yet. ${detail}`);
             }
             console.warn("[sng] recordHandEnd: results already on-chain, proceeding to settle:", err);
         }

@@ -37,6 +37,8 @@ export default tseslint.config(
       "react-hooks/purity": "off",
       "react-hooks/preserve-manual-memoization": "off",
       "no-console": ["warn", { "allow": ["error"] }],
+      // lib is ES2020, so Error's type does not accept a cause option.
+      "preserve-caught-error": "off",
     },
   },
 )

@@ -142,7 +142,7 @@ export const useCosmosWallet = (): UseCosmosWalletReturn => {
             return txHash;
         } catch (err) {
             console.error(`❌ Failed to send ${denom}:`, err);
-            throw new Error(err instanceof Error ? err.message : `Failed to send ${denom}`, { cause: err });
+            throw new Error(err instanceof Error ? err.message : `Failed to send ${denom}`);
         }
     }, [address, currentNetwork, refreshBalance]);
 
