@@ -11,7 +11,7 @@ import { PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
  *   - **Owe a bet you can cover:**  Fold · Call {amount} · Call Any
  *   - **Owe a bet calling would put you all-in:**  Fold · All In
  *   - **Committed, nothing owed** (you bet/called, only a raise brings action back):
- *       nothing — the bar is hidden until a raise actually lands.
+ *       Check/Fold — arm it now; it folds if a raise reaches you.
  *
  * These are pure functions so they can be unit tested apart from the component.
  */
@@ -20,15 +20,17 @@ export type PreAction = "check-fold" | "check" | "fold" | "call-exact" | "call-a
 /**
  * Which buttons the pre-action bar shows, left→right, given whether the player will be
  * able to check, whether they currently owe a bet, and whether calling that bet would
- * put them all-in. An empty list hides the bar entirely (committed with nothing owed).
+ * put them all-in. Waiting on a possible raise still offers Check/Fold, so the box is
+ * on screen before the raise lands.
  */
 export function preActionButtons(canCheck: boolean, owesBet: boolean, callIsAllIn: boolean): PreAction[] {
     if (canCheck) {
         return ["check-fold", "check", "call-any"];
     }
     if (!owesBet) {
-        // Committed this round, no raise yet — nothing meaningful to pre-select.
-        return [];
+        // Committed this round, no raise yet. Check/Fold stays available: it folds
+        // if a raise brings the turn back, and does nothing if the street checks through.
+        return ["check-fold"];
     }
     if (callIsAllIn) {
         // Calling commits the whole stack, so the only choices are fold or jam.
@@ -103,6 +105,17 @@ export function resolvePreAction(action: PreAction, legal: PreActionLegal): Reso
     if (legal.hasCallAction) return "call";
     if (legal.hasCheckAction) return "check";
     return null;
+}
+
+/**
+ * Whether an armed pre-action no longer matches the buttons on screen.
+ * Check/Fold stays armed when a bet lands — that is when it is supposed to fold.
+ * Call-this-amount clears when the size changes. Check clears once a bet is out.
+ */
+export function isPreActionStale(action: PreAction, buttons: readonly PreAction[], callAmountChanged: boolean): boolean {
+    if (action === "check-fold") return false;
+    if (action === "call-exact" && callAmountChanged) return true;
+    return !buttons.includes(action);
 }
 
 /** An armed pre-action is cleared when the player leaves the hand (fold, bust, sit out). */
