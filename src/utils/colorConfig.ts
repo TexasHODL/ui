@@ -60,15 +60,6 @@ export const hexToRgba = (hex: string | undefined, alpha: number): string => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-// Get color with opacity
-export const getColorWithOpacity = (colorKey: string, opacity: number): string => {
-  const color = colorKey.split(".").reduce((obj, key) => obj[key], colors as any);
-  if (color && color.startsWith("#")) {
-    return hexToRgba(color, opacity);
-  }
-  return color;
-};
-
 // CSS custom properties generator
 export const generateCSSVariables = (): string => {
   return `
@@ -104,22 +95,6 @@ export const generateCSSVariables = (): string => {
       --ui-border-color: ${colors.ui.borderColor};
       --ui-text-secondary: ${colors.ui.textSecondary};
     }
-  `;
-};
-
-// Table header gradient
-export const getTableHeaderGradient = (): string => {
-  return `linear-gradient(to right, ${colors.table.bgGradientStart}, ${colors.table.bgGradientMid}, ${colors.table.bgGradientEnd})`;
-};
-
-// Animation background gradients
-export const getAnimationGradient = (mouseX: number, mouseY: number): string => {
-  return `
-    radial-gradient(circle at ${mouseX}% ${mouseY}%, ${hexToRgba(colors.animation.color1, 0.8)} 0%, transparent 60%),
-    radial-gradient(circle at 0% 0%, ${hexToRgba(colors.animation.color2, 0.7)} 0%, transparent 50%),
-    radial-gradient(circle at 100% 0%, ${hexToRgba(colors.animation.color3, 0.7)} 0%, transparent 50%),
-    radial-gradient(circle at 0% 100%, ${hexToRgba(colors.animation.color4, 0.7)} 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, ${hexToRgba(colors.animation.color5, 0.7)} 0%, transparent 50%)
   `;
 };
 

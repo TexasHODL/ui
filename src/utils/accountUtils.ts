@@ -1,22 +1,6 @@
 import { formatMicroUsd } from "./moneyDisplay";
-import { ethers } from "ethers";
 
 import { truncateMiddle } from "./stringUtils";
-
-/**
- * Get public key from private key
- * @param privateKey The private key
- * @returns The uncompressed public key
- */
-export const getPublicKey = (privateKey: string): string => {
-    try {
-        const wallet = new ethers.Wallet(privateKey);
-        return wallet.signingKey.publicKey;
-    } catch (error) {
-        console.error("Error getting public key:", error);
-        throw new Error("Failed to get public key");
-    }
-};
 
 /**
  * Format player ID for display

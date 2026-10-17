@@ -27,6 +27,7 @@ const loadResolver = (route: Route) => {
     }) as typeof fetch;
     let mod!: typeof import("./nftImageResolver");
     jest.isolateModules(() => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- isolateModules must re-execute the module after the RPC env is set
         mod = require("./nftImageResolver");
     });
     return { mod, calls };
@@ -75,6 +76,7 @@ describe("resolveNftImageUrl", () => {
     });
 
     it("walks the gateways for the metadata when the first one fails (the dweb.link 503)", async () => {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports -- loaded next to the isolated resolver so both see the same module instance
         const { IPFS_GATEWAYS } = require("./ipfs");
         const { mod, calls } = loadResolver((url, init) => {
             if (url.startsWith(`${IPFS_GATEWAYS[0]}/ipfs/`)) return json({}, 503);

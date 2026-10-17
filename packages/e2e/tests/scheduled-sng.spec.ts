@@ -56,7 +56,7 @@ test("lobby: a scheduled sit-and-go shows its start time and minimum; the create
   await page.getByText("Create a new table").click();
   await page
     .locator("select")
-    .filter({ has: page.locator('option[value="sit-and-go"]') })
+    .filter({ has: page.locator("option[value=\"sit-and-go\"]") })
     .first()
     .selectOption("sit-and-go");
   const toggle = page.getByTestId("scheduled-start-toggle");

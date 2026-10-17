@@ -1,4 +1,4 @@
-import React from "react";
+
 import { render, screen, fireEvent } from "@testing-library/react";
 import { NftAvatarImage } from "./NftAvatarImage";
 import { IPFS_GATEWAYS } from "../../utils/profile/ipfs";

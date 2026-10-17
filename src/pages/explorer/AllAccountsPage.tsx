@@ -1,5 +1,5 @@
 import { formatMicroUsd, formatUsd } from "../../utils/moneyDisplay";
-import { useState, useEffect, useMemo, useCallback, use } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { isNetworkError } from "../../apis/HTTPClient";
 import { useNavigate } from "react-router-dom";
 import { fromBech32, toBech32 } from "@cosmjs/encoding";

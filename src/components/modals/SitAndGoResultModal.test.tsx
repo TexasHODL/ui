@@ -1,4 +1,4 @@
-import React from "react";
+
 import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SitAndGoResultModal } from "./SitAndGoResultModal";
 import type { PlayerResultData } from "../../hooks/game/useSitAndGoPlayerResults";

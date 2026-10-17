@@ -1,13 +1,13 @@
 import { ModalHeader } from "../components/common/ModalHeader";
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import type { AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { TABLE_SEAT_OPTIONS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { localDateTimeToUnixSeconds } from "../utils/scheduledSng";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { localDateTimeToUnixSeconds, scheduledStartRejection } from "../utils/scheduledSng";
+import { useNavigate } from "react-router-dom";
 
-import "./Dashboard.css"; // Import the CSS file with animations
+import "./Dashboard.css";
 import styles from "./Dashboard.module.css";
 
 // Ethereum Mainnet imports (for auto-switch to correct chain)
@@ -32,7 +32,7 @@ import { validateTableName, tableNameCharCount, normalizeTableName } from "../ut
 
 // Hook imports from barrel file
 import { useUserWalletConnect, useNewTable, useCosmosWallet } from "../hooks";
-import type { CreateTableOptions } from "../hooks/game/useNewTable"; // Import type separately
+import type { CreateTableOptions } from "../hooks/game/useNewTable";
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
@@ -43,7 +43,7 @@ import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/
 import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as utilHandlePasswordSubmit, handlePasswordKeyPress as utilHandlePasswordKeyPress } from "../utils/passwordProtectionUtils";
 
 // Club branding imports
-import { colors, hexToRgba } from "../utils/colorConfig";
+import { colors } from "../utils/colorConfig";
 
 /** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
 const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
@@ -197,17 +197,12 @@ const Dashboard: React.FC = () => {
             // For Sit & Go/Tournament, use the same value for min and max buy-in
             const isTournament = isTournamentFormat(modalGameFormat);
 
-            // A scheduled sit-and-go needs a start time in the future and a
-            // minimum no larger than the table (the chain refuses both).
             const scheduled = isSitAndGoFormat(modalGameFormat) && modalScheduled;
             const startTime = scheduled ? localDateTimeToUnixSeconds(modalScheduledStart) : undefined;
-            if (scheduled) {
-                if (!Number.isFinite(startTime) || (startTime as number) <= Math.floor(Date.now() / 1000)) {
-                    setCreateGameError("Pick a start time in the future for a scheduled tournament.");
-                    return;
-                }
-                if (modalSngMinPlayers < 2) {
-                    setCreateGameError(`Minimum players must be between 2 and ${modalPlayerCount}.`);
+            if (scheduled && startTime !== undefined) {
+                const rejection = scheduledStartRejection(startTime, modalSngMinPlayers, modalPlayerCount);
+                if (rejection) {
+                    setCreateGameError(rejection);
                     return;
                 }
             }
@@ -791,10 +786,9 @@ const Dashboard: React.FC = () => {
                                                 }}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             >
-                                                <option value={2}>2 (Heads-Up)</option>
-                                                <option value={4}>4 (Sit & Go)</option>
-                                                <option value={6}>6 (Sit & Go)</option>
-                                                <option value={9}>9 (Full Ring)</option>
+                                                {TABLE_SEAT_OPTIONS.map(option => (
+                                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                                ))}
                                             </select>
                                         </div>
 

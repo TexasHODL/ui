@@ -171,7 +171,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
     };
 
     // previousActions deliberately omitted — actionsFingerprint covers it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     const actionRows = useMemo(
         () =>
             previousActions.map((action: ActionDTO, index: number) => (

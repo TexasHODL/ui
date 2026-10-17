@@ -19,6 +19,19 @@ import { hasValue, isNullish, isBlank } from "./guards";
 /** Chain-defined valid entrant counts for a Sit & Go. */
 export const VALID_SNG_RUNNER_COUNTS = [2, 4, 6, 9] as const;
 
+const TABLE_SEAT_LABELS: Record<(typeof VALID_SNG_RUNNER_COUNTS)[number], string> = {
+    2: "2 (Heads-Up)",
+    4: "4 (Sit & Go)",
+    6: "6 (Sit & Go)",
+    9: "9 (Full Ring)"
+};
+
+/** Seat choices shown on both create-table forms. */
+export const TABLE_SEAT_OPTIONS = VALID_SNG_RUNNER_COUNTS.map(value => ({
+    value,
+    label: TABLE_SEAT_LABELS[value]
+}));
+
 /** Number of blind levels shown in the preview structure. */
 export const SNG_PREVIEW_LEVEL_COUNT = 10;
 

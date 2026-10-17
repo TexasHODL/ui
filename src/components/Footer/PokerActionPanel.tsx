@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from "react";
-import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { hasContent, hasElements } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
@@ -18,8 +18,7 @@ import {
 } from "../../utils/pockerActionUtils";
 import { formatDisplayAmount } from "../../utils/numberUtils";
 
-// Import hooks
-import { useTableState, useNextToActInfo } from "../../hooks";
+import { useTableState } from "../../hooks";
 import { useActionSounds } from "../../hooks/notifications/useActionSounds";
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { useGameStateContext } from "../../context/GameStateContext";
@@ -51,12 +50,10 @@ import { postBigBlind } from "../../hooks/playerActions/postBigBlind";
 import { startNewHand } from "../../hooks/playerActions/startNewHand";
 import type { PlayerActionResult } from "../../types";
 
-// Import utils
 import { getActionByType } from "../../utils/actionUtils";
 import { getRaiseToAmount } from "../../utils/raiseUtils";
 import { getViewportMode } from "../../config/stageGeometry";
 
-// Import sub-components
 import { ActionButton } from "./ActionButton";
 import { DealButtonGroup } from "./DealButtonGroup";
 import { ShowdownButtons } from "./ShowdownButtons";
@@ -68,7 +65,6 @@ import { PreActionControls } from "./PreActionControls";
 import { isCheckFreeForPlayer, hasVoluntarilyCommittedThisRound, amountToCallMicroForPlayer } from "../../utils/chipUtils";
 import { shouldShowPreActions, shouldClearPreAction, isPreActionStale, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
 
-// Import types
 import type { PokerActionPanelProps } from "./types";
 import { hasFoldedOrMucked } from "../../utils/playerStatus";
 

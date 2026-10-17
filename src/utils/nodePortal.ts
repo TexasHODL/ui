@@ -124,14 +124,14 @@ export function configTomlSnippet(i: ConfigSnippetInput): string {
         `seeds = "${peerString(i.seeds)}"`,
         `persistent_peers = "${peerString(i.validators)}"`,
         "pex = true",
-        'external_address = "<your-public-ip>:26656"   # if reachable from the internet',
+        "external_address = \"<your-public-ip>:26656\"   # if reachable from the internet",
         "",
         "[statesync]",
         "enable = true",
         `rpc_servers = "${i.rpcServers.join(",")}"`,
         `trust_height = ${i.trustHeight}`,
         `trust_hash = "${i.trustHash}"`,
-        'trust_period = "168h0m0s"'
+        "trust_period = \"168h0m0s\""
     ].join("\n");
 }
 
@@ -146,6 +146,6 @@ export function appTomlSnippet(snapshotInterval: number, bondDenom: string): str
         "snapshot-keep-recent = 2",
         "",
         "[pvm]",
-        'embedded_engine = "embedded"'
+        "embedded_engine = \"embedded\""
     ].join("\n");
 }

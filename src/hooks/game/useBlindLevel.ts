@@ -99,7 +99,7 @@ export const useBlindLevel = (): BlindLevelInfo => {
     useEffect(() => {
         if (!hasTimer) return;
 
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- timer tick pattern, same as usePlayerTimer
+         
         setNow(Date.now());
 
         const interval = setInterval(() => {

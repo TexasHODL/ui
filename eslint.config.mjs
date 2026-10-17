@@ -30,7 +30,15 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-expressions": "warn",
       "react-hooks/rules-of-hooks": "warn",
       "react-hooks/exhaustive-deps": "warn",
+      // React Compiler diagnostics. This app does not run the compiler, and
+      // the flagged effect/ref patterns are the current render behavior.
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/preserve-manual-memoization": "off",
       "no-console": ["warn", { "allow": ["error"] }],
+      // lib is ES2020, so Error's type does not accept a cause option.
+      "preserve-caught-error": "off",
     },
   },
 )

@@ -1,4 +1,4 @@
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { RaiseSlider } from "./RaiseSlider";
 import type { RaiseSliderProps } from "./types";

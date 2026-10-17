@@ -1,4 +1,4 @@
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TableSidebar } from "./TableSidebar";
 import { useTablePanels } from "../../../../hooks/game/useTablePanels";

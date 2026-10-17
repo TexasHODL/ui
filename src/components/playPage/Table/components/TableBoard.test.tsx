@@ -1,4 +1,4 @@
-import React from "react";
+
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TableBoard } from "./TableBoard";
 import type { PotDisplayValues } from "../../../../utils/potDisplayUtils";
@@ -51,17 +51,17 @@ test("the nouns theme retains its own artwork", () => {
 });
 test("four-seat portrait uses the clear upper board without changing cards or pot content", () => {
     const { container } = render(<TableBoard {...props} isPortrait tableSize={4} />);
-    expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'true');
-    expect(screen.getAllByAltText('Card Front')).toHaveLength(5);
-    expect(container.querySelectorAll('.animate-win-card')).toHaveLength(2);
-    expect(screen.getByText('Total pot')).toBeInTheDocument();
-    expect(screen.getByText('Main pot')).toBeInTheDocument();
+    expect(container.querySelector(".community-board")).toHaveAttribute("data-portrait-four", "true");
+    expect(screen.getAllByAltText("Card Front")).toHaveLength(5);
+    expect(container.querySelectorAll(".animate-win-card")).toHaveLength(2);
+    expect(screen.getByText("Total pot")).toBeInTheDocument();
+    expect(screen.getByText("Main pot")).toBeInTheDocument();
 });
 test.each([2, 6, 9])("%i-seat portrait selects its own board placement", tableSize => {
     const { container } = render(<TableBoard {...props} isPortrait tableSize={tableSize} />);
-    expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'false');
-    expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-seats', String(tableSize));
-    expect(container.querySelector('.community-pots')).toContainElement(screen.getByText('Main pot'));
+    expect(container.querySelector(".community-board")).toHaveAttribute("data-portrait-four", "false");
+    expect(container.querySelector(".community-board")).toHaveAttribute("data-portrait-seats", String(tableSize));
+    expect(container.querySelector(".community-pots")).toContainElement(screen.getByText("Main pot"));
 });
 test("empty community slots keep their places without a visible box", () => {
     const { container } = render(<TableBoard {...props} communityCards={["QD", "8S", "TH"]} />);
@@ -78,9 +78,9 @@ test("empty community slots keep their places without a visible box", () => {
 });
 test("four-seat landscape keeps the centred board, and empty slots keep the same layout", () => {
     const { container, rerender } = render(<TableBoard {...props} tableSize={4} />);
-    expect(container.querySelector('.community-board')).not.toHaveAttribute('data-portrait-seats');
-    expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'false');
+    expect(container.querySelector(".community-board")).not.toHaveAttribute("data-portrait-seats");
+    expect(container.querySelector(".community-board")).toHaveAttribute("data-portrait-four", "false");
     rerender(<TableBoard {...props} isPortrait tableSize={4} communityCards={[]} />);
-    expect(container.querySelector('.community-board')).toHaveAttribute('data-portrait-four', 'true');
-    expect(container.querySelector('.community-card-row')?.children).toHaveLength(5);
+    expect(container.querySelector(".community-board")).toHaveAttribute("data-portrait-four", "true");
+    expect(container.querySelector(".community-card-row")?.children).toHaveLength(5);
 });

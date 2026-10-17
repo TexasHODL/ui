@@ -21,7 +21,7 @@ import { microToUsdc } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
-import { isEmpty, hasElements, isBlank, hasValue } from "../../utils/guards";
+import { isEmpty, hasValue } from "../../utils/guards";
 import { formatStartsAt, scheduledSngPhase } from "../../utils/scheduledSng";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
@@ -207,7 +207,6 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 },
                 currentNetwork
             );
-
 
             // Mark as joined and notify parent
             setHasJoined(true);

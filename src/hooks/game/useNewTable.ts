@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
-import { BettingLimit, GameFormat, GameVariant, COSMOS_CONSTANTS } from "@block52/poker-vm-sdk";
+import { BettingLimit, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { getSigningClient, getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
-import {  convertBlindsForBlockchain } from "../../utils/gameFormatUtils";
+import { convertBlindsForBlockchain } from "../../utils/gameFormatUtils";
 import { DEFAULT_TIMEOUT_SECONDS } from "../../utils/timerUtils";
 import { usdcToMicroBigInt } from "../../constants/currency";
 import { hasValue } from "../../utils/guards";
