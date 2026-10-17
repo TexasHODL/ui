@@ -29,7 +29,7 @@ export const useCardsForHandStrength = (seatIndex?: number): HandStrength | null
 
   // holeCards/tableDataCommunityCards are deliberately not dependencies: the two
   // keys above encode their contents completely.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   return useMemo(() => {
     try {
       // Omaha uses exactly two hole cards and three board cards (ui#768).

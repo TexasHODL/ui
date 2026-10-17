@@ -84,7 +84,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
     // where isOpen is controlled by the parent and there is no onOpen callback.
     useEffect(() => {
         if (isOpen) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+             
             setAmount("");
             setError("");
             setStep("input");

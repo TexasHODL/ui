@@ -24,7 +24,7 @@ describe("parseConsensusPubkey", () => {
         expect(parseConsensusPubkey("").ok).toBe(false);
         expect(parseConsensusPubkey("{not json").ok).toBe(false);
         expect(parseConsensusPubkey(`{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"${KEY}"}`).ok).toBe(false);
-        expect(parseConsensusPubkey(`{"@type":"/cosmos.crypto.ed25519.PubKey"}`).ok).toBe(false);
+        expect(parseConsensusPubkey("{\"@type\":\"/cosmos.crypto.ed25519.PubKey\"}").ok).toBe(false);
         expect(parseConsensusPubkey("A".repeat(43)).ok).toBe(false);
         expect(parseConsensusPubkey("b521hg93rsm2f5v3zlepf20ru88uweajt3nf492s2p").ok).toBe(false);
     });
@@ -98,16 +98,16 @@ describe("config snippets", () => {
     });
     it("renders seeds, PEX and state sync in config.toml", () => {
         const s = configTomlSnippet({ validators: peers, seeds: peers, rpcServers: ["http://r1", "http://r2"], trustHeight: 900, trustHash: "ABC" });
-        expect(s).toContain('seeds = "id1@1.2.3.4:26656,id2@5.6.7.8:26656"');
+        expect(s).toContain("seeds = \"id1@1.2.3.4:26656,id2@5.6.7.8:26656\"");
         expect(s).toContain("pex = true");
-        expect(s).toContain('rpc_servers = "http://r1,http://r2"');
+        expect(s).toContain("rpc_servers = \"http://r1,http://r2\"");
         expect(s).toContain("trust_height = 900");
-        expect(s).toContain('trust_hash = "ABC"');
+        expect(s).toContain("trust_hash = \"ABC\"");
     });
     it("renders the embedded engine and gasless fee in app.toml", () => {
         const s = appTomlSnippet(1000, "usdc");
-        expect(s).toContain('embedded_engine = "embedded"');
-        expect(s).toContain('minimum-gas-prices = "0usdc"');
+        expect(s).toContain("embedded_engine = \"embedded\"");
+        expect(s).toContain("minimum-gas-prices = \"0usdc\"");
         expect(s).toContain("snapshot-interval = 1000");
     });
 });

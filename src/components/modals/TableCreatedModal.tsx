@@ -19,7 +19,7 @@ export default function TableCreatedModal({ receipt, onClose }: { receipt: Table
         const onKey = (event: KeyboardEvent) => {
             if (event.key === "Escape") closeRef.current();
             if (event.key !== "Tab") return;
-            const controls = dialog.current?.querySelectorAll<HTMLElement>('button, a[href]');
+            const controls = dialog.current?.querySelectorAll<HTMLElement>("button, a[href]");
             if (!controls?.length) return;
             const first = controls[0], last = controls[controls.length - 1];
             if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog.current)) {

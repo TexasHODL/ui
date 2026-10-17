@@ -25,24 +25,24 @@ export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = fa
     useEffect(() => {
         if (!isOpen || !detailed) return;
         const previousFocus = document.activeElement as HTMLElement | null;
-        const closeButton = panelRef.current?.querySelector<HTMLButtonElement>('[aria-label="Close history"]');
+        const closeButton = panelRef.current?.querySelector<HTMLButtonElement>("[aria-label=\"Close history\"]");
         closeButton?.focus({ preventScroll: true });
         const dismiss = () => onClose?.();
         const onPointer = (event: PointerEvent) => {
             const target = event.target as HTMLElement;
             // Let banner/menu buttons perform their own toggle without double-firing.
-            if (panelRef.current?.contains(target) || target.closest('.table-banner-wrap, .mobile-history-trigger')) return;
+            if (panelRef.current?.contains(target) || target.closest(".table-banner-wrap, .mobile-history-trigger")) return;
             dismiss();
         };
-        const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.stopPropagation(); dismiss(); } };
-        document.addEventListener('pointerdown', onPointer);
-        document.addEventListener('keydown', onKey);
+        const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") { event.stopPropagation(); dismiss(); } };
+        document.addEventListener("pointerdown", onPointer);
+        document.addEventListener("keydown", onKey);
         return () => {
-            document.removeEventListener('pointerdown', onPointer);
-            document.removeEventListener('keydown', onKey);
+            document.removeEventListener("pointerdown", onPointer);
+            document.removeEventListener("keydown", onKey);
             if (document.activeElement === closeButton || document.activeElement === document.body) {
-                const target = compact ? document.querySelector<HTMLButtonElement>('.mobile-history-trigger') :
-                    expandRef.current?.isConnected ? expandRef.current : panelRef.current?.querySelector<HTMLButtonElement>('[aria-label="Expand hand history"]');
+                const target = compact ? document.querySelector<HTMLButtonElement>(".mobile-history-trigger") :
+                    expandRef.current?.isConnected ? expandRef.current : panelRef.current?.querySelector<HTMLButtonElement>("[aria-label=\"Expand hand history\"]");
                 (target?.isConnected ? target : previousFocus?.isConnected ? previousFocus : null)?.focus({ preventScroll: true });
             }
         };

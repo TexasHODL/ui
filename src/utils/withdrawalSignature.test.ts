@@ -61,7 +61,7 @@ describe("signatureEndpoints", () => {
 
 describe("describeWithdrawError", () => {
     it("explains a nonce the bridge already paid", () => {
-        expect(describeWithdrawError(new Error('execution reverted: "withdraw: nonce already used"'))).toBe(
+        expect(describeWithdrawError(new Error("execution reverted: \"withdraw: nonce already used\""))).toBe(
             "This withdrawal has already been paid out on Ethereum. Check the receiving wallet."
         );
     });

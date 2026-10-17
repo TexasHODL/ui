@@ -107,8 +107,8 @@ describe("abci string-field codec", () => {
         expect(decodeStringField1(b64)).toBe(long);
     });
     it("reads the value out of an abci_query response and surfaces node errors", () => {
-        const b64 = Buffer.from(encodeStringField1('{"handNumber":20}').slice(2), "hex").toString("base64");
-        expect(parseAbciStringResponse({ result: { response: { code: 0, value: b64 } } })).toBe('{"handNumber":20}');
+        const b64 = Buffer.from(encodeStringField1("{\"handNumber\":20}").slice(2), "hex").toString("base64");
+        expect(parseAbciStringResponse({ result: { response: { code: 0, value: b64 } } })).toBe("{\"handNumber\":20}");
         expect(() => parseAbciStringResponse({ result: { response: { code: 38, log: "version does not exist" } } })).toThrow("version does not exist");
         expect(() => parseAbciStringResponse({})).toThrow();
     });
