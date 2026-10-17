@@ -466,11 +466,6 @@ function stageToPosition(stageX: number, stageY: number, color?: string): Positi
 
 // ─── Derivation Constants (tweak these to move ALL positions globally) ──
 
-/** Scale factor for player components (cards, badges, chips, dealer button).
- *  Applied on top of the auto-fit zoom. 1.0 = default, 1.3 = 30% bigger.
- *  Doesn't affect positioning — just visual size around each element's center. */
-export const COMPONENT_SCALE = 1.2;
-
 /** How many extra pixels to push ALL seats outward from table center.
  *  Positive = further from center (seats spread out, table feels bigger).
  *  Negative = closer to center (seats tighter, table feels smaller).
