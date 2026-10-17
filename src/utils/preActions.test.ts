@@ -7,6 +7,7 @@ import { PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import {
     shouldShowPreActions,
     shouldClearPreAction,
+    isPreActionStale,
     resolvePreAction,
     preActionButtons,
     isBettingRound,
@@ -51,14 +52,26 @@ describe("preActionButtons", () => {
         // owe/all-in flags are ignored once you can check
         expect(preActionButtons(true, true, true)).toEqual(["check-fold", "check", "call-any"]);
     });
-    it("committed with nothing owed → nothing (bar hidden)", () => {
-        expect(preActionButtons(false, false, false)).toEqual([]);
+    it("committed with nothing owed → Check/Fold, so a later raise can be folded in advance", () => {
+        expect(preActionButtons(false, false, false)).toEqual(["check-fold"]);
     });
     it("owe a bet you can cover → Fold · Call {amount} · Call Any", () => {
         expect(preActionButtons(false, true, false)).toEqual(["fold", "call-exact", "call-any"]);
     });
     it("owe a bet that would jam → Fold · All In", () => {
         expect(preActionButtons(false, true, true)).toEqual(["fold", "all-in"]);
+    });
+});
+
+describe("isPreActionStale", () => {
+    it("keeps Check/Fold armed after a bet replaces the button set", () => {
+        expect(isPreActionStale("check-fold", ["fold", "call-exact", "call-any"], false)).toBe(false);
+        expect(isPreActionStale("check-fold", ["check-fold"], false)).toBe(false);
+    });
+    it("clears Check once checking is no longer offered, and Call when the size changes", () => {
+        expect(isPreActionStale("check", ["fold", "call-exact", "call-any"], false)).toBe(true);
+        expect(isPreActionStale("call-exact", ["fold", "call-exact", "call-any"], true)).toBe(true);
+        expect(isPreActionStale("call-any", ["fold", "call-exact", "call-any"], false)).toBe(false);
     });
 });
 

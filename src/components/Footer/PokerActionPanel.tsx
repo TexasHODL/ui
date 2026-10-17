@@ -66,7 +66,7 @@ import { MobileBettingCluster } from "./MobileBettingCluster";
 import { RaiseBetControls } from "./RaiseBetControls";
 import { PreActionControls } from "./PreActionControls";
 import { isCheckFreeForPlayer, hasVoluntarilyCommittedThisRound, amountToCallMicroForPlayer } from "../../utils/chipUtils";
-import { shouldShowPreActions, shouldClearPreAction, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
+import { shouldShowPreActions, shouldClearPreAction, isPreActionStale, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
 
 // Import types
 import type { PokerActionPanelProps } from "./types";
@@ -250,9 +250,9 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     );
     const preActionStackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
 
-    // Which pre-action buttons to show (empty = hide): can check → Check/Fold·Check·Call Any;
+    // Which pre-action buttons to show: can check → Check/Fold·Check·Call Any;
     // owe a bet you can cover → Fold·Call {amount}·Call Any; calling would jam → Fold·All In;
-    // committed with nothing owed → nothing until a raise lands.
+    // committed with nothing owed → Check/Fold, so a later raise can be folded in advance.
     const preActionBtns = useMemo(() => {
         const owesBet = preActionCallMicro > BigInt(0);
         const callIsAllInPre = owesBet && preActionStackMicro > BigInt(0) && preActionCallMicro >= preActionStackMicro;
@@ -319,8 +319,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     );
 
     // Show the bar while it is not the player's turn, they are in the hand, on a betting
-    // street, AND there is at least one applicable button (hidden when committed with
-    // nothing owed). See utils/preActions.
+    // street, and there is at least one applicable button. See utils/preActions.
     const showPreActions =
         shouldShowPreActions({ enabled: preSelectCheck, isUsersTurn, playerStatus, round: gameState?.round }) && preActionBtns.length > 0;
 
@@ -336,7 +335,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         if (preAction == null) return;
         const left = shouldClearPreAction({ action: preAction, isUsersTurn, playerStatus });
         const amountChanged = preAction === "call-exact" && preActionCallMicro !== armedCallMicro;
-        const stale = !isUsersTurn && (!preActionBtns.includes(preAction) || amountChanged);
+        const stale = !isUsersTurn && isPreActionStale(preAction, preActionBtns, amountChanged);
         if (left || stale) {
             setPreAction(null);
             setArmedCallMicro(null);
