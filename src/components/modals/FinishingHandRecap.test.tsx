@@ -35,6 +35,26 @@ test("fans revealed hole cards without rendering hidden cards or changing the re
     expect(screen.getByText("Two Pair, As and Ks")).toBeInTheDocument();
 });
 
+test("names the viewer's row Your Cards and leaves the other seats numbered", () => {
+    const { container } = render(<FinishingHandRecap
+        viewerAddress="B521User"
+        hand={{
+            ...hand,
+            players: [
+                { seat: 1, address: "winner", cards: ["JH", "AH"], description: "Pair of aces", won: "9000" },
+                { seat: 4, address: "b521user", cards: ["7H", "AS"], description: "Ace high", won: null }
+            ]
+        }}
+    />);
+    const yours = container.querySelector(".finish-seat-yours");
+    expect(yours).not.toBeNull();
+    expect(yours).toHaveTextContent("Your Cards");
+    expect(yours).toHaveTextContent("Seat 4");
+    expect(screen.getByText("Seat 1")).toBeInTheDocument();
+    expect(screen.queryByText("Seat 4")).not.toBeNull();
+    expect(yours?.querySelector("strong")).toHaveTextContent("Your Cards");
+});
+
 test("missing snapshots and undealt boards do not invent any cards", () => {
     const { rerender } = render(<FinishingHandRecap hand={null} />);
     expect(screen.queryByRole("img")).toBeNull();
