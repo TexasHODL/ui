@@ -29,7 +29,16 @@
 .finish-recap img.finish-card-winning { transform: translateY(-5px); filter: drop-shadow(0 0 5px #ffd761); }
 .finish-recap img.finish-card-muted { opacity: .4; }
 .finish-seat { padding: 10px 0; border-bottom: 1px solid #34263f; font-size: 14px; }
-.finish-seat > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.finish-seat > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; }
+.finish-seat.finish-seat-yours {
+    background: #be87e51a;
+    border-radius: 10px;
+    margin: 0 -8px;
+    padding-left: 8px;
+    padding-right: 8px;
+    box-shadow: inset 2px 0 0 #be87e5;
+}
+.finish-your-seat { color: #b2a4c0; font-size: 12px; font-weight: 700; margin-left: 8px; }
 .finish-winner { color: #79e7aa; }
 @media (max-width: 600px) {
     .sng-result-notice { width: min(340px, calc(100vw - 24px)); }
