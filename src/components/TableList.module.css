@@ -308,44 +308,23 @@
     background: var(--theme-line, #ffffff03);
     font-weight: 700;
 }
-.tableMenu {
-    position: relative;
-}
-.tableMenu summary {
-    list-style: none;
+.shareButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
+    border-radius: 8px;
     cursor: pointer;
-    padding: 10px 4px;
-    color: var(--theme-muted, #958a9f);
-    font-weight: 700;
-}
-.tableMenu summary::-webkit-details-marker {
-    display: none;
-}
-.tableMenu > div {
-    position: absolute;
-    right: 0;
-    top: 100%;
-    z-index: 10;
-    min-width: 200px;
-    padding: 6px;
-    background: var(--theme-surface, #17111f);
-    border: 1px solid var(--theme-line-strong, #493455);
-    border-radius: 10px;
-    box-shadow: 0 12px 35px #0009;
-}
-.tableMenu button {
-    width: 100%;
-    padding: 10px;
-    text-align: left;
     color: var(--theme-ink, #ded5e7);
-    border-radius: 6px;
 }
-.tableMenu button:hover {
+.shareButton:hover {
     background: var(--theme-line, #ffffff0c);
 }
-.tableMenu button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+.shareButton:focus-visible {
+    outline: 2px solid var(--theme-accent, #b995cf);
+    outline-offset: 2px;
 }
 .empty {
     text-align: center;

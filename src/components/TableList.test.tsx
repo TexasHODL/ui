@@ -3,6 +3,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../utils/generatedTableName";
 import TableList from "./TableList";
+import { copyToClipboard } from "../utils/clipboard";
+jest.mock("../utils/clipboard", () => ({ copyToClipboard: jest.fn() }));
 const mockRefresh = jest.fn().mockResolvedValue(undefined);
 const mockDelete = jest.fn();
 const mockForceClose = jest.fn();
@@ -124,4 +126,14 @@ test("Watch links carry viewing intent while open tables keep the normal join ro
     } finally {
         game.currentPlayers = previousCount;
     }
+});
+
+test("share buttons copy a direct table link without an options menu", () => {
+    const { container } = render(<TableList />);
+    fireEvent.click(screen.getByRole("button", { name: "Share My empty table" }));
+    expect(copyToClipboard).toHaveBeenCalledWith(`${window.location.origin}/table/mine`, "Table link copied");
+    expect(container.querySelector("details")).toBeNull();
+    expect(screen.queryByText("Copy table ID")).not.toBeInTheDocument();
+    expect(mockDelete).not.toHaveBeenCalled();
+    expect(mockForceClose).not.toHaveBeenCalled();
 });

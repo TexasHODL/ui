@@ -1,6 +1,6 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
 import React, { useEffect, useMemo, useState } from "react";
-import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaEllipsisH } from "react-icons/fa";
+import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaShareAlt } from "react-icons/fa";
 import { formatStartsAt, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
@@ -316,14 +316,15 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                     disabled={game.currentPlayers === 0 ? isDeleting : isClosing}
                                                     onClick={() => game.currentPlayers === 0 ? setDeleteId(game.gameId) : setCloseTarget(game)}
                                                 >{game.currentPlayers === 0 ? "Delete table" : "Close & refund"}</button>}
-                                                <details className={styles.tableMenu}>
-                                                    <summary aria-label={"Options for " + tableName}>
-                                                        <FaEllipsisH />
-                                                    </summary>
-                                                    <div>
-                                                        <button onClick={() => copyToClipboard(game.gameId, "Table ID copied")}>Copy table ID</button>
-                                                    </div>
-                                                </details>
+                                                <button
+                                                    type="button"
+                                                    className={styles.shareButton}
+                                                    aria-label={"Share " + tableName}
+                                                    title="Copy table link"
+                                                    onClick={() => copyToClipboard(`${window.location.origin}/table/${game.gameId}`, "Table link copied")}
+                                                >
+                                                    <FaShareAlt aria-hidden="true" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
