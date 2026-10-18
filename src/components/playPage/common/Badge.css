@@ -275,9 +275,9 @@
   transition: opacity 0.15s ease-out, transform 0.15s ease-out, max-height 0.15s ease-out;
 }
 
-/* The banner is 55px and tucks 22px under the stack pill. 30px is the line
-   that fills the part still on screen, on every format, without growing the
-   box. The box widens instead of wrapping or clipping a long label. */
+/* The banner is 55px and tucks 22px under the stack pill. Desktop type matches
+   the stack amount so a long label stays inside the box. Mobile keeps the
+   30px line. The box widens instead of wrapping or clipping. */
 [data-banner-mode="action"] .seat-banner-box,
 [data-banner-mode="seat-join"] .seat-banner-box {
   width: max-content;
@@ -299,18 +299,34 @@
 }
 
 .action-display-text {
-  font-size: 30px;
-  line-height: 30px;
+  font-size: 1.25rem;
+  line-height: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .action-display-amount {
-  font-size: 30px;
-  line-height: 30px;
+  font-size: 1.25rem;
+  line-height: 1.25rem;
   font-weight: 500;
   letter-spacing: 0.02em;
   opacity: 0.9;
+}
+
+/* Same breakpoint as .badge-value: desktop stack text is 1.125rem. */
+@media (min-width: 640px) {
+  .action-display-text,
+  .action-display-amount {
+    font-size: 1.125rem;
+    line-height: 1.125rem;
+  }
+}
+
+/* PR #35 sized the line for the phone banner. Leave that size on mobile. */
+[data-mobile-readable] .action-display-text,
+[data-mobile-readable] .action-display-amount {
+  font-size: 30px;
+  line-height: 30px;
 }
 
 /* Performance optimized animations */
