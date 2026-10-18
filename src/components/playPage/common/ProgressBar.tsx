@@ -32,7 +32,7 @@ const ProgressBar: React.FC<ProgressBarProps> = React.memo(({ index }) => {
 
     return (
         <div className="animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 relative">
-            <span className="ml-2 text-white text-sm w-[15px]">{timeRemaining}</span>
+            <span className="seat-timer-value ml-2 text-white text-sm">{timeRemaining}</span>
             <div className="relative flex-1 mr-[10px] h-full w-[calc(100%-25px)] bg-[#f0f0f030] rounded-md overflow-hidden">
                 {/*
                     Scaled, not resized. `timeRemaining` updates once a second, and

@@ -7,6 +7,9 @@
   border-radius: 9999px;
   padding: 0.125rem 0.5rem 0.125rem 0.125rem;
   box-shadow: 1px 2px 6px 3px color-mix(in srgb, #000000 30%, transparent);
+  /* Stack amount, action-banner line, and the countdown number share this
+     size. Mobile readability replaces each one on its own. */
+  --seat-amount-size: 1.25rem;
 }
 
 .equity-chip {
@@ -81,7 +84,7 @@
 
 .badge-value {
   margin-left: 0.5rem;
-  font-size: 1.25rem;
+  font-size: var(--seat-amount-size);
   font-weight: 600;
   color: black;
   display: flex;
@@ -91,8 +94,8 @@
 }
 
 @media (min-width: 640px) {
-  .badge-value {
-    font-size: 1.125rem;
+  .badge-container {
+    --seat-amount-size: 1.125rem;
   }
 }
 
@@ -275,9 +278,10 @@
   transition: opacity 0.15s ease-out, transform 0.15s ease-out, max-height 0.15s ease-out;
 }
 
-/* The banner is 55px and tucks 22px under the stack pill. 30px is the line
-   that fills the part still on screen, on every format, without growing the
-   box. The box widens instead of wrapping or clipping a long label. */
+/* The banner is 55px and tucks 22px under the stack pill. Desktop type is
+   --seat-amount-size, the same variable as the stack amount and the
+   countdown. Mobile keeps the 30px line. The box widens instead of wrapping
+   or clipping. */
 [data-banner-mode="action"] .seat-banner-box,
 [data-banner-mode="seat-join"] .seat-banner-box {
   width: max-content;
@@ -299,18 +303,33 @@
 }
 
 .action-display-text {
-  font-size: 30px;
-  line-height: 30px;
+  font-size: var(--seat-amount-size);
+  line-height: var(--seat-amount-size);
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
 .action-display-amount {
-  font-size: 30px;
-  line-height: 30px;
+  font-size: var(--seat-amount-size);
+  line-height: var(--seat-amount-size);
   font-weight: 500;
   letter-spacing: 0.02em;
   opacity: 0.9;
+}
+
+/* Countdown seconds. text-sm stays for the line box; this wins the size.
+   The fixed 15px width clips two digits at this size, so desktop grows. */
+.badge-container .seat-timer-value {
+  font-size: var(--seat-amount-size);
+  width: auto;
+  flex-shrink: 0;
+}
+
+/* PR #35 sized the line for the phone banner. Leave that size on mobile. */
+[data-mobile-readable] .action-display-text,
+[data-mobile-readable] .action-display-amount {
+  font-size: 30px;
+  line-height: 30px;
 }
 
 /* Performance optimized animations */
