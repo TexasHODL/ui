@@ -310,8 +310,35 @@ export function stageDimsFor(orientation: StageOrientation): StageDims {
     };
 }
 
+// Felt height depends on the viewport and on which seat count is being laid
+// out. Those do not change while a single placement walk runs, so repeating
+// the stretch math on every felt test pegs an iPhone until the tab is killed.
+let stageDimsCache: {
+    width: number;
+    height: number;
+    mode: ViewportMode;
+    portraitSize: TableSize | null;
+    dims: StageDims;
+} | null = null;
+
 export function getStageDims(): StageDims {
-    return stageDimsFor(getStageOrientation());
+    const width = typeof window === "undefined" ? 0 : window.innerWidth;
+    const height = typeof window === "undefined" ? 0 : window.innerHeight;
+    const mode = getViewportMode();
+    const portraitSize = activePortraitSize;
+    const cached = stageDimsCache;
+    if (
+        cached &&
+        cached.width === width &&
+        cached.height === height &&
+        cached.mode === mode &&
+        cached.portraitSize === portraitSize
+    ) {
+        return cached.dims;
+    }
+    const dims = stageDimsFor(getStageOrientation());
+    stageDimsCache = { width, height, mode, portraitSize, dims };
+    return dims;
 }
 
 // ─── Seat Colors ─────────────────────────────────────────────────────
@@ -811,12 +838,27 @@ export function getAllPositions(tableSize: TableSize): PositionArrays {
 
 export type ViewportMode = "mobile-portrait" | "mobile-landscape" | "tablet" | "desktop";
 
+// Chip placement tests the felt hundreds of thousands of times in one turn.
+// Each test used to construct a fresh matchMedia query. WebKit on an iPhone
+// does that work on the main thread and never paints the table. Reuse one
+// query list; tests replace window.matchMedia, which drops the cached list.
+let coarsePointerList: MediaQueryList | null = null;
+let coarsePointerSource: typeof window.matchMedia | null = null;
+
+function readCoarsePointer(): boolean {
+    if (typeof window.matchMedia !== "function") return false;
+    if (coarsePointerSource !== window.matchMedia) {
+        coarsePointerSource = window.matchMedia;
+        coarsePointerList = window.matchMedia("(pointer: coarse)");
+    }
+    return coarsePointerList?.matches ?? false;
+}
+
 export function getViewportMode(): ViewportMode {
     const width = window.innerWidth;
     const height = window.innerHeight;
     const isLandscape = width > height;
-    const isCoarsePointer =
-        typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+    const isCoarsePointer = readCoarsePointer();
 
     // Portrait: aspect ratio + (coarse pointer OR narrow width). The coarse-pointer
     // test catches large phones (iPhone 14 Pro Max = 430px, Galaxy S24 = 412px,

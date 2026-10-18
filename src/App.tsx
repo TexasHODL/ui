@@ -12,35 +12,36 @@ import Dashboard from "./pages/Dashboard";
 // explorer/admin/table pages download on demand when their route is visited.
 // Dashboard stays eager because it is the "/" landing route — eager-loading it
 // avoids a Suspense flash on the most common entry point.
-const Table = lazy(() => import("./components/playPage/Table"));
-const CosmosWalletPage = lazy(() => import("./components/CosmosWalletPage"));
-const BlocksPage = lazy(() => import("./pages/explorer/BlocksPage"));
-const BlockDetailPage = lazy(() => import("./pages/explorer/BlockDetailPage"));
-const TransactionPage = lazy(() => import("./pages/explorer/TransactionPage"));
-const AddressPage = lazy(() => import("./pages/explorer/AddressPage"));
-const AllAccountsPage = lazy(() => import("./pages/explorer/AllAccountsPage"));
-const DistributionPage = lazy(() => import("./pages/explorer/DistributionPage"));
-const HandReplayPage = lazy(() => import("./pages/explorer/HandReplayPage"));
-const HandPage = lazy(() => import("./pages/explorer/HandPage"));
-const TestSigningPage = lazy(() => import("./pages/TestSigningPage"));
-const ManualBridgeTrigger = lazy(() => import("./pages/ManualBridgeTrigger"));
-const BridgeAdminDashboard = lazy(() => import("./pages/BridgeAdminDashboard"));
-const WithdrawalDashboard = lazy(() => import("./pages/WithdrawalDashboard"));
-const TableAdminPage = lazy(() => import("./pages/TableAdminPage"));
-const GenesisState = lazy(() => import("./pages/GenesisState"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const NodeStatusPage = lazy(() => import("./pages/NodeStatusPage"));
-const NodesPage = lazy(() => import("./pages/NodesPage"));
-const PlayersPage = lazy(() => import("./pages/PlayersPage"));
-const MyHandsPage = lazy(() => import("./pages/MyHandsPage"));
-const PlayerProfilePage = lazy(() => import("./pages/PlayerProfilePage"));
-const TechNotesPage = lazy(() => import("./pages/tech-notes/TechNotesPage"));
+const Table = lazyRoute(() => import("./components/playPage/Table"));
+const CosmosWalletPage = lazyRoute(() => import("./components/CosmosWalletPage"));
+const BlocksPage = lazyRoute(() => import("./pages/explorer/BlocksPage"));
+const BlockDetailPage = lazyRoute(() => import("./pages/explorer/BlockDetailPage"));
+const TransactionPage = lazyRoute(() => import("./pages/explorer/TransactionPage"));
+const AddressPage = lazyRoute(() => import("./pages/explorer/AddressPage"));
+const AllAccountsPage = lazyRoute(() => import("./pages/explorer/AllAccountsPage"));
+const DistributionPage = lazyRoute(() => import("./pages/explorer/DistributionPage"));
+const HandReplayPage = lazyRoute(() => import("./pages/explorer/HandReplayPage"));
+const HandPage = lazyRoute(() => import("./pages/explorer/HandPage"));
+const TestSigningPage = lazyRoute(() => import("./pages/TestSigningPage"));
+const ManualBridgeTrigger = lazyRoute(() => import("./pages/ManualBridgeTrigger"));
+const BridgeAdminDashboard = lazyRoute(() => import("./pages/BridgeAdminDashboard"));
+const WithdrawalDashboard = lazyRoute(() => import("./pages/WithdrawalDashboard"));
+const TableAdminPage = lazyRoute(() => import("./pages/TableAdminPage"));
+const GenesisState = lazyRoute(() => import("./pages/GenesisState"));
+const AdminDashboard = lazyRoute(() => import("./pages/admin/AdminDashboard"));
+const NodeStatusPage = lazyRoute(() => import("./pages/NodeStatusPage"));
+const NodesPage = lazyRoute(() => import("./pages/NodesPage"));
+const PlayersPage = lazyRoute(() => import("./pages/PlayersPage"));
+const MyHandsPage = lazyRoute(() => import("./pages/MyHandsPage"));
+const PlayerProfilePage = lazyRoute(() => import("./pages/PlayerProfilePage"));
+const TechNotesPage = lazyRoute(() => import("./pages/tech-notes/TechNotesPage"));
 // test-sdk only has a named export; re-shape it to a default for React.lazy.
-const TestSdk = lazy(() => import("./test-sdk").then(m => ({ default: m.TestSdk })));
+const TestSdk = lazyRoute(() => import("./test-sdk").then(m => ({ default: m.TestSdk })));
 import { GameStateProvider } from "./context/GameStateContext";
 import { GameSettingsProvider } from "./context/GameSettingsContext";
 import { generateCSSVariables } from "./utils/colorConfig";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { lazyRoute } from "./utils/lazyRoute";
 import FaviconSetter from "./components/FaviconSetter";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { GlobalHeader } from "./components/GlobalHeader";
@@ -54,12 +55,12 @@ import { ActionSubmitProvider } from "./context/ActionSubmitContext";
 const queryClient = new QueryClient();
 
 // Lazy-load debug modal (dev only)
-const ChipDebugModal = lazy(() => import("./components/ChipDebugModal"));
+const ChipDebugModal = lazyRoute(() => import("./components/ChipDebugModal"));
 
 // Dev-only table preview. import.meta.env.DEV is false in production, so the
 // dynamic import and the route below are both dropped from the bundle.
 const TablePreviewPage = import.meta.env.DEV
-    ? lazy(() => import("./pages/dev/TablePreviewPage"))
+    ? lazyRoute(() => import("./pages/dev/TablePreviewPage"))
     : null;
 
 // Create modal

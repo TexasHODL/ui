@@ -8,6 +8,7 @@ import "./components/common/ModalTheme.css";
 import "react-toastify/dist/ReactToastify.css";
 import App from "./App";
 import { installModalViewportFit } from "./utils/modalViewportFit";
+import { installChunkLoadRecovery } from "./utils/lazyRoute";
 import { Profiler } from "react";
 import { NetworkProvider } from "./context/NetworkContext";
 import { getCosmosMnemonic, setCosmosMnemonic, setCosmosAddress } from "./utils/cosmos/storage";
@@ -41,6 +42,7 @@ if (!getCosmosMnemonic()) {
 
 const root = createRoot(document.getElementById("app") as HTMLElement);
 installModalViewportFit();
+installChunkLoadRecovery();
 
 function onRenderCallback(
     _id: string,

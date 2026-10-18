@@ -1,5 +1,6 @@
-import { calculateZoom, VIEWPORT_PARAMS, getSeatPositions, getSeatCoords, getStageDims, getViewportMode, getTableTransform, getContentBounds, mobilePortraitHeightStretch, MOBILE_PORTRAIT_HEIGHT_STRETCH, type TableSize } from "./stageGeometry";
+import { calculateZoom, VIEWPORT_PARAMS, getSeatPositions, getSeatCoords, getAllPositions, getStageDims, getViewportMode, getTableTransform, getContentBounds, mobilePortraitHeightStretch, notePortraitSize, MOBILE_PORTRAIT_HEIGHT_STRETCH, type TableSize } from "./stageGeometry";
 import { mobileCardUnit } from "./mobileCardSizing";
+import { placeMobileRailMarkers } from "./landscapeSeatEdges";
 
 describe("getViewportMode", () => {
     const originalMatchMedia = window.matchMedia;
@@ -77,6 +78,17 @@ describe("getViewportMode", () => {
         // automation) must take the same path as a real phone, not "tablet".
         setViewport(393, 852, false);
         expect(getViewportMode()).toBe("mobile-portrait");
+    });
+
+    it("places iPhone chips without rebuilding the pointer query on every felt test", () => {
+        setViewport(390, 844, true);
+        const matchMedia = window.matchMedia as jest.Mock;
+        matchMedia.mockClear();
+        notePortraitSize(9);
+        const zoom = calculateZoom(9, 390, 844);
+        const unit = parseFloat(mobileCardUnit(true, zoom, 390, 844)) * zoom;
+        placeMobileRailMarkers(getAllPositions(9), zoom, 0, unit, 9);
+        expect(matchMedia).toHaveBeenCalledTimes(1);
     });
 
     it("keeps tablet for wide portrait windows on non-touch pointers", () => {
