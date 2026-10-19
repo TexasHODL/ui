@@ -2,13 +2,18 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
+import { HandHistoryCards } from "../components/explorer/HandHistoryCards";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel, ExplorerReloadButton } from "../components/explorer/ExplorerPanel";
 import { useCosmosWallet } from "../hooks/wallet";
-import { useNetwork } from "../context/NetworkContext";
+import { NETWORK_PRESETS, useNetwork } from "../context/NetworkContext";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
+import { useRecoveredHands } from "../hooks/player/useRecoveredHands";
+import { useHandHistoryCards } from "../hooks/player/useHandHistoryCards";
 import { useIndexerStatus } from "../hooks/player/useIndexerStatus";
 import { useTableFormats } from "../hooks/player/useTableFormats";
 import { describeHandOutcome, describeIndexing, handKey, HandOutcomeTone } from "../utils/handHistory";
+import { displayBoard, historyCountLabel, mergeHistoryHands, type HistoryHandCards } from "../utils/handHistoryCards";
+import { historyNetworks } from "../utils/handReplay";
 import { formatTimestampRelative } from "../utils/formatUtils";
 import { truncateMiddle } from "../utils/stringUtils";
 import { getCardImageUrl } from "../utils/cardImages";
@@ -26,14 +31,24 @@ const toneClass: Record<HandOutcomeTone, string> = {
 
 /**
  * "My Hand History" (ui#721): every indexed hand the wallet in use played,
- * across tables and sessions, newest first. Each opens its read-only replay.
+ * across tables and sessions, newest first, plus played hands the indexer
+ * failed to attach. Each opens its read-only replay.
  */
 export default function MyHandsPage() {
     const { address } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
     const indexerStatus = useIndexerStatus();
-    const { hands, total, loading, error, hasMore, loadMore, reload } = useMyHandHistory(address, `${currentNetwork.name}|${currentNetwork.rest}`, PAGE_SIZE);
-    const formats = useTableFormats(useMemo(() => hands.map(h => h.game_id), [hands]));
+    const networks = useMemo(() => historyNetworks(currentNetwork, NETWORK_PRESETS), [currentNetwork]);
+    const { hands, total, loading, error, hasMore, complete, loadMore, reload } = useMyHandHistory(
+        address,
+        `${currentNetwork.name}|${currentNetwork.rest}`,
+        PAGE_SIZE
+    );
+    const recovered = useRecoveredHands(address, hands, complete, networks);
+    const displayed = useMemo(() => mergeHistoryHands(hands, recovered.hands), [hands, recovered.hands]);
+    const cardMap = useHandHistoryCards(displayed, address, recovered.states, networks);
+    const formats = useTableFormats(useMemo(() => displayed.map(h => h.game_id), [displayed]));
+    const count = Math.max(total, displayed.length);
 
     useEffect(() => {
         document.title = "My Hands - Texas HODL";
@@ -44,7 +59,7 @@ export default function MyHandsPage() {
 
     const header = (
         <span className="flex items-center gap-2 min-w-0">
-            <span>My hands{total > 0 ? ` · ${total.toLocaleString()}` : ""}</span>
+            <span>My hands{count > 0 ? ` · ${count.toLocaleString()}` : ""}</span>
             {address && (
                 <Link to={`/players/${address}`} title={address} className={`font-mono text-xs truncate hover:underline ${styles.brandText}`}>
                     {truncateMiddle(address, 10, 6)}
@@ -74,9 +89,9 @@ export default function MyHandsPage() {
                         </ExplorerEmpty>
                     ) : error && isEmpty(hands) ? (
                         <ExplorerError>{error}</ExplorerError>
-                    ) : loading && isEmpty(hands) ? (
+                    ) : isEmpty(displayed) && (loading || recovered.recovering || (complete && !recovered.searched)) ? (
                         <ExplorerLoading label="Loading your hands…" />
-                    ) : isEmpty(hands) ? (
+                    ) : isEmpty(displayed) ? (
                         <ExplorerEmpty>
                             <span className="page-empty-symbol" aria-hidden="true">
                                 ♠
@@ -89,18 +104,21 @@ export default function MyHandsPage() {
                         </ExplorerEmpty>
                     ) : (
                         <ul className="divide-y divide-white/5">
-                            {hands.map(hand => (
-                                <HandRow key={handKey(hand)} hand={hand} outcome={describeHandOutcome(hand, formats.get(hand.game_id))} />
+                            {displayed.map(hand => (
+                                <HandRow
+                                    key={handKey(hand)}
+                                    hand={hand}
+                                    outcome={describeHandOutcome(hand, formats.get(hand.game_id))}
+                                    cards={cardMap.get(handKey(hand))}
+                                />
                             ))}
                         </ul>
                     )}
 
-                    {address && hasElements(hands) && (
+                    {address && hasElements(displayed) && (
                         <div className="px-3 sm:px-4 py-3 flex flex-col items-center gap-2 border-t border-white/5">
                             {error && <p className="text-sm text-red-400">{error}</p>}
-                            <p className="text-xs text-gray-400">
-                                Showing {hands.length.toLocaleString()} of {total.toLocaleString()}
-                            </p>
+                            <p className="text-xs text-gray-400">{historyCountLabel(displayed.length, total)}</p>
                             {hasMore && (
                                 <button
                                     type="button"
@@ -120,8 +138,17 @@ export default function MyHandsPage() {
     );
 }
 
-function HandRow({ hand, outcome }: { hand: PlayerHand; outcome: { label: string; tone: HandOutcomeTone } }) {
+function HandRow({
+    hand,
+    outcome,
+    cards
+}: {
+    hand: PlayerHand;
+    outcome: { label: string; tone: HandOutcomeTone };
+    cards?: HistoryHandCards;
+}) {
     const replayUrl = `/table/${hand.game_id}?hand=${hand.hand_number}`;
+    const board = displayBoard(hand.community_cards, cards?.board);
     return (
         <li className="px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <div className="flex-1 min-w-0">
@@ -140,11 +167,12 @@ function HandRow({ hand, outcome }: { hand: PlayerHand; outcome: { label: string
                     {" · "}
                     {hand.ended_at ? formatTimestampRelative(hand.ended_at) : `block ${hand.block_height.toLocaleString()}`}
                 </p>
+                <HandHistoryCards seats={cards?.seats ?? []} />
             </div>
-            {hasElements(hand.community_cards) && (
-                <div className="flex gap-1 shrink-0" aria-label={`Board ${hand.community_cards.join(" ")}`}>
-                    {hand.community_cards.map((card, i) => (
-                        <img key={i} src={getCardImageUrl(card.toUpperCase())} alt={card} className="w-6 sm:w-7 rounded-sm" />
+            {hasElements(board) && (
+                <div className="flex gap-1 shrink-0 flex-wrap" aria-label={`Board ${board.join(" ")}`}>
+                    {board.map((card, i) => (
+                        <img key={i} src={getCardImageUrl(card.toUpperCase())} alt={card.toUpperCase()} className="w-6 sm:w-7 rounded-sm" />
                     ))}
                 </div>
             )}
