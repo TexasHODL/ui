@@ -1,5 +1,5 @@
 import { NonPlayerActionType, PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledSngPhase, scheduledStartRejection } from "./scheduledSng";
+import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledLobbyLabel, scheduledSngPhase, scheduledStartRejection } from "./scheduledSng";
 
 const start = 1_700_000_000_000;
 
@@ -26,10 +26,28 @@ describe("hasTournamentStarted", () => {
         expect(hasTournamentStarted({ handNumber: 1, previousActions: [action(NonPlayerActionType.JOIN)] })).toBe(false);
         expect(hasTournamentStarted(undefined)).toBe(false);
     });
-    it("is true once START or a blind is recorded, or past hand 1", () => {
+    it("is true once START or a blind is recorded, the round has left the ante, or past hand 1", () => {
         expect(hasTournamentStarted({ handNumber: 1, previousActions: [action(NonPlayerActionType.START)] })).toBe(true);
         expect(hasTournamentStarted({ handNumber: 1, previousActions: [action(PlayerActionType.SMALL_BLIND)] })).toBe(true);
+        expect(hasTournamentStarted({ handNumber: 1, round: TexasHoldemRound.PREFLOP, previousActions: [] })).toBe(true);
+        expect(hasTournamentStarted({ handNumber: 1, round: TexasHoldemRound.ANTE, previousActions: [] })).toBe(false);
         expect(hasTournamentStarted({ handNumber: 2, previousActions: [] })).toBe(true);
+    });
+});
+
+describe("scheduledLobbyLabel", () => {
+    const base = { scheduledStartTime: start, minPlayers: 4, nowMs: start };
+    it("keeps Starting only while the start is due and the hand has not begun", () => {
+        expect(scheduledLobbyLabel({ ...base, phase: "ready", started: false })).toBe("Starting");
+    });
+    it("says Started once the game is in play, including an early fill", () => {
+        expect(scheduledLobbyLabel({ ...base, phase: "ready", started: true })).toBe("Started");
+        expect(scheduledLobbyLabel({ ...base, phase: "registering", started: true, nowMs: start - 1 })).toBe("Started");
+    });
+    it("keeps the cancelled wording and the pre-start line", () => {
+        expect(scheduledLobbyLabel({ ...base, phase: "cancelled", started: true })).toBe("Cancelled: not enough players");
+        expect(scheduledLobbyLabel({ ...base, phase: "registering", started: false, nowMs: start - 1 })).toContain("· min 4");
+        expect(scheduledLobbyLabel({ ...base, phase: "unscheduled", started: false })).toBe("");
     });
 });
 

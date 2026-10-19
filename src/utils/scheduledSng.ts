@@ -1,4 +1,4 @@
-import { NonPlayerActionType, PlayerActionType, type ActionDTO, type GameOptionsDTO, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { NonPlayerActionType, PlayerActionType, TexasHoldemRound, type ActionDTO, type GameOptionsDTO, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { hasValue, isNullish } from "./guards";
 
 /**
@@ -46,14 +46,28 @@ const STARTED_ACTIONS: ReadonlySet<string> = new Set<string>([
     PlayerActionType.BIG_BLIND
 ]);
 
+/** A hand that has left the waiting ante. Ante itself is still "not started". */
+const IN_PLAY_ROUNDS: ReadonlySet<string> = new Set<string>([
+    TexasHoldemRound.PREFLOP,
+    TexasHoldemRound.FLOP,
+    TexasHoldemRound.TURN,
+    TexasHoldemRound.RIVER,
+    TexasHoldemRound.SHOWDOWN,
+    TexasHoldemRound.END
+]);
+
 /**
- * Whether the tournament is in play: past the first hand, or hand 1 has been
- * started (START recorded) or a blind has been posted. Once in play the field is
- * frozen and the "waiting for players" state is over, even with empty seats.
+ * Whether the tournament is in play: past the first hand, the round has left
+ * the waiting ante, or hand 1 has been started (START recorded) or a blind has
+ * been posted. Once in play the field is frozen and the "waiting for players"
+ * state is over, even with empty seats.
  */
-export const hasTournamentStarted = (gameState: Pick<TexasHoldemStateDTO, "handNumber" | "previousActions"> | null | undefined): boolean => {
+export const hasTournamentStarted = (
+    gameState: (Pick<TexasHoldemStateDTO, "handNumber" | "previousActions"> & Partial<Pick<TexasHoldemStateDTO, "round">>) | null | undefined
+): boolean => {
     if (isNullish(gameState)) return false;
     if (gameState.handNumber > 1) return true;
+    if (hasValue(gameState.round) && IN_PLAY_ROUNDS.has(gameState.round)) return true;
     const actions: ActionDTO[] = Array.isArray(gameState.previousActions) ? gameState.previousActions : [];
     return actions.some(a => STARTED_ACTIONS.has(a.action));
 };
@@ -75,6 +89,21 @@ export const formatStartsAt = (startMs: number, nowMs: number = Date.now()): str
     const sameDay = start.toDateString() === now.toDateString();
     const time = start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     return sameDay ? time : `${start.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`;
+};
+
+/** Lobby status under a scheduled sit-and-go or tournament row. */
+export const scheduledLobbyLabel = (input: {
+    phase: ScheduledSngPhase;
+    scheduledStartTime: number | undefined;
+    minPlayers: number;
+    started: boolean;
+    nowMs?: number;
+}): string => {
+    if (input.phase === "unscheduled" || isNullish(input.scheduledStartTime)) return "";
+    if (input.phase === "cancelled") return "Cancelled: not enough players";
+    if (input.started) return "Started";
+    if (input.phase === "ready") return "Starting";
+    return `Starts ${formatStartsAt(input.scheduledStartTime, input.nowMs)} · min ${input.minPlayers}`;
 };
 
 /** datetime-local input value → unix seconds (NaN when empty/invalid). */

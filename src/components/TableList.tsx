@@ -1,12 +1,13 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
 import React, { useEffect, useMemo, useState } from "react";
 import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaShareAlt } from "react-icons/fa";
-import { formatStartsAt, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
+import { scheduledLobbyLabel, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
 import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
+import { useLobbyTournamentStarted } from "../hooks/game/useLobbyTournamentStarted";
 
 import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
 import { displayGameFormat } from "../utils/createGameType";
@@ -40,14 +41,14 @@ interface TableListProps {
 const scheduledPhase = (game: GameWithFormat): ScheduledSngPhase =>
     scheduledSngPhase({ scheduledStartTime: game.scheduledStartTime, minPlayers: game.minPlayers, registered: game.currentPlayers, nowMs: Date.now() });
 
-/** "Starts 20:30 · min 4" for a scheduled sit-and-go; "" otherwise. */
-const scheduledLabel = (game: GameWithFormat): string => {
-    const phase = scheduledPhase(game);
-    if (phase === "unscheduled" || game.scheduledStartTime === undefined) return "";
-    if (phase === "cancelled") return "Cancelled: not enough players";
-    if (phase === "ready") return "Starting";
-    return `Starts ${formatStartsAt(game.scheduledStartTime)} · min ${game.minPlayers}`;
-};
+/** "Starts 20:30 · min 4", "Starting", "Started", or "Cancelled…" for a scheduled sit-and-go. */
+const scheduledLabel = (game: GameWithFormat, started: boolean): string =>
+    scheduledLobbyLabel({
+        phase: scheduledPhase(game),
+        scheduledStartTime: game.scheduledStartTime,
+        minPlayers: game.minPlayers,
+        started
+    });
 
 const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, refreshKey = 0 }) => {
     const { games: rawGames, isLoading, error, refetch } = useFindGames();
@@ -74,6 +75,13 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const currentPage = Math.min(page, Math.max(1, Math.ceil(games.length / PAGE_SIZE)));
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
+    const startedTables = useLobbyTournamentStarted(
+        pagedGames.filter(game => {
+            const phase = scheduledPhase(game);
+            return phase === "registering" || phase === "ready" || phase === "short";
+        }).map(game => game.gameId).join(","),
+        rawGames
+    );
     const occupiedSeats = clubGames.reduce((sum, game) => sum + game.currentPlayers, 0);
     const availableSeats = clubGames.reduce((sum, game) => sum + Math.max(0, game.maxPlayers - game.currentPlayers), 0);
     const hasFilters = format !== "all" || !!search || openOnly || ownedOnly;
@@ -242,7 +250,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
                                 const phase = scheduledPhase(game);
-                                const schedule = scheduledLabel(game);
+                                const schedule = scheduledLabel(game, startedTables[game.gameId] === true);
                                 const stakes = tournament
                                     ? "Tournament"
                                     : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
