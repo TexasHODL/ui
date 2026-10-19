@@ -167,18 +167,49 @@ test("a scheduled tournament says Started only after the hand has begun", () => 
     }
 });
 
-test("a tournament that never started keeps Cancelled, including the open button", () => {
+test("a cancelled tournament keeps the status line and has no open or view link", () => {
     const game = mockGames.find(item => item.gameId === "tournament")!;
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
     game.currentPlayers = 1;
     game.minPlayers = 4;
+    mockSeats = { tournament: 1 };
+    try {
+        const { unmount } = render(<TableList />);
+        const row = within(screen.getByText("My tournament").closest("tr")!);
+        expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Cancelled: not enough players");
+        expect(row.queryByRole("link")).not.toBeInTheDocument();
+        expect(row.queryByText("Cancelled")).not.toBeInTheDocument();
+        expect(row.queryByText("Open table")).not.toBeInTheDocument();
+        expect(row.queryByText("Return to table")).not.toBeInTheDocument();
+        expect(row.getByRole("button", { name: "Share My tournament" })).toBeInTheDocument();
+        expect(row.queryByRole("button", { name: "Close & refund" })).not.toBeInTheDocument();
+        expect(row.queryByRole("button", { name: "Delete table" })).not.toBeInTheDocument();
+        unmount();
+        render(<TableList compact />);
+        const compactRow = within(screen.getByText("My tournament").closest("tr")!);
+        expect(compactRow.getByTestId("scheduled-start-label")).toHaveTextContent("Cancelled: not enough players");
+        expect(compactRow.queryByRole("link")).not.toBeInTheDocument();
+        expect(compactRow.getByRole("button", { name: "Share My tournament" })).toBeInTheDocument();
+    } finally {
+        Object.assign(game, previous);
+    }
+});
+
+test("an empty cancelled table still lets the owner delete it", () => {
+    const game = mockGames.find(item => item.gameId === "tournament")!;
+    const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
+    game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
+    game.currentPlayers = 0;
+    game.minPlayers = 4;
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Cancelled: not enough players");
-        expect(row.getByRole("link", { name: "Cancelled My tournament" })).toBeInTheDocument();
+        expect(row.queryByRole("link")).not.toBeInTheDocument();
+        expect(row.getByRole("button", { name: "Delete table" })).toBeInTheDocument();
         expect(row.queryByRole("button", { name: "Close & refund" })).not.toBeInTheDocument();
+        expect(row.getByRole("button", { name: "Share My tournament" })).toBeInTheDocument();
     } finally {
         Object.assign(game, previous);
     }
