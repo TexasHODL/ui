@@ -240,8 +240,9 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         }
     }, [registrationClosed, publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess]);
 
-    // Don't show modal if user is already playing, has joined, or the tournament has started.
-    if (isUserAlreadyPlaying || hasJoined || registrationClosed) {
+    // Don't show modal if user is already playing, has joined, the tournament
+    // has started, or it was cancelled before it started.
+    if (isUserAlreadyPlaying || hasJoined || registrationClosed || isCancelled) {
         return null;
     }
 

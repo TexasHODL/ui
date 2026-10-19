@@ -256,8 +256,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
                                 // Full tables already use the grey Watch link (?watch=1). A started or
                                 // finished sit-and-go or tournament uses that same link while seats
-                                // are still open. A game that never started has no open/view link;
-                                // the status line says Cancelled.
+                                // are still open. A cancelled game that never started has no open
+                                // link, except Return to table for someone still seated.
                                 const watch = !seated && !showCancelled && (full || (tournamentStyle && played));
                                 const schedule = scheduledLabel(game, mark);
                                 const stakes = tournament
@@ -313,7 +313,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                         </td>
                                         <td>
                                             <div className={styles.rowActions}>
-                                                {!showCancelled && <a
+                                                {(!showCancelled || seated) && <a
                                                     href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
                                                     className={watch ? styles.watchButton : styles.actionButton}
                                                     aria-label={(seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
