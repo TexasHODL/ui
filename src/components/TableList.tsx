@@ -256,8 +256,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
                                 // Full tables already use the grey Watch link (?watch=1). A started or
                                 // finished sit-and-go or tournament uses that same link while seats
-                                // are still open. Seated players return; a game that never started
-                                // keeps Cancelled.
+                                // are still open. A game that never started has no open/view link;
+                                // the status line says Cancelled.
                                 const watch = !seated && !showCancelled && (full || (tournamentStyle && played));
                                 const schedule = scheduledLabel(game, mark);
                                 const stakes = tournament
@@ -313,10 +313,10 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                         </td>
                                         <td>
                                             <div className={styles.rowActions}>
-                                                <a
+                                                {!showCancelled && <a
                                                     href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
                                                     className={watch ? styles.watchButton : styles.actionButton}
-                                                    aria-label={(showCancelled ? "Cancelled " : seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
+                                                    aria-label={(seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
                                                 >
                                                     {watch ? (
                                                         <>
@@ -326,12 +326,12 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                     ) : (
                                                         <>
                                                             <span className={seated ? styles.returnLabel : undefined}>
-                                                                {showCancelled ? "Cancelled" : seated ? "Return to table" : "Open table"}
+                                                                {seated ? "Return to table" : "Open table"}
                                                             </span>
                                                             <FaArrowRight aria-hidden="true" />
                                                         </>
                                                     )}
-                                                </a>
+                                                </a>}
                                                 {owner && (game.currentPlayers === 0 || isCashFormat(game.gameFormat)) && <button
                                                     className={styles.ownerAction}
                                                     disabled={game.currentPlayers === 0 ? isDeleting : isClosing}
