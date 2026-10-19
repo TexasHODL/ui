@@ -60,7 +60,8 @@ import { useGameResults } from "../../hooks/game/useGameResults"; // Game result
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { SitOutIntentProvider } from "../../context/SitOutIntentContext";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
-import { hasTournamentStarted } from "../../utils/scheduledSng";
+import { hasTournamentStarted, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { searchWithoutJoinSeat } from "../../utils/urlParams";
 import { describeReplayStep, latestCompletedHand } from "../../utils/replayTimeline";
 import { useReplayTimeline } from "../../hooks/game/useReplayTimeline";
 import { ReplayTransport } from "./ReplayTransport";
@@ -631,7 +632,7 @@ const GeometryToggleButton: React.FC = () => {
 
 const Table = React.memo(() => {
     const { id } = useParams<{ id: string }>();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const isWatchMode = searchParams.get("watch") === "1";
     // Game state context and subscription
     const {
@@ -648,6 +649,14 @@ const Table = React.memo(() => {
         replayHandNumber,
         connection
     } = useGameStateContext();
+    const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
+    // A `?seat=` deep link must not join a tournament that has already started.
+    useEffect(() => {
+        if (!registrationClosed) return;
+        const next = searchWithoutJoinSeat(searchParams.toString());
+        if (next === null) return;
+        setSearchParams(next, { replace: true });
+    }, [registrationClosed, searchParams, setSearchParams]);
     const { currentNetwork } = useNetwork();
 
     // Replay mode — read hand/index query params from the readonly share link.

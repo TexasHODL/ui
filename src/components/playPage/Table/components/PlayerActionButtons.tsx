@@ -23,6 +23,7 @@ import { useGameStateContext } from "../../../../context/GameStateContext";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useActionSubmit } from "../../../../context/ActionSubmitContext";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
+import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 
 export interface PlayerActionButtonsProps {
     isMobile: boolean;
@@ -89,6 +90,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     // escape-hatch, and toasts failures — replacing the hand-rolled dirty-state
     // this component used to carry.
     const { gameState, gameFormat } = useGameStateContext();
+    const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
     const { seatAtBottom, toggleSeatAtBottom, sitInOptions } = useGameSettings();
     const { submit, loadingAction } = useActionSubmit();
     const sittingIn = loadingAction === "sit-in";
@@ -233,7 +235,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                 <div className="fixed z-30 bottom-8 left-1/2 -translate-x-1/2">
                     <div className="table-spectator-hint">
                         <span className="table-spectator-dot" aria-hidden="true" />
-                        <span>{isTableFull ? "You’re watching · All seats are taken" : "You’re watching · Choose an open seat to play"}</span>
+                        <span>{isTableFull ? "You’re watching · All seats are taken" : registrationClosed ? "You’re watching" : "You’re watching · Choose an open seat to play"}</span>
                     </div>
                 </div>
             </>

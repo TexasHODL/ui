@@ -98,6 +98,18 @@ export const getAutoFoldEnabled = (): boolean => {
  * // URL: /table/123?callclock=true -> returns true
  * // URL: /table/123?callclock=false -> returns false
  */
+/**
+ * Remove a `seat` deep-link (`?seat=3`) from a query string.
+ * Returns null when the param is absent, so callers can leave the URL alone.
+ * The remaining query has no leading "?".
+ */
+export const searchWithoutJoinSeat = (search: string): string | null => {
+    const params = new URLSearchParams(search);
+    if (!params.has("seat")) return null;
+    params.delete("seat");
+    return params.toString();
+};
+
 export const getCallClockEnabled = (): boolean => {
     const params = new URLSearchParams(window.location.search);
     const callclock = params.get("callclock");

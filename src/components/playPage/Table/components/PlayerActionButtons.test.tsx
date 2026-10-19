@@ -30,7 +30,10 @@ jest.mock("../../../../context/ActionSubmitContext", () => ({
 // reads actionCount from this context. These tests don't exercise that
 // pathway (they assert render structure + click handlers), so a static
 // stub is sufficient.
-const mockGameStateContext = { gameState: { actionCount: 0 }, gameFormat: undefined as GameFormat | undefined };
+const mockGameStateContext = {
+    gameState: { actionCount: 0, handNumber: 1, previousActions: [] as unknown[] },
+    gameFormat: undefined as GameFormat | undefined
+};
 jest.mock("../../../../context/GameStateContext", () => ({
     useGameStateContext: () => mockGameStateContext,
 }));
@@ -94,6 +97,7 @@ const baseProps: PlayerActionButtonsProps = {
 beforeEach(() => {
     // These tests describe a cash table unless a test says otherwise (sit-out is cash-only, ui#730).
     mockGameStateContext.gameFormat = GameFormat.CASH;
+    mockGameStateContext.gameState = { actionCount: 0, handNumber: 1, previousActions: [] };
     mockSubmit.mockClear();
     mockGameSettings.sitInOptions = true; // method-UI tests; auto-drive test sets false
 });
@@ -193,6 +197,7 @@ describe("PlayerActionButtons", () => {
     });
 
     it("shows spectator message and join hint when user is not seated and table is not full", () => {
+        mockGameStateContext.gameState = { actionCount: 0, handNumber: 8, previousActions: [] };
         render(
             <PlayerActionButtons
                 {...baseProps}
@@ -201,6 +206,20 @@ describe("PlayerActionButtons", () => {
             />
         );
         expect(screen.getByText("You’re watching · Choose an open seat to play")).toBeInTheDocument();
+    });
+
+    it("drops the join hint once a sit-and-go has started", () => {
+        mockGameStateContext.gameFormat = GameFormat.SIT_AND_GO;
+        mockGameStateContext.gameState = { actionCount: 4, handNumber: 8, previousActions: [] };
+        render(
+            <PlayerActionButtons
+                {...baseProps}
+                isCurrentUserSeated={false}
+                isTableFull={false}
+            />
+        );
+        expect(screen.getByText("You’re watching")).toBeInTheDocument();
+        expect(screen.queryByText(/Choose an open seat/)).not.toBeInTheDocument();
     });
 
     it("hides BuyChipsButton in SNG games even when TOP_UP is in legalActions", () => {

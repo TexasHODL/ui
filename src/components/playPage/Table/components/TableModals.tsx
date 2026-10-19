@@ -11,6 +11,7 @@
 
 import React from "react";
 import { isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import GameStartCountdown from "../../common/GameStartCountdown";
 import { SitAndGoAutoJoinModal, SitAndGoResultModal } from "../../../modals";
 import SitAndGoWaitingModal from "../../SitAndGoWaitingModal";
@@ -73,6 +74,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
     currentPlayerStack,
     isInActiveHand
 }) => {
+    const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
     return (
         <>
             {/* Game Start Countdown Modal */}
@@ -81,8 +83,9 @@ export const TableModals: React.FC<TableModalsProps> = ({
             )}
 
             {/* Watch is an explicit choice to view the live game, not to buy in.
-                Also protect direct links to full tables from an unusable prompt. */}
-            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && (
+                Also protect direct links to full tables from an unusable prompt.
+                Once the tournament has started, late entry is closed. */}
+            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && (
                 <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} />
             )}
 
