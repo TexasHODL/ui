@@ -1,5 +1,6 @@
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
+import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { localDateTimeToUnixSeconds, scheduledStartRejection } from "../utils/scheduledSng";
@@ -21,8 +22,7 @@ import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
 import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
-import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
 
 interface TableData {
     gameId: string;
@@ -107,19 +107,6 @@ export default function TableAdminPage() {
     // buy-in. "0" = no fee. (poker-vm#2118)
     const [entryFee, setEntryFee] = useState("0");
     const [showStructure, setShowStructure] = useState(false);
-    const [showAdvancedModal, setShowAdvancedModal] = useState(false);
-
-    // Apply advanced JSON params back into the SNG form state. Any field the
-    // user omitted keeps its current value (mergeAdvancedParams handles that in
-    // the modal; here we only write fields that were actually provided).
-    const handleApplyAdvancedParams = (params: AdvancedSngParams) => {
-        if (params.maxPlayers !== undefined) setMaxPlayers(params.maxPlayers);
-        if (params.startingStack !== undefined) setStartingStack(params.startingStack);
-        if (params.smallBlind !== undefined) setSngSmallBlind(params.smallBlind);
-        if (params.bigBlind !== undefined) setSngBigBlind(params.bigBlind);
-        if (params.blindLevelDuration !== undefined) setBlindLevelDuration(params.blindLevelDuration);
-        if (params.buyIn !== undefined) setTournamentBuyIn(params.buyIn.toString());
-    };
 
     // Calculate actual buy-in values from BB
     const { minBuyIn: calculatedMinBuyIn, maxBuyIn: calculatedMaxBuyIn } = useMemo(
@@ -463,14 +450,8 @@ export default function TableAdminPage() {
 
                             {isSitAndGoFormat(gameFormat) && (
                                 <div className="mb-4">
-                                    <label className="text-white text-sm mb-1 block">Scheduled start</label>
-                                    <label className="flex items-center gap-2 text-gray-300 text-sm cursor-pointer" data-testid="scheduled-start-toggle">
-                                        <input type="checkbox" checked={scheduled} onChange={e => setScheduled(e.target.checked)} className="accent-blue-500" />
-                                        Start at a set time
-                                        <span className="text-gray-500 text-xs">— with whoever has registered, or earlier when full</span>
-                                    </label>
-                                    {scheduled && (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                    <ScheduledStartCard checked={scheduled} onChange={setScheduled}>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-gray-300 text-xs mb-1 block">Start time</label>
                                                 <input
@@ -500,7 +481,7 @@ export default function TableAdminPage() {
                                                 Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
                                             </p>
                                         </div>
-                                    )}
+                                    </ScheduledStartCard>
                                 </div>
                             )}
 
@@ -698,15 +679,6 @@ export default function TableAdminPage() {
                                             </p>
                                         </div>
 
-                                        {/* Advanced Options — custom params via JSON */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowAdvancedModal(true)}
-                                            className="w-full px-3 py-2 bg-[#21172b] hover:bg-gray-600 text-gray-200 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <span>⚙</span>
-                                            Advanced Options (Custom Params)
-                                        </button>
                                     </div>
                                 ) : (
                                     <>
@@ -1018,21 +990,6 @@ export default function TableAdminPage() {
                     Choose a table to watch, then take a seat when you’re ready. Want your own game? Open “Create a new table” above.
                 </p>
             </div>
-
-            {/* Advanced SNG Options Modal */}
-            <AdvancedSngParamsModal
-                isOpen={showAdvancedModal}
-                onClose={() => setShowAdvancedModal(false)}
-                current={{
-                    maxPlayers,
-                    buyIn: parseFloat(tournamentBuyIn) || 0,
-                    startingStack,
-                    smallBlind: sngSmallBlind,
-                    bigBlind: sngBigBlind,
-                    blindLevelDuration
-                }}
-                onApply={handleApplyAdvancedParams}
-            />
 
             <TableCreatedModal
                 receipt={showSuccessModal && successTxHash ? { txHash: successTxHash, gameId: createdGameAddress } : null}

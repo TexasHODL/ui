@@ -1,4 +1,5 @@
 
+import { readFileSync } from "fs";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../utils/generatedTableName";
@@ -126,6 +127,19 @@ test("Watch links carry viewing intent while open tables keep the normal join ro
     } finally {
         game.currentPlayers = previousCount;
     }
+});
+
+test("Create table uses the primary orange-to-pink gradient", () => {
+    const onCreateTable = jest.fn();
+    render(<TableList onCreateTable={onCreateTable} />);
+    const button = screen.getByRole("button", { name: "Create table" });
+    expect(button.className).toContain("createButton");
+    const css = readFileSync("src/components/TableList.module.css", "utf8");
+    const rule = css.slice(css.indexOf(".createButton {"), css.indexOf(".createButton:hover"));
+    expect(rule).toContain("linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6)");
+    expect(rule).toContain("color: #200c1c");
+    fireEvent.click(button);
+    expect(onCreateTable).toHaveBeenCalledTimes(1);
 });
 
 test("share buttons copy a direct table link without an options menu", () => {

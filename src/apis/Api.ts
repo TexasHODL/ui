@@ -1,6 +1,7 @@
 import HTTPClient from "./HTTPClient";
 import { hasContent, hasValue } from "../utils/guards";
 import type { PlayerSearchParams, PlayersListResponse, PlayerProfile, PlayerSessionsResponse, PlayerHandsResponse } from "../types/players";
+import type { HandListResponse } from "../pages/explorer/types";
 import type { WithdrawalSignatureResponse } from "../utils/withdrawalSignature";
 
 export class PaymentApi extends HTTPClient {
@@ -96,7 +97,8 @@ export class IndexerApi extends HTTPClient {
     public getSummaryStats = () => this.get("/api/v1/stats/summary");
     public getRandomnessAnalysis = () => this.get("/api/v1/analysis/randomness");
     public getHand = (gameId: string, handNumber: string) => this.get(`/api/v1/hands/${gameId}/${handNumber}`);
-    public getHands = (gameId: string) => this.get(`/api/v1/hands?game_id=${gameId}&limit=100`);
+    public getHands = (gameId: string, offset = 0, limit = 100) =>
+        this.get<HandListResponse>(`/api/v1/hands?game_id=${encodeURIComponent(gameId)}&limit=${limit}&offset=${offset}`);
     /** Returns the single most recent indexed hand across all games. Used as a live test fixture. */
     public getRecentHand = () => this.get("/api/v1/hands?limit=1");
 

@@ -1,7 +1,7 @@
 import { CreationDialog } from "../components/common/CreationDialog";
 import { ModalHeader } from "../components/common/ModalHeader";
-import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import { TABLE_SEAT_OPTIONS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
+import { TABLE_SEAT_OPTIONS } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
@@ -110,32 +110,21 @@ const Dashboard: React.FC = () => {
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
     const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(1); // 25 / 50
-    const [customBlinds, setCustomBlinds] = useState<{ smallBlind: number; bigBlind: number } | null>(null);
     const [entryFee, setEntryFee] = useState(0);
-    const [showAdvanced, setShowAdvanced] = useState(false);
     const [enableRake, setEnableRake] = useState(false);
     const [rakeThreshold, setRakeThreshold] = useState(0);
     const [rakePercentage, setRakePercentage] = useState(5);
     const [rakeCap, setRakeCap] = useState(0.1);
-    const applyAdvanced = (params: AdvancedSngParams) => {
-        if (params.maxPlayers !== undefined) setModalPlayerCount(params.maxPlayers);
-        if (params.buyIn !== undefined) setModalSitAndGoBuyIn(params.buyIn);
-        if (params.startingStack !== undefined) setModalStartingStack(params.startingStack);
-        if (params.blindLevelDuration !== undefined) setModalBlindLevelDuration(params.blindLevelDuration);
-        if (params.smallBlind !== undefined || params.bigBlind !== undefined) {
-            setCustomBlinds({ smallBlind: params.smallBlind ?? modalSmallBlind, bigBlind: params.bigBlind ?? modalBigBlind });
-        }
-    };
 
     // Cash blinds are dollars (BLIND_LEVELS); Sit & Go blinds are chips (SNG_BLINDS).
     const isModalTournament = isTournamentFormat(modalGameFormat);
     const modalSmallBlind = useMemo(
-        () => (isModalTournament ? (customBlinds ?? SNG_BLINDS[modalSngBlindsIndex]).smallBlind : BLIND_LEVELS[selectedBlindLevel].smallBlind),
-        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel, customBlinds]
+        () => (isModalTournament ? SNG_BLINDS[modalSngBlindsIndex].smallBlind : BLIND_LEVELS[selectedBlindLevel].smallBlind),
+        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel]
     );
     const modalBigBlind = useMemo(
-        () => (isModalTournament ? (customBlinds ?? SNG_BLINDS[modalSngBlindsIndex]).bigBlind : BLIND_LEVELS[selectedBlindLevel].bigBlind),
-        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel, customBlinds]
+        () => (isModalTournament ? SNG_BLINDS[modalSngBlindsIndex].bigBlind : BLIND_LEVELS[selectedBlindLevel].bigBlind),
+        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel]
     );
 
     // Calculate actual buy-in values from BB using utility function
@@ -635,13 +624,10 @@ const Dashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {showCreateGameModal && <AdvancedSngParamsModal isOpen={showAdvanced} onClose={() => setShowAdvanced(false)} onApply={applyAdvanced}
-                        current={{ maxPlayers: modalPlayerCount, buyIn: modalSitAndGoBuyIn, startingStack: modalStartingStack, smallBlind: modalSmallBlind, bigBlind: modalBigBlind, blindLevelDuration: modalBlindLevelDuration }} />}
                     {/* Create New Game Modal */}
                     {showCreateGameModal && (
                         <CreationDialog
                             titleId="create-table-title"
-                            hidden={showAdvanced}
                             onClose={() => {
                                 setShowCreateGameModal(false);
                                 setCreateGameError("");
@@ -667,50 +653,39 @@ const Dashboard: React.FC = () => {
                                     </div>
 
                                     {isSitAndGoFormat(modalGameFormat) && (
-                                        <div>
-                                            <label className="block text-white text-sm mb-1">Scheduled start</label>
-                                            <label className="flex items-center gap-2 text-white text-sm cursor-pointer" data-testid="scheduled-start-toggle">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={modalScheduled}
-                                                    onChange={e => setModalScheduled(e.target.checked)}
-                                                    className="accent-blue-500"
-                                                />
-                                                Start at a set time
-                                                <span className="text-gray-400 text-xs">— with whoever has registered, or earlier when full</span>
-                                            </label>
-                                            {modalScheduled && (
-                                                <div className="grid grid-cols-2 gap-3 mt-2">
-                                                    <div>
-                                                        <label className="block text-gray-300 text-xs mb-1">Starts at</label>
-                                                        <input
-                                                            type="datetime-local"
-                                                            aria-label="Scheduled start time"
-                                                            value={modalScheduledStart}
-                                                            onChange={e => setModalScheduledStart(e.target.value)}
-                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-gray-300 text-xs mb-1">Minimum players</label>
-                                                        <select
-                                                            aria-label="Minimum players"
-                                                            value={Math.min(modalSngMinPlayers, modalPlayerCount)}
-                                                            onChange={e => setModalSngMinPlayers(Number(e.target.value))}
-                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-                                                        >
-                                                            {SNG_MIN_PLAYER_OPTIONS.filter(n => n <= modalPlayerCount).map(n => (
-                                                                <option key={n} value={n}>
-                                                                    {n}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <p className="col-span-2 text-gray-400 text-xs">
-                                                        Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
-                                                    </p>
+                                        <div className="creation-span">
+                                        <ScheduledStartCard checked={modalScheduled} onChange={setModalScheduled}>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-gray-300 text-xs mb-1">Starts at</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        aria-label="Scheduled start time"
+                                                        value={modalScheduledStart}
+                                                        onChange={e => setModalScheduledStart(e.target.value)}
+                                                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                    />
                                                 </div>
-                                            )}
+                                                <div>
+                                                    <label className="block text-gray-300 text-xs mb-1">Minimum players</label>
+                                                    <select
+                                                        aria-label="Minimum players"
+                                                        value={Math.min(modalSngMinPlayers, modalPlayerCount)}
+                                                        onChange={e => setModalSngMinPlayers(Number(e.target.value))}
+                                                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                    >
+                                                        {SNG_MIN_PLAYER_OPTIONS.filter(n => n <= modalPlayerCount).map(n => (
+                                                            <option key={n} value={n}>
+                                                                {n}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <p className="sm:col-span-2 text-gray-400 text-xs">
+                                                    Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                </p>
+                                            </div>
+                                        </ScheduledStartCard>
                                         </div>
                                     )}
 
@@ -837,8 +812,8 @@ const Dashboard: React.FC = () => {
                                             <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
                                             <select
                                                 aria-label="Starting blinds"
-                                                value={customBlinds ? "custom" : modalSngBlindsIndex}
-                                                onChange={e => { setCustomBlinds(null); setModalSngBlindsIndex(Number(e.target.value)); }}
+                                                value={modalSngBlindsIndex}
+                                                onChange={e => setModalSngBlindsIndex(Number(e.target.value))}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             >
                                                 {SNG_BLINDS.map((b, i) => (
@@ -846,7 +821,6 @@ const Dashboard: React.FC = () => {
                                                         {b.smallBlind} / {b.bigBlind}
                                                     </option>
                                                 ))}
-                                                {customBlinds && <option value="custom">{customBlinds.smallBlind} / {customBlinds.bigBlind} (Custom)</option>}
                                             </select>
                                             </div>
                                             <div>
@@ -871,7 +845,6 @@ const Dashboard: React.FC = () => {
                                             <p className="text-xs">Flat fee to the creator on top of the buy-in — 0 for none.</p>
                                             </div>
                                             <div className="creation-span">
-                                            <button type="button" className="creation-secondary mt-3" onClick={() => setShowAdvanced(true)}>Advanced Options (Custom Params)</button>
                                             <details className="mt-3">
                                                 <summary>Show Blind Structure</summary>
                                                 <table className="w-full text-sm"><thead><tr><th>Level</th><th>Small blind</th><th>Big blind</th><th>Duration</th></tr></thead>
