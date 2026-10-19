@@ -819,7 +819,7 @@ const Dashboard: React.FC = () => {
                                             <p className="text-xs text-gray-400 mt-1">All players pay the same buy in</p>
                                             </div>
                                             <div>
-                                            <label className="block text-white text-sm mb-1 mt-3">Starting Stack (chips)</label>
+                                            <label className="block text-white text-sm mb-1">Starting Stack (chips)</label>
                                             <select
                                                 aria-label="Starting stack"
                                                 value={modalStartingStack}
@@ -834,7 +834,7 @@ const Dashboard: React.FC = () => {
                                             <input aria-label="Custom starting stack" type="number" min="1" step="1" value={modalStartingStack} onChange={e => setModalStartingStack(Number(e.target.value))} />
                                             </div>
                                             <div>
-                                            <label className="block text-white text-sm mb-1 mt-3">Starting Blinds (chips)</label>
+                                            <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
                                             <select
                                                 aria-label="Starting blinds"
                                                 value={customBlinds ? "custom" : modalSngBlindsIndex}
@@ -850,7 +850,7 @@ const Dashboard: React.FC = () => {
                                             </select>
                                             </div>
                                             <div>
-                                            <label className="block text-white text-sm mb-1 mt-3">Blind Level Duration</label>
+                                            <label className="block text-white text-sm mb-1">Blind Level Duration</label>
                                             <select
                                                 aria-label="Blind level duration"
                                                 value={modalBlindLevelDuration}
@@ -865,7 +865,7 @@ const Dashboard: React.FC = () => {
                                             </select>
                                             </div>
                                             <div>
-                                            <label className="block text-sm mt-3">Entry Fee ($)
+                                            <label className="block text-sm">Entry Fee ($)
                                                 <input aria-label="Entry fee" type="number" min="0" step="0.01" value={entryFee} onChange={e => setEntryFee(Number(e.target.value))} />
                                             </label>
                                             <p className="text-xs">Flat fee to the creator on top of the buy-in — 0 for none.</p>
