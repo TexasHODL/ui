@@ -61,4 +61,36 @@ describe("create table modal layout", () => {
         const base = css.slice(css.indexOf(".creation-form-grid"), css.indexOf("@media (min-width: 800px)"));
         expect(base).toContain("grid-template-columns: minmax(0, 1fr);");
     });
+
+    it("orders the lobby popup like the inline form and labels the custom stack", () => {
+        const lobby = readFileSync("src/pages/Dashboard.tsx", "utf8");
+        const inline = readFileSync("src/pages/TableAdminPage.tsx", "utf8");
+        const at = (source: string, text: string) => {
+            const index = source.indexOf(text);
+            expect(index).toBeGreaterThan(-1);
+            return index;
+        };
+        const name = at(lobby, "Table Name");
+        const gameType = at(lobby, ">Game Type<");
+        const game = at(lobby, ">Game<");
+        const limit = at(lobby, ">Limit<");
+        const seats = at(lobby, "lobby-max-players");
+        const buyIn = at(lobby, "Tournament Buy-In");
+        const fee = at(lobby, "Entry Fee");
+        const stack = at(lobby, "Starting Stack (chips)");
+        const blinds = at(lobby, "Starting Blinds (chips)");
+        const duration = at(lobby, "Blind Level Duration");
+        expect(name).toBeLessThan(gameType);
+        expect(gameType).toBeLessThan(game);
+        expect(game).toBeLessThan(limit);
+        expect(limit).toBeLessThan(seats);
+        expect(seats).toBeLessThan(buyIn);
+        expect(buyIn).toBeLessThan(fee);
+        expect(fee).toBeLessThan(stack);
+        expect(stack).toBeLessThan(blinds);
+        expect(blinds).toBeLessThan(duration);
+        expect(lobby).toContain("Custom stack (chips)");
+        expect(inline).toContain("Custom stack (chips)");
+        expect(lobby).not.toContain("aria-label=\"Custom starting stack\"");
+    });
 });
