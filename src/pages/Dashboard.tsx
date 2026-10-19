@@ -1,6 +1,5 @@
 import { ModalHeader } from "../components/common/ModalHeader";
-import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import { TABLE_SEAT_OPTIONS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { TABLE_SEAT_OPTIONS } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
@@ -109,32 +108,21 @@ const Dashboard: React.FC = () => {
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
     const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(1); // 25 / 50
-    const [customBlinds, setCustomBlinds] = useState<{ smallBlind: number; bigBlind: number } | null>(null);
     const [entryFee, setEntryFee] = useState(0);
-    const [showAdvanced, setShowAdvanced] = useState(false);
     const [enableRake, setEnableRake] = useState(false);
     const [rakeThreshold, setRakeThreshold] = useState(0);
     const [rakePercentage, setRakePercentage] = useState(5);
     const [rakeCap, setRakeCap] = useState(0.1);
-    const applyAdvanced = (params: AdvancedSngParams) => {
-        if (params.maxPlayers !== undefined) setModalPlayerCount(params.maxPlayers);
-        if (params.buyIn !== undefined) setModalSitAndGoBuyIn(params.buyIn);
-        if (params.startingStack !== undefined) setModalStartingStack(params.startingStack);
-        if (params.blindLevelDuration !== undefined) setModalBlindLevelDuration(params.blindLevelDuration);
-        if (params.smallBlind !== undefined || params.bigBlind !== undefined) {
-            setCustomBlinds({ smallBlind: params.smallBlind ?? modalSmallBlind, bigBlind: params.bigBlind ?? modalBigBlind });
-        }
-    };
 
     // Cash blinds are dollars (BLIND_LEVELS); Sit & Go blinds are chips (SNG_BLINDS).
     const isModalTournament = isTournamentFormat(modalGameFormat);
     const modalSmallBlind = useMemo(
-        () => (isModalTournament ? (customBlinds ?? SNG_BLINDS[modalSngBlindsIndex]).smallBlind : BLIND_LEVELS[selectedBlindLevel].smallBlind),
-        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel, customBlinds]
+        () => (isModalTournament ? SNG_BLINDS[modalSngBlindsIndex].smallBlind : BLIND_LEVELS[selectedBlindLevel].smallBlind),
+        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel]
     );
     const modalBigBlind = useMemo(
-        () => (isModalTournament ? (customBlinds ?? SNG_BLINDS[modalSngBlindsIndex]).bigBlind : BLIND_LEVELS[selectedBlindLevel].bigBlind),
-        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel, customBlinds]
+        () => (isModalTournament ? SNG_BLINDS[modalSngBlindsIndex].bigBlind : BLIND_LEVELS[selectedBlindLevel].bigBlind),
+        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel]
     );
 
     // Calculate actual buy-in values from BB using utility function
@@ -634,11 +622,9 @@ const Dashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {showCreateGameModal && <AdvancedSngParamsModal isOpen={showAdvanced} onClose={() => setShowAdvanced(false)} onApply={applyAdvanced}
-                        current={{ maxPlayers: modalPlayerCount, buyIn: modalSitAndGoBuyIn, startingStack: modalStartingStack, smallBlind: modalSmallBlind, bigBlind: modalBigBlind, blindLevelDuration: modalBlindLevelDuration }} />}
                     {/* Create New Game Modal */}
                     {showCreateGameModal && (
-                        <div className="creation-overlay" style={showAdvanced ? { display: "none" } : undefined}>
+                        <div className="creation-overlay">
                             <div className="table-creation creation-modal" role="dialog" aria-modal="true" aria-labelledby="create-table-title">
                                 <ModalHeader kicker="Your game, your table" titleId="create-table-title" title="Create a table." subtitle="Choose your setup. Invite your players." />
                                 <div className="space-y-4">
@@ -823,8 +809,8 @@ const Dashboard: React.FC = () => {
                                             <label className="block text-white text-sm mb-1 mt-3">Starting Blinds (chips)</label>
                                             <select
                                                 aria-label="Starting blinds"
-                                                value={customBlinds ? "custom" : modalSngBlindsIndex}
-                                                onChange={e => { setCustomBlinds(null); setModalSngBlindsIndex(Number(e.target.value)); }}
+                                                value={modalSngBlindsIndex}
+                                                onChange={e => setModalSngBlindsIndex(Number(e.target.value))}
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             >
                                                 {SNG_BLINDS.map((b, i) => (
@@ -832,7 +818,6 @@ const Dashboard: React.FC = () => {
                                                         {b.smallBlind} / {b.bigBlind}
                                                     </option>
                                                 ))}
-                                                {customBlinds && <option value="custom">{customBlinds.smallBlind} / {customBlinds.bigBlind} (Custom)</option>}
                                             </select>
                                             <label className="block text-white text-sm mb-1 mt-3">Blind Level Duration</label>
                                             <select
@@ -851,7 +836,6 @@ const Dashboard: React.FC = () => {
                                                 <input aria-label="Entry fee" type="number" min="0" step="0.01" value={entryFee} onChange={e => setEntryFee(Number(e.target.value))} />
                                             </label>
                                             <p className="text-xs">Flat fee to the creator on top of the buy-in — 0 for none.</p>
-                                            <button type="button" className="creation-secondary mt-3" onClick={() => setShowAdvanced(true)}>Advanced Options (Custom Params)</button>
                                             <details className="mt-3">
                                                 <summary>Show Blind Structure</summary>
                                                 <table className="w-full text-sm"><thead><tr><th>Level</th><th>Small blind</th><th>Big blind</th><th>Duration</th></tr></thead>
