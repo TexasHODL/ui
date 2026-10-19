@@ -12,7 +12,9 @@ const mockForceClose = jest.fn();
 let mockAddress = "owner";
 let mockSeats: Record<string, number> = {};
 jest.mock("../hooks/game/useLobbySeats", () => ({ useLobbySeats: () => mockSeats }));
-const base = { minBuyIn: "200000", maxBuyIn: "1000000", minPlayers: 2, maxPlayers: 6, smallBlind: "10000", bigBlind: "20000", gameVariant: GameVariant.TEXAS_HOLDEM, status: "waiting" };
+let mockStarted: Record<string, boolean> = {};
+jest.mock("../hooks/game/useLobbyTournamentStarted", () => ({ useLobbyTournamentStarted: () => mockStarted }));
+const base = { minBuyIn: "200000", maxBuyIn: "1000000", minPlayers: 2, maxPlayers: 6, smallBlind: "10000", bigBlind: "20000", gameVariant: GameVariant.TEXAS_HOLDEM, status: "waiting", scheduledStartTime: undefined as number | undefined };
 const UNNAMED_ID = "0x031d57314cc4ba07a0ae7edaa0c8c9ff3507dc81b8af99ac8cfe5ba9f5f9aea9";
 const mockGames = [
     { ...base, gameId: "mine", name: "My empty table", creator: "OWNER", gameFormat: GameFormat.CASH, currentPlayers: 0 },
@@ -29,7 +31,7 @@ jest.mock("./common", () => ({ Pagination: () => null }));
 jest.mock("./modals/DeleteTableModal", () => ({ __esModule: true, default: ({ isOpen, gameId }: { isOpen: boolean; gameId: string }) => isOpen ? <div role="dialog">Delete confirmation: {gameId}</div> : null }));
 jest.mock("./modals/ForceCloseTableModal", () => ({ __esModule: true, default: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div role="dialog">Refund confirmation</div> : null }));
 
-beforeEach(() => { jest.clearAllMocks(); mockAddress = "owner"; mockSeats = {}; });
+beforeEach(() => { jest.clearAllMocks(); mockAddress = "owner"; mockSeats = {}; mockStarted = {}; });
 
 test("seated players get their seat badge and return link, distinct from ownership", () => {
     mockAddress = "player-not-owner";
@@ -140,6 +142,41 @@ test("Create table uses the primary orange-to-pink gradient", () => {
     expect(rule).toContain("color: #200c1c");
     fireEvent.click(button);
     expect(onCreateTable).toHaveBeenCalledTimes(1);
+});
+
+test("a scheduled tournament says Started only after the hand has begun", () => {
+    const game = mockGames.find(item => item.gameId === "tournament")!;
+    const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
+    game.scheduledStartTime = Date.now() - 60_000;
+    game.currentPlayers = 5;
+    game.minPlayers = 2;
+    try {
+        const { unmount } = render(<TableList />);
+        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("scheduled-start-label")).toHaveTextContent("Starting");
+        unmount();
+        mockStarted = { tournament: true };
+        render(<TableList />);
+        const row = within(screen.getByText("My tournament").closest("tr")!);
+        expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Started");
+        expect(row.queryByText("Starting")).not.toBeInTheDocument();
+    } finally {
+        Object.assign(game, previous);
+    }
+});
+
+test("a cancelled scheduled tournament keeps its cancelled label", () => {
+    const game = mockGames.find(item => item.gameId === "tournament")!;
+    const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
+    game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
+    game.currentPlayers = 1;
+    game.minPlayers = 4;
+    mockStarted = { tournament: true };
+    try {
+        render(<TableList />);
+        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("scheduled-start-label")).toHaveTextContent("Cancelled: not enough players");
+    } finally {
+        Object.assign(game, previous);
+    }
 });
 
 test("share buttons copy a direct table link without an options menu", () => {
