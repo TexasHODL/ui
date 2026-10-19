@@ -76,6 +76,9 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const currentPage = Math.min(page, Math.max(1, Math.ceil(games.length / PAGE_SIZE)));
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
+    // Every sit-and-go and tournament on the page, scheduled or not. A finished
+    // table can be past the grace window or unscheduled with empty seats after
+    // busts; both still need public state so Watch can replace Open table.
     const startedTables = useLobbyTournamentStarted(
         pagedGames.filter(game => isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat)).map(game => game.gameId).join(","),
         rawGames
@@ -251,10 +254,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const played = mark === "started" || mark === "finished";
                                 const showCancelled = phase === "cancelled" && !played;
                                 const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
-                                // Full tables already use the grey Watch link (?watch=1). A started
-                                // sit-and-go or tournament uses that same link while seats are still
-                                // open. Seated players return; finished and never-started cancelled stay as they are.
-                                const watch = !seated && !showCancelled && (full || (tournamentStyle && mark === "started"));
+                                // Full tables already use the grey Watch link (?watch=1). A started or
+                                // finished sit-and-go or tournament uses that same link while seats
+                                // are still open. Seated players return; a game that never started
+                                // keeps Cancelled.
+                                const watch = !seated && !showCancelled && (full || (tournamentStyle && played));
                                 const schedule = scheduledLabel(game, mark);
                                 const stakes = tournament
                                     ? "Tournament"
