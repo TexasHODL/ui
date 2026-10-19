@@ -49,6 +49,17 @@ import { colors } from "../utils/colorConfig";
 
 /** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
 const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
+const STACK_PRESETS = [
+    { value: 1000, label: "Turbo (1000)" },
+    { value: 1500, label: "Standard (1500)" },
+    { value: 3000, label: "Deep Stack (3000)" }
+] as const;
+const DURATION_PRESETS = [
+    { value: 3, label: "Hyper (3 min)" },
+    { value: 5, label: "Turbo (5 min)" },
+    { value: 10, label: "Standard (10 min)" },
+    { value: 15, label: "Deep (15 min)" }
+] as const;
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -637,63 +648,8 @@ const Dashboard: React.FC = () => {
                         >
                                 <ModalHeader kicker="Your game, your table" titleId="create-table-title" title="Create a table." subtitle="Choose your setup. Invite your players." />
                                 <div className="creation-form-grid">
-                                    <div>
-                                        <label className="block text-white text-sm mb-1">Game Type</label>
-                                        <select
-                                            aria-label="Game type"
-                                            value={modalGameType}
-                                            onChange={e => {
-                                                const type = toCreateGameType(e.target.value);
-                                                if (type) setModalGameType(type);
-                                            }}
-                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            data-testid="create-game-type"
-                                        >
-                                            {CREATE_GAME_TYPES.map(type => (
-                                                <option key={type} value={type}>
-                                                    {createGameTypeLabel(type)}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    {/* Variant and betting limit (ui#768) */}
-                                    <>
-                                        <div>
-                                            <label className="block text-white text-sm mb-1">Game</label>
-                                            <select
-                                                aria-label="Game"
-                                                value={modalGameVariant}
-                                                onChange={e => {
-                                                    const variant = toGameVariant(e.target.value);
-                                                    if (!variant) return;
-                                                    setModalGameVariant(variant);
-                                                    setModalBettingLimit(defaultBettingLimitFor(variant));
-                                                }}
-                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            >
-                                                <option value={GameVariant.TEXAS_HOLDEM}>Texas Hold&apos;em</option>
-                                                <option value={GameVariant.OMAHA}>Omaha</option>
-                                            </select>
-                                        </div>
-                                        <div className="flex-1">
-                                            <label className="block text-white text-sm mb-1">Limit</label>
-                                            <select
-                                                value={modalBettingLimit}
-                                                onChange={e => {
-                                                    const limit = toCreatableBettingLimit(e.target.value);
-                                                    if (limit) setModalBettingLimit(limit);
-                                                }}
-                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            >
-                                                <option value={BettingLimit.NO_LIMIT}>No-Limit</option>
-                                                <option value={BettingLimit.POT_LIMIT}>Pot-Limit</option>
-                                            </select>
-                                        </div>
-                                    </>
-
                                     {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
-                                    <div>
+                                    <div className="creation-span">
                                         <label className="block text-white text-sm mb-1">
                                             Table Name <span className="text-gray-400">(optional)</span>
                                         </label>
@@ -724,6 +680,59 @@ const Dashboard: React.FC = () => {
                                                 Free if left blank. Lowercase a–z, 0–9 and hyphens; $0.10 per character.
                                             </p>
                                         )}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-white text-sm mb-1">Game Type</label>
+                                        <select
+                                            aria-label="Game type"
+                                            value={modalGameType}
+                                            onChange={e => {
+                                                const type = toCreateGameType(e.target.value);
+                                                if (type) setModalGameType(type);
+                                            }}
+                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            data-testid="create-game-type"
+                                        >
+                                            {CREATE_GAME_TYPES.map(type => (
+                                                <option key={type} value={type}>
+                                                    {createGameTypeLabel(type)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Variant and betting limit (ui#768) */}
+                                    <div>
+                                            <label className="block text-white text-sm mb-1">Game</label>
+                                            <select
+                                                aria-label="Game"
+                                                value={modalGameVariant}
+                                                onChange={e => {
+                                                    const variant = toGameVariant(e.target.value);
+                                                    if (!variant) return;
+                                                    setModalGameVariant(variant);
+                                                    setModalBettingLimit(defaultBettingLimitFor(variant));
+                                                }}
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                <option value={GameVariant.TEXAS_HOLDEM}>Texas Hold&apos;em</option>
+                                                <option value={GameVariant.OMAHA}>Omaha</option>
+                                            </select>
+                                        </div>
+                                    <div>
+                                            <label className="block text-white text-sm mb-1">Limit</label>
+                                            <select
+                                                value={modalBettingLimit}
+                                                onChange={e => {
+                                                    const limit = toCreatableBettingLimit(e.target.value);
+                                                    if (limit) setModalBettingLimit(limit);
+                                                }}
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                <option value={BettingLimit.NO_LIMIT}>No-Limit</option>
+                                                <option value={BettingLimit.POT_LIMIT}>Pot-Limit</option>
+                                            </select>
                                     </div>
 
                                         <div>
@@ -837,55 +846,74 @@ const Dashboard: React.FC = () => {
                                             <p className="text-xs text-gray-400 mt-1">All players pay the same buy in</p>
                                             </div>
                                             <div>
+                                            <label className="block text-white text-sm mb-1" htmlFor="lobby-entry-fee">Entry Fee ($)</label>
+                                            <input
+                                                id="lobby-entry-fee"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                value={entryFee}
+                                                onChange={e => setEntryFee(Number(e.target.value))}
+                                                placeholder="0"
+                                            />
+                                            <p className="text-xs text-gray-400 mt-1">Flat fee to the creator on top of the buy-in — 0 for none.</p>
+                                            </div>
+                                            <div className="creation-span">
                                             <label className="block text-white text-sm mb-1">Starting Stack (chips)</label>
-                                            <select
-                                                aria-label="Starting stack"
-                                                value={modalStartingStack}
-                                                onChange={e => setModalStartingStack(Number(e.target.value))}
-                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            >
-                                                {![1000, 1500, 3000].includes(modalStartingStack) && <option value={modalStartingStack}>Custom ({modalStartingStack})</option>}
-                                                <option value={1000}>Turbo (1,000)</option>
-                                                <option value={1500}>Standard (1,500)</option>
-                                                <option value={3000}>Deep Stack (3,000)</option>
-                                            </select>
-                                            <input aria-label="Custom starting stack" type="number" min="1" step="1" value={modalStartingStack} onChange={e => setModalStartingStack(Number(e.target.value))} />
-                                            </div>
-                                            <div>
-                                            <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
-                                            <select
-                                                aria-label="Starting blinds"
-                                                value={modalSngBlindsIndex}
-                                                onChange={e => setModalSngBlindsIndex(Number(e.target.value))}
-                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            >
-                                                {SNG_BLINDS.map((b, i) => (
-                                                    <option key={b.bigBlind} value={i}>
-                                                        {b.smallBlind} / {b.bigBlind}
-                                                    </option>
+                                            <div className="creation-preset-row" role="group" aria-label="Starting stack">
+                                                {STACK_PRESETS.map(preset => (
+                                                    <button
+                                                        key={preset.value}
+                                                        type="button"
+                                                        onClick={() => setModalStartingStack(preset.value)}
+                                                        className={modalStartingStack === preset.value ? "creation-preset-active" : "creation-preset"}
+                                                    >
+                                                        {preset.label}
+                                                    </button>
                                                 ))}
-                                            </select>
                                             </div>
-                                            <div>
+                                            <div className="creation-custom-field">
+                                                <label htmlFor="lobby-custom-stack">Custom stack (chips)</label>
+                                                <input
+                                                    id="lobby-custom-stack"
+                                                    type="number"
+                                                    min="1"
+                                                    step="1"
+                                                    value={modalStartingStack}
+                                                    onChange={e => setModalStartingStack(Number(e.target.value))}
+                                                    placeholder="e.g. 1500"
+                                                />
+                                            </div>
+                                            </div>
+                                            <div className="creation-span">
+                                            <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
+                                            <div className="creation-preset-row" role="group" aria-label="Starting blinds">
+                                                {SNG_BLINDS.map((b, i) => (
+                                                    <button
+                                                        key={b.bigBlind}
+                                                        type="button"
+                                                        onClick={() => setModalSngBlindsIndex(i)}
+                                                        className={modalSngBlindsIndex === i ? "creation-preset-active" : "creation-preset"}
+                                                    >
+                                                        {b.smallBlind} / {b.bigBlind}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            </div>
+                                            <div className="creation-span">
                                             <label className="block text-white text-sm mb-1">Blind Level Duration</label>
-                                            <select
-                                                aria-label="Blind level duration"
-                                                value={modalBlindLevelDuration}
-                                                onChange={e => setModalBlindLevelDuration(Number(e.target.value))}
-                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            >
-                                                <option value={3}>Hyper (3 min)</option>
-                                                <option value={5}>Turbo (5 min)</option>
-                                                <option value={10}>Standard (10 min)</option>
-                                                <option value={15}>Deep (15 min)</option>
-                                                {![3, 5, 10, 15].includes(modalBlindLevelDuration) && <option value={modalBlindLevelDuration}>{modalBlindLevelDuration} min (Custom)</option>}
-                                            </select>
+                                            <div className="creation-preset-row" role="group" aria-label="Blind level duration">
+                                                {DURATION_PRESETS.map(preset => (
+                                                    <button
+                                                        key={preset.value}
+                                                        type="button"
+                                                        onClick={() => setModalBlindLevelDuration(preset.value)}
+                                                        className={modalBlindLevelDuration === preset.value ? "creation-preset-active" : "creation-preset"}
+                                                    >
+                                                        {preset.label}
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <div>
-                                            <label className="block text-sm">Entry Fee ($)
-                                                <input aria-label="Entry fee" type="number" min="0" step="0.01" value={entryFee} onChange={e => setEntryFee(Number(e.target.value))} />
-                                            </label>
-                                            <p className="text-xs">Flat fee to the creator on top of the buy-in — 0 for none.</p>
                                             </div>
                                             <div className="creation-span">
                                             <details className="mt-3">

@@ -585,7 +585,7 @@ export default function TableAdminPage() {
                                         {/* Starting Stack */}
                                         <div>
                                             <label className="text-gray-300 text-xs mb-2 block">Starting Stack (chips)</label>
-                                            <div className="flex gap-2 flex-wrap mb-2">
+                                            <div className="flex gap-2 flex-wrap">
                                                 <button
                                                     type="button"
                                                     onClick={() => setStartingStack(1000)}
@@ -614,15 +614,19 @@ export default function TableAdminPage() {
                                                     Deep Stack (3000)
                                                 </button>
                                             </div>
-                                            <input
-                                                type="number"
-                                                min="100"
-                                                step="100"
-                                                aria-label="Starting stack"
-                                                value={startingStack}
-                                                onChange={e => setStartingStack(Number(e.target.value))}
-                                                className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
-                                            />
+                                            <div className="creation-custom-field">
+                                                <label htmlFor="admin-custom-stack">Custom stack (chips)</label>
+                                                <input
+                                                    id="admin-custom-stack"
+                                                    type="number"
+                                                    min="100"
+                                                    step="100"
+                                                    value={startingStack}
+                                                    onChange={e => setStartingStack(Number(e.target.value))}
+                                                    placeholder="e.g. 1500"
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                />
+                                            </div>
                                         </div>
 
                                         {/* Starting Blinds (chips) */}

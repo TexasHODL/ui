@@ -241,6 +241,17 @@
     opacity: 0.4;
     cursor: not-allowed;
 }
+.table-creation .creation-preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.table-creation .creation-custom-field {
+    margin-top: 14px;
+}
+.table-creation .creation-custom-field label {
+    display: block;
+}
 .table-creation :is(.creation-preset, .creation-preset-active) {
     min-height: 36px;
     padding: 8px 11px;
@@ -248,7 +259,10 @@
     border-radius: 8px;
     background: transparent;
     color: var(--theme-muted, #b9a6c8);
+    font-size: 13px;
+    line-height: 1.2;
     font-weight: 700;
+    cursor: pointer;
 }
 .table-creation .creation-preset-active {
     border-color: var(--theme-wash, #ba7fe766);
