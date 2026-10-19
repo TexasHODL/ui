@@ -1,3 +1,4 @@
+import { CreationDialog } from "../components/common/CreationDialog";
 import { ModalHeader } from "../components/common/ModalHeader";
 import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
 import { TABLE_SEAT_OPTIONS } from "../utils/sngAdvancedParams";
@@ -625,10 +626,16 @@ const Dashboard: React.FC = () => {
 
                     {/* Create New Game Modal */}
                     {showCreateGameModal && (
-                        <div className="creation-overlay">
-                            <div className="table-creation creation-modal" role="dialog" aria-modal="true" aria-labelledby="create-table-title">
+                        <CreationDialog
+                            titleId="create-table-title"
+                            onClose={() => {
+                                setShowCreateGameModal(false);
+                                setCreateGameError("");
+                                setModalTableName("");
+                            }}
+                        >
                                 <ModalHeader kicker="Your game, your table" titleId="create-table-title" title="Create a table." subtitle="Choose your setup. Invite your players." />
-                                <div className="space-y-4">
+                                <div className="creation-form-grid">
                                     <div>
                                         <label className="block text-white text-sm mb-1">Game Type</label>
                                         <select
@@ -646,6 +653,7 @@ const Dashboard: React.FC = () => {
                                     </div>
 
                                     {isSitAndGoFormat(modalGameFormat) && (
+                                        <div className="creation-span">
                                         <ScheduledStartCard checked={modalScheduled} onChange={setModalScheduled}>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 <div>
@@ -678,11 +686,12 @@ const Dashboard: React.FC = () => {
                                                 </p>
                                             </div>
                                         </ScheduledStartCard>
+                                        </div>
                                     )}
 
                                     {/* Variant and betting limit (ui#768) */}
-                                    <div className="flex gap-2">
-                                        <div className="flex-1">
+                                    <>
+                                        <div>
                                             <label className="block text-white text-sm mb-1">Game</label>
                                             <select
                                                 value={modalGameVariant}
@@ -712,7 +721,7 @@ const Dashboard: React.FC = () => {
                                                 <option value={BettingLimit.POT_LIMIT}>Pot-Limit</option>
                                             </select>
                                         </div>
-                                    </div>
+                                    </>
 
                                     {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
                                     <div>
@@ -769,7 +778,9 @@ const Dashboard: React.FC = () => {
                                     {/* Show different fields based on game format */}
                                     {isTournamentFormat(modalGameFormat) ? (
                                         // For Sit & Go and Tournament: Single buy-in field
-                                        <div>
+                                        <div className="creation-span">
+                                            <div className="creation-field-pairs">
+                                            <div>
                                             <label className="block text-white text-sm mb-1">Tournament Buy-In ($)</label>
                                             <input
                                                 type="number"
@@ -781,7 +792,9 @@ const Dashboard: React.FC = () => {
                                                 className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             />
                                             <p className="text-xs text-gray-400 mt-1">All players pay the same buy in</p>
-                                            <label className="block text-white text-sm mb-1 mt-3">Starting Stack (chips)</label>
+                                            </div>
+                                            <div>
+                                            <label className="block text-white text-sm mb-1">Starting Stack (chips)</label>
                                             <select
                                                 aria-label="Starting stack"
                                                 value={modalStartingStack}
@@ -794,7 +807,9 @@ const Dashboard: React.FC = () => {
                                                 <option value={3000}>Deep Stack (3,000)</option>
                                             </select>
                                             <input aria-label="Custom starting stack" type="number" min="1" step="1" value={modalStartingStack} onChange={e => setModalStartingStack(Number(e.target.value))} />
-                                            <label className="block text-white text-sm mb-1 mt-3">Starting Blinds (chips)</label>
+                                            </div>
+                                            <div>
+                                            <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
                                             <select
                                                 aria-label="Starting blinds"
                                                 value={modalSngBlindsIndex}
@@ -807,7 +822,9 @@ const Dashboard: React.FC = () => {
                                                     </option>
                                                 ))}
                                             </select>
-                                            <label className="block text-white text-sm mb-1 mt-3">Blind Level Duration</label>
+                                            </div>
+                                            <div>
+                                            <label className="block text-white text-sm mb-1">Blind Level Duration</label>
                                             <select
                                                 aria-label="Blind level duration"
                                                 value={modalBlindLevelDuration}
@@ -820,16 +837,22 @@ const Dashboard: React.FC = () => {
                                                 <option value={15}>Deep (15 min)</option>
                                                 {![3, 5, 10, 15].includes(modalBlindLevelDuration) && <option value={modalBlindLevelDuration}>{modalBlindLevelDuration} min (Custom)</option>}
                                             </select>
-                                            <label className="block text-sm mt-3">Entry Fee ($)
+                                            </div>
+                                            <div>
+                                            <label className="block text-sm">Entry Fee ($)
                                                 <input aria-label="Entry fee" type="number" min="0" step="0.01" value={entryFee} onChange={e => setEntryFee(Number(e.target.value))} />
                                             </label>
                                             <p className="text-xs">Flat fee to the creator on top of the buy-in — 0 for none.</p>
+                                            </div>
+                                            <div className="creation-span">
                                             <details className="mt-3">
                                                 <summary>Show Blind Structure</summary>
                                                 <table className="w-full text-sm"><thead><tr><th>Level</th><th>Small blind</th><th>Big blind</th><th>Duration</th></tr></thead>
                                                     <tbody>{Array.from({ length: 10 }, (_, i) => <tr key={i}><td>{i + 1}</td><td>{modalSmallBlind * 2 ** i}</td><td>{modalBigBlind * 2 ** i}</td><td>{modalBlindLevelDuration} min</td></tr>)}</tbody>
                                                 </table>
                                             </details>
+                                            </div>
+                                            </div>
                                         </div>
                                     ) : (
                                         // For Cash games: Blind level and buy-in in Big Blinds (BB)
@@ -852,7 +875,7 @@ const Dashboard: React.FC = () => {
                                             </div>
 
                                             {/* Preset buttons */}
-                                            <div>
+                                            <div className="creation-span">
                                                 <label className="block text-white text-sm mb-2">Buy-In Presets</label>
                                                 <div className="flex gap-2 flex-wrap">
                                                     <button
@@ -895,7 +918,7 @@ const Dashboard: React.FC = () => {
                                             </div>
 
                                             {/* Buy-in inputs in BB */}
-                                            <div className="flex gap-4">
+                                            <div className="creation-span flex gap-4">
                                                 <div className="flex-1">
                                                     <label className="block text-white text-sm mb-1">Minimum Buy-In (BB)</label>
                                                     <input
@@ -924,7 +947,7 @@ const Dashboard: React.FC = () => {
 
                                             {/* Calculated buy-in preview */}
                                             {modalBigBlind > 0 && (
-                                                <div className="creation-preview">
+                                                <div className="creation-preview creation-span">
                                                     <p className="text-xs text-gray-400 mb-1">Calculated Buy-In Range:</p>
                                                     <p className="text-sm text-green-400">
                                                         ${formatUsd(calculatedMinBuyIn)} - ${formatUsd(calculatedMaxBuyIn)}
@@ -958,7 +981,7 @@ const Dashboard: React.FC = () => {
                                         </select>
                                     </div>
 
-                                    {modalGameFormat === GameFormat.CASH && <div>
+                                    {modalGameFormat === GameFormat.CASH && <div className="creation-span">
                                         <label><input type="checkbox" checked={enableRake} onChange={e => setEnableRake(e.target.checked)} /> Enable Rake Collection</label>
                                         {enableRake && <div className="space-y-3 mt-3">
                                             <label className="block">Rake-Free Threshold (USDC)<input aria-label="Rake-free threshold" type="number" min="0" step="0.01" value={rakeThreshold} onChange={e => setRakeThreshold(Number(e.target.value))} /></label>
@@ -967,24 +990,24 @@ const Dashboard: React.FC = () => {
                                             <label className="block">Rake Owner Address<input aria-label="Rake owner" readOnly value={cosmosWallet.address ?? ""} /></label>
                                         </div>}
                                     </div>}
-                                    <div className="creation-fee">
+                                    <div className="creation-fee creation-span">
                                         <span className="text-gray-400">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds)</span>
                                         <span className="text-white font-mono">
                                             {creationFeeMicro === null ? "—" : `$${formatMicroUsd(creationFeeMicro.toString())}`}
                                         </span>
                                     </div>
                                     {insufficientForCreation && creationTotalMicro !== null && (
-                                        <p className="creation-notice">
+                                        <p className="creation-notice creation-span">
                                             You need ${formatMicroUsd(creationTotalMicro.toString())} to create this table (fee
                                             {normalizedTableName.length > 0 ? " + name" : ""}); your balance is ${formatUsd(numericUsdcBalance)}.
                                         </p>
                                     )}
 
-                                    {extraOptionsInvalid && <p role="alert">Enter a positive whole-number starting stack and valid non-negative fee/rake amounts.</p>}
-                                    {createGameError && <p className="text-red-500 text-sm">{createGameError}</p>}
-                                    {createTableError && <p className="text-red-500 text-sm">{createTableError.message}</p>}
+                                    {extraOptionsInvalid && <p className="creation-span" role="alert">Enter a positive whole-number starting stack and valid non-negative fee/rake amounts.</p>}
+                                    {createGameError && <p className="creation-span text-red-500 text-sm">{createGameError}</p>}
+                                    {createTableError && <p className="creation-span text-red-500 text-sm">{createTableError.message}</p>}
 
-                                    <div className="flex justify-end space-x-3">
+                                    <div className="creation-span flex justify-end space-x-3">
                                         <button
                                             onClick={() => {
                                                 setShowCreateGameModal(false);
@@ -1019,8 +1042,7 @@ const Dashboard: React.FC = () => {
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                        </CreationDialog>
                     )}
 
                     {/* Two-column layout: Wallet (fixed width) on left, Tables (flex) on right */}
