@@ -24,6 +24,7 @@
     width: min(100%, 460px);
     max-height: calc(100dvh - 40px);
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 28px;
     background: var(--theme-surface, #100c17);
     border: 1px solid var(--theme-wash, #be87e52e);
@@ -264,6 +265,26 @@
     line-height: 1.7;
     margin-top: 18px;
     font-weight: 700;
+}
+.creation-modal.creation-form {
+    width: min(100%, 920px);
+}
+.creation-form-grid,
+.creation-field-pairs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+@media (min-width: 800px) {
+    .creation-form-grid,
+    .creation-field-pairs {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+    .creation-form-grid > .creation-span,
+    .creation-field-pairs > .creation-span {
+        grid-column: 1 / -1;
+    }
 }
 @media (max-width: 900px) {
     .creation-layout {
