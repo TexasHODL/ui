@@ -1,4 +1,5 @@
 import { ModalHeader } from "../components/common/ModalHeader";
+import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
 import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
 import { TABLE_SEAT_OPTIONS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
@@ -659,51 +660,38 @@ const Dashboard: React.FC = () => {
                                     </div>
 
                                     {isSitAndGoFormat(modalGameFormat) && (
-                                        <div>
-                                            <label className="block text-white text-sm mb-1">Scheduled start</label>
-                                            <label className="flex items-center gap-2 text-white text-sm cursor-pointer" data-testid="scheduled-start-toggle">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={modalScheduled}
-                                                    onChange={e => setModalScheduled(e.target.checked)}
-                                                    className="accent-blue-500"
-                                                />
-                                                Start at a set time
-                                                <span className="text-gray-400 text-xs">— with whoever has registered, or earlier when full</span>
-                                            </label>
-                                            {modalScheduled && (
-                                                <div className="grid grid-cols-2 gap-3 mt-2">
-                                                    <div>
-                                                        <label className="block text-gray-300 text-xs mb-1">Starts at</label>
-                                                        <input
-                                                            type="datetime-local"
-                                                            aria-label="Scheduled start time"
-                                                            value={modalScheduledStart}
-                                                            onChange={e => setModalScheduledStart(e.target.value)}
-                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-gray-300 text-xs mb-1">Minimum players</label>
-                                                        <select
-                                                            aria-label="Minimum players"
-                                                            value={Math.min(modalSngMinPlayers, modalPlayerCount)}
-                                                            onChange={e => setModalSngMinPlayers(Number(e.target.value))}
-                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
-                                                        >
-                                                            {SNG_MIN_PLAYER_OPTIONS.filter(n => n <= modalPlayerCount).map(n => (
-                                                                <option key={n} value={n}>
-                                                                    {n}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <p className="col-span-2 text-gray-400 text-xs">
-                                                        Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
-                                                    </p>
+                                        <ScheduledStartCard checked={modalScheduled} onChange={setModalScheduled}>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label className="block text-gray-300 text-xs mb-1">Starts at</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        aria-label="Scheduled start time"
+                                                        value={modalScheduledStart}
+                                                        onChange={e => setModalScheduledStart(e.target.value)}
+                                                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                    />
                                                 </div>
-                                            )}
-                                        </div>
+                                                <div>
+                                                    <label className="block text-gray-300 text-xs mb-1">Minimum players</label>
+                                                    <select
+                                                        aria-label="Minimum players"
+                                                        value={Math.min(modalSngMinPlayers, modalPlayerCount)}
+                                                        onChange={e => setModalSngMinPlayers(Number(e.target.value))}
+                                                        className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                    >
+                                                        {SNG_MIN_PLAYER_OPTIONS.filter(n => n <= modalPlayerCount).map(n => (
+                                                            <option key={n} value={n}>
+                                                                {n}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <p className="sm:col-span-2 text-gray-400 text-xs">
+                                                    Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                </p>
+                                            </div>
+                                        </ScheduledStartCard>
                                     )}
 
                                     {/* Variant and betting limit (ui#768) */}
