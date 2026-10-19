@@ -179,8 +179,9 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
                         </div>
                     )}
 
-                    {/* Players Progress Display */}
-                    <div className="mb-6">
+                    {/* Players Progress Display. Hidden once cancelled: the field is
+                        closed, and "waiting for more" would contradict the refund. */}
+                    {phase !== "cancelled" && <div className="mb-6">
                         <div className="bg-gray-700/80 backdrop-blur-sm rounded-lg p-4 border border-blue-500/30">
                             <div className="text-center mb-3">
                                 <div className="text-xs text-blue-300 font-semibold mb-2">PLAYERS JOINED</div>
@@ -209,17 +210,17 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
                                 </span>
                             </div>
                         </div>
-                    </div>
+                    </div>}
 
                     {/* Your Status */}
-                    <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3 mb-4">
+                    {phase !== "cancelled" && <div className="bg-green-500/20 border border-green-500/30 rounded-lg p-3 mb-4">
                         <div className="flex items-center justify-center gap-2">
                             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                             <span className="text-green-400 font-semibold text-sm">
                                 Waiting for players, you are {playersJoined} of {maxPlayers}
                             </span>
                         </div>
-                    </div>
+                    </div>}
 
 
                     {/* Leave Game — inline two-step confirmation (no separate modal) */}
@@ -275,11 +276,11 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
                     )}
 
                     <div className="text-center">
-                        <p className="text-xs text-gray-400">
+                        {phase !== "cancelled" && <p className="text-xs text-gray-400">
                             {scheduled
                                 ? "Starts when the table is full, or at the start time with at least the minimum"
                                 : "Tournament starts automatically when all players are seated"}
-                        </p>
+                        </p>}
                         <div className="flex items-center justify-center gap-1 mt-2">
                             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
                             <span className="text-xs text-gray-400">Powered by Block52</span>

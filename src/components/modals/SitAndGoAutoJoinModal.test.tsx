@@ -6,7 +6,10 @@ const mockJoin = jest.fn();
 const mockBalance = jest.fn();
 let mockSeats = [0, 1, 2, 3, 4, 5];
 let mockPlaying = false;
-const mockOptions = { maxBuyIn: "1000000", entryFee: "0", smallBlind: "10", bigBlind: "20", startingStack: "1500", maxPlayers: 6 };
+const mockOptions: {
+    maxBuyIn: string; entryFee: string; smallBlind: string; bigBlind: string; startingStack: string; maxPlayers: number;
+    scheduledStartTime?: number; minPlayers?: number;
+} = { maxBuyIn: "1000000", entryFee: "0", smallBlind: "10", bigBlind: "20", startingStack: "1500", maxPlayers: 6 };
 jest.mock("../../hooks/game/useGameOptions", () => ({ useGameOptions: () => ({ gameOptions: mockOptions }) }));
 jest.mock("../../hooks/game/useVacantSeatData", () => ({ useVacantSeatData: () => ({ emptySeatIndexes: mockSeats, isUserAlreadyPlaying: mockPlaying }) }));
 jest.mock("../../hooks/playerActions/joinTable", () => ({ joinTable: (...args: unknown[]) => mockJoin(...args) }));
@@ -35,6 +38,8 @@ beforeEach(() => {
     mockPlaying = false;
     mockContext.gameFormat = undefined;
     mockContext.gameState = { gameOptions: { protocolFeeBps: 1000 } };
+    delete mockOptions.scheduledStartTime;
+    delete mockOptions.minPlayers;
     mockBalance.mockResolvedValue("0");
     localStorage.setItem(STORAGE_KEYS.cosmosAddress, "fixture-address");
 });
@@ -95,6 +100,17 @@ it("closes entry once the tournament has started", () => {
     mockContext.gameState = { handNumber: 8, previousActions: [], gameOptions: { protocolFeeBps: 1000 } };
     rerender(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockJoin).not.toHaveBeenCalled();
+});
+
+it("does not show a buy-in on a cancelled tournament", () => {
+    mockOptions.scheduledStartTime = Date.now() - 20 * 60 * 1000;
+    mockOptions.minPlayers = 4;
+    mockContext.gameFormat = "sit-and-go";
+    mockContext.gameState = { players: [{ seat: 1 }], gameOptions: { protocolFeeBps: 1000 } };
+    render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Take My Seat" })).not.toBeInTheDocument();
     expect(mockJoin).not.toHaveBeenCalled();
 });
 

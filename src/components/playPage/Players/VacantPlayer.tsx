@@ -29,7 +29,7 @@ import { microToUsdc } from "../../../constants/currency";
 import { hasElements } from "../../../utils/guards";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { tournamentRegistrationClosed } from "../../../utils/scheduledSng";
+import { scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
 
@@ -40,6 +40,13 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const { gameOptions } = useGameOptions();
         const { gameState, gameFormat } = useGameStateContext();
         const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
+        const cancelledBeforeStart = scheduledSngPhase({
+            scheduledStartTime: gameOptions?.scheduledStartTime,
+            minPlayers: gameOptions?.minPlayers ?? 2,
+            registered: gameState?.players?.length ?? 0,
+            nowMs: Date.now()
+        }) === "cancelled";
+        const joinClosed = registrationClosed || cancelledBeforeStart;
         const cosmosWallet = useCosmosWallet();
         const { currentNetwork } = useNetwork();
 
@@ -54,15 +61,15 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const [showUSDCDepositModal, setShowUSDCDepositModal] = useState(false);
 
         // Memoize seat status checks
-        const canJoinThisSeat = useMemo(() => !registrationClosed && checkCanJoinSeat(index), [checkCanJoinSeat, index, registrationClosed]);
+        const canJoinThisSeat = useMemo(() => !joinClosed && checkCanJoinSeat(index), [checkCanJoinSeat, index, joinClosed]);
 
         useEffect(() => {
-            if (registrationClosed) setShowBuyInModal(false);
-        }, [registrationClosed]);
+            if (joinClosed) setShowBuyInModal(false);
+        }, [joinClosed]);
 
         // Memoize handlers
         const handleJoinClick = useCallback(() => {
-            if (!canJoinThisSeat || registrationClosed) return;
+            if (!canJoinThisSeat || joinClosed) return;
 
             // Initialize buy-in amount with maxBuyIn for Cash games
             const maxBuyInDollars = formatUSDCToSimpleDollars(gameOptions?.maxBuyIn);
@@ -80,7 +87,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             setJoinError(null);
             setJoinSuccess(false);
             setJoinResponse(null);
-        }, [canJoinThisSeat, registrationClosed, gameOptions?.maxBuyIn, cosmosWallet.balance]);
+        }, [canJoinThisSeat, joinClosed, gameOptions?.maxBuyIn, cosmosWallet.balance]);
 
         const handleSeatClick = useCallback(() => {
             if (!isUserAlreadyPlaying && canJoinThisSeat) {
@@ -136,7 +143,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
         // Handle buy-in confirmation and join
         const handleBuyInConfirm = useCallback(async () => {
-            if (registrationClosed) return;
+            if (joinClosed) return;
             if (!tableId) {
                 setJoinError("Missing table ID");
                 return;
@@ -207,7 +214,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                 setJoinError(err instanceof Error ? err.message : "Unknown error joining table");
                 setIsJoining(false);
             }
-        }, [registrationClosed, tableId, index, onJoin, gameOptions?.minBuyIn, gameOptions?.maxBuyIn, buyInAmount, isSitAndGo, currentNetwork]);
+        }, [joinClosed, tableId, index, onJoin, gameOptions?.minBuyIn, gameOptions?.maxBuyIn, buyInAmount, isSitAndGo, currentNetwork]);
 
         // Memoize container styles
         const containerStyle = useMemo(
@@ -222,9 +229,9 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         const seatText = useMemo(
             () => ({
                 title: "Seat " + index,
-                subtitle: isUserAlreadyPlaying || registrationClosed ? "Open seat" : canJoinThisSeat ? "Take a seat" : "Unavailable"
+                subtitle: isUserAlreadyPlaying || joinClosed ? "Open seat" : canJoinThisSeat ? "Take a seat" : "Unavailable"
             }),
-            [isUserAlreadyPlaying, registrationClosed, canJoinThisSeat, index]
+            [isUserAlreadyPlaying, joinClosed, canJoinThisSeat, index]
         );
 
         // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
