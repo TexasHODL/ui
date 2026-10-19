@@ -8,7 +8,7 @@ jest.mock("../../../../context/GameSettingsContext", () => ({
         playerActionSounds: true,
         autoMuck: false,
         sitInOptions: false,
-        preSelectCheck: false,
+        preSelectCheck: true,
         leftHandMode: false,
         toggleTurnNotificationSound: jest.fn(),
         togglePlayerActionSounds: jest.fn(),
@@ -30,7 +30,7 @@ describe("Table settings", () => {
         const onClose = jest.fn();
         render(<TableSettingsSidebar isOpen tableStyle="modern" onTableStyleChange={onStyle} onClose={onClose} />);
         expect(screen.getAllByRole("switch")).toHaveLength(6);
-        expect(screen.getByRole("switch", { name: "Pre-Select Check/Fold" })).toBeVisible();
+        expect(screen.getByRole("switch", { name: "Pre-Select Check/Fold" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("switch", { name: "Left-hand mode" })).toHaveAttribute("aria-checked", "false");
         expect(screen.getByRole("switch", { name: "Turn Notification Sound" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("switch", { name: "Auto Muck" })).toHaveAttribute("aria-checked", "false");

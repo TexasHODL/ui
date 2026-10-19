@@ -22,6 +22,10 @@ const LS_KEY_PLAYER_ACTION_SOUNDS = "setting_playeractionsounds";
 const LS_KEY_SEAT_AT_BOTTOM = "setting_seatatbottom";
 const LS_KEY_SITIN_OPTIONS = "setting_sitinoptions";
 const LS_KEY_PRE_SELECT_CHECK = "setting_preselectcheck";
+// Upstream leaves this off until the player opts in (ui#388). Ours is on until
+// they turn it off. readBoolSetting only uses this when the key is missing, so
+// a stored "false" stays off.
+const PRE_SELECT_CHECK_DEFAULT = true;
 const LS_KEY_LEFT_HAND = "setting_lefthand";
 
 function readBoolSetting(key: string, fallback: boolean): boolean {
@@ -47,10 +51,10 @@ export interface GameSettings {
     // When OFF (default), taking a seat auto-sits-in (dealt in next hand). When ON,
     // the sit-in method radios are shown so the player chooses (ui#550/#551).
     sitInOptions: boolean;
-    // When OFF (default), the pre-emptive "Check/Fold" box (ui#388) is hidden. When
-    // ON, it appears before your turn while checking would be free, so you can queue
-    // a Check/Fold (check if free, fold to a bet). Pure view/opt-in preference — the
-    // queued intent itself stays ephemeral per-round.
+    // On until the player turns it off. The Check/Fold box (ui#388) then appears
+    // before your turn while checking would be free, so you can queue a Check/Fold
+    // (check if free, fold to a bet). A missing saved value uses our default; a
+    // stored false is kept. The queued intent itself stays ephemeral per-round.
     preSelectCheck: boolean;
     // Landscape phones only. When on, the action column sits on the left edge.
     leftHandMode: boolean;
@@ -105,7 +109,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         readBoolSetting(LS_KEY_SITIN_OPTIONS, false)
     );
     const [preSelectCheck, setPreSelectCheck] = useState<boolean>(() =>
-        readBoolSetting(LS_KEY_PRE_SELECT_CHECK, false)
+        readBoolSetting(LS_KEY_PRE_SELECT_CHECK, PRE_SELECT_CHECK_DEFAULT)
     );
     const [leftHandMode, setLeftHandMode] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_LEFT_HAND, false)
