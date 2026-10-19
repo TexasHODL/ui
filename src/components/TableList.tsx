@@ -7,7 +7,7 @@ import { useDeleteGame } from "../hooks/game/useDeleteGame";
 import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
-import { useLobbyTournamentStarted } from "../hooks/game/useLobbyTournamentStarted";
+import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/game/useLobbyTournamentStarted";
 
 import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
 import { displayGameFormat } from "../utils/createGameType";
@@ -41,13 +41,14 @@ interface TableListProps {
 const scheduledPhase = (game: GameWithFormat): ScheduledSngPhase =>
     scheduledSngPhase({ scheduledStartTime: game.scheduledStartTime, minPlayers: game.minPlayers, registered: game.currentPlayers, nowMs: Date.now() });
 
-/** "Starts 20:30 · min 4", "Starting", "Started", or "Cancelled…" for a scheduled sit-and-go. */
-const scheduledLabel = (game: GameWithFormat, started: boolean): string =>
+/** "Starts 20:30 · min 4", "Starting", "Started", "Finished", or "Cancelled…" for a scheduled sit-and-go. */
+const scheduledLabel = (game: GameWithFormat, mark: LobbyTournamentMark | undefined): string =>
     scheduledLobbyLabel({
         phase: scheduledPhase(game),
         scheduledStartTime: game.scheduledStartTime,
         minPlayers: game.minPlayers,
-        started
+        started: mark === "started" || mark === "finished",
+        finished: mark === "finished"
     });
 
 const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, refreshKey = 0 }) => {
@@ -76,10 +77,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
     const startedTables = useLobbyTournamentStarted(
-        pagedGames.filter(game => {
-            const phase = scheduledPhase(game);
-            return phase === "registering" || phase === "ready" || phase === "short";
-        }).map(game => game.gameId).join(","),
+        pagedGames.filter(game => scheduledPhase(game) !== "unscheduled").map(game => game.gameId).join(","),
         rawGames
     );
     const occupiedSeats = clubGames.reduce((sum, game) => sum + game.currentPlayers, 0);
@@ -250,7 +248,10 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
                                 const phase = scheduledPhase(game);
-                                const schedule = scheduledLabel(game, startedTables[game.gameId] === true);
+                                const mark = startedTables[game.gameId];
+                                const played = mark === "started" || mark === "finished";
+                                const showCancelled = phase === "cancelled" && !played;
+                                const schedule = scheduledLabel(game, mark);
                                 const stakes = tournament
                                     ? "Tournament"
                                     : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
@@ -307,7 +308,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                 <a
                                                     href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
                                                     className={watch ? styles.watchButton : styles.actionButton}
-                                                    aria-label={(phase === "cancelled" ? "Cancelled " : seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
+                                                    aria-label={(showCancelled ? "Cancelled " : seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
                                                 >
                                                     {watch ? (
                                                         <>
@@ -317,7 +318,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                     ) : (
                                                         <>
                                                             <span className={seated ? styles.returnLabel : undefined}>
-                                                                {phase === "cancelled" ? "Cancelled" : seated ? "Return to table" : "Open table"}
+                                                                {showCancelled ? "Cancelled" : seated ? "Return to table" : "Open table"}
                                                             </span>
                                                             <FaArrowRight aria-hidden="true" />
                                                         </>

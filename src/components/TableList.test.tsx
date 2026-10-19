@@ -12,7 +12,7 @@ const mockForceClose = jest.fn();
 let mockAddress = "owner";
 let mockSeats: Record<string, number> = {};
 jest.mock("../hooks/game/useLobbySeats", () => ({ useLobbySeats: () => mockSeats }));
-let mockStarted: Record<string, boolean> = {};
+let mockStarted: Record<string, "started" | "finished"> = {};
 jest.mock("../hooks/game/useLobbyTournamentStarted", () => ({ useLobbyTournamentStarted: () => mockStarted }));
 const base = { minBuyIn: "200000", maxBuyIn: "1000000", minPlayers: 2, maxPlayers: 6, smallBlind: "10000", bigBlind: "20000", gameVariant: GameVariant.TEXAS_HOLDEM, status: "waiting", scheduledStartTime: undefined as number | undefined };
 const UNNAMED_ID = "0x031d57314cc4ba07a0ae7edaa0c8c9ff3507dc81b8af99ac8cfe5ba9f5f9aea9";
@@ -154,7 +154,7 @@ test("a scheduled tournament says Started only after the hand has begun", () => 
         const { unmount } = render(<TableList />);
         expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("scheduled-start-label")).toHaveTextContent("Starting");
         unmount();
-        mockStarted = { tournament: true };
+        mockStarted = { tournament: "started" };
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Started");
@@ -164,16 +164,58 @@ test("a scheduled tournament says Started only after the hand has begun", () => 
     }
 });
 
-test("a cancelled scheduled tournament keeps its cancelled label", () => {
+test("a tournament that never started keeps Cancelled, including the open button", () => {
     const game = mockGames.find(item => item.gameId === "tournament")!;
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
     game.currentPlayers = 1;
     game.minPlayers = 4;
-    mockStarted = { tournament: true };
     try {
         render(<TableList />);
-        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("scheduled-start-label")).toHaveTextContent("Cancelled: not enough players");
+        const row = within(screen.getByText("My tournament").closest("tr")!);
+        expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Cancelled: not enough players");
+        expect(row.getByRole("link", { name: "Cancelled My tournament" })).toBeInTheDocument();
+        expect(row.queryByRole("button", { name: "Close & refund" })).not.toBeInTheDocument();
+    } finally {
+        Object.assign(game, previous);
+    }
+});
+
+test("a started tournament that has lost players stays Started and keeps Open table", () => {
+    const game = mockGames.find(item => item.gameId === "tournament")!;
+    const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
+    game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
+    game.currentPlayers = 1;
+    game.minPlayers = 4;
+    mockStarted = { tournament: "started" };
+    try {
+        render(<TableList />);
+        const row = within(screen.getByText("My tournament").closest("tr")!);
+        expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Started");
+        expect(row.queryByText("Cancelled: not enough players")).not.toBeInTheDocument();
+        expect(row.getByRole("link", { name: "Open My tournament" })).toBeInTheDocument();
+        expect(row.queryByRole("button", { name: "Close & refund" })).not.toBeInTheDocument();
+    } finally {
+        Object.assign(game, previous);
+    }
+});
+
+test("a won tournament says Finished and still opens the table", () => {
+    const game = mockGames.find(item => item.gameId === "tournament")!;
+    const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
+    game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
+    game.currentPlayers = 1;
+    game.minPlayers = 4;
+    mockStarted = { tournament: "finished" };
+    try {
+        render(<TableList />);
+        const row = within(screen.getByText("My tournament").closest("tr")!);
+        expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Finished");
+        expect(row.queryByText("Started")).not.toBeInTheDocument();
+        expect(row.queryByText("Starting")).not.toBeInTheDocument();
+        expect(row.getByRole("link", { name: "Open My tournament" })).toHaveAttribute("href", "/table/tournament");
+        expect(row.queryByRole("button", { name: "Close & refund" })).not.toBeInTheDocument();
+        expect(row.queryByRole("button", { name: "Delete table" })).not.toBeInTheDocument();
     } finally {
         Object.assign(game, previous);
     }

@@ -72,6 +72,18 @@ export const hasTournamentStarted = (
     return actions.some(a => STARTED_ACTIONS.has(a.action));
 };
 
+/**
+ * The tournament has a winner. `results` holds final places and is filled as
+ * players finish; place 1 is written only when the tournament is over.
+ * `winners` is the current hand and must not be treated as the tournament result.
+ */
+export const hasTournamentFinished = (
+    gameState: Partial<Pick<TexasHoldemStateDTO, "results">> | null | undefined
+): boolean => {
+    if (isNullish(gameState) || !Array.isArray(gameState.results)) return false;
+    return gameState.results.some(result => result.place === 1);
+};
+
 /** "mm:ss" (or "h:mm:ss") until a time; "0:00" once passed. */
 export const formatCountdown = (untilMs: number, nowMs: number): string => {
     const total = Math.max(0, Math.floor((untilMs - nowMs) / 1000));
@@ -97,11 +109,13 @@ export const scheduledLobbyLabel = (input: {
     scheduledStartTime: number | undefined;
     minPlayers: number;
     started: boolean;
+    finished: boolean;
     nowMs?: number;
 }): string => {
     if (input.phase === "unscheduled" || isNullish(input.scheduledStartTime)) return "";
-    if (input.phase === "cancelled") return "Cancelled: not enough players";
+    if (input.finished) return "Finished";
     if (input.started) return "Started";
+    if (input.phase === "cancelled") return "Cancelled: not enough players";
     if (input.phase === "ready") return "Starting";
     return `Starts ${formatStartsAt(input.scheduledStartTime, input.nowMs)} · min ${input.minPlayers}`;
 };
