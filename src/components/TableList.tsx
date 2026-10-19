@@ -95,7 +95,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     {!compact && <p>Pick a table. Find your seat. Play your game.</p>}
                 </div>
                 {onCreateTable && (
-                    <button className={styles.secondaryButton} onClick={onCreateTable}>
+                    <button type="button" className={styles.createButton} onClick={onCreateTable}>
                         <FaPlus aria-hidden="true" /> Create table
                     </button>
                 )}

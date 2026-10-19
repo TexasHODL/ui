@@ -49,6 +49,25 @@
     border-color: var(--theme-accent, #bd80ed);
     background: var(--theme-wash, #b14cff15);
 }
+/* Same orange-to-pink fill as the create-table tab and other primary buttons.
+   The ink stays dark so the label stays readable on the gradient in light mode. */
+.createButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 11px 16px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--texas-gradient, linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6));
+    color: #200c1c;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.createButton:hover {
+    filter: brightness(1.1);
+}
 .stats {
     display: flex;
     align-items: center;
@@ -385,7 +404,7 @@
     .overview h1 {
         font-size: 28px;
     }
-    .overview .secondaryButton {
+    .overview .createButton {
         padding: 10px;
         font-size: 13px;
         gap: 6px;
