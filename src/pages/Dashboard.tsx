@@ -80,7 +80,6 @@ const Dashboard: React.FC = () => {
     const [creationReceipt, setCreationReceipt] = useState<TableCreationReceipt | null>(null);
     const [tablesRevision, setTablesRevision] = useState(0);
     const closeCreationReceipt = useCallback(() => setCreationReceipt(null), []);
-    const [selectedContractAddress, setSelectedContractAddress] = useState("0x4c1d6ea77a2ba47dcd0771b7cde0df30a6df1bfaa7");
     const [createGameError, setCreateGameError] = useState("");
 
     // Modal game options
@@ -165,8 +164,6 @@ const Dashboard: React.FC = () => {
             setIsAuthenticated(true);
         }
     }, [passwordEnabled]);
-
-    const DEFAULT_GAME_CONTRACT = "0x4c1d6ea77a2ba47dcd0771b7cde0df30a6df1bfaa7"; // Example address
 
     // Function to handle creating a new game using Cosmos blockchain
     // Paid table name (poker-vm#337): live cost preview + validation. We normalize
@@ -665,6 +662,7 @@ const Dashboard: React.FC = () => {
                                         <div>
                                             <label className="block text-white text-sm mb-1">Game</label>
                                             <select
+                                                aria-label="Game"
                                                 value={modalGameVariant}
                                                 onChange={e => {
                                                     const variant = toGameVariant(e.target.value);
@@ -1002,29 +1000,6 @@ const Dashboard: React.FC = () => {
                                             )}
                                         </>
                                     )}
-
-                                    <div>
-                                        <label className="block text-white text-sm mb-1">Variant</label>
-                                        <select
-                                            aria-label="Variant"
-                                            value={selectedContractAddress}
-                                            onChange={e => setSelectedContractAddress(e.target.value)}
-                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                        >
-                                            <React.Fragment>
-                                                <option value={DEFAULT_GAME_CONTRACT}>Texas Hold'em</option>
-                                                <option value="" disabled>
-                                                    Omaha (Coming Soon)
-                                                </option>
-                                                <option value="" disabled>
-                                                    Seven Card Stud (Coming Soon)
-                                                </option>
-                                                <option value="" disabled>
-                                                    Blackjack (Coming Soon)
-                                                </option>
-                                            </React.Fragment>
-                                        </select>
-                                    </div>
 
                                     {modalGameFormat === GameFormat.CASH && <div className="creation-span">
                                         <label><input type="checkbox" checked={enableRake} onChange={e => setEnableRake(e.target.checked)} /> Enable Rake Collection</label>
