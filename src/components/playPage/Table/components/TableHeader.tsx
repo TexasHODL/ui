@@ -6,6 +6,7 @@ import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { displayTableName } from "../../../../utils/generatedTableName";
 import { formatGameFormatDisplay, formatTableGameDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
@@ -71,6 +72,10 @@ export interface TableHeaderProps {
     handleLeaveTableClick: () => void;
     handleShareHand: () => void;
     onToggleFocus: () => void;
+    /** Opens the latest completed hand's replay in a new tab; absent in replay mode. */
+    handleOpenReplay?: () => void;
+    /** The hand the replay button opens; null before the first hand completes. */
+    replayHand?: number | null;
 }
 
 export const TableHeader: React.FC<TableHeaderProps> = ({
@@ -101,7 +106,9 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     onToggleSettings,
     handleLeaveTableClick,
     handleShareHand,
-    onToggleFocus
+    onToggleFocus,
+    handleOpenReplay,
+    replayHand = null
 }) => {
     const blindLevel = useBlindLevel();
     const [showQR, setShowQR] = useState(false);
@@ -120,7 +127,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 <div className={styles.roomIdentity}>
                     <strong>{title}</strong>
                     <span>
-                        {gameFormat ? formatGameFormatDisplay(gameFormat) : "Poker"}
+                        {gameFormat ? displayGameFormat(gameFormat, gameOptions?.scheduledStartTime, formatGameFormatDisplay) : "Poker"}
                         {" · "}
                         {formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)}
                         {gameOptions && " · " + tableActivePlayers.length + "/" + gameOptions.maxPlayers + " seats"}
@@ -149,6 +156,18 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         <FaShare />
                         <span>Invite</span>
                     </button>
+                    {handleOpenReplay && (
+                        <button
+                            className={styles.toolButton}
+                            onClick={handleOpenReplay}
+                            disabled={replayHand === null}
+                            title={replayHand === null ? "No completed hand to replay yet" : `Replay hand #${replayHand} in a new tab`}
+                            data-testid="open-replay"
+                        >
+                            <FaRedo />
+                            <span>Replay</span>
+                        </button>
+                    )}
                     <button className={styles.toolButton} aria-label="Full screen" title="Table-only view — hide banners" onClick={onToggleFocus}>
                         <FaExpand />
                     </button>

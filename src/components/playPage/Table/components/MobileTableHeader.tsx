@@ -10,7 +10,7 @@
  */
 
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { FaBars, FaCopy, FaExpand, FaQrcode, FaShare, FaTimes } from "react-icons/fa";
+import { FaBars, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare, FaTimes } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
@@ -21,6 +21,7 @@ import { ProfileAvatarButton } from "../../../profile";
 import { TopUpModal } from "../../../modals";
 import { displayTableName } from "../../../../utils/generatedTableName";
 import { formatGameFormatDisplay, formatTableGameDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
@@ -87,6 +88,9 @@ export interface MobileTableHeaderProps {
     onToggleSettings: () => void;
     handleLeaveTableClick: () => void;
     handleShareHand: () => void;
+    /** Opens the latest completed hand's replay in a new tab; absent in replay mode. */
+    handleOpenReplay?: () => void;
+    replayHand?: number | null;
 }
 
 const TABLE_STYLE_LABELS: Record<TableStyleOption, string> = {
@@ -132,7 +136,9 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     onCloseSideBar,
     onToggleSettings,
     handleLeaveTableClick,
-    handleShareHand
+    handleShareHand,
+    handleOpenReplay,
+    replayHand = null
 }) => {
     const blindLevel = useBlindLevel();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -337,7 +343,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         {gameOptions && (
                             <div className="px-4 py-2 border-b border-white/10">
                                 <span className={`text-xs font-semibold ${styles.brandText}`}>
-                                    {gameFormat ? `${formatGameFormatDisplay(gameFormat)} • ` : ""}
+                                    {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay)} • ` : ""}
                                     {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
                                     <span className={`ml-1 ${styles.secondaryText}`}>
                                         ({tableActivePlayers.length}/{gameOptions.maxPlayers} Players)
@@ -367,6 +373,12 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             <FaQrcode size={14} />
                             <span>Share via QR Code</span>
                         </button>
+                        {handleOpenReplay && (
+                            <button className={menuRowClass} onClick={closeMenuAnd(handleOpenReplay)} disabled={replayHand === null} data-testid="open-replay">
+                                <FaRedo size={14} />
+                                <span>{replayHand === null ? "Replay (no completed hand yet)" : `Replay hand #${replayHand}`}</span>
+                            </button>
+                        )}
                         <button className={menuRowClass} onClick={closeMenuAnd(handleShareHand)}>
                             <FaShare size={14} />
                             <span>Share this hand</span>
