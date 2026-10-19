@@ -9,7 +9,7 @@ import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
 import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/game/useLobbyTournamentStarted";
 
-import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
+import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
 import { displayGameFormat } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
@@ -77,7 +77,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
     const startedTables = useLobbyTournamentStarted(
-        pagedGames.filter(game => scheduledPhase(game) !== "unscheduled").map(game => game.gameId).join(","),
+        pagedGames.filter(game => isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat)).map(game => game.gameId).join(","),
         rawGames
     );
     const occupiedSeats = clubGames.reduce((sum, game) => sum + game.currentPlayers, 0);
@@ -242,7 +242,6 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const full = game.currentPlayers >= game.maxPlayers;
                                 const mySeat = mySeats[game.gameId];
                                 const seated = !!mySeat;
-                                const watch = full && !seated;
                                 const formatLabel = displayGameFormat(game.gameFormat, game.scheduledStartTime, formatGameFormatDisplay);
                                 const tournament = formatLabel === "Tournament" || isTournamentFormat(game.gameFormat);
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
@@ -251,6 +250,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const mark = startedTables[game.gameId];
                                 const played = mark === "started" || mark === "finished";
                                 const showCancelled = phase === "cancelled" && !played;
+                                const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
+                                // Full tables already use the grey Watch link (?watch=1). A started
+                                // sit-and-go or tournament uses that same link while seats are still
+                                // open. Seated players return; finished and never-started cancelled stay as they are.
+                                const watch = !seated && !showCancelled && (full || (tournamentStyle && mark === "started"));
                                 const schedule = scheduledLabel(game, mark);
                                 const stakes = tournament
                                     ? "Tournament"

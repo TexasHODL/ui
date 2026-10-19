@@ -23,8 +23,12 @@ jest.mock("../../../../utils/cosmosAccountUtils", () => ({ getCosmosAddressSync:
 jest.mock("../../../../context/ActionSubmitContext", () => ({
     useActionSubmit: () => ({ submit: mockSubmit, loadingAction: null, isBusy: false, lastError: null })
 }));
+const mockTableState = {
+    gameState: { players: [] as unknown[], bigBlindPosition: 2, handNumber: 1, previousActions: [] as unknown[] },
+    gameFormat: "cash" as string | undefined
+};
 jest.mock("../../../../context/GameStateContext", () => ({
-    useGameStateContext: () => ({ gameState: { players: [], bigBlindPosition: 2 }, gameFormat: "cash" })
+    useGameStateContext: () => mockTableState
 }));
 jest.mock("../../../../context/GameSettingsContext", () => ({
     useGameSettings: () => ({ seatAtBottom: false, toggleSeatAtBottom: mockToggleSeatAtBottom })
@@ -89,7 +93,11 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[];
 const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
 
 describe("MobileTableHeader drawer (ui#684)", () => {
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockTableState.gameFormat = "cash";
+        mockTableState.gameState = { players: [], bigBlindPosition: 2, handNumber: 1, previousActions: [] };
+    });
     it("keeps blinds in the chrome and the theme control in the top row", () => {
         renderHeader();
         expect(screen.queryByRole("button", { name: "Open hand history" })).not.toBeInTheDocument();
@@ -151,9 +159,19 @@ describe("MobileTableHeader drawer (ui#684)", () => {
     });
 
     it("shows the spectate hint while unseated", () => {
+        mockTableState.gameState = { players: [], bigBlindPosition: 2, handNumber: 8, previousActions: [] };
         renderHeader({ seated: false });
         openMenu();
         expect(screen.getByText(/tap an open seat to join/)).toBeInTheDocument();
+    });
+
+    it("stops offering a seat once a sit-and-go has started", () => {
+        mockTableState.gameFormat = "sit-and-go";
+        mockTableState.gameState = { players: [], bigBlindPosition: 2, handNumber: 8, previousActions: [] };
+        renderHeader({ seated: false });
+        openMenu();
+        expect(screen.getByText("You’re watching")).toBeInTheDocument();
+        expect(screen.queryByText(/tap an open seat to join/)).not.toBeInTheDocument();
     });
 
     it("hides the spectate hint once seated", () => {

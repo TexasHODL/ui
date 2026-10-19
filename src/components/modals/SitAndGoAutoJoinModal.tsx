@@ -22,7 +22,7 @@ import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { isEmpty, hasValue } from "../../utils/guards";
-import { formatStartsAt, scheduledSngPhase } from "../../utils/scheduledSng";
+import { formatStartsAt, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
 
@@ -39,7 +39,8 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     const { emptySeatIndexes, isUserAlreadyPlaying } = useVacantSeatData();
 
     // Get the game state context to force refresh after joining
-    const { subscribeToTable, gameState, gameVariant } = useGameStateContext();
+    const { subscribeToTable, gameState, gameVariant, gameFormat } = useGameStateContext();
+    const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
 
     // Scheduled start (poker-vm#2680): say when it starts, and refuse a seat at
     // a cancelled table (the chain refuses the join too).
@@ -164,7 +165,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
 
     // Handle auto-join
     const handleTakeSeat = useCallback(async () => {
-        if (!publicKey || !tableId || isUserAlreadyPlaying || hasJoined) return;
+        if (registrationClosed || !publicKey || !tableId || isUserAlreadyPlaying || hasJoined) return;
 
         // Check if there are empty seats
         if (isEmpty(emptySeatIndexes)) {
@@ -237,10 +238,10 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         } finally {
             setIsJoining(false);
         }
-    }, [publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess]);
+    }, [registrationClosed, publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess]);
 
-    // Don't show modal if user is already playing or has joined
-    if (isUserAlreadyPlaying || hasJoined) {
+    // Don't show modal if user is already playing, has joined, or the tournament has started.
+    if (isUserAlreadyPlaying || hasJoined || registrationClosed) {
         return null;
     }
 

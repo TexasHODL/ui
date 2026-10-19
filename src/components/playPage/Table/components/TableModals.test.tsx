@@ -45,6 +45,29 @@ it("does not show a buy-in on a full table opened through an older direct link",
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
+it("hides the buy-in on a Watch link even when a started tournament still has empty seats", () => {
+    render(<TableModals {...props()} isWatchMode hasOpenSeats gameState={{ handNumber: 8, previousActions: [] }} />);
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+});
+
+it("hides the buy-in once a sit-and-go has started, even without a Watch link", () => {
+    render(<TableModals {...props()} gameState={{ handNumber: 8, previousActions: [] }} />);
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+});
+
+it("closes the buy-in when the tournament starts while the page is open", () => {
+    const defaults = props();
+    const { rerender } = render(<TableModals {...defaults} gameState={{ handNumber: 1, round: "ante", previousActions: [] }} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Buy in");
+    rerender(<TableModals {...defaults} gameState={{ handNumber: 8, previousActions: [] }} />);
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+});
+
+it("hides the buy-in once the tournament has a winner", () => {
+    render(<TableModals {...props()} gameState={{ handNumber: 8, previousActions: [], results: [{ place: 1, playerId: "winner", payout: "100" }] }} />);
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+});
+
 it.each([{ gameFormat: GameFormat.CASH }, { isUserAlreadyPlaying: true }, { gameState: null }, { tableId: undefined }])(
     "does not show SNG entry when ineligible: %j", overrides => {
         render(<TableModals {...props()} {...overrides} />);

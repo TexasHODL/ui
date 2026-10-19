@@ -1,4 +1,5 @@
-import { NonPlayerActionType, PlayerActionType, TexasHoldemRound, type ActionDTO, type GameOptionsDTO, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { GameFormat, NonPlayerActionType, PlayerActionType, TexasHoldemRound, type ActionDTO, type GameOptionsDTO, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { isSitAndGoFormat, isTournamentFormat } from "./gameFormatUtils";
 import { hasValue, isNullish } from "./guards";
 
 /**
@@ -63,10 +64,10 @@ const IN_PLAY_ROUNDS: ReadonlySet<string> = new Set<string>([
  * state is over, even with empty seats.
  */
 export const hasTournamentStarted = (
-    gameState: (Pick<TexasHoldemStateDTO, "handNumber" | "previousActions"> & Partial<Pick<TexasHoldemStateDTO, "round">>) | null | undefined
+    gameState: Partial<Pick<TexasHoldemStateDTO, "handNumber" | "previousActions" | "round">> | null | undefined
 ): boolean => {
     if (isNullish(gameState)) return false;
-    if (gameState.handNumber > 1) return true;
+    if (hasValue(gameState.handNumber) && gameState.handNumber > 1) return true;
     if (hasValue(gameState.round) && IN_PLAY_ROUNDS.has(gameState.round)) return true;
     const actions: ActionDTO[] = Array.isArray(gameState.previousActions) ? gameState.previousActions : [];
     return actions.some(a => STARTED_ACTIONS.has(a.action));
@@ -82,6 +83,23 @@ export const hasTournamentFinished = (
 ): boolean => {
     if (isNullish(gameState) || !Array.isArray(gameState.results)) return false;
     return gameState.results.some(result => result.place === 1);
+};
+
+const isTournamentProgressState = (
+    value: unknown
+): value is Partial<Pick<TexasHoldemStateDTO, "handNumber" | "previousActions" | "round" | "results">> =>
+    typeof value === "object" && value !== null;
+
+/**
+ * A sit-and-go or tournament that is in play, or already has a winner, is
+ * closed to new players. Cash games stay open. "Started" is the same public
+ * state the lobby reads; place 1 in `results` means the tournament is over.
+ */
+export const tournamentRegistrationClosed = (format: GameFormat | string | null | undefined, gameState: unknown): boolean => {
+    if (typeof format !== "string") return false;
+    if (!isSitAndGoFormat(format) && !isTournamentFormat(format)) return false;
+    if (!isTournamentProgressState(gameState)) return false;
+    return hasTournamentStarted(gameState) || hasTournamentFinished(gameState);
 };
 
 /** "mm:ss" (or "h:mm:ss") until a time; "0:00" once passed. */

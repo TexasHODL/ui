@@ -12,13 +12,19 @@ jest.mock("../../hooks/game/useVacantSeatData", () => ({ useVacantSeatData: () =
 jest.mock("../../hooks/playerActions/joinTable", () => ({ joinTable: (...args: unknown[]) => mockJoin(...args) }));
 jest.mock("../../utils/cosmosAccountUtils", () => ({ getCosmosBalance: (...args: unknown[]) => mockBalance(...args) }));
 jest.mock("../../context/NetworkContext", () => ({ useNetwork: () => ({ currentNetwork: { name: "fixture" } }) }));
-jest.mock("../../context/GameStateContext", () => ({ useGameStateContext: () => ({ subscribeToTable: jest.fn(), gameState: { gameOptions: { protocolFeeBps: 1000 } } }) }));
+const mockContext: { gameFormat?: string; gameState: Record<string, unknown> } = {
+    gameState: { gameOptions: { protocolFeeBps: 1000 } }
+};
+jest.mock("../../context/GameStateContext", () => ({
+    useGameStateContext: () => ({ subscribeToTable: jest.fn(), gameFormat: mockContext.gameFormat, gameState: mockContext.gameState })
+}));
 jest.mock("../../utils/colorConfig", () => ({ colors: { brand: { primary: "#be87e5" } }, getHexagonStroke: () => "#be87e5" }));
 jest.mock("../../utils/numberUtils", () => ({
     formatUSDCToSimpleDollars: (s: string) => (Number(s) / 1e6).toFixed(2),
     formatForSitAndGo: (s: string) => Number(s).toLocaleString("en-US")
 }));
 jest.mock("../../utils/gameFormatUtils", () => ({
+    ...jest.requireActual("../../utils/gameFormatUtils"),
     getGameTypeMnemonic: () => "6-Max",
     formatTableGameDisplay: () => "Texas Hold'em"
 }));
@@ -27,6 +33,8 @@ beforeEach(() => {
     jest.clearAllMocks();
     mockSeats = [0, 1, 2, 3, 4, 5];
     mockPlaying = false;
+    mockContext.gameFormat = undefined;
+    mockContext.gameState = { gameOptions: { protocolFeeBps: 1000 } };
     mockBalance.mockResolvedValue("0");
     localStorage.setItem(STORAGE_KEYS.cosmosAddress, "fixture-address");
 });
@@ -73,6 +81,21 @@ it("retains join errors without dismissing the dialog or retrying automatically"
         expect(mockJoin).toHaveBeenCalledWith("fixture-table", { amount: "1", seatNumber: 0 }, { name: "fixture" });
         expect(screen.getByRole("dialog")).toBeInTheDocument();
     } finally { log.mockRestore(); }
+});
+
+it("closes entry once the tournament has started", () => {
+    mockContext.gameFormat = "sit-and-go";
+    mockContext.gameState = { handNumber: 8, previousActions: [], gameOptions: { protocolFeeBps: 1000 } };
+    const { rerender } = render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    mockContext.gameFormat = "sit-and-go";
+    mockContext.gameState = { handNumber: 1, round: "ante", previousActions: [], gameOptions: { protocolFeeBps: 1000 } };
+    rerender(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(screen.getByRole("dialog", { name: "Sit & Go Tournament" })).toBeInTheDocument();
+    mockContext.gameState = { handNumber: 8, previousActions: [], gameOptions: { protocolFeeBps: 1000 } };
+    rerender(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mockJoin).not.toHaveBeenCalled();
 });
 
 it("does not show entry again for an already seated player", async () => {

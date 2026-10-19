@@ -1,5 +1,6 @@
 import { NonPlayerActionType, PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentFinished, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledLobbyLabel, scheduledSngPhase, scheduledStartRejection } from "./scheduledSng";
+import { GameFormat } from "@block52/poker-vm-sdk";
+import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentFinished, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledLobbyLabel, scheduledSngPhase, scheduledStartRejection, tournamentRegistrationClosed } from "./scheduledSng";
 
 const start = 1_700_000_000_000;
 
@@ -41,6 +42,21 @@ describe("hasTournamentFinished", () => {
         expect(hasTournamentFinished({ results: [{ place: 3, playerId: "carol", payout: "0" }, { place: 2, playerId: "alice", payout: "0" }] })).toBe(false);
         expect(hasTournamentFinished({ results: [] })).toBe(false);
         expect(hasTournamentFinished(undefined)).toBe(false);
+    });
+});
+
+describe("tournamentRegistrationClosed", () => {
+    const playing = { handNumber: 8, previousActions: [] };
+    it("closes a started or won sit-and-go or tournament", () => {
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, playing)).toBe(true);
+        expect(tournamentRegistrationClosed(GameFormat.TOURNAMENT, playing)).toBe(true);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, { results: [{ place: 1, playerId: "winner", payout: "100" }] })).toBe(true);
+    });
+    it("stays open for cash, and for a sit-and-go that has not started", () => {
+        expect(tournamentRegistrationClosed(GameFormat.CASH, playing)).toBe(false);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, { handNumber: 1, round: "ante", previousActions: [] })).toBe(false);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, undefined)).toBe(false);
+        expect(tournamentRegistrationClosed(undefined, playing)).toBe(false);
     });
 });
 

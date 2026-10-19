@@ -27,6 +27,8 @@ import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActio
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { useTableTopUp } from "../../../../hooks/game/useTableTopUp";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
+import { useGameStateContext } from "../../../../context/GameStateContext";
+import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { formatBlindCountdown } from "./TableHeader";
@@ -160,6 +162,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     // Sit-out lives here on phones rather than pinned over the felt (#684).
     const { nextHandChecked, toggleNextHand, nextBbQueued, toggleNextBb, canSitOut } = useSitOutIntent();
     const isTableFull = !!gameOptions?.maxPlayers && tableActivePlayers.length >= gameOptions.maxPlayers;
+    const { gameState: liveGameState, gameFormat: liveGameFormat } = useGameStateContext();
+    const registrationClosed = tournamentRegistrationClosed(liveGameFormat ?? gameFormat, liveGameState);
     const rowRef = useRef<HTMLDivElement>(null);
     const toolsRef = useRef<HTMLDivElement>(null);
     const probeRef = useRef<HTMLDivElement>(null);
@@ -460,7 +464,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             <div className={`${menuRowClass} cursor-default hover:bg-transparent`}>
                                 <span className="animate-pulse w-2 h-2 rounded-full bg-blue-400 shrink-0" />
                                 <span className="text-blue-300 text-xs">
-                                    {isTableFull ? "Spectating — the table is full" : "Spectating — tap an open seat to join"}
+                                    {registrationClosed ? "You’re watching" : isTableFull ? "Spectating — the table is full" : "Spectating — tap an open seat to join"}
                                 </span>
                             </div>
                         )}
