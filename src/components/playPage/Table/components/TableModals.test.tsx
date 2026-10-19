@@ -68,6 +68,16 @@ it("hides the buy-in once the tournament has a winner", () => {
     expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
 });
 
+it("hides the buy-in when results include first place alone", () => {
+    render(<TableModals {...props()} gameState={{ results: [{ place: 1, playerId: "winner", payout: "100" }] }} />);
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+});
+
+it("still offers a buy-in when only busted places are recorded", () => {
+    render(<TableModals {...props()} gameState={{ handNumber: 1, round: "ante", previousActions: [], results: [{ place: 2, playerId: "out", payout: "0" }] }} />);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Buy in");
+});
+
 it.each([{ gameFormat: GameFormat.CASH }, { isUserAlreadyPlaying: true }, { gameState: null }, { tableId: undefined }])(
     "does not show SNG entry when ineligible: %j", overrides => {
         render(<TableModals {...props()} {...overrides} />);
