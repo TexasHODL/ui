@@ -160,6 +160,10 @@
     font-size: 14px;
     font-weight: 700;
 }
+.toolButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
 .roomHeader button:hover {
     color: var(--theme-ink, #f4e5ff);
     background-color: var(--theme-wash, #b14cff12);

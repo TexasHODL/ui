@@ -33,4 +33,16 @@ describe("ScheduledStartCard", () => {
         fireEvent.click(toggle);
         expect(screen.queryByLabelText("Scheduled start time")).not.toBeInTheDocument();
     });
+
+    it("keeps a tournament start open, with no switch to turn it off", () => {
+        render(
+            <ScheduledStartCard locked checked onChange={() => undefined} testId="tournament-start">
+                <input aria-label="Scheduled start time" type="datetime-local" />
+            </ScheduledStartCard>
+        );
+        expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+        expect(screen.getByTestId("tournament-start")).toBeInTheDocument();
+        expect(screen.getByLabelText("Scheduled start time")).toBeInTheDocument();
+        expect(screen.getByText("A tournament starts at this time with whoever has registered, or earlier when full")).toBeInTheDocument();
+    });
 });

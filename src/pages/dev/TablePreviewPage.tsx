@@ -98,6 +98,7 @@ const TablePreviewPage = () => {
                 unsubscribeFromTable={unsubscribeFromTable}
                 sendAction={sendAction}
                 loadHistoricalState={loadHistoricalState}
+                loadHistoricalStateAtHeight={async () => undefined}
             >
                 <GameMetaProvider gameFormat={GameFormat.CASH} gameVariant={GameVariant.TEXAS_HOLDEM} gameName={undefined}>
                     <ReplayProvider isReplayMode={false} replayHandNumber={null} replayActionIndex={null}>

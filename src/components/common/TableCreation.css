@@ -277,6 +277,9 @@
     border-color: #ff4a83;
     background: color-mix(in srgb, #ff4a83 12%, var(--theme-surface, #100c17));
 }
+.table-creation .scheduled-start-locked {
+    cursor: default;
+}
 .table-creation .scheduled-start-toggle {
     display: flex;
     align-items: center;

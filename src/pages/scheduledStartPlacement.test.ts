@@ -9,7 +9,7 @@ describe("scheduled start placement", () => {
         expect(gameType).toBeGreaterThan(-1);
         expect(maxPlayers).toBeGreaterThan(gameType);
         expect(card).toBeGreaterThan(maxPlayers);
-        expect(source.slice(card - 220, card)).toContain("isSitAndGoFormat(modalGameFormat)");
+        expect(source.slice(card - 220, card)).toContain("modalGameType === \"sit-and-go\"");
         expect(source.slice(card - 120, card)).toContain("creation-span");
     });
 
@@ -21,6 +21,6 @@ describe("scheduled start placement", () => {
         expect(gameType).toBeGreaterThan(-1);
         expect(maxPlayers).toBeGreaterThan(gameType);
         expect(card).toBeGreaterThan(maxPlayers);
-        expect(source.slice(card - 160, card)).toContain("isSitAndGoFormat(gameFormat)");
+        expect(source.slice(card - 160, card)).toContain("gameType === \"sit-and-go\"");
     });
 });

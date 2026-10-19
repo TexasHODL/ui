@@ -20,7 +20,8 @@ import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
-import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
+import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
+import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
 
@@ -47,7 +48,8 @@ export default function TableAdminPage() {
     const { games: fetchedGames, isLoading, error: gamesError, refetch } = useFindGames();
 
     // Default table settings for Cash Game, 9 players, Texas Hold'em
-    const [gameFormat, setGameFormat] = useState<GameFormat>(GameFormat.CASH);
+    const [gameType, setGameType] = useState<CreateGameType>("cash");
+    const gameFormat = createGameTypeFormat(gameType);
     const [tableName, setTableName] = useState(""); // Optional paid table name (poker-vm#337)
     // Variant and betting limit are independent (ui#768); picking a variant
     // resets the limit to that variant's usual one (PLO, NLHE).
@@ -84,10 +86,10 @@ export default function TableAdminPage() {
         return BLIND_LEVELS[selectedBlindLevel].bigBlind.toString();
     }, [gameFormat, sngBigBlind, selectedBlindLevel]);
 
-    const handleGameFormatChange = (newType: GameFormat) => {
-        setGameFormat(newType);
+    const handleGameFormatChange = (newType: CreateGameType) => {
+        setGameType(newType);
         // A single table seats 2..9 (every field has a payout curve, poker-vm#2667).
-        if (isTournamentFormat(newType)) {
+        if (isTournamentFormat(createGameTypeFormat(newType))) {
             const validSngCounts: readonly number[] = VALID_SNG_RUNNER_COUNTS;
             if (!validSngCounts.includes(maxPlayers)) {
                 const next = validSngCounts.reduce((a, b) => (Math.abs(b - maxPlayers) < Math.abs(a - maxPlayers) ? b : a));
@@ -209,7 +211,7 @@ export default function TableAdminPage() {
         const finalMinBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMinBuyIn;
         const finalMaxBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMaxBuyIn;
 
-        const isScheduled = isSitAndGoFormat(gameFormat) && scheduled;
+        const isScheduled = isScheduledCreateType(gameType) || (isSitAndGoFormat(gameFormat) && scheduled);
         const startTime = isScheduled ? localDateTimeToUnixSeconds(scheduledStart) : undefined;
         if (isScheduled && startTime !== undefined) {
             const rejection = scheduledStartRejection(startTime, sngMinPlayers, maxPlayers);
@@ -390,15 +392,19 @@ export default function TableAdminPage() {
                                     <label className="text-gray-300 text-xs mb-1 block">Game Type</label>
                                     <select
                                         aria-label="Game type"
-                                        value={gameFormat}
+                                        data-testid="create-game-type"
+                                        value={gameType}
                                         onChange={e => {
-                                            const format = toGameFormat(e.target.value);
-                                            if (format) handleGameFormatChange(format);
+                                            const type = toCreateGameType(e.target.value);
+                                            if (type) handleGameFormatChange(type);
                                         }}
                                         className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     >
-                                        <option value={GameFormat.SIT_AND_GO}>Sit & Go</option>
-                                        <option value={GameFormat.CASH}>Cash Game</option>
+                                        {CREATE_GAME_TYPES.map(type => (
+                                            <option key={type} value={type}>
+                                                {createGameTypeLabel(type)}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>
@@ -448,9 +454,46 @@ export default function TableAdminPage() {
                                 </div>
                             </div>
 
-                            {isSitAndGoFormat(gameFormat) && (
+                            {gameType === "sit-and-go" && (
                                 <div className="mb-4">
                                     <ScheduledStartCard checked={scheduled} onChange={setScheduled}>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Start time</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    aria-label="Scheduled start time"
+                                                    value={scheduledStart}
+                                                    onChange={e => setScheduledStart(e.target.value)}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-gray-300 text-xs mb-1 block">Minimum players</label>
+                                                <select
+                                                    aria-label="Minimum players"
+                                                    value={Math.min(sngMinPlayers, maxPlayers)}
+                                                    onChange={e => setSngMinPlayers(parseInt(e.target.value))}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                >
+                                                    {Array.from({ length: Math.max(0, maxPlayers - 1) }, (_, i) => i + 2).map(n => (
+                                                        <option key={n} value={n}>
+                                                            {n}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <p className="sm:col-span-2 text-gray-500 text-xs">
+                                                Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                            </p>
+                                        </div>
+                                    </ScheduledStartCard>
+                                </div>
+                            )}
+
+                            {isScheduledCreateType(gameType) && (
+                                <div className="mb-4">
+                                    <ScheduledStartCard locked checked onChange={() => undefined} testId="tournament-start">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="text-gray-300 text-xs mb-1 block">Start time</label>

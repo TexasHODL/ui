@@ -8,7 +8,8 @@ import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
 
-import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatGameVariantDisplay } from "../utils/gameFormatUtils";
+import { isCashFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
+import { displayGameFormat } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
@@ -236,7 +237,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const mySeat = mySeats[game.gameId];
                                 const seated = !!mySeat;
                                 const watch = full && !seated;
-                                const tournament = isTournamentFormat(game.gameFormat);
+                                const formatLabel = displayGameFormat(game.gameFormat, game.scheduledStartTime, formatGameFormatDisplay);
+                                const tournament = formatLabel === "Tournament" || isTournamentFormat(game.gameFormat);
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
                                 const phase = scheduledPhase(game);
@@ -256,8 +258,10 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                     {seated && <span className={styles.seatedBadge}>You’re seated · Seat {mySeat}</span>}
                                                     {owner && <span className={styles.ownerBadge}>Your table</span>}
                                                     <span>
-                                                        {formatGameFormatDisplay(game.gameFormat)} · {game.maxPlayers}-seat ·{" "}
-                                                        {formatGameVariantDisplay(game.gameVariant)}
+                                                        <span data-testid="lobby-format">{formatLabel}</span>
+                                                        {" · "}
+                                                        {game.maxPlayers}-seat ·{" "}
+                                                        <span data-testid="lobby-game">{formatTableGameDisplay(toGameVariant(game.gameVariant), game.bettingLimit)}</span>
                                                     </span>
                                                     {schedule && (
                                                         <span className={styles.scheduledBadge} data-testid="scheduled-start-label">
