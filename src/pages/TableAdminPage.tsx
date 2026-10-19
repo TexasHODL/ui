@@ -22,8 +22,7 @@ import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
 import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameFormat, toGameVariant } from "../utils/gameFormatUtils";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
-import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal";
-import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS, type AdvancedSngParams } from "../utils/sngAdvancedParams";
+import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
 
 interface TableData {
     gameId: string;
@@ -108,19 +107,6 @@ export default function TableAdminPage() {
     // buy-in. "0" = no fee. (poker-vm#2118)
     const [entryFee, setEntryFee] = useState("0");
     const [showStructure, setShowStructure] = useState(false);
-    const [showAdvancedModal, setShowAdvancedModal] = useState(false);
-
-    // Apply advanced JSON params back into the SNG form state. Any field the
-    // user omitted keeps its current value (mergeAdvancedParams handles that in
-    // the modal; here we only write fields that were actually provided).
-    const handleApplyAdvancedParams = (params: AdvancedSngParams) => {
-        if (params.maxPlayers !== undefined) setMaxPlayers(params.maxPlayers);
-        if (params.startingStack !== undefined) setStartingStack(params.startingStack);
-        if (params.smallBlind !== undefined) setSngSmallBlind(params.smallBlind);
-        if (params.bigBlind !== undefined) setSngBigBlind(params.bigBlind);
-        if (params.blindLevelDuration !== undefined) setBlindLevelDuration(params.blindLevelDuration);
-        if (params.buyIn !== undefined) setTournamentBuyIn(params.buyIn.toString());
-    };
 
     // Calculate actual buy-in values from BB
     const { minBuyIn: calculatedMinBuyIn, maxBuyIn: calculatedMaxBuyIn } = useMemo(
@@ -693,15 +679,6 @@ export default function TableAdminPage() {
                                             </p>
                                         </div>
 
-                                        {/* Advanced Options — custom params via JSON */}
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowAdvancedModal(true)}
-                                            className="w-full px-3 py-2 bg-[#21172b] hover:bg-gray-600 text-gray-200 text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                                        >
-                                            <span>⚙</span>
-                                            Advanced Options (Custom Params)
-                                        </button>
                                     </div>
                                 ) : (
                                     <>
@@ -1013,21 +990,6 @@ export default function TableAdminPage() {
                     Choose a table to watch, then take a seat when you’re ready. Want your own game? Open “Create a new table” above.
                 </p>
             </div>
-
-            {/* Advanced SNG Options Modal */}
-            <AdvancedSngParamsModal
-                isOpen={showAdvancedModal}
-                onClose={() => setShowAdvancedModal(false)}
-                current={{
-                    maxPlayers,
-                    buyIn: parseFloat(tournamentBuyIn) || 0,
-                    startingStack,
-                    smallBlind: sngSmallBlind,
-                    bigBlind: sngBigBlind,
-                    blindLevelDuration
-                }}
-                onApply={handleApplyAdvancedParams}
-            />
 
             <TableCreatedModal
                 receipt={showSuccessModal && successTxHash ? { txHash: successTxHash, gameId: createdGameAddress } : null}
