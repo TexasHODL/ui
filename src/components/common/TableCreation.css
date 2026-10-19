@@ -265,6 +265,89 @@
     margin-top: 18px;
     font-weight: 700;
 }
+/* Sit & Go scheduled start: a card and switch, not a lone checkbox. */
+.table-creation .scheduled-start {
+    border: 1px solid var(--theme-line, #ffffff24);
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--theme-accent, #b14cff) 8%, var(--theme-surface, #100c17));
+    padding: 14px 16px;
+}
+.table-creation .scheduled-start-on {
+    border-color: #ff4a83;
+    background: color-mix(in srgb, #ff4a83 12%, var(--theme-surface, #100c17));
+}
+.table-creation .scheduled-start-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--theme-ink, #eadff2);
+    text-align: left;
+    cursor: pointer;
+}
+.table-creation .scheduled-start-icon {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--theme-wash, #b14cff22);
+    color: var(--theme-hot, #f02bc6);
+    font-size: 16px;
+}
+.table-creation .scheduled-start-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+.table-creation .scheduled-start-copy strong {
+    color: var(--theme-ink, #f4eef8);
+    font-size: 15px;
+    font-weight: 700;
+}
+.table-creation .scheduled-start-copy span {
+    color: var(--theme-muted, #a99ab4);
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 600;
+}
+.table-creation .scheduled-start-track {
+    position: relative;
+    flex: 0 0 auto;
+    width: 46px;
+    height: 28px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-muted, #9e8dac) 45%, var(--theme-surface, #100c17));
+}
+.table-creation .scheduled-start-on .scheduled-start-track {
+    background: linear-gradient(105deg, #ff9717, #ff4a83 52%, #f02bc6);
+}
+.table-creation .scheduled-start-track > span {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s ease;
+}
+.table-creation .scheduled-start-on .scheduled-start-track > span {
+    transform: translateX(18px);
+}
+.table-creation .scheduled-start-fields {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--theme-line, #ffffff18);
+}
+
 @media (max-width: 900px) {
     .creation-layout {
         grid-template-columns: minmax(0, 1fr);
