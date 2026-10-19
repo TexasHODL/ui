@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { tournamentStartedFromPublicState, useLobbyTournamentStarted } from "./useLobbyTournamentStarted";
+import { tournamentProgressFromPublicState, useLobbyTournamentStarted } from "./useLobbyTournamentStarted";
 
 const mockGetGameState = jest.fn();
 const mockApi = { getPublicGameState: mockGetGameState };
@@ -12,25 +12,45 @@ const state = (gameState: Record<string, unknown>) => ({
 
 beforeEach(() => mockGetGameState.mockReset());
 
-it("reads a started hand from public state and ignores a table still waiting", () => {
-    expect(tournamentStartedFromPublicState(state({
+it("reads started, finished, and still-waiting tables from public state", () => {
+    expect(tournamentProgressFromPublicState(state({
         handNumber: 1,
         round: TexasHoldemRound.PREFLOP,
-        previousActions: []
-    }))).toBe(true);
-    expect(tournamentStartedFromPublicState(state({
+        previousActions: [],
+        results: []
+    }))).toBe("started");
+    expect(tournamentProgressFromPublicState(state({
+        handNumber: 4,
+        round: TexasHoldemRound.END,
+        previousActions: [],
+        results: [{ place: 1, playerId: "winner", payout: "100" }],
+        winners: [{ address: "winner" }]
+    }))).toBe("finished");
+    expect(tournamentProgressFromPublicState(state({
+        handNumber: 2,
+        round: TexasHoldemRound.END,
+        previousActions: [],
+        results: [{ place: 2, playerId: "alice", payout: "0" }],
+        winners: [{ address: "bob" }]
+    }))).toBe("started");
+    expect(tournamentProgressFromPublicState(state({
         handNumber: 1,
         round: TexasHoldemRound.ANTE,
         previousActions: []
-    }))).toBe(false);
-    expect(tournamentStartedFromPublicState({ game_state: "not-json" })).toBe(false);
-    expect(tournamentStartedFromPublicState(undefined)).toBe(false);
+    }))).toBeNull();
+    expect(tournamentProgressFromPublicState({ game_state: "not-json" })).toBeNull();
+    expect(tournamentProgressFromPublicState(undefined)).toBeNull();
 });
 
-it("loads started tables and drops one that is no longer in play", async () => {
-    mockGetGameState.mockResolvedValue(state({ handNumber: 3, round: TexasHoldemRound.FLOP, previousActions: [] }));
+it("loads a finished table and clears it when the table is waiting again", async () => {
+    mockGetGameState.mockResolvedValue(state({
+        handNumber: 4,
+        round: TexasHoldemRound.END,
+        previousActions: [],
+        results: [{ place: 1, playerId: "winner", payout: "100" }]
+    }));
     const { result } = renderHook(() => useLobbyTournamentStarted("bad-beat", 0));
-    await waitFor(() => expect(result.current).toEqual({ "bad-beat": true }));
+    await waitFor(() => expect(result.current).toEqual({ "bad-beat": "finished" }));
     mockGetGameState.mockResolvedValue(state({ handNumber: 1, round: TexasHoldemRound.ANTE, previousActions: [] }));
     act(() => window.dispatchEvent(new Event("focus")));
     await waitFor(() => expect(result.current).toEqual({}));

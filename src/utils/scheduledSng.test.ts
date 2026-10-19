@@ -1,5 +1,5 @@
 import { NonPlayerActionType, PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledLobbyLabel, scheduledSngPhase, scheduledStartRejection } from "./scheduledSng";
+import { SCHEDULED_SNG_GRACE_MS, formatCountdown, hasTournamentFinished, hasTournamentStarted, isScheduledSng, localDateTimeToUnixSeconds, scheduledLobbyLabel, scheduledSngPhase, scheduledStartRejection } from "./scheduledSng";
 
 const start = 1_700_000_000_000;
 
@@ -35,8 +35,17 @@ describe("hasTournamentStarted", () => {
     });
 });
 
+describe("hasTournamentFinished", () => {
+    it("is true only when results include first place, not a hand winner or a bust", () => {
+        expect(hasTournamentFinished({ results: [{ place: 1, playerId: "winner", payout: "100" }] })).toBe(true);
+        expect(hasTournamentFinished({ results: [{ place: 3, playerId: "carol", payout: "0" }, { place: 2, playerId: "alice", payout: "0" }] })).toBe(false);
+        expect(hasTournamentFinished({ results: [] })).toBe(false);
+        expect(hasTournamentFinished(undefined)).toBe(false);
+    });
+});
+
 describe("scheduledLobbyLabel", () => {
-    const base = { scheduledStartTime: start, minPlayers: 4, nowMs: start };
+    const base = { scheduledStartTime: start, minPlayers: 4, nowMs: start, finished: false };
     it("keeps Starting only while the start is due and the hand has not begun", () => {
         expect(scheduledLobbyLabel({ ...base, phase: "ready", started: false })).toBe("Starting");
     });
@@ -44,8 +53,13 @@ describe("scheduledLobbyLabel", () => {
         expect(scheduledLobbyLabel({ ...base, phase: "ready", started: true })).toBe("Started");
         expect(scheduledLobbyLabel({ ...base, phase: "registering", started: true, nowMs: start - 1 })).toBe("Started");
     });
-    it("keeps the cancelled wording and the pre-start line", () => {
-        expect(scheduledLobbyLabel({ ...base, phase: "cancelled", started: true })).toBe("Cancelled: not enough players");
+    it("says Finished once the tournament has a winner, and never Cancelled after it started", () => {
+        expect(scheduledLobbyLabel({ ...base, phase: "ready", started: true, finished: true })).toBe("Finished");
+        expect(scheduledLobbyLabel({ ...base, phase: "cancelled", started: true, finished: true })).toBe("Finished");
+        expect(scheduledLobbyLabel({ ...base, phase: "cancelled", started: true })).toBe("Started");
+    });
+    it("keeps Cancelled for a game that never started, and the pre-start line", () => {
+        expect(scheduledLobbyLabel({ ...base, phase: "cancelled", started: false })).toBe("Cancelled: not enough players");
         expect(scheduledLobbyLabel({ ...base, phase: "registering", started: false, nowMs: start - 1 })).toContain("· min 4");
         expect(scheduledLobbyLabel({ ...base, phase: "unscheduled", started: false })).toBe("");
     });
