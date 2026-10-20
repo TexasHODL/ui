@@ -6,9 +6,14 @@
  */
 import { DECK_FILES, CHIP_STYLE_FILES, DEALER_STYLE_FILES } from "../utils/tableStyleAssets";
 
-export const DECK_IDS = ["C", "D", "H", "J", "K", "M", "N", "O", "P"] as const;
+/**
+ * "block52" is the original Block52 card art (src/assets/cards, via
+ * getCardImageUrl): no files of its own under assets/decks.
+ */
+export const DECK_IDS = ["block52", "C", "D", "H", "J", "K", "M", "N", "O", "P"] as const;
 export type DeckId = (typeof DECK_IDS)[number];
 export const DECK_LABELS: Record<DeckId, string> = {
+    block52: "Block52 Classic",
     C: "Minimal Modern",
     D: "Brand Night",
     H: "HODL Watermark",
@@ -43,7 +48,7 @@ export interface TableStyles {
     dealer: StyleId;
 }
 
-export const DEFAULT_TABLE_STYLES: TableStyles = { deck: "O", chips: "C", dealer: "C" };
+export const DEFAULT_TABLE_STYLES: TableStyles = { deck: "block52", chips: "C", dealer: "C" };
 
 export const TABLE_STYLE_STORAGE_KEYS = {
     deck: "texas-hodl-card-deck",
@@ -89,6 +94,7 @@ const CHIP_STYLE_URLS = indexChipStyleUrls(CHIP_STYLE_FILES);
 const DEALER_STYLE_URLS = indexDealerStyleUrls(DEALER_STYLE_FILES);
 
 /** Face URL for a card code in a deck, or null when the deck has no such face. */
+/** Block52 Classic returns null, so callers use the original bundled faces. */
 export const deckCardUrl = (deck: DeckId, code: string): string | null => DECK_URLS[deck]?.[code] ?? null;
 /** Styled chip URL for a live chip file name ("25chip.svg"), or null for Current / unknown. */
 export const chipStyleUrl = (style: StyleId, file: string): string | null =>
