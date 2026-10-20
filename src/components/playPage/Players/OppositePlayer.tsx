@@ -20,7 +20,8 @@ import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { useShowingCardsByAddress } from "../../../hooks/player/useShowingCardsByAddress";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
-import { getCardImageUrl, getCardBackUrl, CardBackStyle } from "../../../utils/cardImages";
+import { getCardBackUrl, CardBackStyle } from "../../../utils/cardImages";
+import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
@@ -50,6 +51,8 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
     const { isActive: isTurnTimerActive } = usePlayerTimer(id, index);
     const { equities, shouldShow: shouldShowEquity } = useAllInEquity();
     const { getAvatarForAddress } = useProfileAvatar();
+    // Faces come from the deck chosen in Settings > Cards.
+    const getCardImageUrl = useCardFaceUrl();
 
     // Get equity for this player if available
     const playerEquity = React.useMemo((): number | null => {

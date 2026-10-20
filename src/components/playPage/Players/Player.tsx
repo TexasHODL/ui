@@ -9,7 +9,7 @@ import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
 import { useParams } from "react-router-dom";
 import type { PlayerProps } from "../../../types/index";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { getCardImageUrl } from "../../../utils/cardImages";
+import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { winnerCardHighlight } from "../../../utils/holeCardLayout";
 import { HoleCardRow } from "./HoleCardRow";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
@@ -107,6 +107,8 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         }, [winnerBySeat, index]);
 
         // 5) render hole cards — two for Hold'em, four for Omaha (ui#768)
+        // Faces come from the deck chosen in Settings > Cards.
+        const getCardImageUrl = useCardFaceUrl();
         const renderCards = useCallback(() => {
             if (!hasElements(holeCards)) {
                 return <div className="w-[120px] h-[80px]"></div>;
@@ -144,7 +146,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                     }))}
                 />
             );
-        }, [holeCards, index, isWinner, winnerCards]);
+        }, [holeCards, index, isWinner, winnerCards, getCardImageUrl]);
 
         // 6) container style for positioning
         const containerStyle = useMemo(

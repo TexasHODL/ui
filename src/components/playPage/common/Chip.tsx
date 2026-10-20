@@ -4,6 +4,7 @@ import React from "react";
 import { formatForSitAndGo, convertUSDCToNumber } from "../../../utils/numberUtils";
 import { decomposeAmount } from "../../../utils/chipBreakdown";
 import { getChipImageUrl } from "../../../utils/cardImages";
+import { useChipImageUrl } from "../../../theme/useTableStyles";
 
 /** Vertical offset per chip for same-denomination vertical stacking (px). */
 const STACK_OFFSET_Y = 4;
@@ -79,6 +80,8 @@ function getClusterBounds(count: number, chipSize: number, maxVisibleCount: numb
 }
 
 const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
+    // Chip art from Settings > Chips (Current = the live CDN chips).
+    const chipUrl = useChipImageUrl();
     const amountStr = amount ? amount.toString() : "0";
 
     // Format based on game type: raw chips for tournaments, USDC conversion for cash
@@ -134,7 +137,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
                     return Array.from({ length: stack.visibleCount }).map((_, ci) => (
                         <img
                             key={`s${si}-c${ci}`}
-                            src={getChipImageUrl(stack.file)}
+                            src={chipUrl(stack.file, getChipImageUrl(stack.file))}
                             alt={`$${stack.value} chip`}
                             style={{
                                 position: "absolute",

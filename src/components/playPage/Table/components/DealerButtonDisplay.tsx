@@ -1,5 +1,5 @@
 import * as React from "react";
-import CustomDealer from "../../../../assets/CustomDealer.svg";
+import DealerButtonImage from "../../common/DealerButtonImage";
 import { chipSizeForViewport } from "../../../../utils/chipSize";
 import "./DealerButtonDisplay.css";
 
@@ -23,7 +23,7 @@ const DealerButtonDisplay: React.FC<DealerButtonDisplayProps> = React.memo(({ se
             data-dealer-side={side}
             style={{ width: `${size}px`, height: `${size}px` }}
         >
-            <img src={CustomDealer} alt="Dealer Button" />
+            <DealerButtonImage />
         </div>
     );
 });
