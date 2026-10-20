@@ -18,6 +18,9 @@ import {
     subscribeTableStyles
 } from "./tableStyles";
 import { decomposeAmount } from "../utils/chipBreakdown";
+import { getCardImageUrl } from "../utils/cardImages";
+
+const getCardFaceUrl = (deck: Parameters<typeof deckCardUrl>[0], code: string) => deckCardUrl(deck, code) ?? getCardImageUrl(code);
 
 const ASSETS = path.join(__dirname, "..", "assets");
 const CARD_CODES = "23456789TJQKA".split("").flatMap(rank => "SHDC".split("").map(suit => rank + suit));
@@ -28,18 +31,18 @@ beforeEach(() => {
 });
 
 describe("table style choices", () => {
-    it("offers only the nine selected decks, by name with no letter prefix", () => {
-        expect(DECK_IDS).toEqual(["C", "D", "H", "J", "K", "M", "N", "O", "P"]);
+    it("offers Block52 Classic first plus the nine selected decks, by name with no letter prefix", () => {
+        expect(DECK_IDS).toEqual(["block52", "C", "D", "H", "J", "K", "M", "N", "O", "P"]);
         expect(DECK_IDS.map(id => DECK_LABELS[id])).toEqual([
-            "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
+            "Block52 Classic", "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
             "Classic Courts", "HODL Courts", "Web3 Holo", "Tech Grid"
         ]);
         expect(STYLE_IDS.map(id => CHIP_STYLE_LABELS[id])).toEqual(["Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D"]);
         expect(STYLE_IDS.map(id => DEALER_STYLE_LABELS[id])).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin"]);
     });
 
-    it("defaults to Web3 Holo cards, Crypto coin chips and the Clean minimal dealer button", () => {
-        expect(DEFAULT_TABLE_STYLES).toEqual({ deck: "O", chips: "C", dealer: "C" });
+    it("defaults to Block52 Classic cards, Crypto coin chips and the Clean minimal dealer button", () => {
+        expect(DEFAULT_TABLE_STYLES).toEqual({ deck: "block52", chips: "C", dealer: "C" });
         expect(readTableStyles()).toEqual(DEFAULT_TABLE_STYLES);
     });
 
@@ -76,6 +79,19 @@ describe("table style choices", () => {
         unsubscribe();
     });
 
+    it("keeps a saved deck choice; only players with no saved choice get Block52 Classic", () => {
+        localStorage.setItem(TABLE_STYLE_STORAGE_KEYS.deck, "O");
+        expect(readTableStyles().deck).toBe("O");
+        localStorage.removeItem(TABLE_STYLE_STORAGE_KEYS.deck);
+        expect(readTableStyles().deck).toBe("block52");
+    });
+
+    it("draws Block52 Classic with the original bundled card faces", () => {
+        for (const code of CARD_CODES) expect(deckCardUrl("block52", code)).toBeNull();
+        expect(getCardFaceUrl("block52", "AS")).toBe(getCardImageUrl("AS"));
+        expect(getCardFaceUrl("O", "AS")).toBe("/assets/decks/O/AS.svg");
+    });
+
     it("keeps the stable snapshot between reads (useSyncExternalStore)", () => {
         expect(getTableStyles()).toBe(getTableStyles());
     });
@@ -83,10 +99,10 @@ describe("table style choices", () => {
 
 describe("bundled style art", () => {
     it("ships only the offered decks", () => {
-        expect(fs.readdirSync(path.join(ASSETS, "decks")).sort()).toEqual([...DECK_IDS].sort());
+        expect(fs.readdirSync(path.join(ASSETS, "decks")).sort()).toEqual(DECK_IDS.filter(id => id !== "block52").sort());
     });
 
-    it.each(DECK_IDS)("deck %s maps all 52 faces to a valid SVG file", deck => {
+    it.each(DECK_IDS.filter(id => id !== "block52"))("deck %s maps all 52 faces to a valid SVG file", deck => {
         for (const code of CARD_CODES) {
             expect(deckCardUrl(deck, code)).toBe(`/assets/decks/${deck}/${code}.svg`);
             const svg = fs.readFileSync(path.join(ASSETS, "decks", deck, `${code}.svg`), "utf8");

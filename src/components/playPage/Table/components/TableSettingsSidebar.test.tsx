@@ -54,12 +54,12 @@ describe("Table settings", () => {
         it("shows three dropdowns with the offered names and the defaults selected", () => {
             render(<TableSettingsSidebar isOpen />);
             expect(optionLabels("Cards")).toEqual([
-                "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
+                "Block52 Classic", "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
                 "Classic Courts", "HODL Courts", "Web3 Holo", "Tech Grid"
             ]);
             expect(optionLabels("Chips")).toEqual(["Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D"]);
             expect(optionLabels("Dealer button")).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin"]);
-            expect(screen.getByRole("combobox", { name: "Cards" })).toHaveValue("O");
+            expect(screen.getByRole("combobox", { name: "Cards" })).toHaveValue("block52");
             expect(screen.getByRole("combobox", { name: "Chips" })).toHaveValue("C");
             expect(screen.getByRole("combobox", { name: "Dealer button" })).toHaveValue("C");
         });
