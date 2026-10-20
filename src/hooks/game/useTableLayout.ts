@@ -7,7 +7,7 @@
  */
 
 import { useState, useLayoutEffect, useCallback, useMemo, type RefObject } from "react";
-import { placeMobileRailMarkers } from "../../config/landscapeSeatEdges";
+import { placeMobileRailMarkers, mobileBoardKeepOut } from "../../config/landscapeSeatEdges";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 import {
     type TableSize,
@@ -16,7 +16,9 @@ import {
     calculateZoom,
     getTableTransform,
     getAllPositions,
-    notePortraitSize
+    notePortraitSize,
+    withBetSpots,
+    mobileBetBoard
 } from "../../config/stageGeometry";
 
 export interface UseTableLayoutReturn {
@@ -137,9 +139,15 @@ export const useTableLayout = (
         const base = getAllPositions(tableSize);
         const screenUnit = parseFloat(mobileCardUnit(viewportMode === "mobile-portrait", zoom, cw, ch)) * zoom;
         if (viewportMode === "mobile-landscape" || viewportMode === "mobile-portrait") {
-            return placeMobileRailMarkers(base, zoom, 0, screenUnit, tableSize);
+            const placed = placeMobileRailMarkers(base, zoom, 0, screenUnit, tableSize);
+            // Bets (and the dealer button beside them) follow one rule on every
+            // format: centred on the seat's x, under upper-half seats and above
+            // lower-half seats.
+            const unitStage = screenUnit / Math.max(zoom, 0.01);
+            const board = mobileBoardKeepOut(tableSize, unitStage, viewportMode === "mobile-portrait", 0).filter(item => !item.soft);
+            return withBetSpots(placed, true, unitStage, mobileBetBoard(tableSize, viewportMode === "mobile-portrait", board));
         }
-        return base;
+        return withBetSpots(base, false);
     }, [tableSize, viewportMode, cw, ch, zoom]);
     const tableTransform = useMemo(
         () => getTableTransform(zoom, tableSize, cw, ch, viewportMode.startsWith("mobile") ? 0 : -48),

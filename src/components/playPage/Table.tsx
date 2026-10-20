@@ -39,6 +39,8 @@ import { useNextToActInfo } from "../../hooks/game/useNextToActInfo";
 
 //2. Visual Position/State Providers
 import PlayerChipDisplay from "./Table/components/PlayerChipDisplay";
+import { useDealerPosition } from "../../hooks/game/useDealerPosition";
+import { useShowAllDealerButtons } from "../../context/ShowAllDealerButtonsContext";
 
 //3. Game State Providers
 import { useTableState } from "../../hooks/game/useTableState"; //Provides currentRound, formattedTotalPot, tableSize, tableSize determines player layout (6 vs 9 players)
@@ -808,6 +810,8 @@ const Table = React.memo(() => {
 
     // Enable turn-to-act notifications (tab flashing + optional sound)
     const { turnNotificationSound, playerActionSounds, seatAtBottom, leftHandMode } = useGameSettings();
+    const { dealerSeat } = useDealerPosition();
+    const showAllDealerButtons = useShowAllDealerButtons();
     useTurnNotification(isCurrentUserTurn, {
         enableSound: turnNotificationSound,
         soundVolume: 0.3,
@@ -1494,7 +1498,7 @@ const Table = React.memo(() => {
                                     winnerCards={winnerCards}
                                 />
 
-                                {/* Chips — per-seat memoized leaf; only the affected seat re-renders on WS update (#424) */}
+                                {/* Bets — per-seat memoized leaf (#424). The dealer button sits beside its seat's bet, even with no bet. */}
                                 {!isSitAndGoWaitingForPlayers &&
                                     tableLayout.positions.chips.map((position, positionIndex) => {
                                         const seatNumber = ((positionIndex - startIndex + tableSize) % tableSize) + 1;
@@ -1505,13 +1509,15 @@ const Table = React.memo(() => {
                                                 left={position.left}
                                                 bottom={position.bottom}
                                                 top={position.top}
+                                                side={position.side}
                                                 isTournament={isTournamentFormat(gameFormat)}
+                                                isDealer={showAllDealerButtons || dealerSeat === seatNumber}
                                             />
                                         );
                                     })}
                             </div>
 
-                            {/* Player seats. The dealer button is part of the seat badge. */}
+                            {/* Player seats. */}
                             <PlayerSeating
                                 tableLayout={tableLayout}
                                 tableSize={tableSize}
