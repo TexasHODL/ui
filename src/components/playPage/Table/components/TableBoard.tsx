@@ -9,7 +9,8 @@
  */
 
 import React, { useMemo } from "react";
-import { getCardImageUrl, getCardBackUrl, CardBackStyle } from "../../../../utils/cardImages";
+import { getCardBackUrl, CardBackStyle } from "../../../../utils/cardImages";
+import { useCardFaceUrl } from "../../../../theme/useTableStyles";
 import { PotDisplayValues } from "../../../../utils/potDisplayUtils";
 import { useCardAnimations } from "../../../../hooks/animations/useCardAnimations";
 import OppositePlayerCards from "../../Card/OppositePlayerCards";
@@ -56,6 +57,8 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     // into place when its staggered flag turns on, one after another. Late mount /
     // replay reveals already-dealt slots immediately.
     const { revealedSlots } = useCardAnimations();
+    // Faces come from the deck chosen in Settings > Cards.
+    const getCardImageUrl = useCardFaceUrl();
 
     // Memoize community cards rendering
     const communityCardsElements = useMemo(() => {
@@ -105,7 +108,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                 );
             }
         });
-    }, [communityCards, cardBackStyle, winnerCards, revealedSlots]);
+    }, [communityCards, cardBackStyle, winnerCards, revealedSlots, getCardImageUrl]);
 
     return (
         <>

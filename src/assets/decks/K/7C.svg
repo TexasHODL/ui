@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="550" height="805" viewBox="0 0 550 805" fill="none"><defs><linearGradient id="br" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff9717"/><stop offset=".52" stop-color="#ff4a83"/><stop offset="1" stop-color="#f02bc6"/></linearGradient><linearGradient id="fk" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1e6ff"/><stop offset=".55" stop-color="#ffe6f2"/><stop offset="1" stop-color="#ffecd9"/></linearGradient></defs><rect width="550" height="805" rx="54" fill="url(#br)"/><rect x="12" y="12" width="526" height="781" rx="44" fill="url(#fk)"/><g opacity="0.12"><svg x="255" y="520" width="250" height="259.7" viewBox="310 0 310 322" overflow="visible">
+    <defs>
+      <linearGradient id="purple" x1="0" y1="0" x2="0.35" y2="1">
+        <stop stop-color="#df2cf4"/>
+        <stop offset="0.55" stop-color="#b52add"/>
+        <stop offset="1" stop-color="#7c36c8"/>
+      </linearGradient>
+      <path id="spade" d="M0-16C-4-9-15-3-15 4C-15 13-5 15-1 8C-1 15-4 18-6 20H6C4 18 1 15 1 8C5 15 15 13 15 4C15-3 4-9 0-16Z"/>
+      <path id="heart" d="M0 14C-3 9-15 2-15-6C-15-16-4-19 0-10C4-19 15-16 15-6C15 2 3 9 0 14Z"/>
+      <path id="club" d="M-2 8C-13 16-22 3-13-4C-10-6-6-6-4-4C-12-15-3-23 4-19C10-16 10-8 5-4C15-10 24 3 15 9C11 12 6 11 2 8C3 15 5 17 8 19H-8C-5 17-3 15-2 8Z"/>
+      <mask id="fan-cutouts" maskUnits="userSpaceOnUse" x="310" y="0" width="330" height="340">
+        <path fill="white" d="M310 0H640V340H310Z"/>
+        <g fill="black">
+          <g transform="translate(471 66) rotate(4)">
+            <path fill-rule="evenodd" d="M15 0C5 0 0 7 0 18S5 36 15 36S30 29 30 18S25 0 15 0ZM15 6C21 6 24 10 24 18S21 30 15 30S6 26 6 18S9 6 15 6Z"/>
+            <use href="#heart" transform="translate(15 58) scale(.67)"/>
+          </g>
+          <g transform="translate(584 79) rotate(23)">
+            <path d="M0 0H6V29H24V35H0Z"/>
+            <path d="M12 45L22 59L12 73L2 59Z"/>
+          </g>
+        </g>
+      </mask>
+    </defs>
+    <g id="hodl-fan">
+      <g fill="#7c36c8" mask="url(#fan-cutouts)">
+        <path d="M430 29L437 15Q443-3 460 7L600 77Q617 84 609 101L500 315L562 78Q566 63 550 58Z"/>
+        <path d="M317 83L319 63Q319 46 339 47L492 52Q511 52 510 75L500 315L451 77Q449 61 436 61Z"/>
+      </g>
+      <g fill="#7c36c8">
+        <g transform="translate(414 81) rotate(-11)">
+          <path d="M0 0H5V11H19V0H24V30H19V16H5V30H0Z"/>
+          <use href="#spade" transform="translate(12 50) scale(.6)"/>
+        </g>
+        <g transform="translate(526 64) rotate(14)">
+          <path fill-rule="evenodd" d="M0 0H10C21 0 26 6 26 16S21 32 10 32H0ZM5 5V27H10C18 27 21 23 21 16S18 5 10 5Z"/>
+          <use href="#club" transform="translate(12 51) scale(.5)"/>
+        </g>
+      </g>
+    </g>
+  </svg>
+</g><text x="42" y="270" text-anchor="start" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="270" fill="#5b2bb5" >7</text><path d="M-2 8C-13 16-22 3-13-4C-10-6-6-6-4-4C-12-15-3-23 4-19C10-16 10-8 5-4C15-10 24 3 15 9C11 12 6 11 2 8C3 15 5 17 8 19H-8C-5 17-3 15-2 8Z" fill="#5b2bb5" transform="translate(140 430) scale(7.5)"/><path d="M-2 8C-13 16-22 3-13-4C-10-6-6-6-4-4C-12-15-3-23 4-19C10-16 10-8 5-4C15-10 24 3 15 9C11 12 6 11 2 8C3 15 5 17 8 19H-8C-5 17-3 15-2 8Z" fill="#5b2bb5" transform="translate(400 650) scale(5.5)"/></svg>

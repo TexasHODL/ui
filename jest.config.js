@@ -29,7 +29,9 @@ module.exports = {
     // Mock wagmi (ESM package)
     '^wagmi$': '<rootDir>/src/__mocks__/wagmi.js',
     // import.meta shim (see src/utils/viteEnv.ts)
-    'viteEnv$': '<rootDir>/src/__mocks__/viteEnv.js'
+    'viteEnv$': '<rootDir>/src/__mocks__/viteEnv.js',
+    // import.meta.glob shim for the selectable deck/chip/dealer art
+    'tableStyleAssets$': '<rootDir>/src/__mocks__/tableStyleAssets.js'
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

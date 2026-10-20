@@ -9,6 +9,43 @@ import React from "react";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { ThemeToggle } from "../../../ThemeToggle";
 import type { TableStyleOption } from "./MobileTableHeader";
+import {
+    CHIP_STYLE_LABELS,
+    DEALER_STYLE_LABELS,
+    DECK_IDS,
+    DECK_LABELS,
+    STYLE_IDS,
+    isDeckId,
+    isStyleId,
+    setTableStyle
+} from "../../../../theme/tableStyles";
+import { useTableStyles } from "../../../../theme/useTableStyles";
+
+const SELECT_CLASS = "block w-full mt-2 p-3 rounded-lg border border-white/20 bg-[#181020] text-white";
+
+interface StyleSelectProps {
+    label: string;
+    value: string;
+    options: readonly { value: string; label: string }[];
+    onChange: (value: string) => void;
+}
+
+const StyleSelect: React.FC<StyleSelectProps> = ({ label, value, options, onChange }) => (
+    <label className="settings-appearance">
+        {label}
+        <select aria-label={label} value={value} className={SELECT_CLASS} onChange={event => onChange(event.target.value)}>
+            {options.map(option => (
+                <option key={option.value} value={option.value}>
+                    {option.label}
+                </option>
+            ))}
+        </select>
+    </label>
+);
+
+const DECK_OPTIONS = DECK_IDS.map(id => ({ value: id, label: DECK_LABELS[id] }));
+const CHIP_OPTIONS = STYLE_IDS.map(id => ({ value: id, label: CHIP_STYLE_LABELS[id] }));
+const DEALER_OPTIONS = STYLE_IDS.map(id => ({ value: id, label: DEALER_STYLE_LABELS[id] }));
 
 interface ToggleRowProps {
     label: string;
@@ -64,6 +101,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
         togglePreSelectCheck,
         toggleLeftHandMode
     } = useGameSettings();
+    const tableStyles = useTableStyles();
 
     return (
         <div
@@ -99,7 +137,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                                 <select
                                     aria-label="Table appearance"
                                     value={tableStyle}
-                                    className="block w-full mt-2 p-3 rounded-lg border border-white/20 bg-[#181020] text-white"
+                                    className={SELECT_CLASS}
                                     onChange={event => {
                                         const value = event.target.value;
                                         if (value === "modern" || value === "classic" || value === "nouns") onTableStyleChange(value);
@@ -111,6 +149,24 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                                 </select>
                             </label>
                         )}
+                        <StyleSelect
+                            label="Cards"
+                            value={tableStyles.deck}
+                            options={DECK_OPTIONS}
+                            onChange={value => isDeckId(value) && setTableStyle("deck", value)}
+                        />
+                        <StyleSelect
+                            label="Chips"
+                            value={tableStyles.chips}
+                            options={CHIP_OPTIONS}
+                            onChange={value => isStyleId(value) && setTableStyle("chips", value)}
+                        />
+                        <StyleSelect
+                            label="Dealer button"
+                            value={tableStyles.dealer}
+                            options={DEALER_OPTIONS}
+                            onChange={value => isStyleId(value) && setTableStyle("dealer", value)}
+                        />
                         <ToggleRow
                             label="Turn Notification Sound"
                             description="Sound and tab flash when it’s your turn."
