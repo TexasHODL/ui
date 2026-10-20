@@ -40,10 +40,9 @@ type OppositePlayerProps = {
     status?: string;
     uiPosition?: number;
     cardBackStyle?: CardBackStyle;
-    isDealer?: boolean;
 };
 
-const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle, isDealer = false }) => {
+const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle }) => {
     const { id } = useParams<{ id: string }>();
     const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
     const { winnerInfo, winnerBySeat } = useWinnerInfo();
@@ -204,7 +203,6 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                             isSeated={isSeated}
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
-                            isDealer={isDealer}
                         />
                     </div>
                 </div>
@@ -217,8 +215,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
         prevProps.left === nextProps.left &&
         prevProps.top === nextProps.top &&
         prevProps.index === nextProps.index &&
-        prevProps.color === nextProps.color &&
-        prevProps.isDealer === nextProps.isDealer
+        prevProps.color === nextProps.color
     );
 });
 

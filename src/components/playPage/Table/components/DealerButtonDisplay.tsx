@@ -1,0 +1,33 @@
+import * as React from "react";
+import CustomDealer from "../../../../assets/CustomDealer.svg";
+import { chipSizeForViewport } from "../../../../utils/chipSize";
+import "./DealerButtonDisplay.css";
+
+interface DealerButtonDisplayProps {
+    seatIndex: number;
+    /** Which side of the bet group the button sits on (towards the table interior). */
+    side: "left" | "right";
+}
+
+/**
+ * The dealer button, drawn beside a seat's bet chips and amount, vertically
+ * centred on them. It is the size of one chip. Rendered inside the seat's
+ * `.chip-position` group, which is positioned even when the seat has no bet.
+ */
+const DealerButtonDisplay: React.FC<DealerButtonDisplayProps> = React.memo(({ seatIndex, side }) => {
+    const size = chipSizeForViewport();
+    return (
+        <div
+            className="dealer-button"
+            data-dealer-button={seatIndex}
+            data-dealer-side={side}
+            style={{ width: `${size}px`, height: `${size}px` }}
+        >
+            <img src={CustomDealer} alt="Dealer Button" />
+        </div>
+    );
+});
+
+DealerButtonDisplay.displayName = "DealerButtonDisplay";
+
+export default DealerButtonDisplay;

@@ -19,7 +19,7 @@ function boxesOverlap(a: KeepOut, b: KeepOut, gap: number): boolean {
  * stays centred on the unscaled felt; portrait shifts the card row the same
  * way mobileReadability.css does.
  */
-function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolean, lift: number): KeepOut[] {
+export function mobileBoardKeepOut(size: TableSize, unitStage: number, portrait: boolean, lift: number): KeepOut[] {
     const dims = getStageDims();
     const cx = dims.tableWidth / 2;
     const mid = dims.tableHeight / 2;

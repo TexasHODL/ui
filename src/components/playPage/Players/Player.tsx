@@ -23,8 +23,8 @@ import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
 
-const Player: React.FC<PlayerProps & { uiPosition?: number; isDealer?: boolean }> = memo(
-    ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition, isDealer = false }) => {
+const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
+    ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
         const { id } = useParams<{ id: string }>();
         const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
         const { winnerInfo, winnerBySeat } = useWinnerInfo();
@@ -213,7 +213,6 @@ const Player: React.FC<PlayerProps & { uiPosition?: number; isDealer?: boolean }
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
                             onSitIn={isSittingOut ? handleSitInFromBadge : undefined}
-                            isDealer={isDealer}
                         />
                     </div>
                 </div>
@@ -227,8 +226,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number; isDealer?: boolean }
             prevProps.index === nextProps.index &&
             prevProps.currentIndex === nextProps.currentIndex &&
             prevProps.color === nextProps.color &&
-            prevProps.status === nextProps.status &&
-            prevProps.isDealer === nextProps.isDealer
+            prevProps.status === nextProps.status
         );
     }
 );

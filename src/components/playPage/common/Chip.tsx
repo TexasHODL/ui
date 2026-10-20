@@ -1,3 +1,4 @@
+import { chipSizeForViewport } from "../../../utils/chipSize";
 import { formatMicroUsd } from "../../../utils/moneyDisplay";
 import React from "react";
 import { formatForSitAndGo, convertUSDCToNumber } from "../../../utils/numberUtils";
@@ -8,8 +9,6 @@ import { getChipImageUrl } from "../../../utils/cardImages";
 const STACK_OFFSET_Y = 4;
 
 /** Size of each chip image (px). */
-const CHIP_SIZE = 28;
-const CHIP_SIZE_MOBILE = 32;
 
 type ChipProps = {
     amount: string | bigint;
@@ -100,7 +99,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     // still. mobileReadability.css overrides both classes: landscape paints every
     // seat at 17px on screen, and portrait keeps every seat on this 36px label.
     const compactLabel = !isMobile || (window.innerWidth > window.innerHeight && window.innerHeight <= 500);
-    const chipSize = isMobile ? CHIP_SIZE_MOBILE : CHIP_SIZE;
+    const chipSize = chipSizeForViewport();
 
     const maxVisibleCount = Math.max(1, ...allStacks.map(s => s.visibleCount));
     const bounds = getClusterBounds(allStacks.length, chipSize, maxVisibleCount);

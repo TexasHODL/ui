@@ -65,11 +65,6 @@
     height: calc(19 * var(--mobile-unit));
     font-size: calc(12 * var(--mobile-unit));
 }
-/* Match the seat-number disc. A 48px stage button would shrink with zoom
-   while the badge is counter-zoomed, so the gap would not stay put. */
-[data-mobile-readable] .dealer-badge-button {
-    --dealer-size: calc(22 * var(--mobile-unit));
-}
 /* The shell remains absolute: changing turns cannot re-centre a player. */
 [data-mobile-readable] .seat-banner-shell[data-banner-mode="timer"] {
     margin-top: calc(-22 * var(--mobile-unit));
