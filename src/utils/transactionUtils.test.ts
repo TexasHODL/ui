@@ -1,6 +1,7 @@
 import { describe, it, expect } from "@jest/globals";
 import {
     formatTransactionLabel,
+    describeTransaction,
     extractMessageTypeFromHex,
     formatTransferDirection,
     getTransferDirectionClass,
@@ -175,5 +176,44 @@ describe("transactionUtils", () => {
         it("returns no amount when no USDC transfer event exists", () => {
             expect(sumUsdcTransferEvents([{ type: "message", attributes: [{ key: "amount", value: "25" }] }])).toBeUndefined();
         });
+    });
+});
+
+describe("describeTransaction", () => {
+    const ME = "b52me";
+    const msg = (type: string, fields: Record<string, unknown> = {}) => ({ tx: { body: { messages: [{ "@type": `/pokerchain.poker.v1.${type}`, ...fields }] } } });
+
+    it("labels poker actions by action name, hiding the format-dependent amount", () => {
+        const d = describeTransaction(msg("MsgPerformAction", { action: "post-big-blind", amount: "20", game_id: "0xabc" }), ME);
+        expect(d).toMatchObject({ label: "Post-big-blind", action: "post-big-blind", gameId: "0xabc", messageType: "MsgPerformAction" });
+        expect(d.amount).toBeUndefined();
+        expect(describeTransaction(msg("MsgPerformAction", { action: "bet" }), ME).label).toBe("Bet");
+        expect(describeTransaction(msg("MsgPerformAction", { action: "check" }), ME).label).toBe("Check");
+    });
+
+    it("labels joins (with buy-in), leaves, creates and top-ups", () => {
+        expect(describeTransaction(msg("MsgJoinGame", { buy_in: "5000000", game_id: "0x1" }), ME)).toMatchObject({ label: "Join table", amount: "5000000", gameId: "0x1" });
+        expect(describeTransaction(msg("MsgLeaveGame", { game_id: "0x1" }), ME)).toMatchObject({ label: "Leave table", gameId: "0x1" });
+        expect(describeTransaction(msg("MsgCreateGame"), ME).label).toBe("Create table");
+        expect(describeTransaction(msg("MsgTopUp", { amount: "100", game_id: "0x1" }), ME)).toMatchObject({ label: "Top up", amount: "100" });
+    });
+
+    it("labels transfers with their direction for the viewer", () => {
+        const send = (from: string) => ({ tx: { body: { messages: [{ "@type": "/cosmos.bank.v1beta1.MsgSend", from_address: from, amount: [{ denom: "usdc", amount: "250" }] }] } } });
+        expect(describeTransaction(send(ME), ME)).toMatchObject({ label: "Transfer", transferAmount: "250", transferDirection: "sent" });
+        expect(describeTransaction(send("b52other"), ME)).toMatchObject({ label: "Transfer", transferDirection: "received" });
+    });
+
+    it("labels deposits and withdrawals, taking the amount from transfer events", () => {
+        const events = [{ type: "transfer", attributes: [{ key: "recipient", value: ME }, { key: "amount", value: "7000000usdc" }] }];
+        expect(describeTransaction({ ...msg("MsgProcessDeposit"), events }, ME)).toMatchObject({ label: "Deposit", transferAmount: "7000000", transferDirection: "received" });
+        expect(describeTransaction(msg("MsgInitiateWithdrawal"), ME).label).toBe("Withdrawal");
+    });
+
+    it("falls back gracefully for unknown or missing messages", () => {
+        expect(describeTransaction(msg("MsgDoSomethingNew"), ME).label).toBe("Do Something New");
+        expect(describeTransaction({}, ME)).toMatchObject({ label: "Transaction", messageType: "Transaction" });
+        const events = [{ type: "transfer", attributes: [{ key: "recipient", value: "b52x" }, { key: "amount", value: "5usdc" }] }];
+        expect(describeTransaction({ events }, ME)).toMatchObject({ label: "Transfer", transferDirection: "sent" });
     });
 });

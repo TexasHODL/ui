@@ -196,3 +196,107 @@ export function formatGameId(gameId?: string): string {
     if (gameId.length <= 9) return gameId;
     return `${gameId.slice(0, 6)}...`;
 }
+
+/** A coin amount as the REST gateway serialises it. */
+export interface TxCoin {
+    denom: string;
+    amount: string;
+}
+
+/** One message in a decoded tx body (REST gateway JSON). Only `@type` is always present. */
+export interface TxMessage {
+    "@type": string;
+    action?: string;
+    amount?: string | TxCoin[];
+    game_id?: string;
+    buy_in?: string;
+    from_address?: string;
+    to_address?: string;
+}
+
+/** The fields of a tx_responses entry (plus its decoded body) that the labels need. */
+export interface DescribableTx {
+    events?: TransferEvent[];
+    tx?: { body?: { messages?: TxMessage[] } };
+}
+
+/** What a transaction was for, as shown in the lobby card and the explorer list. */
+export interface TxDescription {
+    /** Display label: "Bet", "Post-big-blind", "Join table", "Transfer", "Deposit"… */
+    label: string;
+    /** Last segment of the first message's type URL, e.g. "MsgPerformAction". */
+    messageType: string;
+    action?: string;
+    /** Displayable USDC amount (micro-units) for the action, e.g. a buy-in. */
+    amount?: string;
+    gameId?: string;
+    transferAmount?: string;
+    transferDirection?: "sent" | "received";
+}
+
+/** Labels for chain messages that are not a poker action. Anything else is derived from the type name. */
+const MESSAGE_LABELS: Record<string, string> = {
+    MsgJoinGame: "Join table",
+    MsgLeaveGame: "Leave table",
+    MsgCreateGame: "Create table",
+    MsgTopUp: "Top up",
+    MsgSend: "Transfer",
+    MsgMultiSend: "Transfer",
+    MsgProcessDeposit: "Deposit",
+    MsgInitiateWithdrawal: "Withdrawal",
+    MsgRegisterNftAvatar: "Register NFT avatar"
+};
+
+/**
+ * Describe a transaction for display, from its first message and its events.
+ * Shared by the lobby's Recent Transactions card and the explorer's address
+ * Transactions list so both always label a tx the same way. Poker actions use
+ * the action name ("Bet", "Post-big-blind"); other messages use MESSAGE_LABELS
+ * or a label derived from the type name; with no decoded body the label is
+ * "Transfer" when the events show a USDC transfer, else "Transaction".
+ *
+ * @param viewer - the address the list is for; decides "sent" vs "received"
+ */
+export function describeTransaction(tx: DescribableTx, viewer: string): TxDescription {
+    const msg = tx.tx?.body?.messages?.[0];
+    const typeUrl = msg?.["@type"] ?? "";
+    const messageType = typeUrl.split(".").pop() || "";
+    const out: TxDescription = { label: "Transaction", messageType: messageType || "Transaction" };
+
+    if (msg) {
+        if (messageType === "MsgPerformAction") {
+            out.action = msg.action;
+            out.amount = getDisplayableActionAmount("MsgPerformAction", typeof msg.amount === "string" ? msg.amount : undefined);
+            out.gameId = msg.game_id;
+        } else if (messageType === "MsgJoinGame") {
+            out.amount = msg.buy_in;
+            out.gameId = msg.game_id;
+        } else if (messageType === "MsgLeaveGame" || messageType === "MsgCreateGame" || messageType === "MsgTopUp") {
+            out.gameId = msg.game_id;
+            if (messageType === "MsgTopUp" && typeof msg.amount === "string") out.amount = msg.amount;
+        } else if (messageType === "MsgSend") {
+            // Bank transfer: MsgSend carries a coin array, not a scalar.
+            const coin = Array.isArray(msg.amount) ? msg.amount[0] : undefined;
+            if (coin) {
+                out.transferAmount = coin.amount;
+                out.transferDirection = msg.from_address === viewer ? "sent" : "received";
+            }
+        }
+    }
+
+    // Fall back to the transfer events for the amount and direction.
+    if (!out.transferAmount && tx.events) {
+        out.transferAmount = sumUsdcTransferEvents(tx.events);
+        if (out.transferAmount) {
+            const transferEvent = tx.events.find(e => e.type === "transfer");
+            const recipient = transferEvent?.attributes?.find(a => a.key === "recipient");
+            out.transferDirection = recipient?.value === viewer ? "received" : "sent";
+        }
+    }
+
+    if (out.action) out.label = formatTransactionLabel(out.action, messageType);
+    else if (MESSAGE_LABELS[messageType]) out.label = MESSAGE_LABELS[messageType];
+    else if (messageType) out.label = formatTransactionLabel(undefined, messageType);
+    else if (out.transferAmount) out.label = "Transfer";
+    return out;
+}

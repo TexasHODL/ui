@@ -60,6 +60,7 @@ html[data-theme="light"] .site-page :is(.text-purple-300, .text-purple-400, .tex
 }
 html[data-theme="light"] .site-page :is(.text-green-300, .text-green-400) { color: #087342; }
 html[data-theme="light"] .site-page :is(.text-red-300, .text-red-400) { color: #b4233c; }
+html[data-theme="light"] .site-page .text-orange-400 { color: #a14a00; }
 html[data-theme="light"] .site-page :is(.text-yellow-400, .text-yellow-400\/70) { color: #805500; }
 html[data-theme="light"] .site-page :is(.border-white\/10, .border-white\/20) { border-color: var(--theme-line); }
 html[data-theme="light"] .site-page :is(.hover\:bg-\[\#21172b\], .hover\:bg-\[\#21172b\]\/50):hover {
