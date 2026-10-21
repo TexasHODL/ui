@@ -3,6 +3,7 @@
  */
 
 import { truncateMiddle } from "./stringUtils";
+import { formatMicroUsd } from "./moneyDisplay";
 
 export interface TransferEvent {
     type?: string;
@@ -195,4 +196,175 @@ export function formatGameId(gameId?: string): string {
     if (!gameId) return "";
     if (gameId.length <= 9) return gameId;
     return `${gameId.slice(0, 6)}...`;
+}
+
+/** A coin amount as the REST gateway serialises it. */
+export interface TxCoin {
+    denom: string;
+    amount: string;
+}
+
+/** One message in a decoded tx body (REST gateway JSON). Only `@type` is always present. */
+export interface TxMessage {
+    "@type": string;
+    action?: string;
+    amount?: string | TxCoin[];
+    game_id?: string;
+    /** MsgJoinGame buy-in (USDC micro-units). The chain field is `buy_in_amount`. */
+    buy_in_amount?: string;
+    /** Legacy name for the buy-in, still read for older txs. */
+    buy_in?: string;
+    from_address?: string;
+    to_address?: string;
+}
+
+/** The fields of a tx_responses entry (plus its decoded body) that the labels need. */
+export interface DescribableTx {
+    events?: TransferEvent[];
+    tx?: { body?: { messages?: TxMessage[] } };
+}
+
+/** What a transaction was for, as shown in the lobby card and the explorer list. */
+export interface TxDescription {
+    /** Display label: "Bet", "Post-big-blind", "Join table", "Transfer", "Deposit"… */
+    label: string;
+    /** Last segment of the first message's type URL, e.g. "MsgPerformAction". */
+    messageType: string;
+    action?: string;
+    /** Displayable USDC amount (micro-units) for the action, e.g. a buy-in. */
+    amount?: string;
+    /**
+     * Raw MsgPerformAction amount (non-zero only). Its unit depends on the
+     * game's format, which the tx does not carry: USDC micro-units for cash,
+     * whole chips for Sit & Go / tournaments. Format with formatActionAmount.
+     */
+    actionAmount?: string;
+    gameId?: string;
+    transferAmount?: string;
+    transferDirection?: "sent" | "received";
+}
+
+/** Labels for chain messages that are not a poker action. Anything else is derived from the type name. */
+const MESSAGE_LABELS: Record<string, string> = {
+    MsgJoinGame: "Join table",
+    MsgLeaveGame: "Leave table",
+    MsgCreateGame: "Create table",
+    MsgTopUp: "Top up",
+    MsgSend: "Transfer",
+    MsgMultiSend: "Transfer",
+    MsgProcessDeposit: "Deposit",
+    MsgInitiateWithdrawal: "Withdrawal",
+    MsgRegisterNftAvatar: "Register NFT avatar"
+};
+
+/**
+ * Describe a transaction for display, from its first message and its events.
+ * Shared by the lobby's Recent Transactions card and the explorer's address
+ * Transactions list so both always label a tx the same way. Poker actions use
+ * the action name ("Bet", "Post-big-blind"); other messages use MESSAGE_LABELS
+ * or a label derived from the type name; with no decoded body the label is
+ * "Transfer" when the events show a USDC transfer, else "Transaction".
+ *
+ * @param viewer - the address the list is for; decides "sent" vs "received"
+ */
+export function describeTransaction(tx: DescribableTx, viewer: string): TxDescription {
+    const msg = tx.tx?.body?.messages?.[0];
+    const typeUrl = msg?.["@type"] ?? "";
+    const messageType = typeUrl.split(".").pop() || "";
+    const out: TxDescription = { label: "Transaction", messageType: messageType || "Transaction" };
+
+    if (msg) {
+        if (messageType === "MsgPerformAction") {
+            out.action = msg.action;
+            out.amount = getDisplayableActionAmount("MsgPerformAction", typeof msg.amount === "string" ? msg.amount : undefined);
+            if (typeof msg.amount === "string" && /^\d+$/.test(msg.amount) && BigInt(msg.amount) > 0n) out.actionAmount = msg.amount;
+            out.gameId = msg.game_id;
+        } else if (messageType === "MsgJoinGame") {
+            out.amount = msg.buy_in_amount ?? msg.buy_in;
+            out.gameId = msg.game_id;
+        } else if (messageType === "MsgLeaveGame" || messageType === "MsgCreateGame" || messageType === "MsgTopUp") {
+            out.gameId = msg.game_id;
+            if (messageType === "MsgTopUp" && typeof msg.amount === "string") out.amount = msg.amount;
+        } else if (messageType === "MsgSend") {
+            // Bank transfer: MsgSend carries a coin array, not a scalar.
+            const coin = Array.isArray(msg.amount) ? msg.amount[0] : undefined;
+            if (coin) {
+                out.transferAmount = coin.amount;
+                out.transferDirection = msg.from_address === viewer ? "sent" : "received";
+            }
+        }
+    }
+
+    // Fall back to the transfer events for the amount and direction.
+    if (!out.transferAmount && tx.events) {
+        out.transferAmount = sumUsdcTransferEvents(tx.events);
+        if (out.transferAmount) {
+            const transferEvent = tx.events.find(e => e.type === "transfer");
+            const recipient = transferEvent?.attributes?.find(a => a.key === "recipient");
+            out.transferDirection = recipient?.value === viewer ? "received" : "sent";
+        }
+    }
+
+    if (out.action) out.label = formatTransactionLabel(out.action, messageType);
+    else if (MESSAGE_LABELS[messageType]) out.label = MESSAGE_LABELS[messageType];
+    else if (messageType) out.label = formatTransactionLabel(undefined, messageType);
+    else if (out.transferAmount) out.label = "Transfer";
+    return out;
+}
+
+/** Game formats as the chain names them (GameFormat in the SDK). */
+export type ChainGameFormat = "cash" | "sit-and-go" | "tournament";
+
+/**
+ * A poker action's amount for display: cash games are USDC micro-units
+ * ("0.02 USDC"), Sit & Go and tournament games are whole chips ("1,732 chips",
+ * no $). With the format unknown the unit is ambiguous, so nothing is shown.
+ */
+export function formatActionAmount(raw: string | undefined, format: ChainGameFormat | undefined): string | undefined {
+    if (!raw || !format) return undefined;
+    if (format === "cash") return `${formatMicroUsd(raw)} USDC`;
+    return `${BigInt(raw).toLocaleString("en-US")} chips`;
+}
+
+/** The format from a /block52/pokerchain/poker/v1/game/{id} response, or undefined. */
+export function parseGameFormat(response: unknown): ChainGameFormat | undefined {
+    try {
+        const raw = (response as { game?: unknown })?.game;
+        const game = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const format = (game as { format?: unknown })?.format;
+        return format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+const gameFormatCache = new Map<string, Promise<ChainGameFormat | undefined>>();
+
+/**
+ * Look up each game's format once (cached for the session; a game's format
+ * never changes). Failed lookups resolve to undefined and are retried later.
+ */
+export async function fetchGameFormats(
+    getGame: (gameId: string) => Promise<unknown>,
+    gameIds: Iterable<string | undefined>
+): Promise<Record<string, ChainGameFormat | undefined>> {
+    const ids = [...new Set([...gameIds].filter((id): id is string => !!id))];
+    const entries = await Promise.all(
+        ids.map(async id => {
+            let pending = gameFormatCache.get(id);
+            if (!pending) {
+                pending = getGame(id).then(parseGameFormat, () => undefined);
+                gameFormatCache.set(id, pending);
+            }
+            const format = await pending;
+            if (!format) gameFormatCache.delete(id);
+            return [id, format] as const;
+        })
+    );
+    return Object.fromEntries(entries);
+}
+
+/** Test hook: forget cached game formats. */
+export function clearGameFormatCache(): void {
+    gameFormatCache.clear();
 }

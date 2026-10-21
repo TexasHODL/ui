@@ -7,14 +7,16 @@ import { formatTimestampRelative } from "../utils/formatUtils";
 
 import styles from "./TransactionPanel.module.css";
 import {
-    formatTransactionLabel,
+    describeTransaction,
+    fetchGameFormats,
+    formatActionAmount,
+    type ChainGameFormat,
     formatTransferDirection,
     getTransferDirectionClass,
     formatShortHash,
     formatGameId,
-    getDisplayableActionAmount,
-    sumUsdcTransferEvents,
-    type TransferEvent
+    type TransferEvent,
+    type TxMessage
 } from "../utils/transactionUtils";
 import { useCosmosApi } from "../context/CosmosApiContext";
 import { isEmpty, hasElements } from "../utils/guards";
@@ -24,11 +26,12 @@ interface Transaction {
     height: string;
     timestamp: string;
     code: number;
-    // Message type for display
-    messageType?: string;
+    // Display label from describeTransaction ("Bet", "Join table", "Transfer"…)
+    label: string;
     // Detailed action info
     action?: string;
     amount?: string;
+    actionAmount?: string;
     gameId?: string;
     // Transfer info
     transferAmount?: string;
@@ -40,31 +43,9 @@ interface TransactionPanelProps {
     usdcBalance: string;
 }
 
-/** A coin amount as the REST gateway serialises it — the value is a string, not a number. */
-interface Coin {
-    denom: string;
-    amount: string;
-}
-
-/**
- * One message inside a transaction body.
- *
- * Only `@type` is always present; every other field belongs to a particular
- * message type, so they are optional and narrowed at the use site. `amount` is
- * genuinely two shapes: a scalar on MsgPerformAction, a coin array on MsgSend.
- */
-interface CosmosTxMessage {
-    "@type": string;
-    action?: string;
-    amount?: string | Coin[];
-    game_id?: string;
-    buy_in?: string;
-    from_address?: string;
-}
-
 /** The decoded transaction body, as returned in the parallel `txs` array. */
 interface CosmosTx {
-    body?: { messages?: CosmosTxMessage[] };
+    body?: { messages?: TxMessage[] };
 }
 
 /**
@@ -102,6 +83,8 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
     const navigate = useNavigate();
     const { currentNetwork } = useNetwork();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    // Each game's format decides an action amount's unit (USDC vs chips).
+    const [gameFormats, setGameFormats] = useState<Record<string, ChainGameFormat | undefined>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const cosmosApi = useCosmosApi();
@@ -142,70 +125,15 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
             uniqueTxs.sort((a, b) => parseInt(b.height) - parseInt(a.height));
             const recentTxs = uniqueTxs.slice(0, 6);
 
-            // Extract message type and details for display
+            // Same labelling as the explorer's address Transactions list.
             const formattedTxs: Transaction[] = recentTxs.map(tx => {
-                let messageType = "Transaction";
-                let action: string | undefined;
-                let amount: string | undefined;
-                let gameId: string | undefined;
-                let transferAmount: string | undefined;
-                let transferDirection: "sent" | "received" | undefined;
-
-                const msg = tx.tx?.body?.messages?.[0];
-                if (msg) {
-                    const msgType = msg["@type"] || "";
-                    // Extract the last part of the type URL
-                    const parts = msgType.split(".");
-                    messageType = parts[parts.length - 1] || "Transaction";
-
-                    // Extract poker action details
-                    if (msgType.includes("MsgPerformAction")) {
-                        action = msg.action;
-                        amount = getDisplayableActionAmount("MsgPerformAction", typeof msg.amount === "string" ? msg.amount : undefined);
-                        gameId = msg.game_id;
-                    } else if (msgType.includes("MsgJoinGame")) {
-                        action = "join";
-                        amount = msg.buy_in;
-                        gameId = msg.game_id;
-                    } else if (msgType.includes("MsgLeaveGame")) {
-                        action = "leave";
-                        gameId = msg.game_id;
-                    } else if (msgType.includes("MsgCreateGame")) {
-                        action = "create";
-                        gameId = msg.game_id;
-                    } else if (msgType.includes("MsgSend")) {
-                        // Bank transfer — MsgSend carries a coin array, not a scalar
-                        const coins = Array.isArray(msg.amount) ? msg.amount[0] : undefined;
-                        if (coins) {
-                            transferAmount = coins.amount;
-                            transferDirection = msg.from_address === address ? "sent" : "received";
-                        }
-                    }
-                }
-
-                // Check events for transfer details if not already found
-                if (!transferAmount && tx.events) {
-                    transferAmount = sumUsdcTransferEvents(tx.events);
-                    if (transferAmount) {
-                        const transferEvent = tx.events.find(e => e.type === "transfer");
-                        const recipientAttr = transferEvent?.attributes?.find(a => a.key === "recipient");
-                        transferDirection = recipientAttr?.value === address ? "received" : "sent";
-                    }
-                }
-
-                return {
-                    txhash: tx.txhash,
-                    height: tx.height,
-                    timestamp: tx.timestamp,
-                    code: tx.code,
-                    messageType,
-                    action,
-                    amount,
-                    gameId,
-                    transferAmount,
-                    transferDirection
-                };
+                const { label, action, amount, actionAmount, gameId, transferAmount, transferDirection } = describeTransaction(tx, address);
+                return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, actionAmount, gameId, transferAmount, transferDirection };
             });
+            fetchGameFormats(
+                id => cosmosApi.getGame(id),
+                formattedTxs.filter(tx => tx.actionAmount).map(tx => tx.gameId)
+            ).then(setGameFormats);
 
             setTransactions(formattedTxs);
         } catch (err: unknown) {
@@ -289,11 +217,20 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                                 className="p-3 rounded-lg bg-gray-900 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors"
                             >
                                 <div className="flex items-center justify-between mb-1">
-                                    <span className="text-white text-sm font-medium">{formatTransactionLabel(tx.action, tx.messageType)}</span>
+                                    <span className="text-white text-sm font-medium">{tx.label}</span>
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${tx.code === 0 ? styles.statusSuccess : styles.statusFailed}`}>
                                         {tx.code === 0 ? "Success" : "Failed"}
                                     </span>
                                 </div>
+                                {/* Poker action amount (USDC for cash, chips for Sit & Go) */}
+                                {formatActionAmount(tx.actionAmount, tx.gameId ? gameFormats[tx.gameId] : undefined) && (
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-sm font-medium ${styles.primaryText}`}>
+                                            {formatActionAmount(tx.actionAmount, tx.gameId ? gameFormats[tx.gameId] : undefined)}
+                                        </span>
+                                        {tx.gameId && <span className="text-xs text-gray-500">Game: {formatGameId(tx.gameId)}</span>}
+                                    </div>
+                                )}
                                 {/* Action/Transfer Details */}
                                 {(tx.amount || tx.transferAmount) && (
                                     <div className="flex items-center gap-2 mb-1">

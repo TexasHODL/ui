@@ -1,6 +1,11 @@
 import { describe, it, expect } from "@jest/globals";
 import {
     formatTransactionLabel,
+    describeTransaction,
+    formatActionAmount,
+    parseGameFormat,
+    fetchGameFormats,
+    clearGameFormatCache,
     extractMessageTypeFromHex,
     formatTransferDirection,
     getTransferDirectionClass,
@@ -175,5 +180,96 @@ describe("transactionUtils", () => {
         it("returns no amount when no USDC transfer event exists", () => {
             expect(sumUsdcTransferEvents([{ type: "message", attributes: [{ key: "amount", value: "25" }] }])).toBeUndefined();
         });
+    });
+});
+
+describe("describeTransaction", () => {
+    const ME = "b52me";
+    const msg = (type: string, fields: Record<string, unknown> = {}) => ({ tx: { body: { messages: [{ "@type": `/pokerchain.poker.v1.${type}`, ...fields }] } } });
+
+    it("labels poker actions by action name, hiding the format-dependent amount", () => {
+        const d = describeTransaction(msg("MsgPerformAction", { action: "post-big-blind", amount: "20", game_id: "0xabc" }), ME);
+        expect(d).toMatchObject({ label: "Post-big-blind", action: "post-big-blind", gameId: "0xabc", messageType: "MsgPerformAction" });
+        expect(d.amount).toBeUndefined();
+        expect(describeTransaction(msg("MsgPerformAction", { action: "bet" }), ME).label).toBe("Bet");
+        expect(describeTransaction(msg("MsgPerformAction", { action: "check" }), ME).label).toBe("Check");
+    });
+
+    it("labels joins (with buy-in), leaves, creates and top-ups", () => {
+        expect(describeTransaction(msg("MsgJoinGame", { buy_in: "5000000", game_id: "0x1" }), ME)).toMatchObject({ label: "Join table", amount: "5000000", gameId: "0x1" });
+        expect(describeTransaction(msg("MsgLeaveGame", { game_id: "0x1" }), ME)).toMatchObject({ label: "Leave table", gameId: "0x1" });
+        expect(describeTransaction(msg("MsgCreateGame"), ME).label).toBe("Create table");
+        expect(describeTransaction(msg("MsgTopUp", { amount: "100", game_id: "0x1" }), ME)).toMatchObject({ label: "Top up", amount: "100" });
+    });
+
+    it("labels transfers with their direction for the viewer", () => {
+        const send = (from: string) => ({ tx: { body: { messages: [{ "@type": "/cosmos.bank.v1beta1.MsgSend", from_address: from, amount: [{ denom: "usdc", amount: "250" }] }] } } });
+        expect(describeTransaction(send(ME), ME)).toMatchObject({ label: "Transfer", transferAmount: "250", transferDirection: "sent" });
+        expect(describeTransaction(send("b52other"), ME)).toMatchObject({ label: "Transfer", transferDirection: "received" });
+    });
+
+    it("labels deposits and withdrawals, taking the amount from transfer events", () => {
+        const events = [{ type: "transfer", attributes: [{ key: "recipient", value: ME }, { key: "amount", value: "7000000usdc" }] }];
+        expect(describeTransaction({ ...msg("MsgProcessDeposit"), events }, ME)).toMatchObject({ label: "Deposit", transferAmount: "7000000", transferDirection: "received" });
+        expect(describeTransaction(msg("MsgInitiateWithdrawal"), ME).label).toBe("Withdrawal");
+    });
+
+    it("falls back gracefully for unknown or missing messages", () => {
+        expect(describeTransaction(msg("MsgDoSomethingNew"), ME).label).toBe("Do Something New");
+        expect(describeTransaction({}, ME)).toMatchObject({ label: "Transaction", messageType: "Transaction" });
+        const events = [{ type: "transfer", attributes: [{ key: "recipient", value: "b52x" }, { key: "amount", value: "5usdc" }] }];
+        expect(describeTransaction({ events }, ME)).toMatchObject({ label: "Transfer", transferDirection: "sent" });
+    });
+});
+
+describe("poker action amounts", () => {
+    const ME = "b52me";
+    const act = (action: string, amount: string) => ({
+        tx: { body: { messages: [{ "@type": "/pokerchain.poker.v1.MsgPerformAction", action, amount, game_id: "0xg" }] } }
+    });
+
+    it("keeps the raw non-zero amount of bets, raises, calls, blinds and all-ins", () => {
+        for (const action of ["bet", "raise", "call", "post-small-blind", "post-big-blind", "all-in"]) {
+            expect(describeTransaction(act(action, "1732"), ME).actionAmount).toBe("1732");
+        }
+        // Check, fold, deal… carry amount "0" on chain: no amount.
+        for (const action of ["check", "fold", "deal", "new-hand"]) {
+            expect(describeTransaction(act(action, "0"), ME).actionAmount).toBeUndefined();
+        }
+    });
+
+    it("reads the join buy-in from the chain's buy_in_amount field", () => {
+        const join = { tx: { body: { messages: [{ "@type": "/pokerchain.poker.v1.MsgJoinGame", game_id: "0xg", seat: "5", buy_in_amount: "1000000" }] } } };
+        expect(describeTransaction(join, ME)).toMatchObject({ label: "Join table", amount: "1000000" });
+    });
+
+    it("formats USDC for cash games and whole chips (no $) for Sit & Go and tournaments", () => {
+        expect(formatActionAmount("20000", "cash")).toBe("0.02 USDC");
+        expect(formatActionAmount("1732", "sit-and-go")).toBe("1,732 chips");
+        expect(formatActionAmount("25000", "tournament")).toBe("25,000 chips");
+        expect(formatActionAmount("1732", undefined)).toBeUndefined();
+        expect(formatActionAmount(undefined, "cash")).toBeUndefined();
+    });
+
+    it("parses the format from the chain's game response (game is a JSON string)", () => {
+        expect(parseGameFormat({ game: JSON.stringify({ format: "sit-and-go" }) })).toBe("sit-and-go");
+        expect(parseGameFormat({ game: { format: "cash" } })).toBe("cash");
+        expect(parseGameFormat({ game: "not json" })).toBeUndefined();
+        expect(parseGameFormat(null)).toBeUndefined();
+    });
+
+    it("looks each game up once and retries a failed lookup next time", async () => {
+        clearGameFormatCache();
+        const getGame = jest.fn(async (id: string) => {
+            if (id === "0xbad") throw new Error("down");
+            return { game: JSON.stringify({ format: id === "0xcash" ? "cash" : "sit-and-go" }) };
+        });
+        expect(await fetchGameFormats(getGame, ["0xcash", "0xsng", "0xcash", undefined, "0xbad"])).toEqual({
+            "0xcash": "cash",
+            "0xsng": "sit-and-go",
+            "0xbad": undefined
+        });
+        await fetchGameFormats(getGame, ["0xcash", "0xsng", "0xbad"]);
+        expect(getGame.mock.calls.map(c => c[0]).sort()).toEqual(["0xbad", "0xbad", "0xcash", "0xsng"]);
     });
 });

@@ -19,7 +19,11 @@ import {
     ExplorerSearchInput
 } from "../../components/explorer/ExplorerPanel";
 import styles from "./AddressPage.module.css";
-import { TransactionResponse } from "../../components/TransactionPanel";
+import { TransactionResponse, type CosmosTxResponse } from "../../components/TransactionPanel";
+import { describeTransaction, fetchGameFormats, formatActionAmount, formatGameId, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
+
+/** One row of the Transactions tab: the tx plus what it was for (shared with the lobby card). */
+type AddressTx = CosmosTxResponse & TxDescription;
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { copyToClipboard } from "../../components/playPage/Table/utils";
 
@@ -30,7 +34,9 @@ export default function AddressPage() {
 
     const [address, setAddress] = useState(urlAddress || "");
     const [balances, setBalances] = useState<Coin[]>([]);
-    const [transactions, setTransactions] = useState<any[]>([]);
+    const [transactions, setTransactions] = useState<AddressTx[]>([]);
+    // Each game's format decides an action amount's unit (USDC vs chips).
+    const [gameFormats, setGameFormats] = useState<Record<string, ChainGameFormat | undefined>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"balances" | "transactions">("balances");
@@ -80,14 +86,23 @@ export default function AddressPage() {
                         cosmosApi.getReceivedTransactions(recipientQuery) as Promise<TransactionResponse>
                     ]);
 
-                    // Combine and deduplicate transactions by hash
-                    const allTxs = [...(sentResponse.tx_responses || []), ...(receivedResponse.tx_responses || [])];
-                    const uniqueTxs = Array.from(new Map(allTxs.map((tx: any) => [tx.txhash, tx])).values());
+                    // Join each response to its decoded body (parallel `txs` array) so
+                    // the list can say what the tx was for, then dedupe by hash.
+                    const withBodies = (response: TransactionResponse) =>
+                        (response.tx_responses || []).map((tx, i) => ({ ...tx, tx: response.txs?.[i] }));
+                    const allTxs = [...withBodies(sentResponse), ...withBodies(receivedResponse)];
+                    const uniqueTxs = Array.from(new Map(allTxs.map(tx => [tx.txhash, tx])).values());
 
                     // Sort by height (descending)
-                    uniqueTxs.sort((a: any, b: any) => parseInt(b.height) - parseInt(a.height));
+                    uniqueTxs.sort((a, b) => parseInt(b.height) - parseInt(a.height));
 
-                    setTransactions(uniqueTxs);
+                    const viewer = searchAddress.trim();
+                    const described = uniqueTxs.map(tx => ({ ...tx, ...describeTransaction(tx, viewer) }));
+                    setTransactions(described);
+                    fetchGameFormats(
+                        id => cosmosApi.getGame(id),
+                        described.filter(tx => tx.actionAmount).map(tx => tx.gameId)
+                    ).then(setGameFormats);
                 } catch (txError) {
                     console.error("Error fetching transactions:", txError);
                     // Don't fail the whole query if transactions fail
@@ -272,8 +287,9 @@ export default function AddressPage() {
                                     <ExplorerEmpty>No transactions for this address.</ExplorerEmpty>
                                 ) : (
                                     <ul className="space-y-2">
-                                        {transactions.map((tx: any, index) => {
+                                        {transactions.map((tx, index) => {
                                             const currentAddress = urlAddress || address;
+                                            const actionAmount = formatActionAmount(tx.actionAmount, tx.gameId ? gameFormats[tx.gameId] : undefined);
                                             return (
                                                 <li
                                                     key={index}
@@ -282,17 +298,38 @@ export default function AddressPage() {
                                                             state: { fromAddress: currentAddress }
                                                         })
                                                     }
+                                                    data-testid="address-tx"
                                                     className={`px-3 py-2 rounded-lg cursor-pointer transition-colors ${styles.txItemCard}`}
                                                 >
                                                     <div className="flex justify-between items-center gap-3">
-                                                        <p className="flex-1 min-w-0 font-mono text-xs sm:text-sm text-white truncate">{tx.txhash}</p>
+                                                        <p className="flex-1 min-w-0 text-sm font-semibold text-white truncate" data-testid="tx-action">
+                                                            {tx.label}
+                                                        </p>
                                                         <span
                                                             className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${tx.code === 0 ? styles.txStatusSuccess : styles.txStatusFailed}`}
                                                         >
                                                             {tx.code === 0 ? "Success" : "Failed"}
                                                         </span>
                                                     </div>
-                                                    <p className="mt-1 text-xs text-gray-400">
+                                                    {actionAmount && (
+                                                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs" data-testid="tx-amount">
+                                                            <span className={`font-medium ${styles.link}`}>{actionAmount}</span>
+                                                            {tx.gameId && <span className="text-gray-400">Game: {formatGameId(tx.gameId)}</span>}
+                                                        </p>
+                                                    )}
+                                                    {(tx.amount || tx.transferAmount) && (
+                                                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs" data-testid="tx-amount">
+                                                            {tx.transferDirection && (
+                                                                <span className={getTransferDirectionClass(tx.transferDirection)}>
+                                                                    {formatTransferDirection(tx.transferDirection)}
+                                                                </span>
+                                                            )}
+                                                            <span className={`font-medium ${styles.link}`}>{formatMicroUsd(tx.amount || tx.transferAmount || "0")} USDC</span>
+                                                            {tx.gameId && <span className="text-gray-400">Game: {formatGameId(tx.gameId)}</span>}
+                                                        </p>
+                                                    )}
+                                                    <p className="mt-1 font-mono text-xs sm:text-sm text-gray-300 truncate">{tx.txhash}</p>
+                                                    <p className="mt-0.5 text-xs text-gray-400">
                                                         Block {tx.height} · {formatTimestampRelative(tx.timestamp)}
                                                     </p>
                                                 </li>

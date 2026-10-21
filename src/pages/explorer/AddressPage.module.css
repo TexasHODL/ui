@@ -55,3 +55,13 @@
     background-color: color-mix(in srgb, var(--accent-danger) 20%, transparent);
     color: var(--accent-danger);
 }
+
+/* Light theme: the tab labels were white on the light panel. */
+:global(html[data-theme="light"]) .tabActive,
+:global(html[data-theme="light"]) .tabInactive:hover {
+    color: var(--theme-ink, #1a0b2e);
+}
+
+:global(html[data-theme="light"]) .tabInactive {
+    color: var(--theme-muted, #5c4574);
+}
