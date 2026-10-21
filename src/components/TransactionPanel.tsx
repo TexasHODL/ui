@@ -8,6 +8,9 @@ import { formatTimestampRelative } from "../utils/formatUtils";
 import styles from "./TransactionPanel.module.css";
 import {
     describeTransaction,
+    fetchGameFormats,
+    formatActionAmount,
+    type ChainGameFormat,
     formatTransferDirection,
     getTransferDirectionClass,
     formatShortHash,
@@ -28,6 +31,7 @@ interface Transaction {
     // Detailed action info
     action?: string;
     amount?: string;
+    actionAmount?: string;
     gameId?: string;
     // Transfer info
     transferAmount?: string;
@@ -79,6 +83,8 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
     const navigate = useNavigate();
     const { currentNetwork } = useNetwork();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    // Each game's format decides an action amount's unit (USDC vs chips).
+    const [gameFormats, setGameFormats] = useState<Record<string, ChainGameFormat | undefined>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const cosmosApi = useCosmosApi();
@@ -121,9 +127,13 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
 
             // Same labelling as the explorer's address Transactions list.
             const formattedTxs: Transaction[] = recentTxs.map(tx => {
-                const { label, action, amount, gameId, transferAmount, transferDirection } = describeTransaction(tx, address);
-                return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, gameId, transferAmount, transferDirection };
+                const { label, action, amount, actionAmount, gameId, transferAmount, transferDirection } = describeTransaction(tx, address);
+                return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, actionAmount, gameId, transferAmount, transferDirection };
             });
+            fetchGameFormats(
+                id => cosmosApi.getGame(id),
+                formattedTxs.filter(tx => tx.actionAmount).map(tx => tx.gameId)
+            ).then(setGameFormats);
 
             setTransactions(formattedTxs);
         } catch (err: unknown) {
@@ -212,6 +222,15 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                                         {tx.code === 0 ? "Success" : "Failed"}
                                     </span>
                                 </div>
+                                {/* Poker action amount (USDC for cash, chips for Sit & Go) */}
+                                {formatActionAmount(tx.actionAmount, tx.gameId ? gameFormats[tx.gameId] : undefined) && (
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className={`text-sm font-medium ${styles.primaryText}`}>
+                                            {formatActionAmount(tx.actionAmount, tx.gameId ? gameFormats[tx.gameId] : undefined)}
+                                        </span>
+                                        {tx.gameId && <span className="text-xs text-gray-500">Game: {formatGameId(tx.gameId)}</span>}
+                                    </div>
+                                )}
                                 {/* Action/Transfer Details */}
                                 {(tx.amount || tx.transferAmount) && (
                                     <div className="flex items-center gap-2 mb-1">

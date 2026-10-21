@@ -3,6 +3,7 @@
  */
 
 import { truncateMiddle } from "./stringUtils";
+import { formatMicroUsd } from "./moneyDisplay";
 
 export interface TransferEvent {
     type?: string;
@@ -209,6 +210,9 @@ export interface TxMessage {
     action?: string;
     amount?: string | TxCoin[];
     game_id?: string;
+    /** MsgJoinGame buy-in (USDC micro-units). The chain field is `buy_in_amount`. */
+    buy_in_amount?: string;
+    /** Legacy name for the buy-in, still read for older txs. */
     buy_in?: string;
     from_address?: string;
     to_address?: string;
@@ -229,6 +233,12 @@ export interface TxDescription {
     action?: string;
     /** Displayable USDC amount (micro-units) for the action, e.g. a buy-in. */
     amount?: string;
+    /**
+     * Raw MsgPerformAction amount (non-zero only). Its unit depends on the
+     * game's format, which the tx does not carry: USDC micro-units for cash,
+     * whole chips for Sit & Go / tournaments. Format with formatActionAmount.
+     */
+    actionAmount?: string;
     gameId?: string;
     transferAmount?: string;
     transferDirection?: "sent" | "received";
@@ -267,9 +277,10 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
         if (messageType === "MsgPerformAction") {
             out.action = msg.action;
             out.amount = getDisplayableActionAmount("MsgPerformAction", typeof msg.amount === "string" ? msg.amount : undefined);
+            if (typeof msg.amount === "string" && /^\d+$/.test(msg.amount) && BigInt(msg.amount) > 0n) out.actionAmount = msg.amount;
             out.gameId = msg.game_id;
         } else if (messageType === "MsgJoinGame") {
-            out.amount = msg.buy_in;
+            out.amount = msg.buy_in_amount ?? msg.buy_in;
             out.gameId = msg.game_id;
         } else if (messageType === "MsgLeaveGame" || messageType === "MsgCreateGame" || messageType === "MsgTopUp") {
             out.gameId = msg.game_id;
@@ -299,4 +310,61 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
     else if (messageType) out.label = formatTransactionLabel(undefined, messageType);
     else if (out.transferAmount) out.label = "Transfer";
     return out;
+}
+
+/** Game formats as the chain names them (GameFormat in the SDK). */
+export type ChainGameFormat = "cash" | "sit-and-go" | "tournament";
+
+/**
+ * A poker action's amount for display: cash games are USDC micro-units
+ * ("0.02 USDC"), Sit & Go and tournament games are whole chips ("1,732 chips",
+ * no $). With the format unknown the unit is ambiguous, so nothing is shown.
+ */
+export function formatActionAmount(raw: string | undefined, format: ChainGameFormat | undefined): string | undefined {
+    if (!raw || !format) return undefined;
+    if (format === "cash") return `${formatMicroUsd(raw)} USDC`;
+    return `${BigInt(raw).toLocaleString("en-US")} chips`;
+}
+
+/** The format from a /block52/pokerchain/poker/v1/game/{id} response, or undefined. */
+export function parseGameFormat(response: unknown): ChainGameFormat | undefined {
+    try {
+        const raw = (response as { game?: unknown })?.game;
+        const game = typeof raw === "string" ? JSON.parse(raw) : raw;
+        const format = (game as { format?: unknown })?.format;
+        return format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+const gameFormatCache = new Map<string, Promise<ChainGameFormat | undefined>>();
+
+/**
+ * Look up each game's format once (cached for the session; a game's format
+ * never changes). Failed lookups resolve to undefined and are retried later.
+ */
+export async function fetchGameFormats(
+    getGame: (gameId: string) => Promise<unknown>,
+    gameIds: Iterable<string | undefined>
+): Promise<Record<string, ChainGameFormat | undefined>> {
+    const ids = [...new Set([...gameIds].filter((id): id is string => !!id))];
+    const entries = await Promise.all(
+        ids.map(async id => {
+            let pending = gameFormatCache.get(id);
+            if (!pending) {
+                pending = getGame(id).then(parseGameFormat, () => undefined);
+                gameFormatCache.set(id, pending);
+            }
+            const format = await pending;
+            if (!format) gameFormatCache.delete(id);
+            return [id, format] as const;
+        })
+    );
+    return Object.fromEntries(entries);
+}
+
+/** Test hook: forget cached game formats. */
+export function clearGameFormatCache(): void {
+    gameFormatCache.clear();
 }

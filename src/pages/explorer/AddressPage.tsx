@@ -20,7 +20,7 @@ import {
 } from "../../components/explorer/ExplorerPanel";
 import styles from "./AddressPage.module.css";
 import { TransactionResponse, type CosmosTxResponse } from "../../components/TransactionPanel";
-import { describeTransaction, formatGameId, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
+import { describeTransaction, fetchGameFormats, formatActionAmount, formatGameId, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
 
 /** One row of the Transactions tab: the tx plus what it was for (shared with the lobby card). */
 type AddressTx = CosmosTxResponse & TxDescription;
@@ -35,6 +35,8 @@ export default function AddressPage() {
     const [address, setAddress] = useState(urlAddress || "");
     const [balances, setBalances] = useState<Coin[]>([]);
     const [transactions, setTransactions] = useState<AddressTx[]>([]);
+    // Each game's format decides an action amount's unit (USDC vs chips).
+    const [gameFormats, setGameFormats] = useState<Record<string, ChainGameFormat | undefined>>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"balances" | "transactions">("balances");
@@ -95,7 +97,12 @@ export default function AddressPage() {
                     uniqueTxs.sort((a, b) => parseInt(b.height) - parseInt(a.height));
 
                     const viewer = searchAddress.trim();
-                    setTransactions(uniqueTxs.map(tx => ({ ...tx, ...describeTransaction(tx, viewer) })));
+                    const described = uniqueTxs.map(tx => ({ ...tx, ...describeTransaction(tx, viewer) }));
+                    setTransactions(described);
+                    fetchGameFormats(
+                        id => cosmosApi.getGame(id),
+                        described.filter(tx => tx.actionAmount).map(tx => tx.gameId)
+                    ).then(setGameFormats);
                 } catch (txError) {
                     console.error("Error fetching transactions:", txError);
                     // Don't fail the whole query if transactions fail
@@ -282,6 +289,7 @@ export default function AddressPage() {
                                     <ul className="space-y-2">
                                         {transactions.map((tx, index) => {
                                             const currentAddress = urlAddress || address;
+                                            const actionAmount = formatActionAmount(tx.actionAmount, tx.gameId ? gameFormats[tx.gameId] : undefined);
                                             return (
                                                 <li
                                                     key={index}
@@ -303,8 +311,14 @@ export default function AddressPage() {
                                                             {tx.code === 0 ? "Success" : "Failed"}
                                                         </span>
                                                     </div>
+                                                    {actionAmount && (
+                                                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs" data-testid="tx-amount">
+                                                            <span className={`font-medium ${styles.link}`}>{actionAmount}</span>
+                                                            {tx.gameId && <span className="text-gray-400">Game: {formatGameId(tx.gameId)}</span>}
+                                                        </p>
+                                                    )}
                                                     {(tx.amount || tx.transferAmount) && (
-                                                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs">
+                                                        <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs" data-testid="tx-amount">
                                                             {tx.transferDirection && (
                                                                 <span className={getTransferDirectionClass(tx.transferDirection)}>
                                                                     {formatTransferDirection(tx.transferDirection)}
