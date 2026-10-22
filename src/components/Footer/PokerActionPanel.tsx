@@ -67,6 +67,7 @@ import { MainActionButtons } from "./MainActionButtons";
 import { MobileBettingCluster } from "./MobileBettingCluster";
 import { RaiseBetControls } from "./RaiseBetControls";
 import { PreActionControls } from "./PreActionControls";
+import { allowsBlindMultiples } from "../../utils/preflopPresets";
 import { isCheckFreeForPlayer, hasVoluntarilyCommittedThisRound, amountToCallMicroForPlayer } from "../../utils/chipUtils";
 import { shouldShowPreActions, shouldClearPreAction, isPreActionStale, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
 
@@ -113,7 +114,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     }, []);
 
     // Get game state and player data
-    const { gameState, gameFormat, connection } = useGameStateContext();
+    const { gameState, gameFormat, gameVariant, connection } = useGameStateContext();
     const isTournament = isTournamentFormat(gameFormat);
     const players = gameState?.players || null;
     const { legalActions, isPlayerTurn, playerStatus, actionTurnIndex } = usePlayerLegalActions();
@@ -610,7 +611,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         onIncrement: handleRaiseIncrement,
         onDecrement: handleRaiseDecrement,
         onAllIn: handleAllInAction,
-        maxIsAllIn
+        maxIsAllIn,
+        allowBlindMultiples: allowsBlindMultiples(gameVariant, gameState?.gameOptions?.bettingLimit)
     };
 
     return (
