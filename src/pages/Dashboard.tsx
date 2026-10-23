@@ -40,6 +40,16 @@ import { isValidSeedPhrase } from "../utils/cosmos";
 import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
+import {
+    BLIND_STRUCTURE_CHOICES,
+    DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
+    isBlindStructureChoice,
+    openingBlindsOf,
+    previewBlindLevels,
+    resolveBlindStructureChoice,
+    type BlindStructureChoice
+} from "../utils/blindStructureChoice";
+import { SNG_PREVIEW_LEVEL_COUNT } from "../utils/sngAdvancedParams";
 
 // Password protection utils
 import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as utilHandlePasswordSubmit, handlePasswordKeyPress as utilHandlePasswordKeyPress } from "../utils/passwordProtectionUtils";
@@ -123,6 +133,10 @@ const Dashboard: React.FC = () => {
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
     const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(1); // 25 / 50
+    // Blind structure (ui#860, poker-vm#1734): doubling (the two selects above
+    // and below), an engine preset, or a custom structure in the SDK's text form.
+    const [modalBlindStructureChoice, setModalBlindStructureChoice] = useState<BlindStructureChoice>("doubling");
+    const [modalCustomBlindText, setModalCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const [entryFee, setEntryFee] = useState(0);
     const [enableRake, setEnableRake] = useState(false);
     const [rakeThreshold, setRakeThreshold] = useState(0);
@@ -131,13 +145,32 @@ const Dashboard: React.FC = () => {
 
     // Cash blinds are dollars (BLIND_LEVELS); Sit & Go blinds are chips (SNG_BLINDS).
     const isModalTournament = isTournamentFormat(modalGameFormat);
+    // What the choice submits (structure) and previews; a structured table's
+    // opening blinds and level time come from its level 0, not the selects.
+    const blindPlan = useMemo(
+        () =>
+            resolveBlindStructureChoice(modalBlindStructureChoice, modalCustomBlindText, {
+                smallBlind: SNG_BLINDS[modalSngBlindsIndex].smallBlind,
+                bigBlind: SNG_BLINDS[modalSngBlindsIndex].bigBlind,
+                durationMinutes: modalBlindLevelDuration
+            }),
+        [modalBlindStructureChoice, modalCustomBlindText, modalSngBlindsIndex, modalBlindLevelDuration]
+    );
+    const sngOpeningBlinds = useMemo(
+        () => (blindPlan.preview ? openingBlindsOf(blindPlan.preview) : undefined),
+        [blindPlan.preview]
+    );
+    const blindPreviewRows = useMemo(
+        () => (blindPlan.preview ? previewBlindLevels(blindPlan.preview, SNG_PREVIEW_LEVEL_COUNT) : []),
+        [blindPlan.preview]
+    );
     const modalSmallBlind = useMemo(
-        () => (isModalTournament ? SNG_BLINDS[modalSngBlindsIndex].smallBlind : BLIND_LEVELS[selectedBlindLevel].smallBlind),
-        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel]
+        () => (isModalTournament ? (sngOpeningBlinds?.smallBlind ?? SNG_BLINDS[modalSngBlindsIndex].smallBlind) : BLIND_LEVELS[selectedBlindLevel].smallBlind),
+        [isModalTournament, sngOpeningBlinds, modalSngBlindsIndex, selectedBlindLevel]
     );
     const modalBigBlind = useMemo(
-        () => (isModalTournament ? SNG_BLINDS[modalSngBlindsIndex].bigBlind : BLIND_LEVELS[selectedBlindLevel].bigBlind),
-        [isModalTournament, modalSngBlindsIndex, selectedBlindLevel]
+        () => (isModalTournament ? (sngOpeningBlinds?.bigBlind ?? SNG_BLINDS[modalSngBlindsIndex].bigBlind) : BLIND_LEVELS[selectedBlindLevel].bigBlind),
+        [isModalTournament, sngOpeningBlinds, modalSngBlindsIndex, selectedBlindLevel]
     );
 
     // Calculate actual buy-in values from BB using utility function
@@ -209,6 +242,12 @@ const Dashboard: React.FC = () => {
                 }
             }
 
+            // A custom blind structure must parse before anything is sent (ui#860).
+            if (isTournament && blindPlan.error) {
+                setCreateGameError(`Blind structure: ${blindPlan.error}`);
+                return;
+            }
+
             const gameOptions: CreateTableOptions = {
                 format: modalGameFormat,
                 variant: modalGameVariant,
@@ -225,8 +264,10 @@ const Dashboard: React.FC = () => {
                 ...(isTournament && {
                     sng: {
                         startingStack: modalStartingStack,
-                        blindLevelDuration: modalBlindLevelDuration,
+                        // A structure carries its own level times; the opening level's is sent for the lobby.
+                        blindLevelDuration: sngOpeningBlinds?.durationMinutes ?? modalBlindLevelDuration,
                         entryFee,
+                        ...(blindPlan.structure && { blindStructure: blindPlan.structure }),
                         ...(scheduled && { startTime })
                     }
                 }),
@@ -349,7 +390,8 @@ const Dashboard: React.FC = () => {
     const extraOptionsInvalid = isModalTournament
         ? !Number.isInteger(modalStartingStack) || modalStartingStack <= 0 || !Number.isFinite(entryFee) || entryFee < 0
         : enableRake && (![rakeThreshold, rakeCap, rakePercentage].every(Number.isFinite) || rakeThreshold < 0 || rakeCap < 0 || rakePercentage < 1 || rakePercentage > 10);
-    const createDisabled = isCreatingTable || !!tableNameError || insufficientForName || insufficientForCreation || extraOptionsInvalid;
+    const createDisabled =
+        isCreatingTable || !!tableNameError || insufficientForName || insufficientForCreation || extraOptionsInvalid || (isModalTournament && !!blindPlan.error);
 
     // Auto-switch to Ethereum Mainnet when wallet connects
     useEffect(() => {
@@ -886,6 +928,25 @@ const Dashboard: React.FC = () => {
                                             </div>
                                             </div>
                                             <div className="creation-span">
+                                            <label className="block text-white text-sm mb-1">Blind Structure</label>
+                                            <select
+                                                data-testid="blind-structure"
+                                                value={modalBlindStructureChoice}
+                                                onChange={e => {
+                                                    if (isBlindStructureChoice(e.target.value)) setModalBlindStructureChoice(e.target.value);
+                                                }}
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                {BLIND_STRUCTURE_CHOICES.map(c => (
+                                                    <option key={c.value} value={c.value}>
+                                                        {c.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            </div>
+                                            {modalBlindStructureChoice === "doubling" && (
+                                                <>
+                                            <div className="creation-span" data-testid="sng-blinds">
                                             <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
                                             <div className="creation-preset-row" role="group" aria-label="Starting blinds">
                                                 {SNG_BLINDS.map((b, i) => (
@@ -900,7 +961,7 @@ const Dashboard: React.FC = () => {
                                                 ))}
                                             </div>
                                             </div>
-                                            <div className="creation-span">
+                                            <div className="creation-span" data-testid="sng-level-duration">
                                             <label className="block text-white text-sm mb-1">Blind Level Duration</label>
                                             <div className="creation-preset-row" role="group" aria-label="Blind level duration">
                                                 {DURATION_PRESETS.map(preset => (
@@ -915,14 +976,56 @@ const Dashboard: React.FC = () => {
                                                 ))}
                                             </div>
                                             </div>
-                                            <div className="creation-span">
-                                            <details className="mt-3">
-                                                <summary>Show Blind Structure</summary>
-                                                <table className="w-full text-sm"><thead><tr><th>Level</th><th>Small blind</th><th>Big blind</th><th>Duration</th></tr></thead>
-                                                    <tbody>{Array.from({ length: 10 }, (_, i) => <tr key={i}><td>{i + 1}</td><td>{modalSmallBlind * 2 ** i}</td><td>{modalBigBlind * 2 ** i}</td><td>{modalBlindLevelDuration} min</td></tr>)}</tbody>
-                                                </table>
-                                            </details>
-                                            </div>
+                                                </>
+                                            )}
+                                            {modalBlindStructureChoice === "custom" && (
+                                                <div className="creation-span">
+                                                    <label className="block text-white text-sm mb-1">Custom structure</label>
+                                                    <textarea
+                                                        data-testid="blind-custom"
+                                                        value={modalCustomBlindText}
+                                                        onChange={e => setModalCustomBlindText(e.target.value)}
+                                                        rows={8}
+                                                        spellCheck={false}
+                                                        className="w-full p-2 rounded bg-gray-700 text-white font-mono text-xs border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                                    />
+                                                    <p className="text-xs text-gray-400 mt-1">
+                                                        start: sb/bb · duration: 5m · progression: double | linear 25 | percentage 1.5 (+ round: 25) · ante: bb | bb * 0.1 |
+                                                        level &gt;= 4 ? bb * 0.1 : 0 · cap: 15 — or levels {"{"} 0: 100/200 … {"}"} (levels count from 0)
+                                                    </p>
+                                                    {blindPlan.error && (
+                                                        <p className="text-xs text-red-400 mt-1" data-testid="blind-structure-error">
+                                                            {blindPlan.error}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {blindPreviewRows.length > 0 && (
+                                                <div className="creation-span mt-3 max-h-40 overflow-y-auto rounded border border-gray-700" data-testid="blind-preview">
+                                                    <table className="w-full text-xs text-gray-300">
+                                                        <thead className="text-gray-400 sticky top-0 bg-gray-800">
+                                                            <tr>
+                                                                <th className="text-left px-2 py-1">Level</th>
+                                                                <th className="text-left px-2 py-1">Blinds</th>
+                                                                <th className="text-left px-2 py-1">Ante</th>
+                                                                <th className="text-left px-2 py-1">Minutes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {blindPreviewRows.map(r => (
+                                                                <tr key={r.number} className="border-t border-gray-700">
+                                                                    <td className="px-2 py-1">{r.number}</td>
+                                                                    <td className="px-2 py-1">
+                                                                        {r.isBreak ? "Break" : `${Number(r.smallBlind).toLocaleString()} / ${Number(r.bigBlind).toLocaleString()}`}
+                                                                    </td>
+                                                                    <td className="px-2 py-1">{r.isBreak || r.ante === "0" ? "—" : Number(r.ante).toLocaleString()}</td>
+                                                                    <td className="px-2 py-1">{r.durationMinutes}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            )}
                                             </div>
                                         </div>
                                     ) : (
