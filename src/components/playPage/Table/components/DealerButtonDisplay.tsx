@@ -1,6 +1,7 @@
 import * as React from "react";
 import DealerButtonImage from "../../common/DealerButtonImage";
 import { chipSizeForViewport } from "../../../../utils/chipSize";
+import { useTableStyles } from "../../../../theme/useTableStyles";
 import "./DealerButtonDisplay.css";
 
 interface DealerButtonDisplayProps {
@@ -16,11 +17,13 @@ interface DealerButtonDisplayProps {
  */
 const DealerButtonDisplay: React.FC<DealerButtonDisplayProps> = React.memo(({ seatIndex, side }) => {
     const size = chipSizeForViewport();
+    const { dealer } = useTableStyles();
     return (
         <div
             className="dealer-button"
             data-dealer-button={seatIndex}
             data-dealer-side={side}
+            data-dealer-style={dealer}
             style={{ width: `${size}px`, height: `${size}px` }}
         >
             <DealerButtonImage />

@@ -10,10 +10,11 @@
  * reachable while hidden — preserving the a11y fix the old overlays carried.
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { FaChevronRight, FaTimes } from "react-icons/fa";
 import ActionsLog from "../../../ActionsLog";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
+import { getViewportMode } from "../../../../config/stageGeometry";
 
 export type TablePanelTab = "history" | "settings";
 
@@ -69,6 +70,14 @@ const SettingsTab: React.FC = () => {
         toggleWinCelebration,
         togglePotAsChips
     } = useGameSettings();
+    // Same classifier as the betting UI: left-hand mode only applies in mobile landscape.
+    const [viewportMode, setViewportMode] = useState(getViewportMode);
+    useEffect(() => {
+        const onResize = () => setViewportMode(getViewportMode());
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+    const showLeftHandMode = viewportMode === "mobile-landscape";
 
     return (
         <div className="flex-1 overflow-y-auto px-4 py-1">
@@ -120,12 +129,14 @@ const SettingsTab: React.FC = () => {
                 checked={preSelectCheck}
                 onToggle={togglePreSelectCheck}
             />
-            <ToggleRow
-                label="Left-hand mode"
-                description="Put landscape betting controls on the left edge. Off keeps them on the right."
-                checked={leftHandMode}
-                onToggle={toggleLeftHandMode}
-            />
+            {showLeftHandMode && (
+                <ToggleRow
+                    label="Left-hand mode"
+                    description="Put landscape betting controls on the left edge. Off keeps them on the right."
+                    checked={leftHandMode}
+                    onToggle={toggleLeftHandMode}
+                />
+            )}
         </div>
     );
 };

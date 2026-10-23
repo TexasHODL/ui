@@ -20,12 +20,19 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  /* ViewBox circle is 131.9 across a 171×215.25 image. These scales make
+  /* ViewBox circle is 131.9 across a 171x215.25 image. These scales make
      that disc fill the square box after the image is stretched to fit. */
   width: 129.7%;
   height: 163.2%;
   max-width: none;
   transform: translate(-50%, -50%);
+}
+
+/* Marble (E) is already a square webp; the SVG stretch above would oval it. */
+.dealer-button[data-dealer-style="E"] img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 /* No bet: keep the group's footprint so the button sits where it would

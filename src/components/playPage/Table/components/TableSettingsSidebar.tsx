@@ -5,7 +5,7 @@
  * Contains toggle switches for in-game options.
  */
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { ThemeToggle } from "../../../ThemeToggle";
 import type { TableStyleOption } from "./MobileTableHeader";
@@ -22,6 +22,7 @@ import {
     setTableStyle
 } from "../../../../theme/tableStyles";
 import { useTableStyles } from "../../../../theme/useTableStyles";
+import { getViewportMode } from "../../../../config/stageGeometry";
 
 const SELECT_CLASS = "block w-full mt-2 p-3 rounded-lg border border-white/20 bg-[#181020] text-white";
 
@@ -108,6 +109,15 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
         togglePotAsChips
     } = useGameSettings();
     const tableStyles = useTableStyles();
+    // Same classifier as the betting UI (PokerActionPanel): only mobile landscape
+    // has left/right edge controls, so hide this row elsewhere. Preference stays stored.
+    const [viewportMode, setViewportMode] = useState(getViewportMode);
+    useEffect(() => {
+        const onResize = () => setViewportMode(getViewportMode());
+        window.addEventListener("resize", onResize);
+        return () => window.removeEventListener("resize", onResize);
+    }, []);
+    const showLeftHandMode = viewportMode === "mobile-landscape";
 
     return (
         <div
@@ -215,12 +225,14 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                             checked={preSelectCheck}
                             onToggle={togglePreSelectCheck}
                         />
-                        <ToggleRow
-                            label="Left-hand mode"
-                            description="Landscape controls sit on the left edge. Off: right edge."
-                            checked={leftHandMode}
-                            onToggle={toggleLeftHandMode}
-                        />
+                        {showLeftHandMode && (
+                            <ToggleRow
+                                label="Left-hand mode"
+                                description="Landscape controls sit on the left edge. Off: right edge."
+                                checked={leftHandMode}
+                                onToggle={toggleLeftHandMode}
+                            />
+                        )}
                     </div>
                 </div>
             )}

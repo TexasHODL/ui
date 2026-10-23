@@ -64,9 +64,9 @@ export interface GameSettings {
     // (ui#847). Turn OFF for a calmer table — the pot still awards, just without
     // the animation. Pairs with the winner banner (ui#848).
     winCelebration: boolean;
-    // When OFF (default), the pot shows as plain "Total Pot: $x" text. When ON, it
-    // shows as a chip stack + amount pill with a POT caption, matching the player
-    // bets on the table (ui#772).
+    // When ON (default), the pot shows as a chip stack + amount pill with a POT
+    // caption, matching the player bets on the table (ui#772). When OFF, plain
+    // "Total Pot: $x" text. A missing saved value uses this default; stored false stays off.
     potAsChips: boolean;
 }
 
@@ -127,7 +127,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         readBoolSetting(LS_KEY_LEFT_HAND, false)
     );
     const [potAsChips, setPotAsChips] = useState<boolean>(() =>
-        readBoolSetting(LS_KEY_POT_AS_CHIPS, false)
+        readBoolSetting(LS_KEY_POT_AS_CHIPS, true)
     );
 
     const [winCelebration, setWinCelebration] = useState<boolean>(() =>
