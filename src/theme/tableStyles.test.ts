@@ -41,7 +41,7 @@ describe("table style choices", () => {
         expect(CHIP_STYLE_IDS.map(id => CHIP_STYLE_LABELS[id])).toEqual([
             "Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D", "Marble"
         ]);
-        expect(STYLE_IDS.map(id => DEALER_STYLE_LABELS[id])).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin"]);
+        expect(STYLE_IDS.map(id => DEALER_STYLE_LABELS[id])).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin", "Marble"]);
     });
 
     it("defaults to Block52 Classic cards, Crypto coin chips and the Clean minimal dealer button", () => {
@@ -143,5 +143,8 @@ describe("bundled style art", () => {
             // Same viewBox as CustomDealer.svg, so the button CSS sizes it identically.
             expect(svg).toContain("viewBox=\"0 0 171 215.249992\"");
         }
+        // Marble (E) is a photoreal webp that object-fits the same CSS box.
+        expect(dealerStyleUrl("E")).toBe("/assets/dealerstyles/E.webp");
+        expect(fs.existsSync(path.join(ASSETS, "dealerstyles", "E.webp"))).toBe(true);
     });
 });

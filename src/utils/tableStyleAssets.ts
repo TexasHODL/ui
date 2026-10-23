@@ -19,7 +19,7 @@ export const CHIP_STYLE_FILES = import.meta.glob("../assets/chipstyles/*/*.{svg,
     import: "default"
 }) as Record<string, string>;
 
-export const DEALER_STYLE_FILES = import.meta.glob("../assets/dealerstyles/*.svg", {
+export const DEALER_STYLE_FILES = import.meta.glob("../assets/dealerstyles/*.{svg,webp}", {
     eager: true,
     query: "?url&no-inline",
     import: "default"
