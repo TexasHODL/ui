@@ -1,4 +1,4 @@
-import { findUserSeat, isSeatBigBlind } from "./playerSeatUtils";
+import { findUserSeat, formatSeatLabel, isSeatBigBlind, validSeat } from "./playerSeatUtils";
 
 describe("findUserSeat", () => {
     const gameState = {
@@ -59,5 +59,33 @@ describe("isSeatBigBlind", () => {
     it("treats seat 0 as not-seated (false even if bigBlindPosition is 0)", () => {
         expect(isSeatBigBlind(0, 0)).toBe(false);
         expect(isSeatBigBlind(0, 3)).toBe(false);
+    });
+});
+
+describe("validSeat", () => {
+    it("returns 1-based seats unchanged", () => {
+        expect(validSeat(1)).toBe(1);
+        expect(validSeat(9)).toBe(9);
+    });
+
+    it("treats 0 / missing / non-integers as absent", () => {
+        expect(validSeat(0)).toBeUndefined();
+        expect(validSeat(null)).toBeUndefined();
+        expect(validSeat(undefined)).toBeUndefined();
+        expect(validSeat(1.5)).toBeUndefined();
+        expect(validSeat(NaN)).toBeUndefined();
+    });
+});
+
+describe("formatSeatLabel", () => {
+    it("renders 1-based seats as Seat N", () => {
+        expect(formatSeatLabel(1)).toBe("Seat 1");
+        expect(formatSeatLabel(9)).toBe("Seat 9");
+    });
+
+    it("never renders Seat 0", () => {
+        expect(formatSeatLabel(0)).toBe("Unknown seat");
+        expect(formatSeatLabel(null)).toBe("Unknown seat");
+        expect(formatSeatLabel(undefined)).toBe("Unknown seat");
     });
 });

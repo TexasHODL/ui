@@ -33,6 +33,12 @@ describe("winnerBannerText", () => {
         );
     });
 
+    it("never shows Seat 0 when the seat is absent", () => {
+        expect(
+            winnerBannerText([{ seat: 0, formattedAmount: "0.54", description: "Trip Tens", winType: "showdown" }])
+        ).toBe("Unknown seat wins the $0.54 pot with Trip Tens");
+    });
+
     it("split pot lists every winner and amount", () => {
         expect(
             winnerBannerText([

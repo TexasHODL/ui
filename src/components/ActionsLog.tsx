@@ -3,6 +3,7 @@ import { buildHandShareUrl } from "../utils/handReplay";
 import { useParams } from "react-router-dom";
 import { useGameProgress } from "../hooks/game/useGameProgress";
 import { useWinnerInfo } from "../hooks/game/useWinnerInfo";
+import { formatSeatLabel } from "../utils/playerSeatUtils";
 import { isTournamentFormat } from "../utils/gameFormatUtils";
 import { getBeatenHandDescription } from "../utils/showdownSummary";
 import { getLastHandResult, subscribeLastHandResult } from "../utils/lastHandResult";
@@ -182,7 +183,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                             {formatActionAmount(action, isTournamentFormat(gameFormat))}
                         </span>
                         <span className={`text-[12px] ${styles.secondaryText}`}>
-                            Seat {action.seat} · {formatRoundName(action.round)}
+                            {formatSeatLabel(action.seat)} · {formatRoundName(action.round)}
                         </span>
                     </div>
                 </div>
@@ -204,7 +205,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                                   {w.description && beatenDescription && ` over ${beatenDescription}`}
                               </span>
                               <span className={`text-[12px] ${styles.secondaryText}`}>
-                                  Seat {w.seat} · {w.winType === "showdown" ? "Showdown" : "Uncontested"}
+                                  {formatSeatLabel(w.seat)} · {w.winType === "showdown" ? "Showdown" : "Uncontested"}
                               </span>
                           </div>
                       </div>
@@ -220,8 +221,8 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
             <button className="history-summary" onClick={onExpand} aria-label="Expand hand history" title="Open full hand history">
                 <span className="history-summary-heading">History <span>Expand ↗</span></span>
                 <span className="history-summary-action">
-                    {winner ? `Seat ${winner.seat} wins ${winner.formattedAmount}` : latest
-                        ? `Seat ${latest.seat} · ${formatActionName(latest.action)}${formatActionAmount(latest, isTournamentFormat(gameFormat))}`
+                    {winner ? `${formatSeatLabel(winner.seat)} wins ${winner.formattedAmount}` : latest
+                        ? `${formatSeatLabel(latest.seat)} · ${formatActionName(latest.action)}${formatActionAmount(latest, isTournamentFormat(gameFormat))}`
                         : "Waiting for the next action"}
                 </span>
             </button>
