@@ -1,0 +1,7 @@
+# Code owners for TexasHODL/ui (adapted from upstream block52/ui be00585 / #864).
+#
+# block52's @bitcoinbrisbane does not apply here. Use the TexasHODL maintainer
+# so enabling "Require review from Code Owners" on main does not block merges
+# waiting on an outside org. Until that branch-protection rule is turned on,
+# this file is informational only and does not change merge behaviour.
+*       @AndrewAB86
