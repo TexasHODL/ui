@@ -74,12 +74,15 @@ describe("PotSizedBetButtons — presets below the minimum bet are greyed out", 
         expect(screen.getByText("Pot")).not.toBeDisabled();
     });
 
-    it("never selects more than the stack (above the stack the preset shoves the stack)", () => {
+    it("greys out a preset above the stack instead of turning it into an all-in (ui#857)", () => {
         const { onAmountSelect } = renderButtons({ totalPotMicro: 100_000_000n, maxAmount: 15 });
-        const quarter = screen.getByText("1/4 Pot");
-        expect(quarter).not.toBeDisabled(); // $25 raw is above min, so the preset is live
-        fireEvent.click(quarter); // $25, capped at the $15 stack
-        expect(onAmountSelect).toHaveBeenCalledWith(15);
+        const quarter = screen.getByText("1/4 Pot"); // $25 > $15 stack
+        expect(quarter).toBeDisabled();
+        expect(quarter).toHaveAttribute("title", "More than your stack");
+        fireEvent.click(quarter);
+        expect(onAmountSelect).not.toHaveBeenCalled();
+        // The stack still goes in via ALL-IN.
+        expect(screen.getByText("ALL-IN")).not.toBeDisabled();
     });
 
     it("disables the presets when the legal minimum exceeds the stack (short stack shoves via ALL-IN)", () => {
@@ -124,13 +127,17 @@ describe("PotSizedBetButtons — presets below the minimum bet are greyed out", 
         expect(onAmountSelect).not.toHaveBeenCalled();
     });
 
-    // ui#768: at pot-limit the engine caps the max at the pot, so a deep
-    // stack's max is not an all-in and must not be labelled one.
-    it("labels the max button MAX when the pot-limit caps it below the stack", () => {
+    // ui#857: at pot-limit the pot caps the max below a deep stack, so Pot is
+    // the max. There is no MAX button; ALL-IN is greyed out until the stack is
+    // smaller than a pot-sized bet.
+    it("greys out ALL-IN (and shows no MAX) when the pot-limit caps the bet below the stack", () => {
         const { onAllIn } = renderButtons({ maxIsAllIn: false });
-        expect(screen.queryByText("ALL-IN")).toBeNull();
-        fireEvent.click(screen.getByText("MAX"));
-        expect(onAllIn).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText("MAX")).toBeNull();
+        const allIn = screen.getByText("ALL-IN");
+        expect(allIn).toBeDisabled();
+        expect(allIn).toHaveAttribute("title", "Pot is the most you can bet at pot-limit");
+        fireEvent.click(allIn);
+        expect(onAllIn).not.toHaveBeenCalled();
     });
 
     describe("cent rounding at the minimum boundary", () => {
@@ -148,12 +155,73 @@ describe("PotSizedBetButtons — presets below the minimum bet are greyed out", 
         });
     });
 
-    it("caps an above-stack preset at the stack when facing a bet (Pot = 2 + 8 = $10 > $5 stack)", () => {
+    it("greys out an above-stack preset when facing a bet (Pot = 2 + 8 = $10 > $5 stack)", () => {
         const { onAmountSelect } = renderButtons({ callAmountMicro: 2_000_000n, totalPotMicro: 6_000_000n, minAmount: 4, maxAmount: 5 });
+        const pot = screen.getByText("Pot");
+        expect(pot).toBeDisabled();
+        fireEvent.click(pot);
+        expect(onAmountSelect).not.toHaveBeenCalled();
+    });
+});
+
+// ui#857, seen live at $0.01/$0.02 Pot-Limit Omaha: on the river a player with
+// $0.59 left faces a bet ($0.14 to call into a $0.70 pot). 1/4 and 1/2 Pot fit
+// the stack; 3/4 Pot and Pot do not, and used to both select the $0.59 all-in.
+describe("PotSizedBetButtons — presets above the max are greyed out (ui#857)", () => {
+    const river = { callAmountMicro: 140_000n, totalPotMicro: 700_000n, minAmount: 0.28, maxAmount: 0.59 };
+
+    it("keeps the affordable presets live at their true size", () => {
+        const { onAmountSelect } = renderButtons(river);
+        fireEvent.click(screen.getByText("1/4 Pot")); // 0.14 + 0.21
+        fireEvent.click(screen.getByText("1/2 Pot")); // 0.14 + 0.42
+        expect(onAmountSelect).toHaveBeenNthCalledWith(1, 0.35);
+        expect(onAmountSelect).toHaveBeenNthCalledWith(2, 0.56);
+    });
+
+    it("greys out 3/4 Pot ($0.77) and Pot ($0.98) instead of shoving $0.59", () => {
+        const { onAmountSelect } = renderButtons(river);
+        for (const label of ["3/4 Pot", "Pot"]) {
+            const button = screen.getByText(label);
+            expect(button).toBeDisabled();
+            expect(button).toHaveAttribute("title", "More than your stack");
+            fireEvent.click(button);
+        }
+        expect(onAmountSelect).not.toHaveBeenCalled();
+    });
+
+    it("leaves ALL-IN as the way to put the whole stack in", () => {
+        const { onAllIn } = renderButtons(river);
+        fireEvent.click(screen.getByText("ALL-IN"));
+        expect(onAllIn).toHaveBeenCalledTimes(1);
+    });
+
+    it("at pot-limit with a deep stack, Pot is the max and ALL-IN is greyed out", () => {
+        // $2 pot, opening: the cap is the pot ($2), so 1/4–Pot fit; none exceed it.
+        renderButtons({ totalPotMicro: 2_000_000n, minAmount: 0.02, maxAmount: 2, maxIsAllIn: false });
+        expect(screen.getByText("Pot")).not.toBeDisabled();
+        expect(screen.getByText("ALL-IN")).toBeDisabled();
+    });
+
+    it("at pot-limit with a stack under a pot-sized bet, Pot greys out and ALL-IN lights up", () => {
+        // $2 pot but only $1.50 behind: the stack is the max, so it's an all-in.
+        const { onAllIn } = renderButtons({ totalPotMicro: 2_000_000n, minAmount: 0.02, maxAmount: 1.5, maxIsAllIn: true });
+        expect(screen.getByText("Pot")).toBeDisabled();
+        fireEvent.click(screen.getByText("ALL-IN"));
+        expect(onAllIn).toHaveBeenCalledTimes(1);
+    });
+
+    it("titles a preset above the pot-limit cap accordingly", () => {
+        renderButtons({ totalPotMicro: 2_000_000n, minAmount: 0.02, maxAmount: 1, maxIsAllIn: false });
+        expect(screen.getByText("Pot")).toHaveAttribute("title", "More than the pot-limit allows");
+    });
+
+    it("does not grey out a pot-limit Pot that only exceeds the cap after cent rounding", () => {
+        // Cap = pot = $1.235; Pot rounds to $1.24 for display but its true size fits.
+        const { onAmountSelect } = renderButtons({ totalPotMicro: 1_235_000n, minAmount: 0.02, maxAmount: 1.235, maxIsAllIn: false });
         const pot = screen.getByText("Pot");
         expect(pot).not.toBeDisabled();
         fireEvent.click(pot);
-        expect(onAmountSelect).toHaveBeenCalledWith(5);
+        expect(onAmountSelect).toHaveBeenCalledWith(1.235);
     });
 });
 
