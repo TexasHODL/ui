@@ -45,6 +45,9 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO, isTournament: boolean) {
                 // validSeat the banner/history kept "Seat 0" instead of falling back.
                 seat: validSeat(winner.seat) ?? validSeat(player?.seat) ?? findSeatFromActions(gameData.previousActions, winner.address) ?? 0,
                 address: winner.address,
+                // Same avatar string seats pass to getAvatarForAddress — without it the
+                // floating win banner falls back to a default and misses the NFT.
+                avatar: player?.avatar,
                 amount: winner.amount.toString(),
                 formattedAmount: formatWinAmount(winner.amount.toString(), isTournament),
                 winType: hasElements(winner.cards) ? "showdown" : "uncontested",
@@ -90,7 +93,7 @@ export const useWinnerInfo = (): WinnerInfoReturn => {
             .join("|");
         // getWinnerInfo falls back to players[] / previousActions when winner.seat
         // is absent, so both address->seat mappings are part of the input too.
-        const seats = gameState.players.map(p => `${p.seat}:${p.address}`).join("|");
+        const seats = gameState.players.map(p => `${p.seat}:${p.address}:${p.avatar ?? ""}`).join("|");
         const actionSeats = (gameState.previousActions ?? []).map(a => `${a.seat}:${a.playerId}`).join("|");
         return `s${winners}#${seats}#${actionSeats}`;
     }, [gameState]);

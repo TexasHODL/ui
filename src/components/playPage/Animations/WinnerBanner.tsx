@@ -22,6 +22,8 @@ const WinnerBanner: React.FC = () => {
     const [text, setText] = useState<string | null>(null);
     // The sole winner's address, for their avatar/NFT; null for a split pot.
     const [winnerAddress, setWinnerAddress] = useState<string | null>(null);
+    // Game-state avatar payload captured with the address so the circle matches the seat chip.
+    const [winnerAvatar, setWinnerAvatar] = useState<string | null>(null);
     // Measured when a banner starts, so it clears the header at any window size.
     const [top, setTop] = useState<number>(() => winnerBannerTop(null));
     const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -33,7 +35,9 @@ const WinnerBanner: React.FC = () => {
         if (!next) return; // no winners this frame — leave the current banner to time out
         setText(next);
         setTop(winnerBannerTop(document.querySelector(".sub-header")?.getBoundingClientRect().bottom ?? null));
-        setWinnerAddress(hasElements(winnerInfo) && winnerInfo.length === 1 ? winnerInfo[0].address : null);
+        const sole = hasElements(winnerInfo) && winnerInfo.length === 1 ? winnerInfo[0] : null;
+        setWinnerAddress(sole?.address ?? null);
+        setWinnerAvatar(sole?.avatar ?? null);
         if (timer.current) clearTimeout(timer.current);
         timer.current = setTimeout(() => setText(null), BANNER_MS);
         return () => {
@@ -64,7 +68,7 @@ const WinnerBanner: React.FC = () => {
     if (!text) return null;
 
     // The winner's avatar (an NFT when they've linked one) leads the banner.
-    const avatarUrl = winnerAddress ? getAvatarForAddress(winnerAddress) : null;
+    const avatarUrl = winnerAddress ? getAvatarForAddress(winnerAddress, winnerAvatar ?? undefined) : null;
 
     // Portal to <body>: the banner rolls across the screen, so it must not be
     // positioned (or scaled) by the table stage it's mounted from. Keyed on the
@@ -79,9 +83,9 @@ const WinnerBanner: React.FC = () => {
                     <NftAvatarImage
                         src={avatarUrl}
                         alt="Winner avatar"
-                        imgClassName="b52-winner-banner__avatar"
+                        imgClassName="b52-winner-banner__avatar-img"
                         chipClassName="b52-winner-banner__avatar"
-                        fallbackClassName="b52-winner-banner__avatar"
+                        fallbackClassName="b52-winner-banner__avatar b52-winner-banner__avatar--fallback"
                     />
                 )}
                 <span className="b52-winner-banner__trophy" aria-hidden="true">
