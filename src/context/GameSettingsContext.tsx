@@ -28,6 +28,7 @@ const LS_KEY_PRE_SELECT_CHECK = "setting_preselectcheck";
 const PRE_SELECT_CHECK_DEFAULT = true;
 const LS_KEY_LEFT_HAND = "setting_lefthand";
 const LS_KEY_WIN_CELEBRATION = "setting_wincelebration";
+const LS_KEY_POT_AS_CHIPS = "setting_potaschips";
 
 function readBoolSetting(key: string, fallback: boolean): boolean {
     const stored = localStorage.getItem(key);
@@ -63,6 +64,10 @@ export interface GameSettings {
     // (ui#847). Turn OFF for a calmer table — the pot still awards, just without
     // the animation. Pairs with the winner banner (ui#848).
     winCelebration: boolean;
+    // When OFF (default), the pot shows as plain "Total Pot: $x" text. When ON, it
+    // shows as a chip stack + amount pill with a POT caption, matching the player
+    // bets on the table (ui#772).
+    potAsChips: boolean;
 }
 
 export interface GameSettingsContextValue extends GameSettings {
@@ -79,6 +84,7 @@ export interface GameSettingsContextValue extends GameSettings {
     togglePreSelectCheck: () => void;
     toggleLeftHandMode: () => void;
     toggleWinCelebration: () => void;
+    togglePotAsChips: () => void;
 }
 
 const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
@@ -119,6 +125,9 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
     const [leftHandMode, setLeftHandMode] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_LEFT_HAND, false)
+    );
+    const [potAsChips, setPotAsChips] = useState<boolean>(() =>
+        readBoolSetting(LS_KEY_POT_AS_CHIPS, false)
     );
 
     const [winCelebration, setWinCelebration] = useState<boolean>(() =>
@@ -229,6 +238,14 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
     }, []);
 
+    const togglePotAsChips = useCallback(() => {
+        setPotAsChips(prev => {
+            const next = !prev;
+            localStorage.setItem(LS_KEY_POT_AS_CHIPS, String(next));
+            return next;
+        });
+    }, []);
+
     const value = useMemo<GameSettingsContextValue>(
         () => ({
             autoDeal,
@@ -244,6 +261,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             preSelectCheck,
             leftHandMode,
             winCelebration,
+            potAsChips,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
@@ -256,7 +274,8 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             toggleSitInOptions,
             togglePreSelectCheck,
             toggleLeftHandMode,
-            toggleWinCelebration
+            toggleWinCelebration,
+            togglePotAsChips
         }),
         [
             autoDeal,
@@ -272,18 +291,21 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             preSelectCheck,
             leftHandMode,
             winCelebration,
+            potAsChips,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
             toggleAutoFold,
             toggleAutoMuck,
+            toggleCallClock,
             toggleTurnNotificationSound,
             togglePlayerActionSounds,
             toggleSeatAtBottom,
             toggleSitInOptions,
             togglePreSelectCheck,
             toggleLeftHandMode,
-            toggleWinCelebration
+            toggleWinCelebration,
+            togglePotAsChips
         ]
     );
 

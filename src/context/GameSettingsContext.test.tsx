@@ -126,3 +126,48 @@ describe("GameSettingsContext — win celebration (ui#847)", () => {
         expect(screen.getByRole("button", { name: "celebration-off" })).toBeInTheDocument();
     });
 });
+function PotAsChipsProbe() {
+    const { potAsChips, togglePotAsChips } = useGameSettings();
+    return (
+        <button onClick={togglePotAsChips} aria-pressed={potAsChips}>
+            {potAsChips ? "chips" : "text"}
+        </button>
+    );
+}
+
+describe("pot as chips (ui#772)", () => {
+    beforeEach(() => localStorage.clear());
+
+    it("is off by default, so the pot stays as plain text", () => {
+        render(
+            <GameSettingsProvider>
+                <PotAsChipsProbe />
+            </GameSettingsProvider>
+        );
+        expect(screen.getByRole("button", { name: "text" })).toHaveAttribute("aria-pressed", "false");
+    });
+
+    it("toggles on and back off, persisting each change", () => {
+        render(
+            <GameSettingsProvider>
+                <PotAsChipsProbe />
+            </GameSettingsProvider>
+        );
+        fireEvent.click(screen.getByRole("button", { name: "text" }));
+        expect(localStorage.getItem("setting_potaschips")).toBe("true");
+        expect(screen.getByRole("button", { name: "chips" })).toHaveAttribute("aria-pressed", "true");
+        fireEvent.click(screen.getByRole("button", { name: "chips" }));
+        expect(localStorage.getItem("setting_potaschips")).toBe("false");
+    });
+
+    it("remembers the choice across a reload", () => {
+        localStorage.setItem("setting_potaschips", "true");
+        render(
+            <GameSettingsProvider>
+                <PotAsChipsProbe />
+            </GameSettingsProvider>
+        );
+        expect(screen.getByRole("button", { name: "chips" })).toBeInTheDocument();
+    });
+});
+
