@@ -138,36 +138,36 @@ function PotAsChipsProbe() {
 describe("pot as chips (ui#772)", () => {
     beforeEach(() => localStorage.clear());
 
-    it("is off by default, so the pot stays as plain text", () => {
+    it("is on by default, so the pot shows as chips", () => {
         render(
             <GameSettingsProvider>
                 <PotAsChipsProbe />
             </GameSettingsProvider>
         );
-        expect(screen.getByRole("button", { name: "text" })).toHaveAttribute("aria-pressed", "false");
+        expect(screen.getByRole("button", { name: "chips" })).toHaveAttribute("aria-pressed", "true");
     });
 
-    it("toggles on and back off, persisting each change", () => {
+    it("toggles off and back on, persisting each change", () => {
         render(
             <GameSettingsProvider>
                 <PotAsChipsProbe />
             </GameSettingsProvider>
         );
-        fireEvent.click(screen.getByRole("button", { name: "text" }));
-        expect(localStorage.getItem("setting_potaschips")).toBe("true");
-        expect(screen.getByRole("button", { name: "chips" })).toHaveAttribute("aria-pressed", "true");
         fireEvent.click(screen.getByRole("button", { name: "chips" }));
         expect(localStorage.getItem("setting_potaschips")).toBe("false");
+        expect(screen.getByRole("button", { name: "text" })).toHaveAttribute("aria-pressed", "false");
+        fireEvent.click(screen.getByRole("button", { name: "text" }));
+        expect(localStorage.getItem("setting_potaschips")).toBe("true");
     });
 
-    it("remembers the choice across a reload", () => {
-        localStorage.setItem("setting_potaschips", "true");
+    it("remembers an explicit off across a reload", () => {
+        localStorage.setItem("setting_potaschips", "false");
         render(
             <GameSettingsProvider>
                 <PotAsChipsProbe />
             </GameSettingsProvider>
         );
-        expect(screen.getByRole("button", { name: "chips" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "text" })).toBeInTheDocument();
     });
 });
 

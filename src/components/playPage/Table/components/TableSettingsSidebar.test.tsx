@@ -1,8 +1,8 @@
-
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TableSettingsSidebar } from "./TableSettingsSidebar";
 import { TABLE_STYLE_STORAGE_KEYS, resetTableStylesForTests } from "../../../../theme/tableStyles";
 import Chip from "../../common/Chip";
+import { getViewportMode } from "../../../../config/stageGeometry";
 
 jest.mock("../../../../context/GameSettingsContext", () => ({
     useGameSettings: () => ({
@@ -12,16 +12,27 @@ jest.mock("../../../../context/GameSettingsContext", () => ({
         sitInOptions: false,
         preSelectCheck: true,
         leftHandMode: false,
+        winCelebration: true,
+        potAsChips: true,
         toggleTurnNotificationSound: jest.fn(),
         togglePlayerActionSounds: jest.fn(),
         toggleAutoMuck: jest.fn(),
         toggleSitInOptions: jest.fn(),
         togglePreSelectCheck: jest.fn(),
-        toggleLeftHandMode: jest.fn()
+        toggleLeftHandMode: jest.fn(),
+        toggleWinCelebration: jest.fn(),
+        togglePotAsChips: jest.fn()
     })
 }));
 
+jest.mock("../../../../config/stageGeometry", () => ({
+    getViewportMode: jest.fn(() => "desktop")
+}));
 describe("Table settings", () => {
+    beforeEach(() => {
+        (getViewportMode as jest.Mock).mockReturnValue("desktop");
+    });
+
     it("keeps hidden settings out of the keyboard and screen-reader flow", () => {
         render(<TableSettingsSidebar isOpen={false} />);
         expect(screen.queryByRole("switch")).not.toBeInTheDocument();
@@ -31,9 +42,8 @@ describe("Table settings", () => {
         const onStyle = jest.fn();
         const onClose = jest.fn();
         render(<TableSettingsSidebar isOpen tableStyle="modern" onTableStyleChange={onStyle} onClose={onClose} />);
-        expect(screen.getAllByRole("switch")).toHaveLength(6);
+        expect(screen.queryByRole("switch", { name: "Left-hand mode" })).not.toBeInTheDocument();
         expect(screen.getByRole("switch", { name: "Pre-Select Check/Fold" })).toHaveAttribute("aria-checked", "true");
-        expect(screen.getByRole("switch", { name: "Left-hand mode" })).toHaveAttribute("aria-checked", "false");
         expect(screen.getByRole("switch", { name: "Turn Notification Sound" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("switch", { name: "Auto Muck" })).toHaveAttribute("aria-checked", "false");
         fireEvent.change(screen.getByRole("combobox", { name: "Table appearance" }), { target: { value: "classic" } });
@@ -42,6 +52,16 @@ describe("Table settings", () => {
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 
+
+    it("lists Left-hand mode only in mobile landscape", () => {
+        (getViewportMode as jest.Mock).mockReturnValue("mobile-landscape");
+        const { unmount } = render(<TableSettingsSidebar isOpen />);
+        expect(screen.getByRole("switch", { name: "Left-hand mode" })).toBeInTheDocument();
+        unmount();
+        (getViewportMode as jest.Mock).mockReturnValue("mobile-portrait");
+        render(<TableSettingsSidebar isOpen />);
+        expect(screen.queryByRole("switch", { name: "Left-hand mode" })).not.toBeInTheDocument();
+    });
     describe("cards, chips and dealer button styles", () => {
         beforeEach(() => {
             localStorage.clear();
@@ -58,7 +78,7 @@ describe("Table settings", () => {
                 "Classic Courts", "HODL Courts", "Web3 Holo", "Tech Grid"
             ]);
             expect(optionLabels("Chips")).toEqual(["Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D", "Marble"]);
-            expect(optionLabels("Dealer button")).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin"]);
+            expect(optionLabels("Dealer button")).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin", "Marble"]);
             expect(screen.getByRole("combobox", { name: "Cards" })).toHaveValue("block52");
             expect(screen.getByRole("combobox", { name: "Chips" })).toHaveValue("C");
             expect(screen.getByRole("combobox", { name: "Dealer button" })).toHaveValue("C");

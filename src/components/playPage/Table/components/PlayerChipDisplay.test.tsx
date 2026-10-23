@@ -78,6 +78,8 @@ describe("dealer button beside the bet", () => {
         expect(css).toMatch(/\.dealer-button \{[^}]*top: 50%;[^}]*transform: translateY\(-50%\)/);
         expect(css).toContain("right: calc(100% + var(--dealer-gap))");
         expect(css).toContain("left: calc(100% + var(--dealer-gap))");
+        // Marble (E) must not use the SVG stretch or it renders as an oval.
+        expect(css).toMatch(/\.dealer-button\[data-dealer-style="E"\] img \{[^}]*width: 100%;[^}]*height: 100%;/);
     });
     it("keeps the dealer button outside the chips+amount group so it can't shift the group's centre", () => {
         const { container } = render(<PlayerChipDisplay seatIndex={1} left="500px" top="250px" bottom="0px" side="bottom" isTournament={false} isDealer />);
