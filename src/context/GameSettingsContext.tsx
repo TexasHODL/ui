@@ -27,6 +27,7 @@ const LS_KEY_PRE_SELECT_CHECK = "setting_preselectcheck";
 // a stored "false" stays off.
 const PRE_SELECT_CHECK_DEFAULT = true;
 const LS_KEY_LEFT_HAND = "setting_lefthand";
+const LS_KEY_POT_AS_CHIPS = "setting_potaschips";
 
 function readBoolSetting(key: string, fallback: boolean): boolean {
     const stored = localStorage.getItem(key);
@@ -58,6 +59,10 @@ export interface GameSettings {
     preSelectCheck: boolean;
     // Landscape phones only. When on, the action column sits on the left edge.
     leftHandMode: boolean;
+    // When OFF (default), the pot shows as plain "Total Pot: $x" text. When ON, it
+    // shows as a chip stack + amount pill with a POT caption, matching the player
+    // bets on the table (ui#772).
+    potAsChips: boolean;
 }
 
 export interface GameSettingsContextValue extends GameSettings {
@@ -73,6 +78,7 @@ export interface GameSettingsContextValue extends GameSettings {
     toggleSitInOptions: () => void;
     togglePreSelectCheck: () => void;
     toggleLeftHandMode: () => void;
+    togglePotAsChips: () => void;
 }
 
 const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
@@ -113,6 +119,9 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
     const [leftHandMode, setLeftHandMode] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_LEFT_HAND, false)
+    );
+    const [potAsChips, setPotAsChips] = useState<boolean>(() =>
+        readBoolSetting(LS_KEY_POT_AS_CHIPS, false)
     );
 
     const toggleAutoDeal = useCallback(() => {
@@ -211,6 +220,14 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
     }, []);
 
+    const togglePotAsChips = useCallback(() => {
+        setPotAsChips(prev => {
+            const next = !prev;
+            localStorage.setItem(LS_KEY_POT_AS_CHIPS, String(next));
+            return next;
+        });
+    }, []);
+
     const value = useMemo<GameSettingsContextValue>(
         () => ({
             autoDeal,
@@ -225,6 +242,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             sitInOptions,
             preSelectCheck,
             leftHandMode,
+            potAsChips,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
@@ -236,7 +254,8 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             toggleSeatAtBottom,
             toggleSitInOptions,
             togglePreSelectCheck,
-            toggleLeftHandMode
+            toggleLeftHandMode,
+            togglePotAsChips
         }),
         [
             autoDeal,
@@ -251,16 +270,20 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             sitInOptions,
             preSelectCheck,
             leftHandMode,
+            potAsChips,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
             toggleAutoFold,
             toggleAutoMuck,
+            toggleCallClock,
             toggleTurnNotificationSound,
             togglePlayerActionSounds,
             toggleSeatAtBottom,
             toggleSitInOptions,
-            togglePreSelectCheck
+            togglePreSelectCheck,
+            toggleLeftHandMode,
+            togglePotAsChips
         ]
     );
 

@@ -96,12 +96,14 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
         sitInOptions,
         preSelectCheck,
         leftHandMode,
+        potAsChips,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
         toggleSitInOptions,
         togglePreSelectCheck,
-        toggleLeftHandMode
+        toggleLeftHandMode,
+        togglePotAsChips
     } = useGameSettings();
     const tableStyles = useTableStyles();
 
@@ -180,6 +182,12 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                             description="Sounds for bets, raises, calls, folds and checks."
                             checked={playerActionSounds}
                             onToggle={togglePlayerActionSounds}
+                        />
+                        <ToggleRow
+                            label="Pot as Chips"
+                            description="Show the pot as a chip stack with the amount. Off keeps plain text."
+                            checked={potAsChips}
+                            onToggle={togglePotAsChips}
                         />
                         <ToggleRow
                             label="Auto Muck"

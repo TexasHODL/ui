@@ -57,13 +57,15 @@ const SettingsTab: React.FC = () => {
         sitInOptions,
         preSelectCheck,
         leftHandMode,
+        potAsChips,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
         toggleCallClock,
         toggleSitInOptions,
         togglePreSelectCheck,
-        toggleLeftHandMode
+        toggleLeftHandMode,
+        togglePotAsChips
     } = useGameSettings();
 
     return (
@@ -79,6 +81,12 @@ const SettingsTab: React.FC = () => {
                 description="Play sounds when players perform actions such as bet, raise, call, fold, and check."
                 checked={playerActionSounds}
                 onToggle={togglePlayerActionSounds}
+            />
+            <ToggleRow
+                label="Pot as Chips"
+                description="Show the pot as a chip stack with the amount, like the bets in front of players. When off, it shows as plain text."
+                checked={potAsChips}
+                onToggle={togglePotAsChips}
             />
             <ToggleRow
                 label="Auto Muck"
