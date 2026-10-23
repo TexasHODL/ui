@@ -1,7 +1,7 @@
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { filterLobbyGames, isLobbyGameUnavailable } from "./lobbyFilters";
+import { filterLobbyGames, isLobbyGameUnavailable, isOpenScheduledRegistration } from "./lobbyFilters";
 import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
 
 const makeGame = (overrides: Partial<GameWithFormat>): GameWithFormat => ({
@@ -111,5 +111,110 @@ describe("lobby discovery", () => {
                 g => g.gameId
             )
         ).toEqual(["cheap-open", "cheap-started", "expensive-open"]);
+    });
+    it("puts open scheduled registration above empty unscheduled SNGs, with Started/full at bottom", () => {
+        const nowMs = 1_700_000_000_000;
+        const bitcoinCandle = makeGame({
+            gameId: "bitcoin-candle",
+            name: "Bitcoin Candle",
+            gameFormat: GameFormat.TOURNAMENT,
+            currentPlayers: 0,
+            maxPlayers: 9,
+            minPlayers: 2,
+            scheduledStartTime: nowMs + 60 * 60 * 1000
+        });
+        const cryptoDegen = makeGame({
+            gameId: "crypto-degen",
+            name: "Crypto Degen",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 0,
+            maxPlayers: 4,
+            minPlayers: 2
+        });
+        const anteUp = makeGame({
+            gameId: "ante-up",
+            name: "Ante Up",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 0,
+            maxPlayers: 4,
+            minPlayers: 2
+        });
+        const cryptoWinter = makeGame({
+            gameId: "crypto-winter",
+            name: "Crypto Winter",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 7,
+            maxPlayers: 9,
+            minPlayers: 4
+        });
+        const moonMission = makeGame({
+            gameId: "moon-mission",
+            name: "Moon Mission",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 6,
+            maxPlayers: 6,
+            minPlayers: 2
+        });
+        const progress = { "crypto-winter": { mark: "started" as const } };
+        expect(isOpenScheduledRegistration(bitcoinCandle, undefined, nowMs)).toBe(true);
+        expect(isOpenScheduledRegistration(cryptoDegen, undefined, nowMs)).toBe(false);
+        expect(
+            filterLobbyGames([cryptoDegen, anteUp, bitcoinCandle, cryptoWinter, moonMission], {
+                ...options,
+                nowMs,
+                progress
+            }).map(g => g.gameId)
+        ).toEqual(["bitcoin-candle", "ante-up", "crypto-degen", "crypto-winter", "moon-mission"]);
+    });
+    it("among open scheduled tables, sorts soonest start first", () => {
+        const nowMs = 1_700_000_000_000;
+        const later = makeGame({
+            gameId: "later-tourney",
+            gameFormat: GameFormat.TOURNAMENT,
+            currentPlayers: 1,
+            maxPlayers: 9,
+            minPlayers: 2,
+            scheduledStartTime: nowMs + 2 * 60 * 60 * 1000
+        });
+        const sooner = makeGame({
+            gameId: "sooner-tourney",
+            gameFormat: GameFormat.TOURNAMENT,
+            currentPlayers: 0,
+            maxPlayers: 9,
+            minPlayers: 2,
+            scheduledStartTime: nowMs + 30 * 60 * 1000
+        });
+        const emptySng = makeGame({
+            gameId: "empty-sng",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 3,
+            maxPlayers: 6,
+            minPlayers: 2
+        });
+        expect(
+            filterLobbyGames([later, emptySng, sooner], { ...options, nowMs }).map(g => g.gameId)
+        ).toEqual(["sooner-tourney", "later-tourney", "empty-sng"]);
+    });
+    it("does not treat Started or Cancelled scheduled tables as open registration", () => {
+        const nowMs = 1_700_000_000_000;
+        const startedScheduled = makeGame({
+            gameId: "started-scheduled",
+            gameFormat: GameFormat.TOURNAMENT,
+            currentPlayers: 5,
+            maxPlayers: 9,
+            minPlayers: 2,
+            scheduledStartTime: nowMs - 60_000
+        });
+        const cancelled = makeGame({
+            gameId: "cancelled-scheduled",
+            gameFormat: GameFormat.TOURNAMENT,
+            currentPlayers: 1,
+            maxPlayers: 9,
+            minPlayers: 4,
+            scheduledStartTime: nowMs - SCHEDULED_SNG_GRACE_MS - 1
+        });
+        const progress = { "started-scheduled": { mark: "started" as const } };
+        expect(isOpenScheduledRegistration(startedScheduled, progress["started-scheduled"], nowMs)).toBe(false);
+        expect(isOpenScheduledRegistration(cancelled, undefined, nowMs)).toBe(false);
     });
 });
