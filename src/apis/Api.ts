@@ -32,13 +32,55 @@ const adminHeaders = (adminKey: string) => ({ headers: { "X-Admin-Key": adminKey
 export const FUND_MOVING_TIMEOUT_MS = 180_000;
 const sendsFunds = (adminKey: string) => ({ ...adminHeaders(adminKey), timeout: FUND_MOVING_TIMEOUT_MS });
 
+/** Optional page for `/cosmos/tx/v1beta1/txs` (uses `limit`+`page`, not `pagination.*`). */
+export type TxSearchOptions = { limit?: number; page?: number };
+
+/** Node caps each txs page at this many rows (limit=200 still returns 100). */
+export const TX_SEARCH_PAGE_SIZE = 100;
+
+/** Build the REST path for a CometBFT event query against GetTxsEvent. */
+export function buildTxSearchPath(query: string, options: TxSearchOptions = {}): string {
+    const limit = options.limit ?? 10;
+    const page = options.page ?? 1;
+    return `/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(query)}&order_by=2&limit=${limit}&page=${page}`;
+}
+
+/** Shape returned by GetTxsEvent (snake_case JSON from the REST gateway). */
+type TxSearchPage = {
+    pagination: { next_key: string | null; total: string } | null;
+    total: string;
+    tx_responses: unknown[];
+    txs?: unknown[];
+};
+
 export class CosmosApi extends HTTPClient {
-    public getSentTransactions = (senderQuery: string) => this.get(`/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(senderQuery)}&order_by=2&limit=10`);
-    public getReceivedTransactions = (recipientQuery: string) =>
-        this.get(`/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(recipientQuery)}&order_by=2&limit=10`);
+    public getSentTransactions = (senderQuery: string, options?: TxSearchOptions) => this.get(buildTxSearchPath(senderQuery, options));
+    public getReceivedTransactions = (recipientQuery: string, options?: TxSearchOptions) => this.get(buildTxSearchPath(recipientQuery, options));
+    /**
+     * Every tx matching an event query, newest first.
+     * Pages through the node (max {@link TX_SEARCH_PAGE_SIZE} per request) until `total` is covered.
+     */
+    public getAllTransactionsMatching = async (eventQuery: string): Promise<TxSearchPage> => {
+        const first = (await this.get(buildTxSearchPath(eventQuery, { limit: TX_SEARCH_PAGE_SIZE, page: 1 }))) as TxSearchPage;
+        const total = Number.parseInt(first.total || "0", 10);
+        const pageCount = Math.max(1, Math.ceil(total / TX_SEARCH_PAGE_SIZE));
+        if (pageCount === 1) return first;
+
+        const rest = await Promise.all(
+            Array.from({ length: pageCount - 1 }, (_, i) =>
+                this.get(buildTxSearchPath(eventQuery, { limit: TX_SEARCH_PAGE_SIZE, page: i + 2 })) as Promise<TxSearchPage>
+            )
+        );
+        const pages = [first, ...rest];
+        return {
+            pagination: null,
+            total: first.total,
+            tx_responses: pages.flatMap(p => p.tx_responses || []),
+            txs: pages.flatMap(p => p.txs || [])
+        };
+    };
     /** The single most recent tx matching an event query (e.g. `message.sender='b521…'`). */
-    public getLatestTransaction = (eventQuery: string) =>
-        this.get(`/cosmos/tx/v1beta1/txs?query=${encodeURIComponent(eventQuery)}&order_by=2&limit=1`);
+    public getLatestTransaction = (eventQuery: string) => this.get(buildTxSearchPath(eventQuery, { limit: 1, page: 1 }));
     public getValidators = (limit?: number) => this.get(`/cosmos/staking/v1beta1/validators${limit ? `?pagination.limit=${limit}` : ""}`);
     public getValidatorsByStatus = (status: string, signal?: AbortSignal) =>
         this.get(`/cosmos/staking/v1beta1/validators?status=${status}&pagination.limit=100`, { signal });

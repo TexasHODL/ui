@@ -79,11 +79,11 @@ export default function AddressPage() {
                     const senderQuery = `message.sender='${searchAddress.trim()}'`;
                     const recipientQuery = `transfer.recipient='${searchAddress.trim()}'`;
 
-                    // Fetch both sent and received transactions
-                    // Note: Cosmos SDK uses 'query=' parameter, not 'events='
+                    // Full history: page through both event queries (node caps page size at 100).
+                    // Lobby TransactionPanel still uses getSent/getReceived (default limit=10) then slice(0, 6).
                     const [sentResponse, receivedResponse] = await Promise.all([
-                        cosmosApi.getSentTransactions(senderQuery) as Promise<TransactionResponse>,
-                        cosmosApi.getReceivedTransactions(recipientQuery) as Promise<TransactionResponse>
+                        cosmosApi.getAllTransactionsMatching(senderQuery) as Promise<TransactionResponse>,
+                        cosmosApi.getAllTransactionsMatching(recipientQuery) as Promise<TransactionResponse>
                     ]);
 
                     // Join each response to its decoded body (parallel `txs` array) so
