@@ -493,6 +493,33 @@
     }
 }
 
+/* "Pot as Chips" setting (ui#772): the chip stack + amount pill (shared with
+   player bets) with a small caption underneath naming the pot. */
+.pot-chips,
+.pot-chips-secondary {
+    display: flex;
+    justify-content: center;
+}
+
+.pot-chips-secondary {
+    margin-top: 6px;
+}
+
+.pot-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.pot-pill-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, #ffffff 65%, transparent);
+}
+
 .chip-position {
     position: absolute;
 }
@@ -844,6 +871,12 @@
 .nouns-table-felt .pot-display {
     background: linear-gradient(135deg, rgba(214, 60, 94, 0.2), rgba(43, 131, 246, 0.2));
     border: 2px solid rgba(214, 60, 94, 0.3);
+}
+
+/* Nouns-themed pot pill caption */
+.nouns-table-felt .pot-pill-label {
+    font-family: "Silkscreen", monospace;
+    color: rgba(214, 60, 94, 0.9);
 }
 
 /* Performance mode - disable expensive animations */
