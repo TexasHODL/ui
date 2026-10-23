@@ -8,6 +8,7 @@ import { useEffect, useLayoutEffect, useState, useMemo, useCallback, memo, useRe
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatPotDisplay, formatChipCount } from "../../utils/potDisplayUtils";
 import PokerActionPanel from "../Footer";
+import WinnerBanner from "./Animations/WinnerBanner";
 import { MobileActionDock } from "./Table/components/MobileActionDock";
 
 // Extracted Table components
@@ -1532,6 +1533,9 @@ const Table = React.memo(() => {
                                 cardBackStyle={cardBackStyle}
                                 updateBalanceOnPlayerJoin={updateBalanceOnPlayerJoin}
                             />
+
+                            {/* Last-pot winner banner (ui#848) — portal to body, above the table */}
+                            <WinnerBanner />
 
                             {/* DEBUG overlays */}
                             <PositionDebugMarkers positions={tableLayout.positions} />
