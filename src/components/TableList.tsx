@@ -84,7 +84,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     );
     const startedTables = useLobbyTournamentStarted(tournamentIds, rawGames);
     const games = useMemo(() => {
-        const filtered = filterLobbyGames(clubGames, { format, search, openOnly, sort });
+        const filtered = filterLobbyGames(clubGames, { format, search, openOnly, sort, progress: startedTables });
         // Non-empty search skips 24h aging so users can find old finished tables by id.
         return applyEndedLobbyRetention(filtered, startedTables, Date.now(), search);
     }, [clubGames, format, search, openOnly, sort, startedTables]);

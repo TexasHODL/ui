@@ -1,7 +1,8 @@
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { filterLobbyGames } from "./lobbyFilters";
+import { filterLobbyGames, isLobbyGameUnavailable } from "./lobbyFilters";
+import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
 
 const makeGame = (overrides: Partial<GameWithFormat>): GameWithFormat => ({
     gameId: "cash-empty",
@@ -51,5 +52,64 @@ describe("lobby discovery", () => {
         const expensive = makeGame({ gameId: "expensive", minBuyIn: "9007199254740993" });
         const cheaper = makeGame({ gameId: "cheaper", minBuyIn: "9007199254740992" });
         expect(filterLobbyGames([expensive, cheaper], { ...options, sort: "buyin" }).map(game => game.gameId)).toEqual(["cheaper", "expensive"]);
+    });
+    it("sinks Started and Finished tournaments below joinable tables for Available first", () => {
+        const started = makeGame({
+            gameId: "crypto-winter",
+            name: "Crypto Winter",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 7,
+            maxPlayers: 9,
+            minPlayers: 4
+        });
+        const finished = makeGame({
+            gameId: "public-money",
+            name: "Public Money",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 1,
+            maxPlayers: 9,
+            minPlayers: 4
+        });
+        const cashJoinable = makeGame({ gameId: "cash-joinable", currentPlayers: 2 });
+        const progress = {
+            "crypto-winter": { mark: "started" as const },
+            "public-money": { mark: "finished" as const }
+        };
+        expect(
+            filterLobbyGames([started, finished, cashJoinable, games[1]], { ...options, progress }).map(g => g.gameId)
+        ).toEqual(["cash-joinable", "crypto-winter", "cash-full", "public-money"]);
+    });
+    it("sinks Cancelled scheduled SNGs below joinable tables", () => {
+        const nowMs = 1_700_000_000_000;
+        const cancelled = makeGame({
+            gameId: "cancelled-sng",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 2,
+            maxPlayers: 9,
+            minPlayers: 4,
+            scheduledStartTime: nowMs - SCHEDULED_SNG_GRACE_MS - 1
+        });
+        const joinable = makeGame({ gameId: "cash-joinable", currentPlayers: 1 });
+        expect(
+            filterLobbyGames([cancelled, joinable], { ...options, nowMs }).map(g => g.gameId)
+        ).toEqual(["cash-joinable", "cancelled-sng"]);
+        expect(isLobbyGameUnavailable(cancelled, undefined, nowMs)).toBe(true);
+    });
+    it("keeps buy-in primary for buyin sort, then prefers available over unavailable on ties", () => {
+        const cheapStarted = makeGame({
+            gameId: "cheap-started",
+            minBuyIn: "100000",
+            gameFormat: GameFormat.SIT_AND_GO,
+            currentPlayers: 7,
+            maxPlayers: 9
+        });
+        const cheapOpen = makeGame({ gameId: "cheap-open", minBuyIn: "100000", currentPlayers: 2 });
+        const expensiveOpen = makeGame({ gameId: "expensive-open", minBuyIn: "500000", currentPlayers: 3 });
+        const progress = { "cheap-started": { mark: "started" as const } };
+        expect(
+            filterLobbyGames([expensiveOpen, cheapStarted, cheapOpen], { ...options, sort: "buyin", progress }).map(
+                g => g.gameId
+            )
+        ).toEqual(["cheap-open", "cheap-started", "expensive-open"]);
     });
 });
