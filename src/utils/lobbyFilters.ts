@@ -46,6 +46,27 @@ export function isLobbyGameUnavailable(
     return phase === "cancelled";
 }
 
+/**
+ * Joinable sit-and-go/tournament still in open scheduled registration
+ * (registering / ready / short). Empty unscheduled SNGs are not this.
+ */
+export function isOpenScheduledRegistration(
+    game: GameWithFormat,
+    progress: LobbyGameProgress | undefined,
+    nowMs: number
+): boolean {
+    if (isLobbyGameUnavailable(game, progress, nowMs)) return false;
+    const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
+    if (!tournamentStyle) return false;
+    const phase = scheduledSngPhase({
+        scheduledStartTime: game.scheduledStartTime,
+        minPlayers: game.minPlayers,
+        registered: game.currentPlayers,
+        nowMs
+    });
+    return phase === "registering" || phase === "ready" || phase === "short";
+}
+
 /** Filter real table data without mutating the shared game list. Full tables remain watchable. */
 export function filterLobbyGames(
     games: GameWithFormat[],
@@ -68,13 +89,24 @@ export function filterLobbyGames(
                 if (aBuyIn !== bBuyIn) return aBuyIn < bBuyIn ? -1 : 1;
             }
             // Available first: joinable above full / Started / Finished / Cancelled.
+            // Among joinable, open scheduled registration floats above empty
+            // unscheduled SNGs; among those, soonest start first.
             // For buyin, buy-in stays primary; this only breaks buy-in ties.
             const aUnavailable = isLobbyGameUnavailable(a, progress?.[a.gameId], nowMs);
             const bUnavailable = isLobbyGameUnavailable(b, progress?.[b.gameId], nowMs);
-            return (
-                Number(aUnavailable) - Number(bUnavailable) ||
-                b.currentPlayers - a.currentPlayers ||
-                a.gameId.localeCompare(b.gameId)
-            );
+            if (aUnavailable !== bUnavailable) {
+                return Number(aUnavailable) - Number(bUnavailable);
+            }
+            const aOpenScheduled = isOpenScheduledRegistration(a, progress?.[a.gameId], nowMs);
+            const bOpenScheduled = isOpenScheduledRegistration(b, progress?.[b.gameId], nowMs);
+            if (aOpenScheduled !== bOpenScheduled) {
+                return Number(bOpenScheduled) - Number(aOpenScheduled);
+            }
+            if (aOpenScheduled && bOpenScheduled) {
+                const aStart = a.scheduledStartTime ?? Number.POSITIVE_INFINITY;
+                const bStart = b.scheduledStartTime ?? Number.POSITIVE_INFINITY;
+                if (aStart !== bStart) return aStart < bStart ? -1 : 1;
+            }
+            return b.currentPlayers - a.currentPlayers || a.gameId.localeCompare(b.gameId);
         });
 }
