@@ -70,7 +70,7 @@ describe("AddressPage transactions", () => {
         );
         fireEvent.click(await screen.findByRole("tab", { name: /Transactions \(6\)/ }));
         const rows = await screen.findAllByTestId("address-tx");
-        expect(rows.map(row => within(row).getByTestId("tx-action").textContent)).toEqual(["Post-big-blind", "Transfer", "Join table", "Something New", "Raise", "Check"]);
+        expect(rows.map(row => within(row).getByTestId("tx-action").textContent)).toEqual(["Post-big-blind", "Received", "Join table", "Something New", "Raise", "Check"]);
 
         expect(within(rows[0]).getByText("AAA111")).toBeInTheDocument();
         expect(within(rows[0]).getByText(/Block 30/)).toBeInTheDocument();
