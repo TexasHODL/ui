@@ -96,12 +96,14 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
         sitInOptions,
         preSelectCheck,
         leftHandMode,
+        winCelebration,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
         toggleSitInOptions,
         togglePreSelectCheck,
-        toggleLeftHandMode
+        toggleLeftHandMode,
+        toggleWinCelebration
     } = useGameSettings();
     const tableStyles = useTableStyles();
 
@@ -180,6 +182,12 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                             description="Sounds for bets, raises, calls, folds and checks."
                             checked={playerActionSounds}
                             onToggle={togglePlayerActionSounds}
+                        />
+                        <ToggleRow
+                            label="Win Celebration"
+                            description="Play the gold-chip celebration on the winning seat. Off = calmer table; the pot still awards."
+                            checked={winCelebration}
+                            onToggle={toggleWinCelebration}
                         />
                         <ToggleRow
                             label="Auto Muck"

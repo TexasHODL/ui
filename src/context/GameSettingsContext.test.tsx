@@ -1,4 +1,3 @@
-
 import { fireEvent, render, screen } from "@testing-library/react";
 import { GameSettingsProvider, useGameSettings } from "./GameSettingsContext";
 
@@ -12,6 +11,15 @@ function CheckFoldProbe() {
     return (
         <button onClick={togglePreSelectCheck} aria-pressed={preSelectCheck}>
             {preSelectCheck ? "on" : "off"}
+        </button>
+    );
+}
+
+function WinCelebrationProbe() {
+    const { winCelebration, toggleWinCelebration } = useGameSettings();
+    return (
+        <button onClick={toggleWinCelebration} aria-pressed={winCelebration}>
+            {winCelebration ? "celebration-on" : "celebration-off"}
         </button>
     );
 }
@@ -78,5 +86,43 @@ describe("pre-select check/fold", () => {
             </GameSettingsProvider>
         );
         expect(screen.getByRole("button", { name: "off" })).toBeInTheDocument();
+    });
+});
+
+describe("GameSettingsContext — win celebration (ui#847)", () => {
+    beforeEach(() => localStorage.clear());
+
+    it("is on by default, so existing players see no change", () => {
+        render(
+            <GameSettingsProvider>
+                <WinCelebrationProbe />
+            </GameSettingsProvider>
+        );
+        expect(screen.getByRole("button", { name: "celebration-on" })).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("toggles off and back on, persisting each change", () => {
+        render(
+            <GameSettingsProvider>
+                <WinCelebrationProbe />
+            </GameSettingsProvider>
+        );
+        fireEvent.click(screen.getByRole("button", { name: "celebration-on" }));
+        expect(screen.getByRole("button", { name: "celebration-off" })).toHaveAttribute("aria-pressed", "false");
+        expect(localStorage.getItem("setting_wincelebration")).toBe("false");
+
+        fireEvent.click(screen.getByRole("button", { name: "celebration-off" }));
+        expect(screen.getByRole("button", { name: "celebration-on" })).toHaveAttribute("aria-pressed", "true");
+        expect(localStorage.getItem("setting_wincelebration")).toBe("true");
+    });
+
+    it("remembers the choice across a reload", () => {
+        localStorage.setItem("setting_wincelebration", "false");
+        render(
+            <GameSettingsProvider>
+                <WinCelebrationProbe />
+            </GameSettingsProvider>
+        );
+        expect(screen.getByRole("button", { name: "celebration-off" })).toBeInTheDocument();
     });
 });

@@ -22,6 +22,7 @@ import VacantPlayer from "../../Players/VacantPlayer";
 import TurnAnimation from "../../Animations/TurnAnimation";
 import WinAnimation from "../../Animations/WinAnimation";
 import { CardBackStyle } from "../../../../utils/cardImages";
+import { useGameSettings } from "../../../../context/GameSettingsContext";
 
 // Memoize TurnAnimation
 const MemoizedTurnAnimation = React.memo(TurnAnimation);
@@ -79,6 +80,8 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
         for (const p of tableDataPlayers) bySeat.set(p.seat, p);
         return bySeat;
     }, [tableDataPlayers]);
+
+    const { winCelebration } = useGameSettings();
 
     const winnerSeats = React.useMemo(() => {
         const seats = new Set<number>();
@@ -216,7 +219,7 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
                         )}
 
                         {/* Winner ripple — same position as player */}
-                        {isWinnerSeat && <WinAnimation index={seatNum - 1} position={position} />}
+                        {isWinnerSeat && winCelebration && <WinAnimation index={seatNum - 1} position={position} />}
 
                         {componentToRender}
                     </div>

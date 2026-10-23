@@ -57,13 +57,15 @@ const SettingsTab: React.FC = () => {
         sitInOptions,
         preSelectCheck,
         leftHandMode,
+        winCelebration,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
         toggleCallClock,
         toggleSitInOptions,
         togglePreSelectCheck,
-        toggleLeftHandMode
+        toggleLeftHandMode,
+        toggleWinCelebration
     } = useGameSettings();
 
     return (
@@ -79,6 +81,12 @@ const SettingsTab: React.FC = () => {
                 description="Play sounds when players perform actions such as bet, raise, call, fold, and check."
                 checked={playerActionSounds}
                 onToggle={togglePlayerActionSounds}
+            />
+            <ToggleRow
+                label="Win Celebration"
+                description="Play the gold-chip celebration animation on the winning seat. Turn off for a calmer table — the pot still awards, just without the animation."
+                checked={winCelebration}
+                onToggle={toggleWinCelebration}
             />
             <ToggleRow
                 label="Auto Muck"

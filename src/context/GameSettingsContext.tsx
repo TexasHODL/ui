@@ -27,6 +27,7 @@ const LS_KEY_PRE_SELECT_CHECK = "setting_preselectcheck";
 // a stored "false" stays off.
 const PRE_SELECT_CHECK_DEFAULT = true;
 const LS_KEY_LEFT_HAND = "setting_lefthand";
+const LS_KEY_WIN_CELEBRATION = "setting_wincelebration";
 
 function readBoolSetting(key: string, fallback: boolean): boolean {
     const stored = localStorage.getItem(key);
@@ -58,6 +59,10 @@ export interface GameSettings {
     preSelectCheck: boolean;
     // Landscape phones only. When on, the action column sits on the left edge.
     leftHandMode: boolean;
+    // When ON (default), the gold-chip win celebration plays on the winning seat
+    // (ui#847). Turn OFF for a calmer table — the pot still awards, just without
+    // the animation. Pairs with the winner banner (ui#848).
+    winCelebration: boolean;
 }
 
 export interface GameSettingsContextValue extends GameSettings {
@@ -73,6 +78,7 @@ export interface GameSettingsContextValue extends GameSettings {
     toggleSitInOptions: () => void;
     togglePreSelectCheck: () => void;
     toggleLeftHandMode: () => void;
+    toggleWinCelebration: () => void;
 }
 
 const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
@@ -113,6 +119,10 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
     const [leftHandMode, setLeftHandMode] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_LEFT_HAND, false)
+    );
+
+    const [winCelebration, setWinCelebration] = useState<boolean>(() =>
+        readBoolSetting(LS_KEY_WIN_CELEBRATION, true)
     );
 
     const toggleAutoDeal = useCallback(() => {
@@ -211,6 +221,14 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
     }, []);
 
+    const toggleWinCelebration = useCallback(() => {
+        setWinCelebration(prev => {
+            const next = !prev;
+            localStorage.setItem(LS_KEY_WIN_CELEBRATION, String(next));
+            return next;
+        });
+    }, []);
+
     const value = useMemo<GameSettingsContextValue>(
         () => ({
             autoDeal,
@@ -225,6 +243,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             sitInOptions,
             preSelectCheck,
             leftHandMode,
+            winCelebration,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
@@ -236,7 +255,8 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             toggleSeatAtBottom,
             toggleSitInOptions,
             togglePreSelectCheck,
-            toggleLeftHandMode
+            toggleLeftHandMode,
+            toggleWinCelebration
         }),
         [
             autoDeal,
@@ -251,6 +271,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             sitInOptions,
             preSelectCheck,
             leftHandMode,
+            winCelebration,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
@@ -260,7 +281,9 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             togglePlayerActionSounds,
             toggleSeatAtBottom,
             toggleSitInOptions,
-            togglePreSelectCheck
+            togglePreSelectCheck,
+            toggleLeftHandMode,
+            toggleWinCelebration
         ]
     );
 
