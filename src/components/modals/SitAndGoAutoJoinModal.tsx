@@ -22,7 +22,8 @@ import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { isEmpty, hasValue } from "../../utils/guards";
-import { formatStartsAt, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { isScheduledSng, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
 
@@ -42,13 +43,20 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     const { subscribeToTable, gameState, gameVariant, gameFormat } = useGameStateContext();
     const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
 
-    // Scheduled start (poker-vm#2680): say when it starts, and refuse a seat at
-    // a cancelled table (the chain refuses the join too).
+    // Scheduled start (poker-vm#2680): live countdown before Take My Seat, and
+    // refuse a seat at a cancelled table (the chain refuses the join too).
+    const scheduled = isScheduledSng(gameOptions);
+    const [nowMs, setNowMs] = useState(() => Date.now());
+    useEffect(() => {
+        if (!scheduled) return;
+        const id = setInterval(() => setNowMs(Date.now()), 1000);
+        return () => clearInterval(id);
+    }, [scheduled]);
     const scheduledPhase = scheduledSngPhase({
         scheduledStartTime: gameOptions?.scheduledStartTime,
         minPlayers: gameOptions?.minPlayers ?? 2,
         registered: gameState?.players?.length ?? 0,
-        nowMs: Date.now()
+        nowMs
     });
     const isCancelled = scheduledPhase === "cancelled";
 
@@ -280,10 +288,14 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 <p className="tournament-error" data-testid="scheduled-cancelled">
                     Cancelled: not enough players registered by the start time.
                 </p>
-            ) : scheduledPhase !== "unscheduled" && hasValue(gameOptions?.scheduledStartTime) && (
-                <p className="tournament-note" data-testid="scheduled-start-info">
-                    Starts {formatStartsAt(gameOptions.scheduledStartTime)} with at least {gameOptions.minPlayers} players, or earlier when full
-                </p>
+            ) : scheduledPhase === "registering" && hasValue(gameOptions?.scheduledStartTime) && (
+                <ScheduledStartCountdown
+                    scheduledStartTime={gameOptions.scheduledStartTime}
+                    minPlayers={gameOptions.minPlayers ?? 2}
+                    maxPlayers={gameOptions.maxPlayers ?? 0}
+                    nowMs={nowMs}
+                    testId="scheduled-start-info"
+                />
             )}
             {buyInError && <p className="tournament-error" role="alert">{buyInError}</p>}
             <button onClick={handleTakeSeat}

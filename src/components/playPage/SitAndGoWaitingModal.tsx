@@ -16,7 +16,8 @@ import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalA
 import { startTournament } from "../../hooks/playerActions/startTournament";
 import { getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { formatSitAndGoStackString } from "../../utils/numberUtils";
-import { formatCountdown, formatStartsAt, isScheduledSng, scheduledSngPhase } from "../../utils/scheduledSng";
+import { formatStartsAt, isScheduledSng, scheduledSngPhase } from "../../utils/scheduledSng";
+import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 import styles from "./SitAndGoWaitingModal.module.css";
 
 interface SitAndGoWaitingModalProps {
@@ -142,16 +143,16 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
 
                     {/* Scheduled start (poker-vm#2680) */}
                     {scheduled && hasValue(gameOptions?.scheduledStartTime) && phase !== "cancelled" && (
+                        phase === "registering" ? (
+                            <ScheduledStartCountdown
+                                scheduledStartTime={gameOptions.scheduledStartTime}
+                                minPlayers={gameOptions.minPlayers ?? 2}
+                                maxPlayers={maxPlayers}
+                                nowMs={nowMs}
+                            />
+                        ) : (
                         <div className="mb-4 bg-gray-700/80 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30 text-center" data-testid="scheduled-start-panel">
-                            {phase === "registering" ? (
-                                <>
-                                    <div className="text-xs text-blue-300 font-semibold">STARTS IN</div>
-                                    <div className="text-2xl text-white font-mono font-bold">{formatCountdown(gameOptions.scheduledStartTime, nowMs)}</div>
-                                    <div className="text-xs text-gray-400">
-                                        {formatStartsAt(gameOptions.scheduledStartTime, nowMs)} · needs {gameOptions.minPlayers} of {maxPlayers}, or starts early when full
-                                    </div>
-                                </>
-                            ) : phase === "short" ? (
+                            {phase === "short" ? (
                                 <>
                                     <div className="text-xs text-yellow-300 font-semibold">START TIME PASSED</div>
                                     <div className="text-sm text-gray-200">
@@ -177,6 +178,7 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
                                 </>
                             )}
                         </div>
+                        )
                     )}
 
                     {/* Players Progress Display. Hidden once cancelled: the field is
