@@ -159,10 +159,18 @@
   transition: all 0.3s ease;
 }
 
-.btn-all-in:hover {
+.btn-all-in:hover:not(:disabled) {
   background: linear-gradient(to right, var(--accent-glow), color-mix(in srgb, var(--accent-glow) 90%, transparent));
   border-color: var(--accent-glow);
   box-shadow: 0 0 20px color-mix(in srgb, var(--accent-glow) 40%, transparent);
   transform: scale(1.05);
+}
+
+/* Not a legal action (e.g. pot-limit with a stack deeper than a pot bet, ui#857):
+   greyed out like the presets, with no hover glow. */
+.btn-all-in:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
 }
 
