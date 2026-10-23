@@ -57,7 +57,7 @@ describe("Table settings", () => {
                 "Block52 Classic", "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
                 "Classic Courts", "HODL Courts", "Web3 Holo", "Tech Grid"
             ]);
-            expect(optionLabels("Chips")).toEqual(["Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D"]);
+            expect(optionLabels("Chips")).toEqual(["Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D", "Marble"]);
             expect(optionLabels("Dealer button")).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin"]);
             expect(screen.getByRole("combobox", { name: "Cards" })).toHaveValue("block52");
             expect(screen.getByRole("combobox", { name: "Chips" })).toHaveValue("C");

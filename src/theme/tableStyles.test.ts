@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import {
+    CHIP_STYLE_IDS,
     CHIP_STYLE_LABELS,
     DEALER_STYLE_LABELS,
     DECK_IDS,
@@ -37,7 +38,9 @@ describe("table style choices", () => {
             "Block52 Classic", "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
             "Classic Courts", "HODL Courts", "Web3 Holo", "Tech Grid"
         ]);
-        expect(STYLE_IDS.map(id => CHIP_STYLE_LABELS[id])).toEqual(["Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D"]);
+        expect(CHIP_STYLE_IDS.map(id => CHIP_STYLE_LABELS[id])).toEqual([
+            "Current", "Classic casino", "Flat brand", "Crypto coin", "Layered 3D", "Marble"
+        ]);
         expect(STYLE_IDS.map(id => DEALER_STYLE_LABELS[id])).toEqual(["Current", "Classic acrylic", "Brand ring", "Clean minimal", "Gold coin"]);
     });
 
@@ -121,10 +124,13 @@ describe("bundled style art", () => {
             decomposeAmount(amount).forEach(stack => files.add(stack.file));
         }
         expect(files.size).toBeGreaterThan(5);
-        for (const style of STYLE_IDS) {
+        for (const style of CHIP_STYLE_IDS) {
             for (const file of files) {
                 if (style === "current") expect(chipStyleUrl(style, file)).toBeNull();
-                else expect(chipStyleUrl(style, file)).toBe(`/assets/chipstyles/${style}/${file}`);
+                else if (style === "E") {
+                    // Marble ships as photoreal webp (block52/cards marble set).
+                    expect(chipStyleUrl(style, file)).toBe(`/assets/chipstyles/E/${file.replace(/\.svg$/, ".webp")}`);
+                } else expect(chipStyleUrl(style, file)).toBe(`/assets/chipstyles/${style}/${file}`);
             }
         }
     });

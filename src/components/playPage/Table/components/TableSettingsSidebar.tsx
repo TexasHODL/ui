@@ -10,11 +10,13 @@ import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { ThemeToggle } from "../../../ThemeToggle";
 import type { TableStyleOption } from "./MobileTableHeader";
 import {
+    CHIP_STYLE_IDS,
     CHIP_STYLE_LABELS,
     DEALER_STYLE_LABELS,
     DECK_IDS,
     DECK_LABELS,
     STYLE_IDS,
+    isChipStyleId,
     isDeckId,
     isStyleId,
     setTableStyle
@@ -44,7 +46,7 @@ const StyleSelect: React.FC<StyleSelectProps> = ({ label, value, options, onChan
 );
 
 const DECK_OPTIONS = DECK_IDS.map(id => ({ value: id, label: DECK_LABELS[id] }));
-const CHIP_OPTIONS = STYLE_IDS.map(id => ({ value: id, label: CHIP_STYLE_LABELS[id] }));
+const CHIP_OPTIONS = CHIP_STYLE_IDS.map(id => ({ value: id, label: CHIP_STYLE_LABELS[id] }));
 const DEALER_OPTIONS = STYLE_IDS.map(id => ({ value: id, label: DEALER_STYLE_LABELS[id] }));
 
 interface ToggleRowProps {
@@ -159,7 +161,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
                             label="Chips"
                             value={tableStyles.chips}
                             options={CHIP_OPTIONS}
-                            onChange={value => isStyleId(value) && setTableStyle("chips", value)}
+                            onChange={value => isChipStyleId(value) && setTableStyle("chips", value)}
                         />
                         <StyleSelect
                             label="Dealer button"

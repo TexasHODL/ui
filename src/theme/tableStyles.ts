@@ -25,14 +25,25 @@ export const DECK_LABELS: Record<DeckId, string> = {
     P: "Tech Grid"
 };
 
+/** Dealer button styles (also the shared letter ids A–D). */
 export const STYLE_IDS = ["current", "A", "B", "C", "D"] as const;
 export type StyleId = (typeof STYLE_IDS)[number];
-export const CHIP_STYLE_LABELS: Record<StyleId, string> = {
+
+/**
+ * Chip styles: A–D match the SVG sets under assets/chipstyles; E is the
+ * photoreal marble set from block52/cards (ui#776 / #777), bundled as webp.
+ * Crypto coin (C) stays the default — marble is opt-in only.
+ */
+export const CHIP_STYLE_IDS = ["current", "A", "B", "C", "D", "E"] as const;
+export type ChipStyleId = (typeof CHIP_STYLE_IDS)[number];
+
+export const CHIP_STYLE_LABELS: Record<ChipStyleId, string> = {
     current: "Current",
     A: "Classic casino",
     B: "Flat brand",
     C: "Crypto coin",
-    D: "Layered 3D"
+    D: "Layered 3D",
+    E: "Marble"
 };
 export const DEALER_STYLE_LABELS: Record<StyleId, string> = {
     current: "Current",
@@ -44,7 +55,7 @@ export const DEALER_STYLE_LABELS: Record<StyleId, string> = {
 
 export interface TableStyles {
     deck: DeckId;
-    chips: StyleId;
+    chips: ChipStyleId;
     dealer: StyleId;
 }
 
@@ -58,6 +69,7 @@ export const TABLE_STYLE_STORAGE_KEYS = {
 
 export const isDeckId = (value: unknown): value is DeckId => (DECK_IDS as readonly unknown[]).includes(value);
 export const isStyleId = (value: unknown): value is StyleId => (STYLE_IDS as readonly unknown[]).includes(value);
+export const isChipStyleId = (value: unknown): value is ChipStyleId => (CHIP_STYLE_IDS as readonly unknown[]).includes(value);
 
 /** "../assets/decks/O/AS.svg" -> { O: { AS: url } }. */
 export const indexDeckUrls = (files: Record<string, string>): Record<string, Record<string, string>> => {
@@ -69,11 +81,11 @@ export const indexDeckUrls = (files: Record<string, string>): Record<string, Rec
     return out;
 };
 
-/** "../assets/chipstyles/C/25chip.svg" -> { C: { "25chip.svg": url } }. */
+/** "../assets/chipstyles/C/25chip.svg" -> { C: { "25chip.svg": url } }; E uses .webp. */
 export const indexChipStyleUrls = (files: Record<string, string>): Record<string, Record<string, string>> => {
     const out: Record<string, Record<string, string>> = {};
     for (const [file, url] of Object.entries(files)) {
-        const m = file.match(/chipstyles\/([A-D])\/([A-Za-z0-9]+\.svg)$/);
+        const m = file.match(/chipstyles\/([A-E])\/([A-Za-z0-9]+\.(?:svg|webp))$/);
         if (m) (out[m[1]] ??= {})[m[2]] = url;
     }
     return out;
@@ -96,9 +108,17 @@ const DEALER_STYLE_URLS = indexDealerStyleUrls(DEALER_STYLE_FILES);
 /** Face URL for a card code in a deck, or null when the deck has no such face. */
 /** Block52 Classic returns null, so callers use the original bundled faces. */
 export const deckCardUrl = (deck: DeckId, code: string): string | null => DECK_URLS[deck]?.[code] ?? null;
-/** Styled chip URL for a live chip file name ("25chip.svg"), or null for Current / unknown. */
-export const chipStyleUrl = (style: StyleId, file: string): string | null =>
-    style === "current" ? null : CHIP_STYLE_URLS[style]?.[file] ?? null;
+/**
+ * Styled chip URL for a live chip file name ("25chip.svg"), or null for Current / unknown.
+ * Marble (E) ships as .webp with the same base names, so "25chip.svg" resolves to
+ * "25chip.webp" in that style.
+ */
+export const chipStyleUrl = (style: ChipStyleId, file: string): string | null => {
+    if (style === "current") return null;
+    const urls = CHIP_STYLE_URLS[style];
+    if (!urls) return null;
+    return urls[file] ?? urls[file.replace(/\.svg$/, ".webp")] ?? null;
+};
 /** Styled dealer button URL, or null for Current. */
 export const dealerStyleUrl = (style: StyleId): string | null => (style === "current" ? null : DEALER_STYLE_URLS[style] ?? null);
 
@@ -114,7 +134,7 @@ const read = <T>(key: string, valid: (v: unknown) => v is T, fallback: T): T => 
 export function readTableStyles(): TableStyles {
     return {
         deck: read(TABLE_STYLE_STORAGE_KEYS.deck, isDeckId, DEFAULT_TABLE_STYLES.deck),
-        chips: read(TABLE_STYLE_STORAGE_KEYS.chips, isStyleId, DEFAULT_TABLE_STYLES.chips),
+        chips: read(TABLE_STYLE_STORAGE_KEYS.chips, isChipStyleId, DEFAULT_TABLE_STYLES.chips),
         dealer: read(TABLE_STYLE_STORAGE_KEYS.dealer, isStyleId, DEFAULT_TABLE_STYLES.dealer)
     };
 }
