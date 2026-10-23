@@ -37,6 +37,9 @@ interface Transaction {
     // Transfer info
     transferAmount?: string;
     transferDirection?: "sent" | "received";
+    // SNG/tournament prize claim (from describeTransaction / sng_prize_claimed)
+    prizePlace?: number;
+    isPrizeClaim?: boolean;
 }
 
 interface TransactionPanelProps {
@@ -128,12 +131,12 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
 
             // Same labelling as the explorer's address Transactions list.
             const formattedTxs: Transaction[] = recentTxs.map(tx => {
-                const { label, action, amount, actionAmount, gameId, transferAmount, transferDirection } = describeTransaction(tx, address);
-                return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, actionAmount, gameId, transferAmount, transferDirection };
+                const { label, action, amount, actionAmount, gameId, transferAmount, transferDirection, prizePlace, isPrizeClaim } = describeTransaction(tx, address);
+                return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, actionAmount, gameId, transferAmount, transferDirection, prizePlace, isPrizeClaim };
             });
             fetchGameFormats(
                 id => cosmosApi.getGame(id),
-                formattedTxs.filter(tx => tx.actionAmount).map(tx => tx.gameId)
+                formattedTxs.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId)
             ).then(setGameFormats);
 
             setTransactions(formattedTxs);
