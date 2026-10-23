@@ -98,6 +98,60 @@ describe("winner seat is 1-based (no Seat 0 banner)", () => {
         expect(result.current.winnerInfo?.[0]?.seat).toBe(3);
         expect(result.current.winnerBySeat.get(3)?.address).toBe("0xa");
     });
+    it("falls back to previousActions when winner left players[] (Leave at END)", () => {
+        withState({
+            winners: [{ seat: 0, address: "0xWinner", amount: "540000", description: "Trip Tens", cards: ["TD", "TH"] }],
+            players: [],
+            previousActions: [
+                { playerId: "0xWinner", seat: 1, action: "bet", amount: "100000", round: "river", index: 1, timestamp: 0 },
+                { playerId: "0xWinner", seat: 1, action: "leave", amount: "800000", round: "end", index: 2, timestamp: 1 }
+            ]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(1);
+        expect(result.current.winnerBySeat.get(1)?.description).toBe("Trip Tens");
+        expect(result.current.winnerBySeat.get(0)).toBeUndefined();
+    });
+
+    it("matches previousActions playerId case-insensitively", () => {
+        withState({
+            winners: [{ seat: 0, address: "0xAbCd", amount: "100", description: "Pair", cards: ["AS", "AH"] }],
+            players: [],
+            previousActions: [{ playerId: "0xabcd", seat: 2, action: "call", amount: "50", round: "flop", index: 1, timestamp: 0 }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(2);
+    });
+
+    it("prefers players[] over previousActions when both resolve", () => {
+        withState({
+            winners: [{ seat: 0, address: "0xa", amount: "100" }],
+            players: [{ seat: 4, address: "0xa" }],
+            previousActions: [{ playerId: "0xa", seat: 9, action: "bet", amount: "1", round: "flop", index: 1, timestamp: 0 }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(4);
+    });
+
+    it("stays unresolved only when seat cannot be known from stamp, players, or actions", () => {
+        withState({
+            winners: [{ seat: 0, address: "0xorphan", amount: "540000", description: "Trip Tens", cards: ["TD", "TH"] }],
+            players: [],
+            previousActions: [{ playerId: "0xother", seat: 1, action: "bet", amount: "1", round: "flop", index: 1, timestamp: 0 }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(0);
+        expect(result.current.winnerBySeat.get(0)?.description).toBe("Trip Tens");
+    });
+
 });
 
 describe("win amounts use the table's units (ui#727)", () => {

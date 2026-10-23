@@ -7,7 +7,7 @@ import { formatAmount } from "../../utils/accountUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { WinnerInfo, WinnerInfoReturn } from "../../types/index";
 import { hasElements } from "../../utils/guards";
-import { validSeat } from "../../utils/playerSeatUtils";
+import { findSeatFromActions, validSeat } from "../../utils/playerSeatUtils";
 
 /**
  * Format a won amount the way the action log formats bets (ui#727): SNG and
@@ -32,9 +32,9 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO, isTournament: boolean) {
         return gameData.winners.map((winner: WinnerDTO) => {
             // Prefer the engine-stamped winner.seat (SDK 1.2.15+): it's captured
             // at win time, so it survives the winner LEAVING the table (players[]
-            // lookup would yield seat 0 — #2378). Fall back to resolving from
-            // players[] for backends that don't stamp it yet, which keeps the
-            // winner banner working while the winner is still seated.
+            // lookup would yield seat 0 — #2378). Fall back to players[], then to
+            // this hand's previousActions (Leave at END removes the player from
+            // players[] while History still has Seat N on their actions).
             const player = gameData.players?.find((p: PlayerDTO) => p.address?.toLowerCase() === winner.address?.toLowerCase());
 
             // winType is derived from whether cards were revealed: a showdown win
@@ -42,8 +42,8 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO, isTournament: boolean) {
             // not. Fixes the previously-hardcoded "Showdown" label on fold wins.
             return {
                 // Seat 0 is absent (JSON/protobuf default), not nullish for ??: without
-                // validSeat the banner/history kept "Seat 0" instead of falling back to players[].
-                seat: validSeat(winner.seat) ?? validSeat(player?.seat) ?? 0,
+                // validSeat the banner/history kept "Seat 0" instead of falling back.
+                seat: validSeat(winner.seat) ?? validSeat(player?.seat) ?? findSeatFromActions(gameData.previousActions, winner.address) ?? 0,
                 address: winner.address,
                 amount: winner.amount.toString(),
                 formattedAmount: formatWinAmount(winner.amount.toString(), isTournament),
@@ -88,10 +88,11 @@ export const useWinnerInfo = (): WinnerInfoReturn => {
         const winners = gameState.winners
             .map(w => `${w.seat ?? ""}:${w.address}:${w.amount}:${w.name ?? ""}:${w.description ?? ""}:${(w.cards ?? []).join(",")}`)
             .join("|");
-        // getWinnerInfo falls back to a players[] lookup when winner.seat is
-        // absent, so the address->seat mapping is part of the input too.
+        // getWinnerInfo falls back to players[] / previousActions when winner.seat
+        // is absent, so both address->seat mappings are part of the input too.
         const seats = gameState.players.map(p => `${p.seat}:${p.address}`).join("|");
-        return `s${winners}#${seats}`;
+        const actionSeats = (gameState.previousActions ?? []).map(a => `${a.seat}:${a.playerId}`).join("|");
+        return `s${winners}#${seats}#${actionSeats}`;
     }, [gameState]);
 
     // `gameState` is deliberately NOT a dependency: `fingerprint` encodes every
