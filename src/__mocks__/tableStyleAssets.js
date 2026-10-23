@@ -9,7 +9,7 @@ const list = (dir, depth) => {
         for (const name of fs.readdirSync(path.join(assets, rel))) {
             const r = `${rel}/${name}`;
             if (d > 0) walk(r, d - 1);
-            else if (name.endsWith(".svg")) out[`../assets/${r}`] = `/assets/${r}`;
+            else if (name.endsWith(".svg") || name.endsWith(".webp")) out[`../assets/${r}`] = `/assets/${r}`;
         }
     };
     walk(dir, depth);

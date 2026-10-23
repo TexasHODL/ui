@@ -13,7 +13,7 @@ export const DECK_FILES = import.meta.glob("../assets/decks/{C,D,H,J,K,M,N,O,P}/
     import: "default"
 }) as Record<string, string>;
 
-export const CHIP_STYLE_FILES = import.meta.glob("../assets/chipstyles/*/*.svg", {
+export const CHIP_STYLE_FILES = import.meta.glob("../assets/chipstyles/*/*.{svg,webp}", {
     eager: true,
     query: "?url&no-inline",
     import: "default"
