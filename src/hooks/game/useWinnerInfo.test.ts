@@ -187,3 +187,39 @@ describe("win amounts use the table's units (ui#727)", () => {
         expect(result.current.winnerBySeat.get(2)?.formattedAmount).toBe("0.40");
     });
 });
+
+
+describe("winner avatar for floating win banner", () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it("carries the player avatar from players[] so the banner can show the NFT", () => {
+        withState({
+            winners: [{ seat: 2, address: "0xWinner", amount: "150000000", cards: [] }],
+            players: [
+                {
+                    seat: 2,
+                    address: "0xWinner",
+                    avatar: "nft:eip155:1/erc721:0xabc0000000000000000000000000000000000001/42|ipfs://QmWinnerNft/42"
+                }
+            ]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.avatar).toBe(
+            "nft:eip155:1/erc721:0xabc0000000000000000000000000000000000001/42|ipfs://QmWinnerNft/42"
+        );
+        expect(result.current.winnerBySeat.get(2)?.avatar).toContain("ipfs://QmWinnerNft/42");
+    });
+
+    it("leaves avatar undefined when the player has no NFT payload", () => {
+        withState({
+            winners: [{ seat: 1, address: "0xPlain", amount: "100" }],
+            players: [{ seat: 1, address: "0xPlain" }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.avatar).toBeUndefined();
+    });
+});

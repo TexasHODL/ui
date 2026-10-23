@@ -432,6 +432,8 @@ export interface WinnerInfo {
     address: string;
     amount: string | number;
     formattedAmount: string;
+    /** Game-state avatar payload (nft:...|url) so the win banner matches seat chips. */
+    avatar?: string;
     winType?: string;
     description?: string;
     handName?: string;
