@@ -103,6 +103,30 @@ it("closes entry once the tournament has started", () => {
     expect(mockJoin).not.toHaveBeenCalled();
 });
 
+it("shows the live STARTS IN countdown on scheduled tables before Take My Seat", () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date("2026-10-23T10:00:00.000Z"));
+    try {
+        mockOptions.scheduledStartTime = Date.now() + 8 * 60 * 1000 + 7 * 1000;
+        mockOptions.minPlayers = 2;
+        mockBalance.mockResolvedValue("0");
+        render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+        const panel = screen.getByTestId("scheduled-start-info");
+        expect(panel).toHaveTextContent("STARTS IN");
+        expect(panel).toHaveTextContent("8:07");
+        expect(panel).toHaveTextContent(/needs 2 of 6, or starts early when full/);
+    } finally {
+        jest.useRealTimers();
+    }
+});
+
+it("leaves cash / unscheduled sit-and-go without a countdown", async () => {
+    render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    await screen.findByRole("button", { name: "Insufficient Balance" });
+    expect(screen.queryByTestId("scheduled-start-info")).not.toBeInTheDocument();
+    expect(screen.queryByText("STARTS IN")).not.toBeInTheDocument();
+});
+
 it("does not show a buy-in on a cancelled tournament", () => {
     mockOptions.scheduledStartTime = Date.now() - 20 * 60 * 1000;
     mockOptions.minPlayers = 4;

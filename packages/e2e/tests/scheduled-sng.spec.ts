@@ -75,7 +75,9 @@ test("table: register → countdown → ready → START → cancelled", async ({
   await page.goto(`/table/${SNG_GAME_ID}`);
 
   await test.step("registering: the join modal says when it starts", async () => {
-    await expect(page.getByTestId("scheduled-start-info")).toContainText(/Starts .* with at least 2 players/, { timeout: 15_000 });
+    const joinCountdown = page.getByTestId("scheduled-start-info");
+    await expect(joinCountdown).toContainText("STARTS IN", { timeout: 15_000 });
+    await expect(joinCountdown).toContainText(/needs 2 of \d+, or starts early when full/);
     await page.screenshot({ path: `${SHOTS}scheduled-sng-register.png` });
   });
 
