@@ -209,7 +209,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     <ProfileAvatarButton title="Choose your avatar" />
                 </div>
             </div>
-            <div className={styles.roomStatus}>
+            <div className={`sub-header ${styles.roomStatus}`}>
                 <div className={styles.stakes}>
                     <span>BLINDS</span>
                     <strong>

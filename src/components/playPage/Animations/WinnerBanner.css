@@ -1,0 +1,88 @@
+/* Last-pot winner banner (ui#848) — a pill that rolls right-to-left through a
+   window over the middle half of the screen, in the clear strip above the top
+   seat. It rolls at a steady speed out of the window's right edge and into its
+   left edge, clipped like a train through a tunnel — no
+   fade, and no visible edge.
+   Rendered in a portal on <body> so the table's scaling transform can't move it.
+   Doesn't block clicks on the game underneath. */
+
+/* The visible window: 62.5% of the screen, centred. overflow: hidden is the
+   invisible "tunnel": unlike clip-path it doesn't force a repaint every frame, so
+   the browser can slide the pill on the GPU without re-drawing anything. The
+   window is tall enough that only the left/right edges ever clip. */
+.b52-winner-banner-track {
+    position: fixed;
+    /* top is set inline: just under the table info bar (winnerBannerTop). */
+    left: 18.75vw;
+    width: 62.5vw;
+    height: 48px;
+    overflow: hidden;
+    contain: layout paint;
+    transform: translateZ(0); /* its own compositor layer */
+    z-index: 60;
+    pointer-events: none; /* never block the game underneath */
+}
+
+.b52-winner-banner {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: max-content;
+    margin: auto 0; /* vertically centred in the window */
+    /* Starts just past the right edge (BANNER_EDGE_MARGIN_PX) so not even a sliver
+       of its border sits on the clip line before it rolls in. */
+    left: calc(100% + 6px);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 9999px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(244, 196, 48, 0.55);
+    color: #f8fafc;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    /* The roll itself is a pixel translate set from WinnerBanner.tsx (Web
+       Animations API), so it runs on the compositor. */
+    will-change: transform;
+}
+
+.b52-winner-banner__avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 9999px;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-left: -8px; /* tuck into the pill's rounded end */
+    border: 1px solid rgba(244, 196, 48, 0.55);
+}
+
+.b52-winner-banner__trophy {
+    font-size: 15px;
+    line-height: 1;
+}
+
+.b52-winner-banner__text {
+    /* Always the whole message, however long: never truncated. */
+    white-space: nowrap;
+}
+
+@keyframes b52-winner-banner-fade {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    10%,
+    90% {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .b52-winner-banner {
+        left: 50%;
+        transform: translateX(-50%);
+        animation: b52-winner-banner-fade 15000ms linear forwards;
+    }
+}
