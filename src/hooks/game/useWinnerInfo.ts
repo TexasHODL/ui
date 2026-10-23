@@ -7,6 +7,7 @@ import { formatAmount } from "../../utils/accountUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { WinnerInfo, WinnerInfoReturn } from "../../types/index";
 import { hasElements } from "../../utils/guards";
+import { validSeat } from "../../utils/playerSeatUtils";
 
 /**
  * Format a won amount the way the action log formats bets (ui#727): SNG and
@@ -40,7 +41,9 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO, isTournament: boolean) {
             // carries the winning hand; an uncontested win (everyone folded) does
             // not. Fixes the previously-hardcoded "Showdown" label on fold wins.
             return {
-                seat: winner.seat ?? player?.seat ?? 0,
+                // Seat 0 is absent (JSON default), not nullish for ??: without validSeat the
+                // banner/history kept "Seat 0" instead of falling back to players[].
+                seat: validSeat(winner.seat) ?? validSeat(player?.seat) ?? 0,
                 address: winner.address,
                 amount: winner.amount.toString(),
                 formattedAmount: formatWinAmount(winner.amount.toString(), isTournament),

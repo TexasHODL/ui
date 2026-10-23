@@ -17,6 +17,15 @@ export function isSeatBigBlind(
     return hasValue(seat) && seat > 0 && hasValue(bigBlindPosition) && bigBlindPosition === seat;
 }
 
+
+/**
+ * Chain seats are 1-indexed. Seat 0 (and non-integers / missing) means not seated
+ * - often the JSON/protobuf default when a seat field was never stamped.
+ */
+export function validSeat(seat: number | null | undefined): number | undefined {
+    return typeof seat === "number" && Number.isInteger(seat) && seat > 0 ? seat : undefined;
+}
+
 interface GameStateLike {
     players?: Array<Pick<PlayerDTO, "address" | "seat">>;
 }
