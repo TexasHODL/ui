@@ -1,5 +1,28 @@
 import { BettingLimit, GameFormat, GameVariant, GameListItem } from "@block52/poker-vm-sdk";
-import { convertGameListItemToGameWithFormat, convertGameList } from "./convertUtils";
+import {
+    coerceScheduledStartTimeMs,
+    convertGameListItemToGameWithFormat,
+    convertGameList
+} from "./convertUtils";
+
+describe("coerceScheduledStartTimeMs", () => {
+    it("keeps positive finite numbers", () => {
+        expect(coerceScheduledStartTimeMs(1_792_137_600_000)).toBe(1_792_137_600_000);
+    });
+
+    it("parses numeric strings (prod proto-JSON defense)", () => {
+        expect(coerceScheduledStartTimeMs("1792137600000")).toBe(1_792_137_600_000);
+    });
+
+    it("returns undefined for empty, NaN, zero, negative", () => {
+        expect(coerceScheduledStartTimeMs(undefined)).toBeUndefined();
+        expect(coerceScheduledStartTimeMs(null)).toBeUndefined();
+        expect(coerceScheduledStartTimeMs("")).toBeUndefined();
+        expect(coerceScheduledStartTimeMs("nope")).toBeUndefined();
+        expect(coerceScheduledStartTimeMs(0)).toBeUndefined();
+        expect(coerceScheduledStartTimeMs(-1)).toBeUndefined();
+    });
+});
 
 describe("convertUtils", () => {
     const makeGameListItem = (overrides?: Partial<GameListItem>): GameListItem => ({
@@ -89,6 +112,33 @@ describe("convertUtils", () => {
         it("should throw when gameOptions is missing", () => {
             const game = makeGameListItem({ gameOptions: undefined as any });
             expect(() => convertGameListItemToGameWithFormat(game)).toThrow("missing gameOptions");
+        });
+
+        it("coerces string scheduledStartTime to number (Heads Up list path)", () => {
+            const game = makeGameListItem({
+                gameId: "0x626ed36fb231ce7b1bc654624de1d8aa566092f13dbc59f8ab502d6f6e7f7991",
+                format: GameFormat.SIT_AND_GO,
+                currentPlayers: 1,
+                gameOptions: {
+                    ...makeGameListItem().gameOptions,
+                    minPlayers: 2,
+                    maxPlayers: 2,
+                    scheduledStartTime: "1792137600000" as unknown as number
+                }
+            });
+            const result = convertGameListItemToGameWithFormat(game);
+            expect(result.scheduledStartTime).toBe(1_792_137_600_000);
+            expect(typeof result.scheduledStartTime).toBe("number");
+        });
+
+        it("passes numeric scheduledStartTime through unchanged", () => {
+            const game = makeGameListItem({
+                gameOptions: {
+                    ...makeGameListItem().gameOptions,
+                    scheduledStartTime: 1_792_137_600_000
+                }
+            });
+            expect(convertGameListItemToGameWithFormat(game).scheduledStartTime).toBe(1_792_137_600_000);
         });
     });
 

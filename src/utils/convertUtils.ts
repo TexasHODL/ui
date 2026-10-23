@@ -33,6 +33,13 @@ export interface GameWithFormat {
     scheduledStartTime?: number;
 }
 
+/** Epoch ms for lobby math; string SST would concat with grace and break 24h hide. */
+export const coerceScheduledStartTimeMs = (raw: unknown): number | undefined => {
+    if (raw == null || raw === "") return undefined;
+    const ms = typeof raw === "number" ? raw : Number(raw);
+    return Number.isFinite(ms) && ms > 0 ? ms : undefined;
+};
+
 /**
  * Converts a single GameListItem (SDK type) to GameWithFormat (UI type).
  * Flattens gameOptions fields to root level for convenient UI consumption.
@@ -65,7 +72,7 @@ export const convertGameListItemToGameWithFormat = (game: GameListItem): GameWit
         timeout: opts.timeout,
         createdAt: game.createdAt,
         updatedAt: game.updatedAt,
-        scheduledStartTime: opts.scheduledStartTime,
+        scheduledStartTime: coerceScheduledStartTimeMs(opts.scheduledStartTime),
         entryFee: opts.entryFee,
         protocolFeeBps: opts.protocolFeeBps
     };

@@ -1,4 +1,4 @@
-import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "./scheduledSng";
+﻿import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "./scheduledSng";
 import type { ActionDTO } from "@block52/poker-vm-sdk";
 
 /** Minimal progress shape used to age out finished lobby rows. */
@@ -9,15 +9,23 @@ export type LobbyEndedProgress = {
 };
 
 /**
- * Rolldown co-bundles this module with TableList and has mangled
- * LOBBY_ENDED_RETENTION_MS / shouldHideEndedLobbyGame / maxPreviousActionTimestamp
- * to the same short names as TableList locals (games, currentPage, pagedGames).
- * Those locals overwrite the live export bindings after first render, so aging
- * fails open in production. Keep hide logic inside this IIFE and call it only
- * via closures so overwritten export names cannot break applyEndedLobbyRetention.
+ * Rolldown co-bundles this module with TableList and mangles exports / imports
+ * to the same short names as TableList locals (`games`/`W`, `isLoading`/`a`,
+ * `isDeleting`/`u`, …). Those locals can overwrite live module bindings after
+ * first render, so aging fails open in production.
+ *
+ * Keep hide logic inside this IIFE and snapshot every value the hide path
+ * needs (retention, grace, phase helper) as consts — same defense as #93 for
+ * retentionMs. Call shouldHide only via the closed-over binding, never a
+ * reassignable live export.
  */
 const lobbyEndedFilterApi = (() => {
     const retentionMs = 24 * 60 * 60 * 1000;
+    // Snapshot at init — do not read SCHEDULED_SNG_GRACE_MS / scheduledSngPhase
+    // through free module bindings inside shouldHide (prod mangled them to `a` /
+    // `u`, which TableList also uses for isLoading / isDeleting).
+    const graceMs = SCHEDULED_SNG_GRACE_MS;
+    const phaseOf = scheduledSngPhase;
 
     function maxPreviousActionTimestamp(
         actions: ActionDTO[] | null | undefined
@@ -32,12 +40,19 @@ const lobbyEndedFilterApi = (() => {
         return max > 0 ? max : undefined;
     }
 
+    /** Coerce epoch ms; string SST would concat with grace and fail open. */
+    function startTimeMs(value: unknown): number | undefined {
+        if (value == null || value === "") return undefined;
+        const ms = typeof value === "number" ? value : Number(value);
+        return Number.isFinite(ms) && ms > 0 ? ms : undefined;
+    }
+
     /**
      * Hide Finished or Cancelled lobby rows once they have been ended for
      * retentionMs. Non-ended rows always stay. Finished rows without a
      * reliable endedAtMs stay visible (fail open).
      *
-     * Cancelled time = scheduledStartTime + SCHEDULED_SNG_GRACE_MS.
+     * Cancelled time = scheduledStartTime + graceMs.
      * Finished time = progress.endedAtMs (from public previousActions).
      */
     function shouldHideEndedLobbyGame(
@@ -52,14 +67,15 @@ const lobbyEndedFilterApi = (() => {
         }
         if (progress?.mark === "started") return false;
 
-        const phase = scheduledSngPhase({
-            scheduledStartTime: game.scheduledStartTime,
+        const scheduledStartTime = startTimeMs(game.scheduledStartTime);
+        const phase = phaseOf({
+            scheduledStartTime,
             minPlayers: game.minPlayers,
             registered: game.currentPlayers,
             nowMs
         });
-        if (phase !== "cancelled") return false;
-        const cancelAt = (game.scheduledStartTime as number) + SCHEDULED_SNG_GRACE_MS;
+        if (phase !== "cancelled" || scheduledStartTime === undefined) return false;
+        const cancelAt = scheduledStartTime + graceMs;
         return nowMs >= cancelAt + retentionMs;
     }
 

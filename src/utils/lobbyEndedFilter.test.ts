@@ -1,4 +1,4 @@
-import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
+﻿import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
 import {
     LOBBY_ENDED_RETENTION_MS,
     applyEndedLobbyRetention,
@@ -81,6 +81,17 @@ describe("shouldHideEndedLobbyGame", () => {
     it("does not treat a started-then-cancelled schedule as cancelled when mark is started", () => {
         expect(shouldHideEndedLobbyGame(cancelledGame, { mark: "started" }, now)).toBe(false);
     });
+
+    it("hides even when scheduledStartTime arrives as a numeric string (no concat)", () => {
+        const oldCancel = {
+            scheduledStartTime: String(
+                now - SCHEDULED_SNG_GRACE_MS - LOBBY_ENDED_RETENTION_MS - HOUR
+            ) as unknown as number,
+            minPlayers: 2,
+            currentPlayers: 1
+        };
+        expect(shouldHideEndedLobbyGame(oldCancel, undefined, now)).toBe(true);
+    });
 });
 
 describe("applyEndedLobbyRetention", () => {
@@ -104,5 +115,59 @@ describe("applyEndedLobbyRetention", () => {
             .toEqual([oldFinished.gameId]);
         expect(applyEndedLobbyRetention([oldFinished], progress, now, "abad").map(g => g.gameId))
             .toEqual([oldFinished.gameId]);
+    });
+});
+
+/**
+ * Production Heads Up $1.00 on play.texashodl.net (still visible after #92/#93):
+ * gameId 0x626ed36f…7991, scheduledStartTime 1792137600000 (2026-10-16 08:00 UTC),
+ * cancel+24h due 2026-10-17 08:15 UTC. list_games returns numeric SST; public
+ * state is ante/join-only so progress mark is absent (not started).
+ */
+describe("prod Heads Up cancelled fixture", () => {
+    const headsUp = {
+        gameId: "0x626ed36fb231ce7b1bc654624de1d8aa566092f13dbc59f8ab502d6f6e7f7991",
+        scheduledStartTime: 1_792_137_600_000,
+        minPlayers: 2,
+        currentPlayers: 1
+    };
+    const afterRetention = headsUp.scheduledStartTime + SCHEDULED_SNG_GRACE_MS + LOBBY_ENDED_RETENTION_MS;
+
+    it("hides after cancel+24h with empty search and no progress mark", () => {
+        const nowMs = afterRetention + 1;
+        expect(shouldHideEndedLobbyGame(headsUp, undefined, nowMs)).toBe(true);
+        expect(
+            applyEndedLobbyRetention([headsUp], {}, nowMs, "").map(g => g.gameId)
+        ).toEqual([]);
+    });
+
+    it("stays findable via search after cancel+24h", () => {
+        const nowMs = afterRetention + 1;
+        expect(
+            applyEndedLobbyRetention([headsUp], {}, nowMs, headsUp.gameId).map(g => g.gameId)
+        ).toEqual([headsUp.gameId]);
+        expect(
+            applyEndedLobbyRetention([headsUp], {}, nowMs, "626ed36f").map(g => g.gameId)
+        ).toEqual([headsUp.gameId]);
+    });
+
+    it("stays visible inside the 24h window after cancel", () => {
+        const nowMs = afterRetention - 1;
+        expect(shouldHideEndedLobbyGame(headsUp, undefined, nowMs)).toBe(false);
+        expect(
+            applyEndedLobbyRetention([headsUp], {}, nowMs, "").map(g => g.gameId)
+        ).toEqual([headsUp.gameId]);
+    });
+
+    it("still hides when SST is a string form of the same epoch ms", () => {
+        const nowMs = afterRetention + 1;
+        const asString = {
+            ...headsUp,
+            scheduledStartTime: String(headsUp.scheduledStartTime) as unknown as number
+        };
+        expect(shouldHideEndedLobbyGame(asString, undefined, nowMs)).toBe(true);
+        expect(
+            applyEndedLobbyRetention([asString], {}, nowMs, "").map(g => g.gameId)
+        ).toEqual([]);
     });
 });
