@@ -10,6 +10,7 @@ import {
     describeTransaction,
     fetchGameFormats,
     formatActionAmount,
+    formatPrizeClaimLabel,
     type ChainGameFormat,
     formatTransferDirection,
     getTransferDirectionClass,
@@ -217,7 +218,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                                 className="p-3 rounded-lg bg-gray-900 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors"
                             >
                                 <div className="flex items-center justify-between mb-1">
-                                    <span className="text-white text-sm font-medium">{tx.label}</span>
+                                    <span className="text-white text-sm font-medium">{tx.isPrizeClaim ? formatPrizeClaimLabel(tx.prizePlace, tx.gameId ? gameFormats[tx.gameId] : undefined) : tx.label}</span>
                                     <span className={`text-xs px-2 py-0.5 rounded-full ${tx.code === 0 ? styles.statusSuccess : styles.statusFailed}`}>
                                         {tx.code === 0 ? "Success" : "Failed"}
                                     </span>

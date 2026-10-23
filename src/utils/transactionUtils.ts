@@ -273,6 +273,11 @@ export interface TxMessage {
     player?: string;
     from_address?: string;
     to_address?: string;
+    /**
+     * MsgLeaveGame finishing order (REST snake_case). Place-1-first player
+     * addresses for an SNG/tournament claim; empty for cash leaves.
+     */
+    finishing_order?: string[];
 }
 
 /** The fields of a tx_responses entry (plus its decoded body) that the labels need. */
@@ -299,6 +304,14 @@ export interface TxDescription {
     gameId?: string;
     transferAmount?: string;
     transferDirection?: "sent" | "received";
+    /**
+     * Finishing place (1 = win) when this MsgLeaveGame settled an SNG/tournament
+     * prize (`sng_prize_claimed`). Refine the label with formatPrizeClaimLabel
+     * once the game's format is known.
+     */
+    prizePlace?: number;
+    /** True when events include sng_prize_claimed for the viewer. */
+    isPrizeClaim?: boolean;
 }
 
 /** Labels for chain messages that are not a poker action. Anything else is derived from the type name. */
@@ -313,6 +326,75 @@ const MESSAGE_LABELS: Record<string, string> = {
     MsgInitiateWithdrawal: "Withdrawal",
     MsgRegisterNftAvatar: "Register NFT avatar"
 };
+
+/** Game formats as the chain names them (GameFormat in the SDK). */
+export type ChainGameFormat = "cash" | "sit-and-go" | "tournament";
+
+const PLACE_ORDINALS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
+
+/** 1 → "1st", 2 → "2nd", …; falls back to "Nth" past 10th. */
+export function placeOrdinal(place: number): string {
+    if (!Number.isFinite(place) || place < 1) return "";
+    return PLACE_ORDINALS[place - 1] ?? `${place}th`;
+}
+
+/**
+ * Attributes of a chain `sng_prize_claimed` event for `player` (case-insensitive),
+ * or undefined when this tx did not settle that player's prize.
+ *
+ * Claim winnings broadcasts the same MsgLeaveGame as a cash leave (see
+ * claimWinnings.ts); the event is what distinguishes a prize payout.
+ */
+export function findSngPrizeClaimed(
+    events: TransferEvent[] | undefined,
+    player: string
+): { amount?: string; gameId?: string; player?: string } | undefined {
+    if (!events || !player) return undefined;
+    const want = player.toLowerCase();
+    for (const event of events) {
+        if (event.type !== "sng_prize_claimed") continue;
+        const fields = Object.fromEntries((event.attributes ?? []).filter(a => a.key).map(a => [a.key!, a.value ?? ""]));
+        if ((fields.player || "").toLowerCase() !== want) continue;
+        return { amount: fields.amount || undefined, gameId: fields.game_id || undefined, player: fields.player };
+    }
+    return undefined;
+}
+
+/**
+ * Place (1-based) of `player` in a MsgLeaveGame finishing_order, or undefined
+ * when the order is missing/empty or the player is not listed.
+ */
+export function placeFromFinishingOrder(finishingOrder: string[] | undefined, player: string): number | undefined {
+    if (!finishingOrder?.length || !player) return undefined;
+    const want = player.toLowerCase();
+    const index = finishingOrder.findIndex(addr => (addr || "").toLowerCase() === want);
+    return index >= 0 ? index + 1 : undefined;
+}
+
+/**
+ * Label for an SNG/tournament prize claim. Amount stays in the transfer row
+ * (+0.27 USDC); this is only the action title.
+ *
+ * With format: "Sit & Go Win", "Sit & Go 3rd", "Tournament Win", "Tournament 3rd".
+ * Without format: "Win", "3rd place", or "Prize claim" when place is unknown.
+ */
+export function formatPrizeClaimLabel(place: number | undefined, format: ChainGameFormat | undefined): string {
+    const ordinal = place ? placeOrdinal(place) : "";
+    const isWin = place === 1;
+    if (format === "sit-and-go") {
+        if (isWin) return "Sit & Go Win";
+        if (ordinal) return `Sit & Go ${ordinal}`;
+        return "Sit & Go prize";
+    }
+    if (format === "tournament") {
+        if (isWin) return "Tournament Win";
+        if (ordinal) return `Tournament ${ordinal}`;
+        return "Tournament prize";
+    }
+    if (isWin) return "Win";
+    if (ordinal) return `${ordinal} place`;
+    return "Prize claim";
+}
 
 /**
  * Describe a transaction for display, from its first message and its events.
@@ -362,6 +444,7 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
     }
 
     const out: TxDescription = { label: "Transaction", messageType: messageType || "Transaction" };
+    let isPrizeClaim = false;
 
     if (msg) {
         if (messageType === "MsgPerformAction") {
@@ -375,6 +458,20 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
         } else if (messageType === "MsgLeaveGame" || messageType === "MsgCreateGame" || messageType === "MsgTopUp") {
             out.gameId = msg.game_id;
             if (messageType === "MsgTopUp" && typeof msg.amount === "string") out.amount = msg.amount;
+            // Claim winnings uses MsgLeaveGame too; the chain emits sng_prize_claimed.
+            if (messageType === "MsgLeaveGame") {
+                const prize = findSngPrizeClaimed(tx.events, viewer);
+                if (prize) {
+                    isPrizeClaim = true;
+                    out.isPrizeClaim = true;
+                    out.prizePlace = placeFromFinishingOrder(msg.finishing_order, viewer);
+                    out.label = formatPrizeClaimLabel(out.prizePlace, undefined);
+                    if (prize.amount && /^\d+$/.test(prize.amount) && BigInt(prize.amount) > 0n) {
+                        out.transferAmount = prize.amount;
+                        out.transferDirection = "received";
+                    }
+                }
+            }
         } else if (messageType === "MsgSend") {
             // Bank transfer: MsgSend carries a coin array, not a scalar.
             const coin = Array.isArray(msg.amount) ? msg.amount[0] : undefined;
@@ -395,15 +492,15 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
         }
     }
 
-    if (out.action) out.label = formatTransactionLabel(out.action, messageType);
+    if (isPrizeClaim) {
+        // Keep formatPrizeClaimLabel from the MsgLeaveGame branch; callers refine
+        // with the game format via formatPrizeClaimLabel(prizePlace, format).
+    } else if (out.action) out.label = formatTransactionLabel(out.action, messageType);
     else if (MESSAGE_LABELS[messageType]) out.label = MESSAGE_LABELS[messageType];
     else if (messageType) out.label = formatTransactionLabel(undefined, messageType);
     else if (out.transferAmount) out.label = "Transfer";
     return out;
 }
-
-/** Game formats as the chain names them (GameFormat in the SDK). */
-export type ChainGameFormat = "cash" | "sit-and-go" | "tournament";
 
 /**
  * A poker action's amount for display: cash games are USDC micro-units

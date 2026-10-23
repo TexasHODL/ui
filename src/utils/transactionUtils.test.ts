@@ -2,6 +2,9 @@ import { describe, it, expect } from "@jest/globals";
 import {
     formatTransactionLabel,
     describeTransaction,
+    formatPrizeClaimLabel,
+    placeFromFinishingOrder,
+    findSngPrizeClaimed,
     formatActionAmount,
     parseGameFormat,
     fetchGameFormats,
@@ -261,6 +264,97 @@ describe("describeTransaction", () => {
         expect(describeTransaction(msg("MsgLeaveGame", { game_id: "0x1" }), ME)).toMatchObject({ label: "Leave table", gameId: "0x1" });
         expect(describeTransaction(msg("MsgCreateGame"), ME).label).toBe("Create table");
         expect(describeTransaction(msg("MsgTopUp", { amount: "100", game_id: "0x1" }), ME)).toMatchObject({ label: "Top up", amount: "100" });
+    });
+
+    it("labels SNG/tournament prize claims instead of Leave table", () => {
+        const me = ME;
+        const events = [
+            {
+                type: "sng_prize_claimed",
+                attributes: [
+                    { key: "game_id", value: "0x318a" },
+                    { key: "player", value: me },
+                    { key: "amount", value: "270000" }
+                ]
+            },
+            {
+                type: "transfer",
+                attributes: [
+                    { key: "recipient", value: me },
+                    { key: "sender", value: "b521escrow" },
+                    { key: "amount", value: "270000usdc" }
+                ]
+            }
+        ];
+        const claim = {
+            events,
+            tx: {
+                body: {
+                    messages: [
+                        {
+                            "@type": "/pokerchain.poker.v1.MsgLeaveGame",
+                            creator: me,
+                            game_id: "0x318a",
+                            finishing_order: [me, "b52second", "b52third"]
+                        }
+                    ]
+                }
+            }
+        };
+        expect(describeTransaction(claim, me)).toMatchObject({
+            label: "Win",
+            messageType: "MsgLeaveGame",
+            gameId: "0x318a",
+            prizePlace: 1,
+            isPrizeClaim: true,
+            transferAmount: "270000",
+            transferDirection: "received"
+        });
+        expect(describeTransaction(msg("MsgLeaveGame", { game_id: "0x1", creator: me }), me)).toMatchObject({
+            label: "Leave table",
+            gameId: "0x1"
+        });
+        const third = {
+            events: [
+                {
+                    type: "sng_prize_claimed",
+                    attributes: [
+                        { key: "game_id", value: "0xt" },
+                        { key: "player", value: me },
+                        { key: "amount", value: "100000" }
+                    ]
+                }
+            ],
+            tx: {
+                body: {
+                    messages: [
+                        {
+                            "@type": "/pokerchain.poker.v1.MsgLeaveGame",
+                            creator: me,
+                            game_id: "0xt",
+                            finishing_order: ["b52first", "b52second", me]
+                        }
+                    ]
+                }
+            }
+        };
+        expect(describeTransaction(third, me)).toMatchObject({ label: "3rd place", prizePlace: 3, isPrizeClaim: true });
+    });
+
+    it("formats prize-claim titles from place and game format", () => {
+        expect(formatPrizeClaimLabel(1, "sit-and-go")).toBe("Sit & Go Win");
+        expect(formatPrizeClaimLabel(3, "sit-and-go")).toBe("Sit & Go 3rd");
+        expect(formatPrizeClaimLabel(1, "tournament")).toBe("Tournament Win");
+        expect(formatPrizeClaimLabel(2, "tournament")).toBe("Tournament 2nd");
+        expect(formatPrizeClaimLabel(1, undefined)).toBe("Win");
+        expect(formatPrizeClaimLabel(3, undefined)).toBe("3rd place");
+        expect(formatPrizeClaimLabel(undefined, "sit-and-go")).toBe("Sit & Go prize");
+        expect(placeFromFinishingOrder(["a", "b", "c"], "b")).toBe(2);
+        expect(findSngPrizeClaimed([{ type: "sng_prize_claimed", attributes: [{ key: "player", value: "B52X" }, { key: "amount", value: "1" }] }], "b52x")).toEqual({
+            amount: "1",
+            gameId: undefined,
+            player: "B52X"
+        });
     });
 
     it("labels transfers with their direction for the viewer", () => {

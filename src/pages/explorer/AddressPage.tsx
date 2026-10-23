@@ -20,7 +20,7 @@ import {
 } from "../../components/explorer/ExplorerPanel";
 import styles from "./AddressPage.module.css";
 import { TransactionResponse, type CosmosTxResponse } from "../../components/TransactionPanel";
-import { describeTransaction, fetchGameFormats, formatActionAmount, formatGameId, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
+import { describeTransaction, fetchGameFormats, formatActionAmount, formatPrizeClaimLabel, formatGameId, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
 
 /** One row of the Transactions tab: the tx plus what it was for (shared with the lobby card). */
 type AddressTx = CosmosTxResponse & TxDescription;
@@ -101,7 +101,7 @@ export default function AddressPage() {
                     setTransactions(described);
                     fetchGameFormats(
                         id => cosmosApi.getGame(id),
-                        described.filter(tx => tx.actionAmount).map(tx => tx.gameId)
+                        described.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId)
                     ).then(setGameFormats);
                 } catch (txError) {
                     console.error("Error fetching transactions:", txError);
@@ -303,7 +303,7 @@ export default function AddressPage() {
                                                 >
                                                     <div className="flex justify-between items-center gap-3">
                                                         <p className="flex-1 min-w-0 text-sm font-semibold text-white truncate" data-testid="tx-action">
-                                                            {tx.label}
+                                                            {tx.isPrizeClaim ? formatPrizeClaimLabel(tx.prizePlace, tx.gameId ? gameFormats[tx.gameId] : undefined) : tx.label}
                                                         </p>
                                                         <span
                                                             className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-semibold ${tx.code === 0 ? styles.txStatusSuccess : styles.txStatusFailed}`}
