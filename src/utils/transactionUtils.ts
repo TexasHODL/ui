@@ -363,12 +363,57 @@ export function findSngPrizeClaimed(
 /**
  * Place (1-based) of `player` in a MsgLeaveGame finishing_order, or undefined
  * when the order is missing/empty or the player is not listed.
+ *
+ * WARNING: Do not use this alone for prize-claim labels. Early ITM claims pass a
+ * place-sorted list of *busted* players only (finishingOrderFromState), so a 3rd
+ * place finisher sits at index 0 and would be misread as a win. Prefer
+ * placeFromGameResults / placeFromPrizePayouts via resolvePrizePlace.
  */
 export function placeFromFinishingOrder(finishingOrder: string[] | undefined, player: string): number | undefined {
     if (!finishingOrder?.length || !player) return undefined;
     const want = player.toLowerCase();
     const index = finishingOrder.findIndex(addr => (addr || "").toLowerCase() === want);
     return index >= 0 ? index + 1 : undefined;
+}
+
+/** One entry of gameState.results from a /game/{id} response. */
+export interface GameResultPlace {
+    place: number;
+    playerId: string;
+    payout?: string;
+}
+
+/** One entry of gameState.payouts (prize schedule by place). */
+export interface GamePayoutPlace {
+    place: number;
+    amount: string;
+}
+
+/** True finishing place from gameState.results[].place (not finishing_order index). */
+export function placeFromGameResults(results: GameResultPlace[] | undefined, player: string): number | undefined {
+    if (!results?.length || !player) return undefined;
+    const want = player.toLowerCase();
+    const hit = results.find(r => (r.playerId || "").toLowerCase() === want);
+    if (!hit || !Number.isFinite(hit.place) || hit.place < 1) return undefined;
+    return hit.place;
+}
+
+/** Infer place by matching claimed micro-USDC amount to gameState.payouts. */
+export function placeFromPrizePayouts(prizeAmount: string | undefined, payouts: GamePayoutPlace[] | undefined): number | undefined {
+    if (!prizeAmount || !/^\d+$/.test(prizeAmount) || !payouts?.length) return undefined;
+    const hits = payouts.filter(p => p.amount === prizeAmount && Number.isFinite(p.place) && p.place >= 1);
+    if (hits.length !== 1) return undefined;
+    return hits[0].place;
+}
+
+/** Prefer results, then payout amount. Never finishing_order index (early ITM is incomplete). */
+export function resolvePrizePlace(args: {
+    player: string;
+    results?: GameResultPlace[];
+    payouts?: GamePayoutPlace[];
+    prizeAmount?: string;
+}): number | undefined {
+    return placeFromGameResults(args.results, args.player) ?? placeFromPrizePayouts(args.prizeAmount, args.payouts);
 }
 
 /**
@@ -464,8 +509,10 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
                 if (prize) {
                     isPrizeClaim = true;
                     out.isPrizeClaim = true;
-                    out.prizePlace = placeFromFinishingOrder(msg.finishing_order, viewer);
-                    out.label = formatPrizeClaimLabel(out.prizePlace, undefined);
+                    // Place comes from game results / payout schedule after getGame
+                    // (finishing_order index is wrong for early ITM claims).
+                    out.prizePlace = undefined;
+                    out.label = formatPrizeClaimLabel(undefined, undefined);
                     if (prize.amount && /^\d+$/.test(prize.amount) && BigInt(prize.amount) > 0n) {
                         out.transferAmount = prize.amount;
                         out.transferDirection = "received";
@@ -513,19 +560,91 @@ export function formatActionAmount(raw: string | undefined, format: ChainGameFor
     return `${BigInt(raw).toLocaleString("en-US")} chips`;
 }
 
-/** The format from a /block52/pokerchain/poker/v1/game/{id} response, or undefined. */
-export function parseGameFormat(response: unknown): ChainGameFormat | undefined {
+/** Parsed fields from a /block52/pokerchain/poker/v1/game/{id} response. */
+export interface GamePrizeMeta {
+    format?: ChainGameFormat;
+    results?: GameResultPlace[];
+    payouts?: GamePayoutPlace[];
+}
+
+function parseGameObject(response: unknown): Record<string, unknown> | undefined {
     try {
         const raw = (response as { game?: unknown })?.game;
         const game = typeof raw === "string" ? JSON.parse(raw) : raw;
-        const format = (game as { format?: unknown })?.format;
-        return format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined;
+        return game && typeof game === "object" ? (game as Record<string, unknown>) : undefined;
     } catch {
         return undefined;
     }
 }
 
-const gameFormatCache = new Map<string, Promise<ChainGameFormat | undefined>>();
+/** The format from a /block52/pokerchain/poker/v1/game/{id} response, or undefined. */
+export function parseGameFormat(response: unknown): ChainGameFormat | undefined {
+    const format = parseGameObject(response)?.format;
+    return format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined;
+}
+
+/** Results + payout schedule + format from a /game/{id} response. */
+export function parseGamePrizeMeta(response: unknown): GamePrizeMeta {
+    const game = parseGameObject(response);
+    if (!game) return {};
+    const format = game.format;
+    const gs = (game.gameState && typeof game.gameState === "object" ? game.gameState : undefined) as
+        | { results?: unknown; payouts?: unknown }
+        | undefined;
+    const resultsRaw = Array.isArray(gs?.results) ? gs!.results : undefined;
+    const payoutsRaw = Array.isArray(gs?.payouts) ? gs!.payouts : undefined;
+    const results = resultsRaw
+        ?.map((r): GameResultPlace | undefined => {
+            if (!r || typeof r !== "object") return undefined;
+            const place = Number((r as { place?: unknown }).place);
+            const playerId = String((r as { playerId?: unknown }).playerId ?? "");
+            const payout = (r as { payout?: unknown }).payout;
+            if (!playerId || !Number.isFinite(place) || place < 1) return undefined;
+            return { place, playerId, payout: typeof payout === "string" ? payout : undefined };
+        })
+        .filter((r): r is GameResultPlace => !!r);
+    const payouts = payoutsRaw
+        ?.map((p): GamePayoutPlace | undefined => {
+            if (!p || typeof p !== "object") return undefined;
+            const place = Number((p as { place?: unknown }).place);
+            const amount = String((p as { amount?: unknown }).amount ?? "");
+            if (!amount || !Number.isFinite(place) || place < 1) return undefined;
+            return { place, amount };
+        })
+        .filter((p): p is GamePayoutPlace => !!p);
+    return {
+        format: format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined,
+        results,
+        payouts
+    };
+}
+
+const gamePrizeMetaCache = new Map<string, Promise<GamePrizeMeta>>();
+
+/**
+ * Look up each game's prize meta once (cached for the session). Failed lookups
+ * resolve empty and are retried later. Format never changes; results may grow
+ * as more players bust, so callers that need a place should re-fetch after a miss.
+ */
+export async function fetchGamePrizeMeta(
+    getGame: (gameId: string) => Promise<unknown>,
+    gameIds: Iterable<string | undefined>
+): Promise<Record<string, GamePrizeMeta>> {
+    const ids = [...new Set([...gameIds].filter((id): id is string => !!id))];
+    const entries = await Promise.all(
+        ids.map(async id => {
+            let pending = gamePrizeMetaCache.get(id);
+            if (!pending) {
+                pending = getGame(id).then(parseGamePrizeMeta, () => ({}));
+                gamePrizeMetaCache.set(id, pending);
+            }
+            const meta = await pending;
+            if (!meta.format && !meta.results?.length && !meta.payouts?.length) gamePrizeMetaCache.delete(id);
+            return [id, meta] as const;
+        })
+    );
+    return Object.fromEntries(entries);
+}
 
 /**
  * Look up each game's format once (cached for the session; a game's format
@@ -535,23 +654,11 @@ export async function fetchGameFormats(
     getGame: (gameId: string) => Promise<unknown>,
     gameIds: Iterable<string | undefined>
 ): Promise<Record<string, ChainGameFormat | undefined>> {
-    const ids = [...new Set([...gameIds].filter((id): id is string => !!id))];
-    const entries = await Promise.all(
-        ids.map(async id => {
-            let pending = gameFormatCache.get(id);
-            if (!pending) {
-                pending = getGame(id).then(parseGameFormat, () => undefined);
-                gameFormatCache.set(id, pending);
-            }
-            const format = await pending;
-            if (!format) gameFormatCache.delete(id);
-            return [id, format] as const;
-        })
-    );
-    return Object.fromEntries(entries);
+    const meta = await fetchGamePrizeMeta(getGame, gameIds);
+    return Object.fromEntries(Object.entries(meta).map(([id, m]) => [id, m.format]));
 }
 
-/** Test hook: forget cached game formats. */
+/** Test hook: forget cached game formats / prize meta. */
 export function clearGameFormatCache(): void {
-    gameFormatCache.clear();
+    gamePrizeMetaCache.clear();
 }

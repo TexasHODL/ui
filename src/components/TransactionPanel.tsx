@@ -9,8 +9,10 @@ import styles from "./TransactionPanel.module.css";
 import {
     describeTransaction,
     fetchGameFormats,
+    fetchGamePrizeMeta,
     formatActionAmount,
     formatPrizeClaimLabel,
+    resolvePrizePlace,
     type ChainGameFormat,
     formatTransferDirection,
     getTransferDirectionClass,
@@ -134,10 +136,24 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                 const { label, action, amount, actionAmount, gameId, transferAmount, transferDirection, prizePlace, isPrizeClaim } = describeTransaction(tx, address);
                 return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, actionAmount, gameId, transferAmount, transferDirection, prizePlace, isPrizeClaim };
             });
-            fetchGameFormats(
-                id => cosmosApi.getGame(id),
-                formattedTxs.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId)
-            ).then(setGameFormats);
+            const gameIds = formattedTxs.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId);
+            fetchGamePrizeMeta(id => cosmosApi.getGame(id), gameIds).then(meta => {
+                setGameFormats(Object.fromEntries(Object.entries(meta).map(([id, m]) => [id, m.format])));
+                setTransactions(prev =>
+                    prev.map(tx => {
+                        if (!tx.isPrizeClaim || !tx.gameId) return tx;
+                        const m = meta[tx.gameId];
+                        const place = resolvePrizePlace({
+                            player: address,
+                            results: m?.results,
+                            payouts: m?.payouts,
+                            prizeAmount: tx.transferAmount
+                        });
+                        if (place == null) return tx;
+                        return { ...tx, prizePlace: place };
+                    })
+                );
+            });
 
             setTransactions(formattedTxs);
         } catch (err: unknown) {

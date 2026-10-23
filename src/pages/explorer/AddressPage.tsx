@@ -20,7 +20,7 @@ import {
 } from "../../components/explorer/ExplorerPanel";
 import styles from "./AddressPage.module.css";
 import { TransactionResponse, type CosmosTxResponse } from "../../components/TransactionPanel";
-import { describeTransaction, fetchGameFormats, formatActionAmount, formatPrizeClaimLabel, formatGameId, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
+import { describeTransaction, fetchGameFormats, fetchGamePrizeMeta, formatActionAmount, formatPrizeClaimLabel, formatGameId, resolvePrizePlace, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
 
 /** One row of the Transactions tab: the tx plus what it was for (shared with the lobby card). */
 type AddressTx = CosmosTxResponse & TxDescription;
@@ -99,10 +99,24 @@ export default function AddressPage() {
                     const viewer = searchAddress.trim();
                     const described = uniqueTxs.map(tx => ({ ...tx, ...describeTransaction(tx, viewer) }));
                     setTransactions(described);
-                    fetchGameFormats(
-                        id => cosmosApi.getGame(id),
-                        described.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId)
-                    ).then(setGameFormats);
+                    const gameIds = described.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId);
+                    fetchGamePrizeMeta(id => cosmosApi.getGame(id), gameIds).then(meta => {
+                        setGameFormats(Object.fromEntries(Object.entries(meta).map(([id, m]) => [id, m.format])));
+                        setTransactions(prev =>
+                            prev.map(tx => {
+                                if (!tx.isPrizeClaim || !tx.gameId) return tx;
+                                const m = meta[tx.gameId];
+                                const place = resolvePrizePlace({
+                                    player: viewer,
+                                    results: m?.results,
+                                    payouts: m?.payouts,
+                                    prizeAmount: tx.transferAmount
+                                });
+                                if (place == null) return tx;
+                                return { ...tx, prizePlace: place };
+                            })
+                        );
+                    });
                 } catch (txError) {
                     console.error("Error fetching transactions:", txError);
                     // Don't fail the whole query if transactions fail
