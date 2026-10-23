@@ -1,0 +1,56 @@
+/* Floating win pill (ui#861): starts at the seat's drop-down action bar, under
+   the stack, and floats up to the top of the hole cards, then fades. */
+
+.win-amount-float {
+    position: absolute;
+    top: calc(100% + 6px); /* the drop-down action bar under the stack */
+    left: 50%;
+    z-index: 40;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #fde68a 0%, #f4c430 100%);
+    border: 1px solid rgba(120, 80, 0, 0.55);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    color: #1f2937;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+    pointer-events: none; /* never block the game underneath */
+    opacity: 0;
+    animation: win-amount-float-up 3000ms ease-out forwards;
+}
+
+@keyframes win-amount-float-up {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 0);
+    }
+    12% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -120px); /* top of the hole cards */
+    }
+}
+
+@keyframes win-amount-float-fade {
+    0%,
+    100% {
+        opacity: 0;
+    }
+    12%,
+    80% {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .win-amount-float {
+        transform: translate(-50%, 0);
+        animation-name: win-amount-float-fade;
+    }
+}
