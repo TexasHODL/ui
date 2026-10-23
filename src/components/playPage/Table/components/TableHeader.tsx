@@ -10,18 +10,13 @@ import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
+import { formatBlindCountdown } from "../../../../utils/blindStructure";
 import styles from "./TableHeader.module.css";
 import { ThemeToggle } from "../../../ThemeToggle";
 
-export const formatBlindCountdown = (secondsRemaining: number): string => {
-    // Negative = overtime (hand still running past the level end); show the
-    // elapsed-over time with a leading minus, e.g. -0:10. (poker-vm#2292)
-    const isOvertime = secondsRemaining < 0;
-    const abs = Math.abs(secondsRemaining);
-    const minutes = Math.floor(abs / 60);
-    const seconds = abs % 60;
-    return `${isOvertime ? "-" : ""}${minutes}:${seconds.toString().padStart(2, "0")}`;
-};
+// Re-exported for existing importers (e.g. MobileTableHeader); the formatter
+// itself now lives in utils/blindStructure so the Blinds panel can share it.
+export { formatBlindCountdown };
 
 export interface TableHeaderProps {
     // Table info
