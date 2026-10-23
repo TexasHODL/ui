@@ -1,16 +1,59 @@
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { isCashFormat, isTournamentFormat } from "./gameFormatUtils";
+import { isCashFormat, isSitAndGoFormat, isTournamentFormat } from "./gameFormatUtils";
+import { scheduledSngPhase } from "./scheduledSng";
 
 export type LobbyFormat = "all" | "cash" | "tournament";
 export type LobbySort = "activity" | "buyin";
 
+/** Minimal progress mark from useLobbyTournamentStarted (Started / Finished). */
+export type LobbyGameProgress = { mark: "started" | "finished" };
+
+export type FilterLobbyGamesOptions = {
+    format: LobbyFormat;
+    search: string;
+    openOnly: boolean;
+    sort: LobbySort;
+    /**
+     * Optional Started/Finished marks per gameId. Without these, only seat
+     * fullness and Cancelled scheduled phase can mark a table unavailable.
+     */
+    progress?: Record<string, LobbyGameProgress | undefined>;
+    /** Clock for Cancelled phase; defaults to Date.now(). */
+    nowMs?: number;
+};
+
+/**
+ * True when the table is not joinable: full, or a sit-and-go/tournament that
+ * has Started/Finished (no late entry), or a Cancelled scheduled SNG.
+ */
+export function isLobbyGameUnavailable(
+    game: GameWithFormat,
+    progress: LobbyGameProgress | undefined,
+    nowMs: number
+): boolean {
+    if (game.currentPlayers >= game.maxPlayers) return true;
+    const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
+    if (!tournamentStyle) return false;
+    if (progress?.mark === "started" || progress?.mark === "finished") return true;
+    const phase = scheduledSngPhase({
+        scheduledStartTime: game.scheduledStartTime,
+        minPlayers: game.minPlayers,
+        registered: game.currentPlayers,
+        nowMs
+    });
+    // Cancelled only when the game never started (same rule as TableList Watch).
+    return phase === "cancelled";
+}
+
 /** Filter real table data without mutating the shared game list. Full tables remain watchable. */
 export function filterLobbyGames(
     games: GameWithFormat[],
-    options: { format: LobbyFormat; search: string; openOnly: boolean; sort: LobbySort }
+    options: FilterLobbyGamesOptions
 ): GameWithFormat[] {
     const query = options.search.trim().toLowerCase();
+    const nowMs = options.nowMs ?? Date.now();
+    const progress = options.progress;
     return games
         .filter(
             game =>
@@ -24,8 +67,14 @@ export function filterLobbyGames(
                 const bBuyIn = BigInt(b.minBuyIn);
                 if (aBuyIn !== bBuyIn) return aBuyIn < bBuyIn ? -1 : 1;
             }
-            const aFull = a.currentPlayers >= a.maxPlayers;
-            const bFull = b.currentPlayers >= b.maxPlayers;
-            return Number(aFull) - Number(bFull) || b.currentPlayers - a.currentPlayers || a.gameId.localeCompare(b.gameId);
+            // Available first: joinable above full / Started / Finished / Cancelled.
+            // For buyin, buy-in stays primary; this only breaks buy-in ties.
+            const aUnavailable = isLobbyGameUnavailable(a, progress?.[a.gameId], nowMs);
+            const bUnavailable = isLobbyGameUnavailable(b, progress?.[b.gameId], nowMs);
+            return (
+                Number(aUnavailable) - Number(bUnavailable) ||
+                b.currentPlayers - a.currentPlayers ||
+                a.gameId.localeCompare(b.gameId)
+            );
         });
 }
