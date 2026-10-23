@@ -38,6 +38,59 @@ export function sumUsdcTransferEvents(events: TransferEvent[]): string | undefin
     return found ? total.toString() : undefined;
 }
 
+/** The address-bearing fields of the poker and bank messages, by message type. */
+export interface TxMessageSigner {
+    /** MsgCreateGame, MsgLeaveGame */
+    creator?: string;
+    /** MsgJoinGame, MsgPerformAction */
+    player?: string;
+    /** MsgSend */
+    from_address?: string;
+}
+
+/**
+ * The address that signed (and pays for) a message, or undefined when the
+ * message type carries none of the known signer fields.
+ */
+export function getMessageSigner(msg: TxMessageSigner): string | undefined {
+    return msg.creator ?? msg.player ?? msg.from_address;
+}
+
+/**
+ * Net USDC movement of ONE address across a transaction's transfer events.
+ *
+ * A transaction can move money between many parties (a buy-in is split into
+ * fee shares for several recipients), so the tx total says nothing about what
+ * a given wallet gained or lost. Summing only the transfers where `address` is
+ * the recipient (credit) or the sender (debit) does.
+ *
+ * @returns the absolute micro-USDC amount and its direction, or undefined when
+ *          the address is not party to a USDC transfer or the net is zero
+ */
+export function netUsdcTransferFor(
+    events: TransferEvent[],
+    address: string
+): { amount: string; direction: "sent" | "received" } | undefined {
+    let net = 0n;
+
+    for (const event of events) {
+        if (event.type !== "transfer") continue;
+
+        const attributes = event.attributes ?? [];
+        const recipient = attributes.find(a => a.key === "recipient")?.value;
+        const sender = attributes.find(a => a.key === "sender")?.value;
+        const match = attributes.find(a => a.key === "amount")?.value?.match(/^(\d+)usdc$/);
+        if (!match) continue;
+
+        const amount = BigInt(match[1]);
+        if (recipient === address) net += amount;
+        if (sender === address) net -= amount;
+    }
+
+    if (net === 0n) return undefined;
+    return net > 0n ? { amount: net.toString(), direction: "received" } : { amount: (-net).toString(), direction: "sent" };
+}
+
 /**
  * MsgPerformAction amounts are format-dependent: cash uses USDC micro-units,
  * while sit-and-go and tournament games use chips. The transaction payload
@@ -214,6 +267,10 @@ export interface TxMessage {
     buy_in_amount?: string;
     /** Legacy name for the buy-in, still read for older txs. */
     buy_in?: string;
+    /** MsgCreateGame, MsgLeaveGame signer. */
+    creator?: string;
+    /** MsgJoinGame, MsgPerformAction signer. */
+    player?: string;
     from_address?: string;
     to_address?: string;
 }
@@ -264,6 +321,9 @@ const MESSAGE_LABELS: Record<string, string> = {
  * the action name ("Bet", "Post-big-blind"); other messages use MESSAGE_LABELS
  * or a label derived from the type name; with no decoded body the label is
  * "Transfer" when the events show a USDC transfer, else "Transaction".
+ * When the message was signed by someone other than `viewer` but still touches
+ * this wallet (fee share, etc.), the label is "Received" with the viewer's net
+ * USDC movement — not the other player's action or the whole tx total.
  *
  * @param viewer - the address the list is for; decides "sent" vs "received"
  */
@@ -271,6 +331,36 @@ export function describeTransaction(tx: DescribableTx, viewer: string): TxDescri
     const msg = tx.tx?.body?.messages?.[0];
     const typeUrl = msg?.["@type"] ?? "";
     const messageType = typeUrl.split(".").pop() || "";
+
+    // Someone else's tx that pays this address (e.g. a fee share of another
+    // player's buy-in): show only what this address received, not their action
+    // or the whole tx total (ui#855 / block52#856).
+    if (msg) {
+        const signer = getMessageSigner(msg);
+        if (signer && signer !== viewer) {
+            // Prefer the viewer's net from transfer events (fee shares of a foreign
+            // buy-in, etc.). For a plain MsgSend with no events decoded yet, fall
+            // back to the message's coin so the lobby/explorer still show an amount.
+            const net = tx.events ? netUsdcTransferFor(tx.events, viewer) : undefined;
+            let transferAmount = net?.amount;
+            let transferDirection = net?.direction;
+            if (!transferAmount && messageType === "MsgSend") {
+                const coin = Array.isArray(msg.amount) ? msg.amount[0] : undefined;
+                if (coin) {
+                    transferAmount = coin.amount;
+                    transferDirection = "received";
+                }
+            }
+            return {
+                label: "Received",
+                messageType: messageType || "Received",
+                gameId: msg.game_id,
+                transferAmount,
+                transferDirection
+            };
+        }
+    }
+
     const out: TxDescription = { label: "Transaction", messageType: messageType || "Transaction" };
 
     if (msg) {
