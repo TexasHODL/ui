@@ -180,6 +180,8 @@ export interface RaiseBetControlsProps {
     onAllIn: () => void;
     /** Whether the max commits the whole stack; false at pot-limit when the pot caps it (ui#768). */
     maxIsAllIn: boolean;
+    /** Whether the table opens with big-blind multiples; false for Omaha and pot-limit (ui#751). */
+    allowBlindMultiples: boolean;
 }
 
 /**
@@ -220,4 +222,6 @@ export interface PotSizedBetButtonsProps {
     className?: string;
     /** Whether the max commits the whole stack; false at pot-limit when the pot caps it (ui#768). */
     maxIsAllIn: boolean;
+    /** Whether the table opens with big-blind multiples; false for Omaha and pot-limit (ui#751). */
+    allowBlindMultiples: boolean;
 }

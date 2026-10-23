@@ -10,7 +10,8 @@ const baseProps: RaiseBetControlsProps = {
     isInvalid: false, isMobileLandscape: true,
     isTournament: true, currentRound: TexasHoldemRound.FLOP, previousActions: [],
     disabled: false, onAmountChange: jest.fn(), onIncrement: jest.fn(),
-    onDecrement: jest.fn(), onAllIn: jest.fn(), maxIsAllIn: true
+    onDecrement: jest.fn(), onAllIn: jest.fn(), maxIsAllIn: true,
+    allowBlindMultiples: true
 };
 
 describe("RaiseBetControls presets", () => {
