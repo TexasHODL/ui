@@ -12,7 +12,7 @@ const mockForceClose = jest.fn();
 let mockAddress = "owner";
 let mockSeats: Record<string, number> = {};
 jest.mock("../hooks/game/useLobbySeats", () => ({ useLobbySeats: () => mockSeats }));
-let mockStarted: Record<string, "started" | "finished"> = {};
+let mockStarted: Record<string, { mark: "started" | "finished"; endedAtMs?: number }> = {};
 jest.mock("../hooks/game/useLobbyTournamentStarted", () => ({ useLobbyTournamentStarted: () => mockStarted }));
 const base = { minBuyIn: "200000", maxBuyIn: "1000000", minPlayers: 2, maxPlayers: 6, smallBlind: "10000", bigBlind: "20000", gameVariant: GameVariant.TEXAS_HOLDEM, status: "waiting", scheduledStartTime: undefined as number | undefined };
 const UNNAMED_ID = "0x031d57314cc4ba07a0ae7edaa0c8c9ff3507dc81b8af99ac8cfe5ba9f5f9aea9";
@@ -156,7 +156,7 @@ test("a scheduled tournament says Started only after the hand has begun", () => 
         expect(waiting.getByTestId("scheduled-start-label")).toHaveTextContent("Starting");
         expect(waiting.getByRole("link", { name: "Open My tournament" })).toHaveAttribute("href", "/table/tournament");
         unmount();
-        mockStarted = { tournament: "started" };
+        mockStarted = { tournament: { mark: "started" } };
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Started");
@@ -249,7 +249,7 @@ test("a started tournament that still has empty seats uses Watch, not Open table
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
     game.currentPlayers = 5;
     game.minPlayers = 4;
-    mockStarted = { tournament: "started" };
+    mockStarted = { tournament: { mark: "started" } };
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
@@ -274,7 +274,7 @@ test("a seated player at a started tournament still returns to the table", () =>
     game.scheduledStartTime = Date.now() - 60_000;
     game.currentPlayers = 5;
     game.minPlayers = 4;
-    mockStarted = { tournament: "started" };
+    mockStarted = { tournament: { mark: "started" } };
     mockSeats = { tournament: 2 };
     try {
         render(<TableList />);
@@ -287,7 +287,7 @@ test("a seated player at a started tournament still returns to the table", () =>
 });
 
 test("a cash game stays Open table even if a started mark is present", () => {
-    mockStarted = { occupied: "started" };
+    mockStarted = { occupied: { mark: "started" } };
     render(<TableList />);
     const row = within(screen.getByText("My occupied table").closest("tr")!);
     expect(row.getByRole("link", { name: "Open My occupied table" })).toHaveAttribute("href", "/table/occupied");
@@ -300,7 +300,7 @@ test("a finished tournament uses Watch for a non-seated owner", () => {
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
     game.currentPlayers = 5;
     game.minPlayers = 4;
-    mockStarted = { tournament: "finished" };
+    mockStarted = { tournament: { mark: "finished" } };
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
@@ -326,7 +326,7 @@ test("a finished tournament uses Watch for a non-seated visitor", () => {
     game.currentPlayers = 5;
     game.minPlayers = 4;
     mockAddress = "visitor";
-    mockStarted = { tournament: "finished" };
+    mockStarted = { tournament: { mark: "finished" } };
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
@@ -344,7 +344,7 @@ test("a seated player at a finished tournament still returns to the table", () =
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
     game.currentPlayers = 1;
     game.minPlayers = 4;
-    mockStarted = { tournament: "finished" };
+    mockStarted = { tournament: { mark: "finished" } };
     mockSeats = { tournament: 3 };
     try {
         render(<TableList />);
@@ -362,7 +362,7 @@ test("an unscheduled sit-and-go that has finished with empty seats uses Watch", 
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers };
     game.scheduledStartTime = undefined;
     game.currentPlayers = 1;
-    mockStarted = { tournament: "finished" };
+    mockStarted = { tournament: { mark: "finished" } };
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);

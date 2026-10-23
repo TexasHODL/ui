@@ -18,21 +18,21 @@ it("reads started, finished, and still-waiting tables from public state", () => 
         round: TexasHoldemRound.PREFLOP,
         previousActions: [],
         results: []
-    }))).toBe("started");
+    }))).toEqual({ mark: "started" });
+    // Omit winners — Jest's SDK stub lacks withWinnerDescriptions (pre-existing);
+    // finished detection only needs results place 1. endedAtMs comes from previousActions.
     expect(tournamentProgressFromPublicState(state({
         handNumber: 4,
         round: TexasHoldemRound.END,
-        previousActions: [],
-        results: [{ place: 1, playerId: "winner", payout: "100" }],
-        winners: [{ address: "winner" }]
-    }))).toBe("finished");
+        previousActions: [{ timestamp: 1_700_000_000_111 }],
+        results: [{ place: 1, playerId: "winner", payout: "100" }]
+    }))).toEqual({ mark: "finished", endedAtMs: 1_700_000_000_111 });
     expect(tournamentProgressFromPublicState(state({
         handNumber: 2,
         round: TexasHoldemRound.END,
         previousActions: [],
-        results: [{ place: 2, playerId: "alice", payout: "0" }],
-        winners: [{ address: "bob" }]
-    }))).toBe("started");
+        results: [{ place: 2, playerId: "alice", payout: "0" }]
+    }))).toEqual({ mark: "started" });
     expect(tournamentProgressFromPublicState(state({
         handNumber: 1,
         round: TexasHoldemRound.ANTE,
@@ -46,11 +46,13 @@ it("loads a finished table and clears it when the table is waiting again", async
     mockGetGameState.mockResolvedValue(state({
         handNumber: 4,
         round: TexasHoldemRound.END,
-        previousActions: [],
+        previousActions: [{ timestamp: 99 }],
         results: [{ place: 1, playerId: "winner", payout: "100" }]
     }));
     const { result } = renderHook(() => useLobbyTournamentStarted("bad-beat", 0));
-    await waitFor(() => expect(result.current).toEqual({ "bad-beat": "finished" }));
+    await waitFor(() => expect(result.current).toEqual({
+        "bad-beat": { mark: "finished", endedAtMs: 99 }
+    }));
     mockGetGameState.mockResolvedValue(state({ handNumber: 1, round: TexasHoldemRound.ANTE, previousActions: [] }));
     act(() => window.dispatchEvent(new Event("focus")));
     await waitFor(() => expect(result.current).toEqual({}));

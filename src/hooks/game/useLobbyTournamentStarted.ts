@@ -1,17 +1,26 @@
 import { useEffect, useState } from "react";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { parseGameStateJson } from "../../utils/handReplay";
+import { maxPreviousActionTimestamp, type LobbyEndedProgress } from "../../utils/lobbyEndedFilter";
 import { hasTournamentFinished, hasTournamentStarted } from "../../utils/scheduledSng";
 
 export type LobbyTournamentMark = "started" | "finished";
+export type LobbyTournamentProgress = LobbyEndedProgress;
 
 /** Started, finished, or still waiting, from one public game-state payload. */
-export function tournamentProgressFromPublicState(response: { game_state?: string } | null | undefined): LobbyTournamentMark | null {
+export function tournamentProgressFromPublicState(
+    response: { game_state?: string } | null | undefined
+): LobbyTournamentProgress | null {
     if (!response?.game_state) return null;
     try {
         const { state } = parseGameStateJson(response.game_state);
-        if (hasTournamentFinished(state)) return "finished";
-        if (hasTournamentStarted(state)) return "started";
+        if (hasTournamentFinished(state)) {
+            return {
+                mark: "finished",
+                endedAtMs: maxPreviousActionTimestamp(state.previousActions)
+            };
+        }
+        if (hasTournamentStarted(state)) return { mark: "started" };
         return null;
     } catch (err) {
         console.error("Failed to read tournament state:", err);
@@ -22,10 +31,19 @@ export function tournamentProgressFromPublicState(response: { game_state?: strin
 /**
  * Whether each visible scheduled table has started or already been won.
  * Public state only — no wallet, no subscription. Refresh on focus and every 15s.
+ * Finished progress includes endedAtMs from the last previousActions timestamp
+ * so the lobby can age out Finished rows after 24 hours.
  */
-export function useLobbyTournamentStarted(tableIds: string, refreshToken: unknown): Record<string, LobbyTournamentMark> {
+export function useLobbyTournamentStarted(
+    tableIds: string,
+    refreshToken: unknown
+): Record<string, LobbyTournamentProgress> {
     const api = useCosmosApi();
-    const [result, setResult] = useState<{ api: typeof api; tableIds: string; marks: Record<string, LobbyTournamentMark> } | null>(null);
+    const [result, setResult] = useState<{
+        api: typeof api;
+        tableIds: string;
+        marks: Record<string, LobbyTournamentProgress>;
+    } | null>(null);
     useEffect(() => {
         if (!tableIds) {
             setResult(null);
@@ -47,8 +65,8 @@ export function useLobbyTournamentStarted(tableIds: string, refreshToken: unknow
                     }
                 }));
                 if (!cancelled) {
-                    const marks: Record<string, LobbyTournamentMark> = {};
-                    for (const [id, mark] of entries) if (mark) marks[id] = mark;
+                    const marks: Record<string, LobbyTournamentProgress> = {};
+                    for (const [id, progress] of entries) if (progress) marks[id] = progress;
                     setResult({ api, tableIds, marks });
                 }
             } finally {

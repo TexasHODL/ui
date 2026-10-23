@@ -8,6 +8,7 @@ import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
 import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/game/useLobbyTournamentStarted";
+import { shouldHideEndedLobbyGame } from "../utils/lobbyEndedFilter";
 
 import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
 import { displayGameFormat } from "../utils/createGameType";
@@ -72,17 +73,25 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
             (treasuryOnly && treasuryAddress ? rawGames.filter(game => game.creator === treasuryAddress) : rawGames),
         [rawGames, treasuryOnly, ownedOnly, address]
     );
-    const games = useMemo(() => filterLobbyGames(clubGames, { format, search, openOnly, sort }), [clubGames, format, search, openOnly, sort]);
+    // All sit-and-go / tournament tables in the club list — needed before paging so
+    // Finished/Cancelled rows older than 24h can be filtered out of the lobby.
+    const tournamentIds = useMemo(
+        () => clubGames
+            .filter(game => isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat))
+            .map(game => game.gameId)
+            .join(","),
+        [clubGames]
+    );
+    const startedTables = useLobbyTournamentStarted(tournamentIds, rawGames);
+    const games = useMemo(() => {
+        const nowMs = Date.now();
+        return filterLobbyGames(clubGames, { format, search, openOnly, sort }).filter(
+            game => !shouldHideEndedLobbyGame(game, startedTables[game.gameId], nowMs)
+        );
+    }, [clubGames, format, search, openOnly, sort, startedTables]);
     const currentPage = Math.min(page, Math.max(1, Math.ceil(games.length / PAGE_SIZE)));
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
-    // Every sit-and-go and tournament on the page, scheduled or not. A finished
-    // table can be past the grace window or unscheduled with empty seats after
-    // busts; both still need public state so Watch can replace Open table.
-    const startedTables = useLobbyTournamentStarted(
-        pagedGames.filter(game => isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat)).map(game => game.gameId).join(","),
-        rawGames
-    );
     const occupiedSeats = clubGames.reduce((sum, game) => sum + game.currentPlayers, 0);
     const availableSeats = clubGames.reduce((sum, game) => sum + Math.max(0, game.maxPlayers - game.currentPlayers), 0);
     const hasFilters = format !== "all" || !!search || openOnly || ownedOnly;
@@ -250,7 +259,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
                                 const phase = scheduledPhase(game);
-                                const mark = startedTables[game.gameId];
+                                const progress = startedTables[game.gameId];
+                                const mark = progress?.mark;
                                 const played = mark === "started" || mark === "finished";
                                 const showCancelled = phase === "cancelled" && !played;
                                 const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
