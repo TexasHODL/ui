@@ -25,9 +25,15 @@ export const DECK_LABELS: Record<DeckId, string> = {
     P: "Tech Grid"
 };
 
-/** Dealer button styles (also the shared letter ids A–D). */
-export const STYLE_IDS = ["current", "A", "B", "C", "D"] as const;
+/**
+ * Dealer button styles. A–D are the SVG sets under assets/dealerstyles;
+ * E is the photoreal marble dealer (block52/cards ui#776 / #778), bundled as webp.
+ * Clean minimal (C) stays the default — marble is opt-in only.
+ */
+export const STYLE_IDS = ["current", "A", "B", "C", "D", "E"] as const;
 export type StyleId = (typeof STYLE_IDS)[number];
+/** Alias kept for callers that want the dealer list by name. */
+export const DEALER_STYLE_IDS = STYLE_IDS;
 
 /**
  * Chip styles: A–D match the SVG sets under assets/chipstyles; E is the
@@ -50,7 +56,8 @@ export const DEALER_STYLE_LABELS: Record<StyleId, string> = {
     A: "Classic acrylic",
     B: "Brand ring",
     C: "Clean minimal",
-    D: "Gold coin"
+    D: "Gold coin",
+    E: "Marble"
 };
 
 export interface TableStyles {
@@ -91,11 +98,11 @@ export const indexChipStyleUrls = (files: Record<string, string>): Record<string
     return out;
 };
 
-/** "../assets/dealerstyles/C.svg" -> { C: url }. */
+/** "../assets/dealerstyles/C.svg" -> { C: url }; E is dealerstyles/E.webp. */
 export const indexDealerStyleUrls = (files: Record<string, string>): Record<string, string> => {
     const out: Record<string, string> = {};
     for (const [file, url] of Object.entries(files)) {
-        const m = file.match(/dealerstyles\/([A-D])\.svg$/);
+        const m = file.match(/dealerstyles\/([A-E])\.(?:svg|webp)$/);
         if (m) out[m[1]] = url;
     }
     return out;
