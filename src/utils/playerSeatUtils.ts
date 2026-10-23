@@ -57,3 +57,28 @@ export function findUserSeat(
     const wanted = userAddress.toLowerCase();
     return players.find(p => p.address?.toLowerCase() === wanted)?.seat;
 }
+
+/**
+ * Most recent 1-based seat for `address` in this hand's action log.
+ *
+ * Used when `winner.seat` is the absent default (0) and the winner has already
+ * left `players[]` (Leave at END) — which is exactly when the win banner would
+ * otherwise fall through to "Unknown seat" despite History still knowing Seat N
+ * from earlier actions.
+ */
+export function findSeatFromActions(
+    actions: Array<{ playerId?: string; seat?: number }> | null | undefined,
+    address: string | null | undefined
+): number | undefined {
+    if (!hasContent(address) || !hasElements(actions)) return undefined;
+    const wanted = address.toLowerCase();
+    for (let i = actions.length - 1; i >= 0; i--) {
+        const action = actions[i];
+        if (action.playerId?.toLowerCase() === wanted) {
+            const seat = validSeat(action.seat);
+            if (seat !== undefined) return seat;
+        }
+    }
+    return undefined;
+}
+

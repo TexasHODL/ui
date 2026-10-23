@@ -33,7 +33,7 @@ describe("winnerBannerText", () => {
         );
     });
 
-    it("never shows Seat 0 when the seat is absent", () => {
+    it("last-resort label when seat stays unresolved (prefer resolving in useWinnerInfo)", () => {
         expect(
             winnerBannerText([{ seat: 0, formattedAmount: "0.54", description: "Trip Tens", winType: "showdown" }])
         ).toBe("Unknown seat wins the $0.54 pot with Trip Tens");

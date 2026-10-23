@@ -1,4 +1,4 @@
-import { findUserSeat, formatSeatLabel, isSeatBigBlind, validSeat } from "./playerSeatUtils";
+import { findSeatFromActions, findUserSeat, formatSeatLabel, isSeatBigBlind, validSeat } from "./playerSeatUtils";
 
 describe("findUserSeat", () => {
     const gameState = {
@@ -87,5 +87,32 @@ describe("formatSeatLabel", () => {
         expect(formatSeatLabel(0)).toBe("Unknown seat");
         expect(formatSeatLabel(null)).toBe("Unknown seat");
         expect(formatSeatLabel(undefined)).toBe("Unknown seat");
+    });
+});
+
+describe("findSeatFromActions", () => {
+    it("returns the most recent valid seat for the address (case-insensitive)", () => {
+        const actions = [
+            { playerId: "0xAa", seat: 1 },
+            { playerId: "0xBb", seat: 2 },
+            { playerId: "0xAA", seat: 1 }, // leave / later action still seat 1
+        ];
+        expect(findSeatFromActions(actions, "0xaa")).toBe(1);
+        expect(findSeatFromActions(actions, "0xBB")).toBe(2);
+    });
+
+    it("skips seat 0 / missing and keeps scanning older actions", () => {
+        const actions = [
+            { playerId: "0xa", seat: 3 },
+            { playerId: "0xa", seat: 0 },
+        ];
+        expect(findSeatFromActions(actions, "0xa")).toBe(3);
+    });
+
+    it("returns undefined when there is no match or no actions", () => {
+        expect(findSeatFromActions([{ playerId: "0xa", seat: 1 }], "0xb")).toBeUndefined();
+        expect(findSeatFromActions([], "0xa")).toBeUndefined();
+        expect(findSeatFromActions(null, "0xa")).toBeUndefined();
+        expect(findSeatFromActions([{ playerId: "0xa", seat: 1 }], "")).toBeUndefined();
     });
 });
