@@ -2,8 +2,17 @@
 export const CHIP_SIZE = 28;
 export const CHIP_SIZE_MOBILE = 32;
 
-/** One chip's size for the current window. The dealer button uses the same size. */
+/** One chip's size for the current window. */
 export function chipSizeForViewport(): number {
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
     return isMobile ? CHIP_SIZE_MOBILE : CHIP_SIZE;
+}
+
+/**
+ * Dealer button box size: 20% larger than one chip (34 desktop / 38 mobile).
+ * Matches seatEnvelope.buttonW so layout clearance already reserved for the
+ * larger disc. Square box keeps every style (including Marble) circular.
+ */
+export function dealerButtonSizeForViewport(): number {
+    return Math.round(chipSizeForViewport() * 1.2);
 }

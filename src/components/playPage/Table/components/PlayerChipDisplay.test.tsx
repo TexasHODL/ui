@@ -55,12 +55,14 @@ describe("dealer button beside the bet", () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it("sizes the button as one chip", () => {
+    it("sizes the button 20% larger than one chip", () => {
         const { container } = render(<PlayerChipDisplay seatIndex={1} left="0px" top="0px" bottom="0px" side="top" isTournament={false} isDealer />);
         const button = container.querySelector(".dealer-button") as HTMLElement;
         const chip = container.querySelector("img[alt$='chip']") as HTMLElement;
-        expect(button.style.width).toBe(chip.style.width);
-        expect(button.style.height).toBe(chip.style.height);
+        const chipPx = parseFloat(chip.style.width);
+        const expected = `${Math.round(chipPx * 1.2)}px`;
+        expect(button.style.width).toBe(expected);
+        expect(button.style.height).toBe(expected);
     });
 
     it("no longer draws a dealer button on the seat badge", () => {
