@@ -133,3 +133,18 @@ describe("shouldShowWinnerSummary", () => {
         expect(shouldShowWinnerSummary(undefined, [winner])).toBe(false);
     });
 });
+
+describe("getWinnerLine seat labels", () => {
+    it("never shows Seat 0", () => {
+        const line = getWinnerLine({
+            seat: 0,
+            address: "0x1234567890abcdef1234567890abcdef12345678",
+            amount: "540000",
+            formattedAmount: "0.54",
+            description: "Trip Tens",
+            winType: "showdown"
+        });
+        expect(line).toContain("Unknown seat");
+        expect(line).not.toContain("Seat 0");
+    });
+});

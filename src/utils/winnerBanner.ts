@@ -1,4 +1,5 @@
 import { hasElements } from "./guards";
+import { formatSeatLabel } from "./playerSeatUtils";
 
 /**
  * Builds the last-pot winner banner text (ui#848) from the resolved winners.
@@ -41,9 +42,9 @@ export function winnerBannerText(winners: BannerWinner[] | null | undefined): st
         // The engine's wording as-is, so the banner matches the seat labels and
         // hand log (wording changes belong upstream in the engine — see poker-vm).
         const hand = w.winType === "showdown" && engineHand ? ` with ${engineHand}` : "";
-        return `Seat ${w.seat} wins ${wonPhrase(w.formattedAmount)}${hand}`;
+        return `${formatSeatLabel(w.seat)} wins ${wonPhrase(w.formattedAmount)}${hand}`;
     }
-    return `Split pot — ${winners.map(w => `Seat ${w.seat} ${bannerAmount(w.formattedAmount)}`).join(" · ")}`;
+    return `Split pot — ${winners.map(w => `${formatSeatLabel(w.seat)} ${bannerAmount(w.formattedAmount)}`).join(" · ")}`;
 }
 
 /** Gap between the table's info bar and the banner (px). */

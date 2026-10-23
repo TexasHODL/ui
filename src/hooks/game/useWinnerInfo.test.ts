@@ -58,6 +58,48 @@ describe("useWinnerInfo winnerBySeat (#2455)", () => {
     });
 });
 
+
+describe("winner seat is 1-based (no Seat 0 banner)", () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it("falls back to players[] when winner.seat is 0 (absent stamp)", () => {
+        withState({
+            winners: [{ seat: 0, address: "0xa", amount: "540000", description: "Trip Tens", cards: ["TD", "TH"] }],
+            players: [{ seat: 1, address: "0xa" }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(1);
+        expect(result.current.winnerBySeat.get(1)?.description).toBe("Trip Tens");
+        expect(result.current.winnerBySeat.get(0)).toBeUndefined();
+    });
+
+    it("falls back to players[] when winner.seat is missing", () => {
+        withState({
+            winners: [{ address: "0xb", amount: "100", description: "Pair of Aces", cards: ["AS", "AH"] }],
+            players: [{ seat: 2, address: "0xb" }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(2);
+        expect(result.current.winnerBySeat.get(2)?.address).toBe("0xb");
+    });
+
+    it("prefers a stamped 1-based winner.seat over players[]", () => {
+        withState({
+            winners: [{ seat: 3, address: "0xa", amount: "100" }],
+            players: [{ seat: 1, address: "0xa" }]
+        });
+
+        const { result } = renderHook(() => useWinnerInfo());
+
+        expect(result.current.winnerInfo?.[0]?.seat).toBe(3);
+        expect(result.current.winnerBySeat.get(3)?.address).toBe("0xa");
+    });
+});
+
 describe("win amounts use the table's units (ui#727)", () => {
     afterEach(() => jest.clearAllMocks());
 

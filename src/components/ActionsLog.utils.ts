@@ -2,6 +2,7 @@ import { ActionDTO, NonPlayerActionType, TexasHoldemRound, TexasHoldemStateDTO }
 import { formatPlayerId, formatAmount } from "../utils/accountUtils";
 import { WinnerInfo } from "../types/index";
 import { hasElements } from "../utils/guards";
+import { formatSeatLabel } from "../utils/playerSeatUtils";
 
 /**
  * Actions whose amounts are MONETARY (USDC micro-units) even in tournaments:
@@ -101,13 +102,13 @@ export const getActionLine = (action: ActionDTO, isTournament: boolean): string 
     const actionName = formatActionName(action.action);
     const amount = formatActionAmount(action, isTournament);
     const round = formatRoundName(action.round);
-    return `${player} (Seat ${action.seat}): ${actionName}${amount} - ${round}`;
+    return `${player} (${formatSeatLabel(action.seat)}): ${actionName}${amount} - ${round}`;
 };
 
 export const getWinnerLine = (winner: WinnerInfo): string => {
     const player = formatPlayerId(winner.address);
     const hand = winner.description ? `${winner.description} — ` : "";
-    return `${player} (Seat ${winner.seat}): WINS ${hand}${winner.formattedAmount}`;
+    return `${player} (${formatSeatLabel(winner.seat)}): WINS ${hand}${winner.formattedAmount}`;
 };
 
 export const shouldShowWinnerSummary = (
