@@ -1,6 +1,7 @@
 import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
 import {
     LOBBY_ENDED_RETENTION_MS,
+    applyEndedLobbyRetention,
     maxPreviousActionTimestamp,
     shouldHideEndedLobbyGame
 } from "./lobbyEndedFilter";
@@ -79,5 +80,29 @@ describe("shouldHideEndedLobbyGame", () => {
 
     it("does not treat a started-then-cancelled schedule as cancelled when mark is started", () => {
         expect(shouldHideEndedLobbyGame(cancelledGame, { mark: "started" }, now)).toBe(false);
+    });
+});
+
+describe("applyEndedLobbyRetention", () => {
+    const oldFinished = {
+        gameId: "0xabadfinished",
+        scheduledStartTime: now - 48 * HOUR,
+        minPlayers: 2,
+        currentPlayers: 1
+    };
+    const progress = {
+        [oldFinished.gameId]: { mark: "finished" as const, endedAtMs: now - 48 * HOUR }
+    };
+
+    it("hides past-24h finished rows when search is empty", () => {
+        expect(applyEndedLobbyRetention([oldFinished], progress, now, "").map(g => g.gameId)).toEqual([]);
+        expect(applyEndedLobbyRetention([oldFinished], progress, now, "   ").map(g => g.gameId)).toEqual([]);
+    });
+
+    it("keeps past-24h finished rows when search is non-empty (e.g. game id)", () => {
+        expect(applyEndedLobbyRetention([oldFinished], progress, now, oldFinished.gameId).map(g => g.gameId))
+            .toEqual([oldFinished.gameId]);
+        expect(applyEndedLobbyRetention([oldFinished], progress, now, "abad").map(g => g.gameId))
+            .toEqual([oldFinished.gameId]);
     });
 });

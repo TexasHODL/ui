@@ -8,7 +8,7 @@ import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
 import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/game/useLobbyTournamentStarted";
-import { shouldHideEndedLobbyGame } from "../utils/lobbyEndedFilter";
+import { applyEndedLobbyRetention } from "../utils/lobbyEndedFilter";
 
 import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
 import { displayGameFormat } from "../utils/createGameType";
@@ -84,10 +84,9 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     );
     const startedTables = useLobbyTournamentStarted(tournamentIds, rawGames);
     const games = useMemo(() => {
-        const nowMs = Date.now();
-        return filterLobbyGames(clubGames, { format, search, openOnly, sort }).filter(
-            game => !shouldHideEndedLobbyGame(game, startedTables[game.gameId], nowMs)
-        );
+        const filtered = filterLobbyGames(clubGames, { format, search, openOnly, sort });
+        // Non-empty search skips 24h aging so users can find old finished tables by id.
+        return applyEndedLobbyRetention(filtered, startedTables, Date.now(), search);
     }, [clubGames, format, search, openOnly, sort, startedTables]);
     const currentPage = Math.min(page, Math.max(1, Math.ceil(games.length / PAGE_SIZE)));
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);

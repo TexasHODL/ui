@@ -55,3 +55,20 @@ export function shouldHideEndedLobbyGame(
     const cancelAt = (game.scheduledStartTime as number) + SCHEDULED_SNG_GRACE_MS;
     return nowMs >= cancelAt + LOBBY_ENDED_RETENTION_MS;
 }
+
+/**
+ * Drop past-retention Finished/Cancelled rows from an already-filtered lobby
+ * list. When the user has typed a search query, skip aging so they can still
+ * find an old finished table by id (or name) to review the finishing hand.
+ */
+export function applyEndedLobbyRetention<
+    T extends { gameId: string; scheduledStartTime?: number; minPlayers: number; currentPlayers: number }
+>(
+    games: T[],
+    progressById: Record<string, LobbyEndedProgress | undefined>,
+    nowMs: number,
+    search: string
+): T[] {
+    if (search.trim()) return games;
+    return games.filter(game => !shouldHideEndedLobbyGame(game, progressById[game.gameId], nowMs));
+}
