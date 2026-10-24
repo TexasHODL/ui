@@ -49,7 +49,8 @@ const scheduledLabel = (game: GameWithFormat, mark: LobbyTournamentMark | undefi
         scheduledStartTime: game.scheduledStartTime,
         minPlayers: game.minPlayers,
         started: mark === "started" || mark === "finished",
-        finished: mark === "finished"
+        finished: mark === "finished",
+        lateRegistrationLevels: game.lateRegistrationLevels
     });
 
 const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, refreshKey = 0 }) => {
