@@ -20,7 +20,7 @@ import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
-import { defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
+import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
@@ -430,13 +430,16 @@ export default function TableAdminPage() {
                                         aria-label="Betting limit"
                                         value={bettingLimit}
                                         onChange={e => {
-                                            const limit = toCreatableBettingLimit(e.target.value);
+                                            const limit = toCreatableBettingLimit(e.target.value, gameVariant);
                                             if (limit) setBettingLimit(limit);
                                         }}
                                         className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     >
-                                        <option value={BettingLimit.NO_LIMIT}>No-Limit</option>
-                                        <option value={BettingLimit.POT_LIMIT}>Pot-Limit</option>
+                                        {creatableBettingLimits(gameVariant).map(limit => (
+                                            <option key={limit} value={limit}>
+                                                {bettingLimitLabel(limit)}
+                                            </option>
+                                        ))}
                                     </select>
                                 </div>
                                 <div>
