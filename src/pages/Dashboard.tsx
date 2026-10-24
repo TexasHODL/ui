@@ -5,7 +5,7 @@ import { TABLE_SEAT_OPTIONS } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
-import { localDateTimeToUnixSeconds, scheduledStartRejection } from "../utils/scheduledSng";
+import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "../utils/scheduledSng";
 import { useNavigate } from "react-router-dom";
 
 import "./Dashboard.css";
@@ -59,9 +59,6 @@ import { colors } from "../utils/colorConfig";
 
 /** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
 const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
-// Late registration choices for a tournament (poker-vm#2731): 0 = off, else the
-// number of blind levels it stays open after the start.
-const LATE_REGISTRATION_LEVEL_OPTIONS = [0, 1, 2, 3, 4, 6];
 const STACK_PRESETS = [
     { value: 1000, label: "Turbo (1000)" },
     { value: 1500, label: "Standard (1500)" },
@@ -881,7 +878,7 @@ const Dashboard: React.FC = () => {
                                                         >
                                                             {LATE_REGISTRATION_LEVEL_OPTIONS.map(n => (
                                                                 <option key={n} value={n}>
-                                                                    {n === 0 ? "Off: the field is fixed at the start" : `Open for the first ${n} blind level${n === 1 ? "" : "s"}`}
+                                                                    {lateRegistrationOptionLabel(n)}
                                                                 </option>
                                                             ))}
                                                         </select>
