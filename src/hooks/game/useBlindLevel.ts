@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import type { BlindStructureDTO } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatChipCount } from "../../utils/potDisplayUtils";
@@ -31,6 +32,11 @@ export interface BlindLevelInfo {
     isActive: boolean;
     /** Whether we have enough data to show the timer */
     hasTimer: boolean;
+    /**
+     * The table's blind structure (a preset or a concrete structure), when it was
+     * created with one; undefined means the blinds simply double every level.
+     */
+    blindStructure?: BlindStructureDTO;
 }
 
 /**
@@ -127,6 +133,7 @@ export const useBlindLevel = (): BlindLevelInfo => {
         secondsRemaining,
         levelDurationSeconds,
         isActive,
-        hasTimer
+        hasTimer,
+        blindStructure: gameOptions?.blindStructure
     };
 };

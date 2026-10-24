@@ -78,6 +78,7 @@ import LiveHandStrengthDisplay from "./LiveHandStrengthDisplay";
 import { useGameStateSounds } from "../../hooks/notifications/useGameStateSounds";
 import NoWalletOverlay from "./NoWalletOverlay";
 import SngPayoutPanel from "./SngPayoutPanel";
+import BlindsPanel from "./BlindsPanel";
 
 // Table Error Page
 import TableErrorPage from "./TableErrorPage";
@@ -1407,6 +1408,9 @@ const Table = React.memo(() => {
                 )}
 
                 </div>
+                {/* Blinds structure panel (ui#794) — self-gates to SNG/tournament;
+                    non-modal floating tab + panel. Hidden in replay mode. */}
+                {!isReplayMode && <BlindsPanel />}
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
                 {isCompactMobile && <LiveHandStrengthDisplay />}
