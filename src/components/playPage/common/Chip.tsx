@@ -138,7 +138,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
                         <img
                             key={`s${si}-c${ci}`}
                             src={chipUrl(stack.file, getChipImageUrl(stack.file))}
-                            alt={`$${stack.value} chip`}
+                            alt={isTournament ? `${stack.value} chip` : `$${stack.value} chip`}
                             style={{
                                 position: "absolute",
                                 left: `${pos.x}px`,
