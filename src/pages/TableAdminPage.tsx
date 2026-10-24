@@ -3,7 +3,7 @@ import "../components/common/TableCreation.css";
 import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { localDateTimeToUnixSeconds, scheduledStartRejection } from "../utils/scheduledSng";
+import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "../utils/scheduledSng";
 import { BettingLimit, GameFormat, GameVariant, CosmosClient, getDefaultCosmosConfig, PlayerDTO, computeGameNameFee } from "@block52/poker-vm-sdk";
 import { Link, useNavigate } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
@@ -63,6 +63,7 @@ export default function TableAdminPage() {
     const [scheduled, setScheduled] = useState(false);
     const [scheduledStart, setScheduledStart] = useState(""); // datetime-local value
     const [sngMinPlayers, setSngMinPlayers] = useState(2);
+    const [lateRegLevels, setLateRegLevels] = useState(0); // poker-vm#2731; 0 = off
 
     // Selected blind level (index in BLIND_LEVELS array) — cash games only
     const [selectedBlindLevel, setSelectedBlindLevel] = useState(DEFAULT_BLIND_LEVEL_INDEX);
@@ -227,7 +228,8 @@ export default function TableAdminPage() {
                   startingStack,
                   blindLevelDuration,
                   entryFee: parseFloat(entryFee) || 0,
-                  ...(isScheduled && { startTime })
+                  ...(isScheduled && { startTime }),
+                  ...(isScheduled && lateRegLevels > 0 && { lateRegistrationLevels: lateRegLevels })
               }
             : undefined;
 
@@ -523,8 +525,25 @@ export default function TableAdminPage() {
                                                     ))}
                                                 </select>
                                             </div>
+                                            <div className="sm:col-span-2">
+                                                <label className="text-gray-300 text-xs mb-1 block">Late registration</label>
+                                                <select
+                                                    data-testid="late-registration"
+                                                    aria-label="Late registration"
+                                                    value={lateRegLevels}
+                                                    onChange={e => setLateRegLevels(parseInt(e.target.value))}
+                                                    className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                                >
+                                                    {LATE_REGISTRATION_LEVEL_OPTIONS.map(n => (
+                                                        <option key={n} value={n}>
+                                                            {lateRegistrationOptionLabel(n)}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                             <p className="sm:col-span-2 text-gray-500 text-xs">
                                                 Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                {lateRegLevels > 0 && " Late entrants take an empty seat with a full starting stack until the window closes or someone finishes in the money."}
                                             </p>
                                         </div>
                                     </ScheduledStartCard>
