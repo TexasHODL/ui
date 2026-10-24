@@ -4,6 +4,10 @@ import {
     describeTransaction,
     formatPrizeClaimLabel,
     placeFromFinishingOrder,
+    placeFromGameResults,
+    placeFromPrizePayouts,
+    resolvePrizePlace,
+    parseGamePrizeMeta,
     findSngPrizeClaimed,
     formatActionAmount,
     parseGameFormat,
@@ -302,10 +306,10 @@ describe("describeTransaction", () => {
             }
         };
         expect(describeTransaction(claim, me)).toMatchObject({
-            label: "Win",
+            label: "Prize claim",
             messageType: "MsgLeaveGame",
             gameId: "0x318a",
-            prizePlace: 1,
+            prizePlace: undefined,
             isPrizeClaim: true,
             transferAmount: "270000",
             transferDirection: "received"
@@ -338,7 +342,7 @@ describe("describeTransaction", () => {
                 }
             }
         };
-        expect(describeTransaction(third, me)).toMatchObject({ label: "3rd place", prizePlace: 3, isPrizeClaim: true });
+        expect(describeTransaction(third, me)).toMatchObject({ label: "Prize claim", prizePlace: undefined, isPrizeClaim: true });
     });
 
     it("formats prize-claim titles from place and game format", () => {
@@ -350,6 +354,41 @@ describe("describeTransaction", () => {
         expect(formatPrizeClaimLabel(3, undefined)).toBe("3rd place");
         expect(formatPrizeClaimLabel(undefined, "sit-and-go")).toBe("Sit & Go prize");
         expect(placeFromFinishingOrder(["a", "b", "c"], "b")).toBe(2);
+        // Early ITM finishing_order is place-sorted busted-only: 3rd at index 0 must NOT be treated as a win.
+        const earlyItmOrder = ["b52third", "b52fourth", "b52fifth"];
+        expect(placeFromFinishingOrder(earlyItmOrder, "b52third")).toBe(1); // misleading index — do not use for labels
+        expect(
+            resolvePrizePlace({
+                player: "b52third",
+                results: [
+                    { place: 3, playerId: "b52third", payout: "2880000" },
+                    { place: 4, playerId: "b52fourth", payout: "0" }
+                ],
+                payouts: [
+                    { place: 1, amount: "7200000" },
+                    { place: 2, amount: "4320000" },
+                    { place: 3, amount: "2880000" }
+                ],
+                prizeAmount: "2880000"
+            })
+        ).toBe(3);
+        expect(placeFromGameResults([{ place: 3, playerId: "B52THIRD" }], "b52third")).toBe(3);
+        expect(placeFromPrizePayouts("2880000", [{ place: 3, amount: "2880000" }])).toBe(3);
+        expect(
+            parseGamePrizeMeta({
+                game: JSON.stringify({
+                    format: "sit-and-go",
+                    gameState: {
+                        results: [{ place: 3, playerId: "b52third", payout: "2880000" }],
+                        payouts: [{ place: 3, amount: "2880000" }]
+                    }
+                })
+            })
+        ).toMatchObject({
+            format: "sit-and-go",
+            results: [{ place: 3, playerId: "b52third", payout: "2880000" }],
+            payouts: [{ place: 3, amount: "2880000" }]
+        });
         expect(findSngPrizeClaimed([{ type: "sng_prize_claimed", attributes: [{ key: "player", value: "B52X" }, { key: "amount", value: "1" }] }], "b52x")).toEqual({
             amount: "1",
             gameId: undefined,
