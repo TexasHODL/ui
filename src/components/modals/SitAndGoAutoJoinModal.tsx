@@ -22,7 +22,7 @@ import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { isEmpty, hasValue } from "../../utils/guards";
-import { isScheduledSng, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { formatStartsAt, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
 import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
@@ -41,7 +41,10 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
 
     // Get the game state context to force refresh after joining
     const { subscribeToTable, gameState, gameVariant, gameFormat } = useGameStateContext();
-    const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
+    // Late registration (poker-vm#2731): a started tournament still takes players while the window is open.
+    const lateRegPhase = lateRegistrationPhase(gameState, Date.now());
+    const lateRegEndsAt = gameState ? lateRegistrationEndsAt(gameState.gameOptions) : undefined;
+    const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState) && lateRegPhase !== "open";
 
     // Scheduled start (poker-vm#2680): live countdown before Take My Seat, and
     // refuse a seat at a cancelled table (the chain refuses the join too).
@@ -59,6 +62,11 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         nowMs
     });
     const isCancelled = scheduledPhase === "cancelled";
+
+    // Late registration (poker-vm#2731): a started tournament may still take
+    // new players for its first few blind levels; once that window shuts the
+    // chain refuses the join, so the seat button is disabled too.
+    const isRegistrationClosed = isCancelled || lateRegPhase === "closed";
 
     // Get Cosmos address once
     const publicKey = useMemo(() => localStorage.getItem(STORAGE_KEYS.cosmosAddress) || undefined, []);
@@ -288,6 +296,14 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 <p className="tournament-error" data-testid="scheduled-cancelled">
                     Cancelled: not enough players registered by the start time.
                 </p>
+            ) : lateRegPhase === "closed" ? (
+                <p className="tournament-error" data-testid="late-registration-closed">
+                    Registration has closed: the tournament is under way.
+                </p>
+            ) : lateRegPhase === "open" ? (
+                <p className="tournament-note" data-testid="late-registration-open">
+                    Late registration open{hasValue(lateRegEndsAt) ? ` until ${formatStartsAt(lateRegEndsAt)}` : ""}: join with a full starting stack
+                </p>
             ) : scheduledPhase === "registering" && hasValue(gameOptions?.scheduledStartTime) && (
                 <ScheduledStartCountdown
                     scheduledStartTime={gameOptions.scheduledStartTime}
@@ -299,9 +315,9 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
             )}
             {buyInError && <p className="tournament-error" role="alert">{buyInError}</p>}
             <button onClick={handleTakeSeat}
-                disabled={isCancelled || isJoining || isBalanceLoading || balanceFormatted < parseFloat(maxBuyInFormatted) || isEmpty(emptySeatIndexes)}
+                disabled={isRegistrationClosed || isJoining || isBalanceLoading || balanceFormatted < parseFloat(maxBuyInFormatted) || isEmpty(emptySeatIndexes)}
                 className="hodl-primary">
-                {isCancelled ? "Cancelled" : isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
+                {isCancelled ? "Cancelled" : isRegistrationClosed ? "Registration Closed" : isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
                     ? "Insufficient Balance" : isEmpty(emptySeatIndexes) ? "Table Full" : "Take My Seat"}
             </button>
             <p className="tournament-note">

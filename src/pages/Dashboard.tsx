@@ -59,6 +59,9 @@ import { colors } from "../utils/colorConfig";
 
 /** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
 const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
+// Late registration choices for a tournament (poker-vm#2731): 0 = off, else the
+// number of blind levels it stays open after the start.
+const LATE_REGISTRATION_LEVEL_OPTIONS = [0, 1, 2, 3, 4, 6];
 const STACK_PRESETS = [
     { value: 1000, label: "Turbo (1000)" },
     { value: 1500, label: "Standard (1500)" },
@@ -132,6 +135,7 @@ const Dashboard: React.FC = () => {
     const [modalScheduled, setModalScheduled] = useState(false);
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
+    const [modalLateRegLevels, setModalLateRegLevels] = useState(0); // poker-vm#2731; 0 = off
     const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(1); // 25 / 50
     // Blind structure (ui#860, poker-vm#1734): doubling (the two selects above
     // and below), an engine preset, or a custom structure in the SDK's text form.
@@ -268,7 +272,8 @@ const Dashboard: React.FC = () => {
                         blindLevelDuration: sngOpeningBlinds?.durationMinutes ?? modalBlindLevelDuration,
                         entryFee,
                         ...(blindPlan.structure && { blindStructure: blindPlan.structure }),
-                        ...(scheduled && { startTime })
+                        ...(scheduled && { startTime }),
+                        ...(scheduled && modalLateRegLevels > 0 && { lateRegistrationLevels: modalLateRegLevels })
                     }
                 }),
                 ...(modalGameFormat === GameFormat.CASH && enableRake && { rake: {
@@ -861,8 +866,25 @@ const Dashboard: React.FC = () => {
                                                             ))}
                                                         </select>
                                                     </div>
+                                                    <div className="sm:col-span-2">
+                                                        <label className="block text-gray-300 text-xs mb-1">Late registration</label>
+                                                        <select
+                                                            data-testid="late-registration"
+                                                            aria-label="Late registration"
+                                                            value={modalLateRegLevels}
+                                                            onChange={e => setModalLateRegLevels(Number(e.target.value))}
+                                                            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+                                                        >
+                                                            {LATE_REGISTRATION_LEVEL_OPTIONS.map(n => (
+                                                                <option key={n} value={n}>
+                                                                    {n === 0 ? "Off: the field is fixed at the start" : `Open for the first ${n} blind level${n === 1 ? "" : "s"}`}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                     <p className="sm:col-span-2 text-gray-400 text-xs">
                                                         Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                        {modalLateRegLevels > 0 && " Late entrants take an empty seat with a full starting stack until the window closes or someone finishes in the money."}
                                                     </p>
                                                 </div>
                                             </ScheduledStartCard>
