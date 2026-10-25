@@ -7,7 +7,13 @@ export type LobbyFormat = "all" | "cash" | "tournament";
 export type LobbySort = "activity" | "buyin";
 
 /** Minimal progress mark from useLobbyTournamentStarted (Started / Finished). */
-export type LobbyGameProgress = { mark: "started" | "finished" };
+export type LobbyGameProgress = { mark: "started" | "finished"; lateRegOpen?: boolean; lateRegEndsAtMs?: number };
+
+/** A started tournament that still takes late entrants (poker-vm#2731). */
+export function isLateRegistrationOpenProgress(progress: LobbyGameProgress | undefined, nowMs: number): boolean {
+    if (progress?.mark !== "started" || progress.lateRegOpen !== true) return false;
+    return typeof progress.lateRegEndsAtMs !== "number" || nowMs < progress.lateRegEndsAtMs;
+}
 
 export type FilterLobbyGamesOptions = {
     format: LobbyFormat;
@@ -26,6 +32,7 @@ export type FilterLobbyGamesOptions = {
 /**
  * True when the table is not joinable: full, or a sit-and-go/tournament that
  * has Started/Finished (no late entry), or a Cancelled scheduled SNG.
+ * A started tournament with late registration open stays joinable.
  */
 export function isLobbyGameUnavailable(
     game: GameWithFormat,
@@ -35,6 +42,7 @@ export function isLobbyGameUnavailable(
     if (game.currentPlayers >= game.maxPlayers) return true;
     const tournamentStyle = isSitAndGoFormat(game.gameFormat) || isTournamentFormat(game.gameFormat);
     if (!tournamentStyle) return false;
+    if (isLateRegistrationOpenProgress(progress, nowMs)) return false;
     if (progress?.mark === "started" || progress?.mark === "finished") return true;
     const phase = scheduledSngPhase({
         scheduledStartTime: game.scheduledStartTime,

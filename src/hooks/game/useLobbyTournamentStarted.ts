@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { parseGameStateJson } from "../../utils/handReplay";
 import { maxPreviousActionTimestamp, type LobbyEndedProgress } from "../../utils/lobbyEndedFilter";
-import { hasTournamentFinished, hasTournamentStarted } from "../../utils/scheduledSng";
+import { hasTournamentFinished, hasTournamentStarted, lateRegistrationEndsAt, lateRegistrationPhase } from "../../utils/scheduledSng";
 
 export type LobbyTournamentMark = "started" | "finished";
 export type LobbyTournamentProgress = LobbyEndedProgress;
@@ -20,7 +20,13 @@ export function tournamentProgressFromPublicState(
                 endedAtMs: maxPreviousActionTimestamp(state.previousActions)
             };
         }
-        if (hasTournamentStarted(state)) return { mark: "started" };
+        if (hasTournamentStarted(state)) {
+            // Late registration (poker-vm#2731): still joinable while the window is open.
+            if (lateRegistrationPhase(state, Date.now()) === "open") {
+                return { mark: "started", lateRegOpen: true, lateRegEndsAtMs: state.gameOptions ? lateRegistrationEndsAt(state.gameOptions) : undefined };
+            }
+            return { mark: "started" };
+        }
         return null;
     } catch (err) {
         console.error("Failed to read tournament state:", err);

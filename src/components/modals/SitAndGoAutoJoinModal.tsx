@@ -22,7 +22,7 @@ import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { isEmpty, hasValue } from "../../utils/guards";
-import { formatStartsAt, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
 import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
@@ -61,7 +61,8 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         registered: gameState?.players?.length ?? 0,
         nowMs
     });
-    const isCancelled = scheduledPhase === "cancelled";
+    // Busted players leave the seat count below minPlayers after the start; that is not a cancellation.
+    const isCancelled = scheduledPhase === "cancelled" && !hasTournamentStarted(gameState);
 
     // Late registration (poker-vm#2731): a started tournament may still take
     // new players for its first few blind levels; once that window shuts the
