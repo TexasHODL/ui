@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from "react";
 import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { hasContent, hasElements } from "../../utils/guards";
+import { hasContent, hasElements, isNullish } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
@@ -40,7 +40,7 @@ import { usePlayerTimer } from "../../hooks/player/usePlayerTimer";
 import { useAutoShowCards } from "../../hooks/playerActions/useAutoShowCards";
 import { useAutoMuck } from "../../hooks/playerActions/useAutoMuck";
 
-// Import raw action hooks — these THROW on failure (unlike the handle* wrappers
+// Import raw action hooks â€” these THROW on failure (unlike the handle* wrappers
 // in actionHandlers, which swallow errors). Submission goes through the
 // ActionSubmitController, which owns dedupe / serialize / retry / error toasts.
 import { betHand } from "../../hooks/playerActions/betHand";
@@ -77,9 +77,9 @@ import { hasFoldedOrMucked } from "../../utils/playerStatus";
 export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, network, onTransactionSubmitted }) => {
     // The ActionSubmitController owns dedupe, serialization, the safe transport
     // retry, the confirmation gate (busy stays until the chain advances a signal
-    // — ui#364/#440), the 8s escape-hatch, and centralized error toasts.
-    // Every submission from this panel — manual buttons AND the automatic hooks
-    // (new-hand / blinds / deal / fold / pre-action / show / muck) — goes through
+    // â€” ui#364/#440), the 8s escape-hatch, and centralized error toasts.
+    // Every submission from this panel â€” manual buttons AND the automatic hooks
+    // (new-hand / blinds / deal / fold / pre-action / show / muck) â€” goes through
     // the one ActionSubmitController (ui#635), so its loadingAction is the single
     // source for every spinner.
     const { submit, loadingAction, isBusy: isSubmitBusy, lastError: submitLastError } = useActionSubmit();
@@ -253,7 +253,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Pre-select "Check/Fold" (ui#388): before it's the player's turn, if checking
     // would be free, offer a box that checks when action reaches them, or folds if
-    // someone bets first. Ephemeral per-round intent — NOT a persisted setting.
+    // someone bets first. Ephemeral per-round intent â€” NOT a persisted setting.
     // The pre-action bar (ui#388): while it is not the player's turn they arm one of
     // Check/Fold, Check | Call {amount}, or Call Any, which fires on their turn.
     const [preAction, setPreAction] = useState<PreAction | null>(null);
@@ -261,14 +261,14 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Whether the player will be able to CHECK when action returns to them: no one has
     // out-committed them this round AND they have not themselves bet/called this round
-    // (after committing, action only returns via a raise they must answer — ui#388).
+    // (after committing, action only returns via a raise they must answer â€” ui#388).
     const canCheckNext = useMemo(() => {
         const even = isCheckFreeForPlayer(players, userAddress, gameState?.round, gameState?.previousActions ?? []);
         const committed = hasVoluntarilyCommittedThisRound(userAddress ?? "", gameState?.round ?? "", gameState?.previousActions ?? []);
         return even && !committed;
     }, [players, userAddress, gameState?.round, gameState?.previousActions]);
 
-    // Chips owed to call right now (0 when even) — drives the "Call {amount}" button and
+    // Chips owed to call right now (0 when even) â€” drives the "Call {amount}" button and
     // is available before the turn, when there is no CALL legal action yet.
     const preActionCallMicro = useMemo(
         () => amountToCallMicroForPlayer(players, userAddress, gameState?.round, gameState?.previousActions ?? []),
@@ -276,9 +276,9 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     );
     const preActionStackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
 
-    // Which pre-action buttons to show: can check → Check/Fold·Check·Call Any;
-    // owe a bet you can cover → Fold·Call {amount}·Call Any; calling would jam → Fold·All In;
-    // committed with nothing owed → Check/Fold, so a later raise can be folded in advance.
+    // Which pre-action buttons to show: can check â†’ Check/FoldÂ·CheckÂ·Call Any;
+    // owe a bet you can cover â†’ FoldÂ·Call {amount}Â·Call Any; calling would jam â†’ FoldÂ·All In;
+    // committed with nothing owed â†’ Check/Fold, so a later raise can be folded in advance.
     const preActionBtns = useMemo(() => {
         const owesBet = preActionCallMicro > BigInt(0);
         const callIsAllInPre = owesBet && preActionStackMicro > BigInt(0) && preActionCallMicro >= preActionStackMicro;
@@ -315,9 +315,9 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const maxRaiseMicro = useMemo(() => parseMicroToBigInt(raiseAction?.max), [raiseAction]);
     const callAmountMicro = useMemo(() => parseMicroToBigInt(callAction?.min), [callAction]);
 
-    // Convert to display values — USDC conversion for cash, raw chips for tournaments
+    // Convert to display values â€” USDC conversion for cash, raw chips for tournaments
     const toDisplay = useCallback((micro: bigint) => (isTournament ? Number(micro) : microBigIntToUsdc(micro)), [isTournament]);
-    // Convert display values back to chain units — raw bigint for tournaments, ×10^6 for cash
+    // Convert display values back to chain units â€” raw bigint for tournaments, Ã—10^6 for cash
     const fromDisplay = useCallback((display: number) => (isTournament ? BigInt(Math.floor(display)) : usdcToMicroBigInt(display)), [isTournament]);
     const minBet = useMemo(() => toDisplay(minBetMicro), [toDisplay, minBetMicro]);
     const maxBet = useMemo(() => toDisplay(maxBetMicro), [toDisplay, maxBetMicro]);
@@ -372,7 +372,10 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // once it is their turn and the armed action resolves to a real move, usePreAction
     // submits it, so the action controls are suppressed (no flash of the betting bar).
     const preActionLegal = { hasCheckAction, hasCallAction, hasFoldAction };
-    const preActionFiring = isUsersTurn && preAction != null && resolvePreAction(preAction, preActionLegal) != null;
+    // "Call {amount}" fires only at the amount it was armed at (ui#875).
+    const preActionCallGuard = { armedCallMicro, owedMicro: preActionCallMicro };
+    const preActionFiring =
+        isUsersTurn && !isNullish(preAction) && !isNullish(resolvePreAction(preAction, preActionLegal, preActionCallGuard));
 
     const clearPreAction = useCallback(() => {
         setPreAction(null);
@@ -388,7 +391,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         submit,
         isSubmitBusy,
         onTransactionSubmitted,
-        clearPreAction
+        clearPreAction,
+        preActionCallGuard
     );
 
     // All-in as a FE label (poker-vm#2351/#2353). The engine never advertises an
@@ -398,7 +402,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     //     bet slider, so render a dedicated ALL-IN button that dispatches
     //     RAISE(stack) and suppress the normal raise button + slider.
     //   - Capped all-in CALL (facing a bet >= stack, no raise): the normal CALL
-    //     button already commits the whole stack — just relabel it "Call (All-In)".
+    //     button already commits the whole stack â€” just relabel it "Call (All-In)".
     const stackMicro = useMemo(() => parseMicroToBigInt(userPlayer?.stack), [userPlayer?.stack]);
     const shortShoveRaise = useMemo(() => isShortShoveRaise(legalActions, stackMicro), [legalActions, stackMicro]);
     const callIsAllIn = useMemo(() => isCappedAllInCall(legalActions, stackMicro), [legalActions, stackMicro]);
@@ -552,7 +556,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     };
 
     // Short-shove ALL-IN: dispatch the all-in-only RAISE for the whole stack (the
-    // real legal action — no ALL_IN dispatch). Commits immediately; there is no
+    // real legal action â€” no ALL_IN dispatch). Commits immediately; there is no
     // amount to stage. (poker-vm#2353, ui#457)
     const handleShortShoveAllInAction = () => {
         if (!hasContent(tableId)) return;
@@ -631,7 +635,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                         : "flex flex-col w-full justify-center rounded-lg relative z-10 lg:w-[570px] mx-4 lg:mx-0 space-y-2 lg:space-y-3 max-w-full"
                 }
             >
-                {/* Pre-action bar (ui#388) — shown when it's not your turn: Check/Fold,
+                {/* Pre-action bar (ui#388) â€” shown when it's not your turn: Check/Fold,
                     Check | Call {amount}, and Call Any. Arm one and it fires on your turn
                     with no betting bar. On a phone it stays inside the action dock. */}
                 {showPreActions && (
@@ -671,7 +675,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 )}
 
                 {/* Auto-new-hand: hold on the showdown for a beat, showing a
-                    "Dealing hand #X…" indicator before the next hand deals (ui#443) */}
+                    "Dealing hand #Xâ€¦" indicator before the next hand deals (ui#443) */}
                 {autoNewHandEnabled && isDealingNewHand && !controlsPending && (
                     <div className="flex justify-center mb-2 lg:mb-3">
                         <ActionButton
@@ -689,7 +693,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                 {/* Only show other buttons if deal button is not showing */}
                 {!hideOtherButtons && (
                     <>
-                        {/* Showdown Buttons — gated on isUsersTurn like every other
+                        {/* Showdown Buttons â€” gated on isUsersTurn like every other
                             control (ui#697). In the sequenced clockwise showdown
                             (poker-vm#2140) the engine offers SHOW/MUCK only to the single
                             pending losing-hand player (nextToAct); a forced/auto reveal
