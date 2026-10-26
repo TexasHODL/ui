@@ -22,10 +22,13 @@ import { hasElements } from "../../../utils/guards";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
+import { getAvatarSide } from "../../../config/stageGeometry";
 
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
     ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
         const { id } = useParams<{ id: string }>();
+        // NFT avatar on the outer side of the pod (ui#835)
+        const avatarChipClass = getAvatarSide(left) === "left" ? `${styles.avatarChip} ${styles.avatarChipLeft}` : styles.avatarChip;
         const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
         const { winnerInfo, winnerBySeat } = useWinnerInfo();
         const winnerCards = useWinnerCards();
@@ -170,8 +173,8 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             src={selectedAvatarUrl}
                             alt="Player avatar"
                             imgClassName={styles.avatarImage}
-                            chipClassName={styles.avatarChip}
-                            fallbackClassName={`${styles.avatarChip} ${styles.avatarFallback}`}
+                            chipClassName={avatarChipClass}
+                            fallbackClassName={`${avatarChipClass} ${styles.avatarFallback}`}
                         />
                     )}
                     {/* Spacer preserves the 55px flow height the old status bar occupied */}

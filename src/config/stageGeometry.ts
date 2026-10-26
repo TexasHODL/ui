@@ -20,7 +20,7 @@
  * 3. DERIVED POSITIONS
  *    Chips, dealer buttons, and animations are calculated from seat positions:
  *      - Chips:      40% from seat toward table center (adjust CHIP_DISTANCE)
- *      - Dealer:     30% from seat toward table center (adjust DEALER_DISTANCE)
+ *      - Dealer:     on the seat->centre ray, just clear of the pod and the bet (ui#835)
  *      - Turn anim:  seat position + 80px down (adjust TURN_ANIM_Y_OFFSET)
  *      - Win anim:   same as seat position
  *
@@ -33,7 +33,7 @@
  * ═══════════════════════════════════════════════════════════════════════
  *
  * To move ALL chips/dealers/animations globally:
- *   → Change the distance constants: CHIP_DISTANCE, DEALER_DISTANCE, TURN_ANIM_Y_OFFSET
+ *   → Change the distance constants: CHIP_DISTANCE, DEALER_POD_GAP, TURN_ANIM_Y_OFFSET
  *
  * To nudge ONE specific seat's element by a few pixels:
  *   → Add an entry to GLOBAL_OFFSETS (applies on all screen sizes)
@@ -293,11 +293,6 @@ const SEAT_SPREAD = -30;
 /** How far chips sit from seat toward table center (0 = at seat, 1 = at center) */
 const CHIP_DISTANCE = 0.42;
 
-/** How far dealer button sits from seat toward table center.
- *  0.5 = halfway between seat and center — ensures button is ON the table surface
- *  for all seats including top (5,6) and edge (7,8) positions. */
-const DEALER_DISTANCE = 0.34;
-
 /** How many pixels down the turn animation ring sits below the seat coordinate.
  *  30px puts it on the badge center (player is 140px tall, centered via translate-y-50%). */
 const TURN_ANIM_Y_OFFSET = 30;
@@ -396,27 +391,153 @@ export function getChipPositions(tableSize: TableSize): ChipPosition[] {
     });
 }
 
-/**
- * Get dealer button positions.
- * Placed between seat and table edge, offset toward table center.
- */
-export function getDealerPositions(tableSize: TableSize): Position[] {
-    const dims = getStageDims();
-    const coords = getSeatCoords(tableSize);
+/** Seat pod footprint (Player/VacantPlayer: 160x140 box centred on the seat). */
+export const POD_HALF_WIDTH = 80;
+export const POD_HALF_HEIGHT = 70;
 
-    return coords.map(([x, y]) => {
-        const [sx, sy] = applySpread(x, y);
-        const dx = dims.centerX - sx;
-        const dy = dims.centerY - sy;
+/** Dealer button diameter (Table.tsx renders it w-12 h-12). */
+export const DEALER_BUTTON_SIZE = 48;
 
-        // Move DEALER_DISTANCE from seat toward center
-        const dealerX = sx + dx * DEALER_DISTANCE;
-        const dealerY = sy + dy * DEALER_DISTANCE;
+/** Clear felt between the pod edge and the button edge. */
+const DEALER_POD_GAP = 12;
 
-        return stageToPosition(dealerX, dealerY);
-    });
+/** Approximate bet-chip pill footprint in table units, anchored at its
+ *  left/bottom corner (PlayerChipDisplay). Mobile chips use larger text, so
+ *  they cover more felt. Used only to keep the dealer button off the bet. */
+export function getChipFootprint(): { width: number; height: number } {
+    const mode = getViewportMode();
+    return mode === "mobile-portrait" || mode === "mobile-landscape" ? { width: 175, height: 44 } : { width: 130, height: 40 };
 }
 
+/** Max sideways slide (table units) when the seat's own bet sits on the ray. */
+const DEALER_MAX_SLIDE = 120;
+
+/** Never push the button further than this fraction of seat->centre. */
+const DEALER_MAX_DISTANCE = 0.62;
+
+export interface Rect { left: number; top: number; right: number; bottom: number; }
+
+/** Community cards + total-pot label keep-out (table-div coords). */
+export function getBoardRect(): Rect {
+    const dims = getStageDims();
+    const cx = dims.centerX - dims.originX;
+    const cy = dims.centerY - dims.originY;
+    const portrait = getStageOrientation() === "portrait";
+    return portrait
+        ? { left: cx - 205, top: cy - 95, right: cx + 205, bottom: cy + 85 }
+        : { left: cx - 205, top: cy - 75, right: cx + 205, bottom: cy + 60 };
+}
+
+export function rectsOverlap(a: Rect, b: Rect): boolean {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+/** Chip pill rectangle (table-div coords) for a { left, bottom } chip position. */
+export function chipRect(chip: ChipPosition): Rect {
+    const dims = getStageDims();
+    const left = parseFloat(chip.left);
+    const bottomEdge = dims.tableHeight - parseFloat(chip.bottom);
+    const fp = getChipFootprint();
+    return { left, top: bottomEdge - fp.height, right: left + fp.width, bottom: bottomEdge };
+}
+
+/** Seat pod rectangle (table-div coords) for a seat centre position. */
+export function podRect(seat: Position): Rect {
+    const x = parseFloat(seat.left);
+    const y = parseFloat(seat.top);
+    return { left: x - POD_HALF_WIDTH, top: y - POD_HALF_HEIGHT, right: x + POD_HALF_WIDTH, bottom: y + POD_HALF_HEIGHT };
+}
+
+/** Dealer button rectangle (table-div coords) for a centred dealer position. */
+export function dealerRect(dealer: Position): Rect {
+    const x = parseFloat(dealer.left);
+    const y = parseFloat(dealer.top);
+    const r = DEALER_BUTTON_SIZE / 2;
+    return { left: x - r, top: y - r, right: x + r, bottom: y + r };
+}
+
+/**
+ * Which side of the pod the NFT avatar goes on (ui#835): the OUTER side,
+ * i.e. away from the table centre. Seats left of centre get it on the left;
+ * right-of-centre and centre-column seats (hero, top) keep it on the right.
+ */
+export function getAvatarSide(seatLeft: string | undefined): "left" | "right" {
+    const x = parseFloat(seatLeft ?? "");
+    if (!Number.isFinite(x)) return "right";
+    return x < getStageDims().tableWidth / 2 - 1 ? "left" : "right";
+}
+
+/**
+ * Get dealer button positions (ui#835).
+ *
+ * The button is a felt token, not part of the avatar pod: it sits on the
+ * straight line from the seat to the table centre, just past the pod edge, so
+ * it is always "in front of" the button player and reads the same from every
+ * seat as it rotates. There are no per-seat sideways nudges and no left/right
+ * flipping. If the seat's own bet chip is on that line, the button slides
+ * further toward the pot until it clears it.
+ *
+ * @param chips final chip positions (with offsets) to avoid; optional.
+ */
+export function getDealerPositions(tableSize: TableSize, chips?: ChipPosition[]): Position[] {
+    const dims = getStageDims();
+    const coords = getSeatCoords(tableSize);
+    const [cx, cy] = stageToTable(dims.centerX, dims.centerY);
+    const r = DEALER_BUTTON_SIZE / 2;
+    const pods = getSeatPositions(tableSize).map(podRect);
+
+    return coords.map(([x, y], i) => {
+        const [ssx, ssy] = applySpread(x, y);
+        const [sx, sy] = stageToTable(ssx, ssy);
+        const vx = cx - sx;
+        const vy = cy - sy;
+        const len = Math.hypot(vx, vy);
+        if (len === 0) return stageToPosition(ssx, ssy);
+        const ux = vx / len;
+        const uy = vy / len;
+
+        // Distance along the ray at which it leaves the pod rectangle.
+        const exitX = Math.abs(ux) > 1e-6 ? POD_HALF_WIDTH / Math.abs(ux) : Infinity;
+        const exitY = Math.abs(uy) > 1e-6 ? POD_HALF_HEIGHT / Math.abs(uy) : Infinity;
+        // The button is a square-ish token: its far corner must clear the pod too.
+        const clearance = r * (Math.abs(ux) + Math.abs(uy));
+        const minT = Math.min(exitX, exitY) + DEALER_POD_GAP + clearance;
+        const maxT = Math.max(minT, len * DEALER_MAX_DISTANCE);
+
+        // t = distance along the ray; s = sideways slide (perpendicular).
+        const at = (t: number, s = 0): Position => ({
+            left: `${Math.round((sx + ux * t - uy * s) * 10) / 10}px`,
+            top: `${Math.round((sy + uy * t + ux * s) * 10) / 10}px`
+        });
+
+        const avoid: Rect[] = [getBoardRect(), ...pods];
+        if (chips?.[i]) avoid.push(chipRect(chips[i]));
+        const clear = (pos: Position) => {
+            const r = dealerRect(pos);
+            return avoid.every(a => !rectsOverlap(r, a));
+        };
+
+        // Search the felt in front of the pod (t = distance along the ray,
+        // s = sideways slide) and take the clear spot nearest to "just in front
+        // of the pod". Sliding is penalised so the button stays on the ray
+        // whenever it can. Deterministic per seat geometry, no side flipping.
+        let best: Position | null = null;
+        let bestCost = Infinity;
+        for (let t = minT; t <= maxT; t += 2) {
+            for (let s = -DEALER_MAX_SLIDE; s <= DEALER_MAX_SLIDE; s += 2) {
+                const cost = (t - minT) + 1.5 * Math.abs(s);
+                if (cost >= bestCost) continue;
+                const pos = at(t, s);
+                if (clear(pos)) {
+                    best = pos;
+                    bestCost = cost;
+                }
+            }
+        }
+        if (best) return best;
+        return at(minT);
+    });
+}
 /**
  * Get turn animation positions.
  * Placed at the seat with a slight downward offset for the ring animation.
@@ -494,10 +615,6 @@ type ElementType = "players" | "vacantPlayers" | "chips" | "dealers"
 const GLOBAL_OFFSETS: Partial<Record<TableSize,
     Partial<Record<ElementType, Record<number, Offset>>>>> = {
     2: {
-        dealers: {
-            0: { dx: 95, dy: 63 },
-            1: { dx: 95, dy: -20 }
-        },
         chips: {
             0: { dx: -38, dy: 40 },
             1: { dx: -38, dy: -5 }
@@ -505,12 +622,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     4: {
-        dealers: {
-            0: { dx: 95, dy: 63 },    // seat 1
-            1: { dx: -57, dy: -2 },  // seat 2
-            2: { dx: 95, dy: -20 }, // seat 3
-            3: { dx: 60, dy: 24 },   // seat 4
-            },
         chips: {
             0: { dx: -38, dy: 40 },    // seat 1
             1: { dx: -90, dy: 90 },  // seat 2
@@ -520,14 +631,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     6: {
-        dealers: {
-            0: { dx: 95, dy: 63 },    // seat 1
-            1: { dx: -60, dy: 23 },  // seat 2
-            2: { dx: -60, dy: -73 }, // seat 3
-            3: { dx: 95, dy: -20 },   // seat 4
-            4: { dx: 60, dy: -23 },  // seat 5
-            5: { dx: 60, dy: 73 }    // seat 6
-        },
         chips: {
             0: { dx: -38, dy: 40 },    // seat 1
             1: { dx: -92, dy: 20 },  // seat 2
@@ -539,17 +642,6 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
     },
 
     9: {
-        dealers: {
-            0: { dx: 95, dy: 65 },   // seat 1
-            1: { dx: 25, dy: 115 },   // seat 2
-            2: { dx: -68, dy: 7},   // seat 3
-            3: { dx: -38, dy: 0 },  // seat 4
-            4: { dx: 58, dy: -19 },  // seat 5
-            5: { dx: 132, dy: -19 }, // seat 6
-            6: { dx: 39, dy: -48 },   // seat 7
-            7: { dx: 68, dy: 57 },    // seat 8
-            8: { dx: 165, dy: 115 }   // seat 9
-        },
         chips: {
             0: { dx: -35, dy: 40 },         // seat 1
             1: { dx: -125, dy: 40 },       // seat 2
@@ -566,24 +658,9 @@ const GLOBAL_OFFSETS: Partial<Record<TableSize,
 
 
 /** Per-viewport offsets — override for specific screen sizes only */
-const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {
-    "desktop": {
-        9: {
-            dealers: {
-                1: { dy: -50 },  // D2 — move up so it's above the chips
-                8: { dy: -50 },  // D9
-            }
-        }
-    },
-    "mobile-landscape": {
-        9: {
-            dealers: {
-                1: { dy: -40 },  // D2
-                8: { dy: -40 },  // D9
-            }
-        }
-    }
-};
+// The dealer button is no longer offset per seat or per viewport (ui#835): it is
+// derived on the seat->centre ray in getDealerPositions.
+const VIEWPORT_OFFSETS: Partial<Record<ViewportMode, typeof GLOBAL_OFFSETS>> = {};
 
 /** Portrait offsets are tuned independently — the landscape GLOBAL_OFFSETS were
  *  hand-fitted to the landscape seat ring and don't transfer. Nudge portrait
@@ -684,11 +761,12 @@ export interface PositionArrays {
 
 /** Get all position arrays for a given table size, with offsets applied */
 export function getAllPositions(tableSize: TableSize): PositionArrays {
+    const chips = applyChipOffsets(getChipPositions(tableSize), tableSize);
     return {
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
-        chips: applyChipOffsets(getChipPositions(tableSize), tableSize),
-        dealers: applyPositionOffsets(getDealerPositions(tableSize), tableSize, "dealers"),
+        chips,
+        dealers: getDealerPositions(tableSize, chips),
         turnAnimations: applyPositionOffsets(getTurnAnimationPositions(tableSize), tableSize, "turnAnimations"),
         winAnimations: applyPositionOffsets(getWinAnimationPositions(tableSize), tableSize, "winAnimations"),
         holeCards: applyHoleCardOffsets(getHoleCardSlotPositions(tableSize), tableSize),

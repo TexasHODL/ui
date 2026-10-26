@@ -30,6 +30,7 @@ import { HoleCardRow } from "./HoleCardRow";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
+import { getAvatarSide } from "../../../config/stageGeometry";
 
 type OppositePlayerProps = {
     left?: string;
@@ -44,6 +45,8 @@ type OppositePlayerProps = {
 
 const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle }) => {
     const { id } = useParams<{ id: string }>();
+    // NFT avatar on the outer side of the pod (ui#835)
+    const avatarChipClass = getAvatarSide(left) === "left" ? `${styles.avatarChip} ${styles.avatarChipLeft}` : styles.avatarChip;
     const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
     const { winnerInfo, winnerBySeat } = useWinnerInfo();
     const winnerCards = useWinnerCards();
@@ -156,8 +159,8 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                             src={selectedAvatarUrl}
                             alt="Player avatar"
                             imgClassName={styles.avatarImage}
-                            chipClassName={styles.avatarChip}
-                            fallbackClassName={`${styles.avatarChip} ${styles.avatarFallback}`}
+                            chipClassName={avatarChipClass}
+                            fallbackClassName={`${avatarChipClass} ${styles.avatarFallback}`}
                         />
                     )}
                     {/* Spacer preserves the 55px flow height the old status bar occupied */}
