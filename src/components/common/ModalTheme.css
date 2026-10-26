@@ -169,3 +169,17 @@
 @media (prefers-reduced-motion: reduce) {
     .hodl-modal .animate-pulse, .hodl-modal .animate-bounce { animation: none; }
 }
+
+/* Sit & Go modal secondary actions: brand colour, primary join stays dominant.
+   Spectate reuses the lobby "Started"/"Finished" badge blue (TableList .scheduledBadge). */
+.hodl-modal .tournament-secondary-actions > .sng-spectate-btn { --sng-blue: var(--theme-accent, #8eb6ff);
+    background: color-mix(in srgb, var(--sng-blue) 16%, transparent); border: 1px solid var(--sng-blue); color: #e3edff; }
+.hodl-modal .tournament-secondary-actions > .sng-spectate-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--sng-blue) 30%, transparent); color: #fff; }
+.hodl-modal .tournament-secondary-actions > .sng-spectate-btn:focus-visible { outline: 2px solid var(--sng-blue); outline-offset: 2px; }
+.hodl-modal .tournament-secondary-actions > .sng-lobby-btn { background: #7c36c833; border: 1px solid #9b5ce0; color: #efe2fb; }
+.hodl-modal .tournament-secondary-actions > .sng-lobby-btn:hover:not(:disabled) { background: #7c36c859; border-color: #be87e5; color: #fff; }
+.hodl-modal .tournament-secondary-actions > .sng-lobby-btn:focus-visible { outline: 2px solid #d1a4f1; outline-offset: 2px; }
+@media (max-width: 359px) { .tournament-secondary-actions { grid-template-columns: 1fr; } }
+/* Disabled "Insufficient Balance": same red as the insufficient balance value (Tailwind text-red-400). */
+.hodl-modal .hodl-primary.sng-insufficient:disabled { --sng-red: var(--color-red-400, #f87171);
+    background: color-mix(in srgb, var(--sng-red) 14%, transparent); border: 1px solid color-mix(in srgb, var(--sng-red) 55%, transparent); color: var(--sng-red); }
