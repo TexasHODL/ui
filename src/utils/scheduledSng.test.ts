@@ -22,6 +22,19 @@ describe("scheduledSngPhase", () => {
     });
 });
 
+describe("hasTournamentFinished", () => {
+    const result = (place: number): ResultDTO => ({ place, playerId: `b521p${place}`, payout: "0" });
+    it("is false before anyone has a place, and while players are only busting out", () => {
+        expect(hasTournamentFinished({ results: [] })).toBe(false);
+        expect(hasTournamentFinished({ results: [result(4), result(3)] })).toBe(false);
+        expect(hasTournamentFinished(undefined)).toBe(false);
+        expect(hasTournamentFinished(null)).toBe(false);
+    });
+    it("is true once 1st place is recorded", () => {
+        expect(hasTournamentFinished({ results: [result(4), result(3), result(2), result(1)] })).toBe(true);
+    });
+});
+
 describe("hasTournamentStarted", () => {
     const action = (a: string) => ({ playerId: "b521x", seat: 1, action: a as PlayerActionType, amount: "0", round: TexasHoldemRound.ANTE, index: 1, timestamp: 0 });
     it("is false while registering", () => {
