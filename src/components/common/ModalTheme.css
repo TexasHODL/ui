@@ -154,6 +154,9 @@
 .tournament-costs dt, .tournament-balance > span:first-child { color: #b2a4c0; font-weight: 700; }
 .tournament-costs .entry-total { border-top: 1px solid #be87e526; padding-top: 10px; margin-top: 10px; font-weight: 600; }
 .tournament-entry > button { width: 100%; min-height: 44px; border-radius: 10px; margin-top: 16px; font-size: 16px; }
+.tournament-secondary-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.tournament-secondary-actions > button { min-height: 44px; border-radius: 10px; font-size: 15px; font-weight: 700; padding: 0 12px; }
+@media (max-width: 360px) { .tournament-secondary-actions { grid-template-columns: 1fr; } }
 .tournament-note { color: #b2a4c0; text-align: center; font-size: 13px; margin-top: 16px; line-height: 1.6; font-weight: 700; }
 .tournament-note small { display: block; font-size: 12px; margin-top: 4px; }
 .tournament-error { padding: 10px; border: 1px solid #fb718544; border-radius: 10px; background: #fb718510; color: #fda4af; font-size: 15px; margin-top: 12px; }

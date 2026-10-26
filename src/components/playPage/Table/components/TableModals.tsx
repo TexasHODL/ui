@@ -9,7 +9,7 @@
  * - Leave table modal
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import GameStartCountdown from "../../common/GameStartCountdown";
@@ -75,6 +75,9 @@ export const TableModals: React.FC<TableModalsProps> = ({
     isInActiveHand
 }) => {
     const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
+    // Spectate closes the entry prompt for the rest of this table visit, so a
+    // poll or re-render that remounts it does not trap the player again.
+    const [spectatingTableId, setSpectatingTableId] = useState<string | undefined>(undefined);
     return (
         <>
             {/* Game Start Countdown Modal */}
@@ -86,8 +89,8 @@ export const TableModals: React.FC<TableModalsProps> = ({
                 Also protect direct links to full tables from an unusable prompt.
                 Once the tournament has started, entry stays open only while
                 late registration is open (poker-vm#2731). */}
-            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && (
-                <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} />
+            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && spectatingTableId !== tableId && (
+                <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} onSpectate={() => setSpectatingTableId(tableId)} />
             )}
 
             {/* Sit & Go Waiting Modal - Shows for Sit & Go games when user is playing but waiting for more players */}
@@ -108,10 +111,10 @@ export const TableModals: React.FC<TableModalsProps> = ({
             {/* Transaction Popup - Bottom Right */}
             <TransactionPopup txHash={recentTxHash} onClose={handleCloseTransactionPopup} />
 
-            {/* Leave Table Modal — cash games only.
+            {/* Leave Table Modal â€” cash games only.
                 SNG/Tournament players cannot leave an in-play tournament
                 (frozen roster; the chain drops LEAVE from legal actions once a
-                blind is posted — poker-vm#2343/#2349). Showing this generic
+                blind is posted â€” poker-vm#2343/#2349). Showing this generic
                 modal after a bust-out let players wrongly leave, rebuy, and
                 re-trigger the waiting modal for everyone (block52/ui#465). SNG
                 leave/terminal flows are handled by SitAndGoWaitingModal

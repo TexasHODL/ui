@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { GameFormat } from "@block52/poker-vm-sdk";
 import { TableModals, type TableModalsProps } from "./TableModals";
 
 jest.mock("../../../modals", () => ({
-    SitAndGoAutoJoinModal: () => <div role="dialog">Buy in</div>,
+    SitAndGoAutoJoinModal: ({ onSpectate }: { onSpectate?: () => void }) => <div role="dialog">Buy in<button onClick={onSpectate}>Spectate</button></div>,
     SitAndGoResultModal: () => <div data-testid="result-handler" />,
     LeaveTableModal: () => <div data-testid="leave-handler" />
 }));
@@ -91,4 +91,16 @@ it("preserves seated players' waiting, countdown and result flows on a Watch lin
     expect(screen.getByText("Waiting for players")).toBeInTheDocument();
     expect(screen.getByText("Countdown")).toBeInTheDocument();
     expect(screen.getByTestId("result-handler")).toBeInTheDocument();
+});
+
+it("keeps the buy-in closed for the rest of the visit after Spectate, even if it would remount", () => {
+    const defaults = props();
+    const { rerender } = render(<TableModals {...defaults} />);
+    fireEvent.click(screen.getByRole("button", { name: "Spectate" }));
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+    rerender(<TableModals {...defaults} hasOpenSeats={false} />);
+    rerender(<TableModals {...defaults} hasOpenSeats gameState={{ handNumber: 1 }} />);
+    expect(screen.queryByText("Buy in")).not.toBeInTheDocument();
+    rerender(<TableModals {...defaults} tableId="another-table" />);
+    expect(screen.getByRole("dialog")).toHaveTextContent("Buy in");
 });

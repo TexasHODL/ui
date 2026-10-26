@@ -75,6 +75,8 @@ export interface LeaveTableModalProps extends ControlledModalProps {
 export interface SitAndGoAutoJoinModalProps {
     tableId: string;
     onJoinSuccess: () => void;
+    /** Player chose to watch instead; the parent keeps the prompt closed for this table visit. */
+    onSpectate?: () => void;
 }
 
 /**

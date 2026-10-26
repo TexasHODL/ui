@@ -3,6 +3,8 @@ import SitAndGoAutoJoinModal from "./SitAndGoAutoJoinModal";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 const mockJoin = jest.fn();
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({ useNavigate: () => mockNavigate }));
 const mockBalance = jest.fn();
 let mockSeats = [0, 1, 2, 3, 4, 5];
 let mockPlaying = false;
@@ -144,4 +146,65 @@ it("does not show entry again for an already seated player", async () => {
     await waitFor(() => expect(mockBalance).toHaveBeenCalled());
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(mockJoin).not.toHaveBeenCalled();
+});
+
+describe("leaving the entry prompt without joining", () => {
+    it("lets an underfunded player spectate or return to the lobby", async () => {
+        mockBalance.mockResolvedValue("500000");
+        render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+        expect(await screen.findByRole("button", { name: "Insufficient Balance" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Spectate" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "Return to Lobby" })).toBeEnabled();
+        expect(screen.getByRole("dialog", { name: "Sit & Go Tournament" })).toHaveAttribute("aria-modal", "true");
+    });
+
+    it("Spectate closes the prompt, stays on the table and tells the parent", async () => {
+        const onSpectate = jest.fn();
+        render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} onSpectate={onSpectate} />);
+        await screen.findByRole("button", { name: "Insufficient Balance" });
+        fireEvent.click(screen.getByRole("button", { name: "Spectate" }));
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(onSpectate).toHaveBeenCalledTimes(1);
+        expect(mockNavigate).not.toHaveBeenCalled();
+        expect(mockJoin).not.toHaveBeenCalled();
+    });
+
+    it("stays dismissed across re-renders (polls) after Spectate", async () => {
+        const { rerender } = render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+        await screen.findByRole("button", { name: "Insufficient Balance" });
+        fireEvent.click(screen.getByRole("button", { name: "Spectate" }));
+        mockSeats = [2, 3];
+        rerender(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("Return to Lobby navigates to the lobby", async () => {
+        render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+        await screen.findByRole("button", { name: "Insufficient Balance" });
+        fireEvent.click(screen.getByRole("button", { name: "Return to Lobby" }));
+        expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+
+    it("Escape spectates", async () => {
+        const onSpectate = jest.fn();
+        render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} onSpectate={onSpectate} />);
+        await screen.findByRole("button", { name: "Insufficient Balance" });
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(onSpectate).toHaveBeenCalledTimes(1);
+    });
+
+    it("ignores Escape and disables both exits while a join is in flight", async () => {
+        mockBalance.mockResolvedValue("2000000");
+        mockJoin.mockReturnValue(new Promise(() => {}));
+        const onSpectate = jest.fn();
+        render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} onSpectate={onSpectate} />);
+        fireEvent.click(await screen.findByRole("button", { name: "Take My Seat" }));
+        expect(await screen.findByRole("button", { name: /Joining/ })).toBeDisabled();
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Spectate" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Return to Lobby" })).toBeDisabled();
+        expect(onSpectate).not.toHaveBeenCalled();
+    });
 });
