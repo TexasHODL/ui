@@ -22,10 +22,15 @@ export function tournamentProgressFromPublicState(
         }
         if (hasTournamentStarted(state)) {
             // Late registration (poker-vm#2731): still joinable while the window is open.
+            // Blind timer for the lobby stuck-table check (same calc as the header).
+            const options = state.gameOptions;
+            const timer = options?.levelStartTime && options.blindLevelDuration
+                ? { blindTimer: { levelStartTime: options.levelStartTime, blindLevelDuration: options.blindLevelDuration } }
+                : {};
             if (lateRegistrationPhase(state, Date.now()) === "open") {
-                return { mark: "started", lateRegOpen: true, lateRegEndsAtMs: state.gameOptions ? lateRegistrationEndsAt(state.gameOptions) : undefined };
+                return { mark: "started", lateRegOpen: true, lateRegEndsAtMs: state.gameOptions ? lateRegistrationEndsAt(state.gameOptions) : undefined, ...timer };
             }
-            return { mark: "started" };
+            return { mark: "started", ...timer };
         }
         return null;
     } catch (err) {

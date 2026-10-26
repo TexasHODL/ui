@@ -1,5 +1,6 @@
-﻿import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "./scheduledSng";
+import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "./scheduledSng";
 import type { ActionDTO } from "@block52/poker-vm-sdk";
+import { blindLevelSecondsRemaining } from "./blindLevelTimer";
 
 /** Minimal progress shape used to age out finished lobby rows. */
 export type LobbyEndedProgress = {
@@ -10,6 +11,8 @@ export type LobbyEndedProgress = {
     lateRegOpen?: boolean;
     /** When late registration closes (epoch ms), if known. */
     lateRegEndsAtMs?: number;
+    /** Started: blind timer from gameOptions, for the stuck-table check. */
+    blindTimer?: { levelStartTime?: number; blindLevelDuration?: number };
 };
 
 /**
@@ -30,6 +33,8 @@ const lobbyEndedFilterApi = (() => {
     // `u`, which TableList also uses for isLoading / isDeleting).
     const graceMs = SCHEDULED_SNG_GRACE_MS;
     const phaseOf = scheduledSngPhase;
+    const stuckOverdueMs = 6 * 60 * 60 * 1000;
+    const secondsRemainingOf = blindLevelSecondsRemaining;
 
     function maxPreviousActionTimestamp(
         actions: ActionDTO[] | null | undefined
@@ -69,7 +74,13 @@ const lobbyEndedFilterApi = (() => {
             if (typeof endedAt !== "number" || endedAt <= 0) return false;
             return nowMs >= endedAt + retentionMs;
         }
-        if (progress?.mark === "started") return false;
+        if (progress?.mark === "started") {
+            // Stuck in-play table: next blind level overdue by > stuckOverdueMs.
+            // Live hands only run minutes past a level end (30s action
+            // timeouts), so hours of overtime means the table has locked up.
+            const remaining = secondsRemainingOf(progress.blindTimer, nowMs);
+            return typeof remaining === "number" && -remaining * 1000 > stuckOverdueMs;
+        }
 
         const scheduledStartTime = startTimeMs(game.scheduledStartTime);
         const phase = phaseOf({
@@ -103,6 +114,7 @@ const lobbyEndedFilterApi = (() => {
 
     return {
         LOBBY_ENDED_RETENTION_MS: retentionMs,
+        LOBBY_STUCK_LEVEL_OVERDUE_MS: stuckOverdueMs,
         maxPreviousActionTimestamp,
         shouldHideEndedLobbyGame,
         applyEndedLobbyRetention
@@ -111,6 +123,15 @@ const lobbyEndedFilterApi = (() => {
 
 /** How long Finished / Cancelled rows stay in the lobby after they end. */
 export const LOBBY_ENDED_RETENTION_MS = lobbyEndedFilterApi.LOBBY_ENDED_RETENTION_MS;
+
+/**
+ * Started SNG/tournament rows are hidden from the lobby list once the next
+ * blind level is overdue by more than this (the table header shows the same
+ * value, e.g. "-360:00 to next level"). 6h is far beyond any real hand
+ * overtime and well under the stuck tables seen in prod (~13 and ~53 days).
+ * List-only: direct links and lobby search still show the table.
+ */
+export const LOBBY_STUCK_LEVEL_OVERDUE_MS = lobbyEndedFilterApi.LOBBY_STUCK_LEVEL_OVERDUE_MS;
 
 /** Newest previousActions.timestamp, or undefined when none are usable. */
 export const maxPreviousActionTimestamp = lobbyEndedFilterApi.maxPreviousActionTimestamp;

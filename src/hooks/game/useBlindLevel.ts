@@ -4,6 +4,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatChipCount } from "../../utils/potDisplayUtils";
 import { hasContent, hasValue, isNullish } from "../../utils/guards";
+import { blindLevelSecondsRemaining } from "../../utils/blindLevelTimer";
 
 export interface BlindLevelInfo {
     /** Current blind level (0-based), undefined if not provided by backend */
@@ -97,9 +98,9 @@ export const useBlindLevel = (): BlindLevelInfo => {
         // the UI shows that overtime in red (e.g. -0:10). Once the hand
         // completes the backend advances levelStartTime and the clock resets to
         // the new level (e.g. 2:50 for a 3-min level that ran 10s over). (poker-vm#2292)
-        const elapsedInLevelSeconds = Math.floor((now - startTime) / 1000);
-        return levelDurationSeconds - elapsedInLevelSeconds;
-    }, [hasTimer, startTime, now, levelDurationSeconds, level]);
+        // Shared with the lobby stuck-table filter so both agree.
+        return blindLevelSecondsRemaining({ levelStartTime: startTime, blindLevelDuration }, now) ?? -1;
+    }, [hasTimer, startTime, now, blindLevelDuration, level]);
 
     // Tick the timer every second when active (same pattern as usePlayerTimer)
     useEffect(() => {
