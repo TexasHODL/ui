@@ -1,6 +1,6 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
 import React, { useEffect, useMemo, useState } from "react";
-import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaShareAlt } from "react-icons/fa";
+import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { scheduledLobbyLabel, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
@@ -329,30 +329,16 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                         </td>
                                         <td>
                                             <div className={styles.rowActions}>
-                                                {(!showCancelled || seated) && <a
-                                                    href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
-                                                    className={watch ? styles.watchButton : styles.actionButton}
-                                                    aria-label={(seated ? "Return to " : watch ? "Watch " : lateRegister ? "Late register at " : "Open ") + tableName}
-                                                >
-                                                    {watch ? (
-                                                        <>
-                                                            <FaEye aria-hidden="true" />
-                                                            <span>Watch</span>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <span className={seated ? styles.returnLabel : undefined}>
-                                                                {seated ? "Return to table" : lateRegister ? "Late register" : "Open table"}
-                                                            </span>
-                                                            <FaArrowRight aria-hidden="true" />
-                                                        </>
-                                                    )}
-                                                </a>}
                                                 {owner && (game.currentPlayers === 0 || isCashFormat(game.gameFormat)) && <button
+                                                    type="button"
                                                     className={styles.ownerAction}
+                                                    aria-label={game.currentPlayers === 0 ? "Delete table" : "Close & refund"}
+                                                    title={game.currentPlayers === 0 ? "Delete table" : "Close & refund"}
                                                     disabled={game.currentPlayers === 0 ? isDeleting : isClosing}
                                                     onClick={() => game.currentPlayers === 0 ? setDeleteId(game.gameId) : setCloseTarget(game)}
-                                                >{game.currentPlayers === 0 ? "Delete table" : "Close & refund"}</button>}
+                                                >
+                                                    <FaTrashAlt aria-hidden="true" />
+                                                </button>}
                                                 <button
                                                     type="button"
                                                     className={styles.shareButton}
@@ -362,6 +348,23 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                 >
                                                     <FaShareAlt aria-hidden="true" />
                                                 </button>
+                                                {(!showCancelled || seated) && <a
+                                                    href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
+                                                    className={watch ? styles.watchButton : styles.actionButton}
+                                                    aria-label={(seated ? "Return to " : watch ? "Spectate " : lateRegister ? "Late register at " : "Open ") + tableName}
+                                                >
+                                                    {watch ? (
+                                                        <>
+                                                            <FaEye aria-hidden="true" />
+                                                            <span>Spectate</span>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <span>{seated ? "Return to table" : lateRegister ? "Late register" : "Open table"}</span>
+                                                            <FaArrowRight aria-hidden="true" />
+                                                        </>
+                                                    )}
+                                                </a>}
                                             </div>
                                         </td>
                                     </tr>
