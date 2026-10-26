@@ -283,7 +283,7 @@
 }
 .rowActions {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
@@ -297,7 +297,24 @@
     font-size: 13px;
     font-weight: 600;
 }
-.ownerAction { padding: 8px 10px; border: 1px solid var(--theme-wash, #e494a650); border-radius: 8px; color: var(--theme-danger, #eeb0bf); font-size: 13px; white-space: nowrap; }
+.ownerSlot {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
+.ownerAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: 1px solid var(--theme-wash, #e494a650);
+    border-radius: 8px;
+    color: var(--theme-danger, #eeb0bf);
+    cursor: pointer;
+}
 .ownerAction:hover:not(:disabled) { background: var(--theme-wash, #e494a612); }
 .ownerAction:disabled { opacity: .45; cursor: not-allowed; }
 .actionButton,
@@ -306,7 +323,11 @@
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 11px 14px;
+    box-sizing: border-box;
+    width: 168px;
+    height: 44px;
+    flex-shrink: 0;
+    padding: 0 14px;
     white-space: nowrap;
     border-radius: 9px;
     font-size: 14px;
@@ -322,9 +343,9 @@
     filter: brightness(1.12);
 }
 .watchButton {
-    border: 1px solid var(--theme-line, #ffffff20);
-    color: var(--theme-muted, #bdb4c7);
-    background: var(--theme-line, #ffffff03);
+    border: 1px solid color-mix(in srgb, var(--theme-accent, #8eb6ff) 55%, transparent);
+    color: var(--theme-accent, #8eb6ff);
+    background: color-mix(in srgb, var(--theme-accent, #8eb6ff) 14%, transparent);
     font-weight: 700;
 }
 .shareButton {
@@ -337,6 +358,9 @@
     border-radius: 8px;
     cursor: pointer;
     color: var(--theme-ink, #ded5e7);
+}
+.watchButton:hover {
+    background: color-mix(in srgb, var(--theme-accent, #8eb6ff) 22%, transparent);
 }
 .shareButton:hover {
     background: var(--theme-line, #ffffff0c);
@@ -458,14 +482,30 @@
     }
     .actionButton,
     .watchButton {
-        padding: 10px;
-        min-height: 40px;
+        width: 92px;
+        height: 40px;
+        padding: 0 8px;
+        gap: 6px;
+        font-size: 12px;
     }
     .actionButton span,
     .watchButton span {
+        white-space: normal;
+        text-align: center;
+        line-height: 1.15;
+    }
+    .actionButton svg,
+    .watchButton svg {
         display: none;
     }
-    .actionButton .returnLabel { display: inline; max-width: 65px; white-space: normal; text-align: center; font-size: 13px; }
+    .ownerAction,
+    .ownerSlot,
+    .shareButton {
+        width: 36px;
+        min-width: 36px;
+        height: 40px;
+        min-height: 40px;
+    }
     .rowActions {
         gap: 5px;
     }

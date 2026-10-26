@@ -44,7 +44,7 @@ test("seated players get their seat badge and return link, distinct from ownersh
     expect(screen.queryByRole("link", { name: "Return to My empty table" })).toBeNull();
 });
 
-test("a seated player returns to a full tournament instead of Watch", () => {
+test("a seated player returns to a full tournament instead of Spectate", () => {
     const game = mockGames.find(game => game.gameId === "tournament")!;
     const previousCount = game.currentPlayers;
     game.currentPlayers = game.maxPlayers;
@@ -52,8 +52,20 @@ test("a seated player returns to a full tournament instead of Watch", () => {
     try {
         render(<TableList />);
         expect(screen.getByRole("link", { name: "Return to My tournament" })).toHaveAttribute("href", "/table/tournament");
-        expect(screen.queryByRole("link", { name: "Watch My tournament" })).toBeNull();
+        expect(screen.queryByRole("link", { name: "Spectate My tournament" })).toBeNull();
     } finally { game.currentPlayers = previousCount; }
+});
+test("row actions render share, main, then the owner bin, with a slot reserved when there is no bin", () => {
+    render(<TableList />);
+    screen.getAllByRole("row").slice(1).forEach(tr => {
+        const actions = tr.querySelector("td:last-child > div");
+        if (!actions) return;
+        const last = actions.lastElementChild!;
+        const bin = within(tr).queryByRole("button", { name: /Delete table|Close & refund/ });
+        if (bin) expect(last).toBe(bin); else expect(last).toHaveAttribute("aria-hidden", "true");
+        const share = within(tr).getByRole("button", { name: /^Share / });
+        expect(actions.firstElementChild).toBe(share);
+    });
 });
 test("owner controls are visible and open confirmation without sending a transaction", () => {
     render(<TableList />);
@@ -116,13 +128,13 @@ test("unnamed tables show a generated name", () => {
     expect(screen.getByText("My empty table")).toBeInTheDocument();
 });
 
-test("Watch links carry viewing intent while open tables keep the normal join route", () => {
+test("Spectate links carry viewing intent while open tables keep the normal join route", () => {
     const game = mockGames.find(game => game.gameId === "tournament")!;
     const previousCount = game.currentPlayers;
     game.currentPlayers = game.maxPlayers;
     try {
         render(<TableList />);
-        expect(screen.getByRole("link", { name: "Watch My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
+        expect(screen.getByRole("link", { name: "Spectate My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
         expect(screen.getByRole("link", { name: "Open My empty table" })).toHaveAttribute("href", "/table/mine");
         expect(mockDelete).not.toHaveBeenCalled();
         expect(mockForceClose).not.toHaveBeenCalled();
@@ -161,7 +173,7 @@ test("a scheduled tournament says Started only after the hand has begun", () => 
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Started");
         expect(row.queryByText("Starting")).not.toBeInTheDocument();
-        expect(row.getByRole("link", { name: "Watch My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
+        expect(row.getByRole("link", { name: "Spectate My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
     } finally {
         Object.assign(game, previous);
     }
@@ -243,7 +255,7 @@ test("an empty cancelled table still lets the owner delete it", () => {
     }
 });
 
-test("a started tournament that still has empty seats uses Watch, not Open table", () => {
+test("a started tournament that still has empty seats uses Spectate, not Open table", () => {
     const game = mockGames.find(item => item.gameId === "tournament")!;
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
@@ -253,14 +265,14 @@ test("a started tournament that still has empty seats uses Watch, not Open table
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
-        const link = row.getByRole("link", { name: "Watch My tournament" });
+        const link = row.getByRole("link", { name: "Spectate My tournament" });
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Started");
         expect(row.queryByText("Cancelled: not enough players")).not.toBeInTheDocument();
         expect(link).toHaveAttribute("href", "/table/tournament?watch=1");
         expect(link.className).toContain("watchButton");
-        expect(link).toHaveTextContent("Watch");
+        expect(link).toHaveTextContent("Spectate");
         expect(row.queryByText("Open table")).not.toBeInTheDocument();
-        expect(row.queryByText("Spectate")).not.toBeInTheDocument();
+        expect(row.queryByText("Watch")).not.toBeInTheDocument();
         expect(row.getByRole("button", { name: "Share My tournament" })).toBeInTheDocument();
         expect(row.queryByRole("button", { name: "Close & refund" })).not.toBeInTheDocument();
     } finally {
@@ -280,7 +292,7 @@ test("a seated player at a started tournament still returns to the table", () =>
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.getByRole("link", { name: "Return to My tournament" })).toHaveAttribute("href", "/table/tournament");
-        expect(row.queryByRole("link", { name: "Watch My tournament" })).not.toBeInTheDocument();
+        expect(row.queryByRole("link", { name: "Spectate My tournament" })).not.toBeInTheDocument();
     } finally {
         Object.assign(game, previous);
     }
@@ -291,10 +303,10 @@ test("a cash game stays Open table even if a started mark is present", () => {
     render(<TableList />);
     const row = within(screen.getByText("My occupied table").closest("tr")!);
     expect(row.getByRole("link", { name: "Open My occupied table" })).toHaveAttribute("href", "/table/occupied");
-    expect(row.queryByRole("link", { name: "Watch My occupied table" })).not.toBeInTheDocument();
+    expect(row.queryByRole("link", { name: "Spectate My occupied table" })).not.toBeInTheDocument();
 });
 
-test("a finished tournament uses Watch for a non-seated owner", () => {
+test("a finished tournament uses Spectate for a non-seated owner", () => {
     const game = mockGames.find(item => item.gameId === "tournament")!;
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
@@ -304,7 +316,7 @@ test("a finished tournament uses Watch for a non-seated owner", () => {
     try {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
-        const link = row.getByRole("link", { name: "Watch My tournament" });
+        const link = row.getByRole("link", { name: "Spectate My tournament" });
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Finished");
         expect(row.getByText("Your table")).toBeInTheDocument();
         expect(row.queryByText(/You’re seated/)).not.toBeInTheDocument();
@@ -319,7 +331,7 @@ test("a finished tournament uses Watch for a non-seated owner", () => {
     }
 });
 
-test("a finished tournament uses Watch for a non-seated visitor", () => {
+test("a finished tournament uses Spectate for a non-seated visitor", () => {
     const game = mockGames.find(item => item.gameId === "tournament")!;
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers, minPlayers: game.minPlayers };
     game.scheduledStartTime = Date.now() - 20 * 60 * 1000;
@@ -331,7 +343,7 @@ test("a finished tournament uses Watch for a non-seated visitor", () => {
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.queryByText("Your table")).not.toBeInTheDocument();
-        expect(row.getByRole("link", { name: "Watch My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
+        expect(row.getByRole("link", { name: "Spectate My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
         expect(row.queryByText("Open table")).not.toBeInTheDocument();
     } finally {
         Object.assign(game, previous);
@@ -351,13 +363,13 @@ test("a seated player at a finished tournament still returns to the table", () =
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.getByTestId("scheduled-start-label")).toHaveTextContent("Finished");
         expect(row.getByRole("link", { name: "Return to My tournament" })).toHaveAttribute("href", "/table/tournament");
-        expect(row.queryByRole("link", { name: "Watch My tournament" })).not.toBeInTheDocument();
+        expect(row.queryByRole("link", { name: "Spectate My tournament" })).not.toBeInTheDocument();
     } finally {
         Object.assign(game, previous);
     }
 });
 
-test("an unscheduled sit-and-go that has finished with empty seats uses Watch", () => {
+test("an unscheduled sit-and-go that has finished with empty seats uses Spectate", () => {
     const game = mockGames.find(item => item.gameId === "tournament")!;
     const previous = { scheduledStartTime: game.scheduledStartTime, currentPlayers: game.currentPlayers };
     game.scheduledStartTime = undefined;
@@ -367,7 +379,7 @@ test("an unscheduled sit-and-go that has finished with empty seats uses Watch", 
         render(<TableList />);
         const row = within(screen.getByText("My tournament").closest("tr")!);
         expect(row.queryByTestId("scheduled-start-label")).not.toBeInTheDocument();
-        expect(row.getByRole("link", { name: "Watch My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
+        expect(row.getByRole("link", { name: "Spectate My tournament" })).toHaveAttribute("href", "/table/tournament?watch=1");
         expect(row.queryByText("Open table")).not.toBeInTheDocument();
         expect(row.queryByText("Cancelled")).not.toBeInTheDocument();
     } finally {
