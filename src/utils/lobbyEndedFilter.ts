@@ -33,7 +33,7 @@ const lobbyEndedFilterApi = (() => {
     // `u`, which TableList also uses for isLoading / isDeleting).
     const graceMs = SCHEDULED_SNG_GRACE_MS;
     const phaseOf = scheduledSngPhase;
-    const stuckOverdueMs = 6 * 60 * 60 * 1000;
+    const stuckOverdueMs = 48 * 60 * 60 * 1000;
     const secondsRemainingOf = blindLevelSecondsRemaining;
 
     function maxPreviousActionTimestamp(
@@ -127,7 +127,7 @@ export const LOBBY_ENDED_RETENTION_MS = lobbyEndedFilterApi.LOBBY_ENDED_RETENTIO
 /**
  * Started SNG/tournament rows are hidden from the lobby list once the next
  * blind level is overdue by more than this (the table header shows the same
- * value, e.g. "-360:00 to next level"). 6h is far beyond any real hand
+ * value, e.g. "-2880:00 to next level"). 48h is far beyond any real hand
  * overtime and well under the stuck tables seen in prod (~13 and ~53 days).
  * List-only: direct links and lobby search still show the table.
  */

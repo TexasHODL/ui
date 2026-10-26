@@ -51,6 +51,13 @@ describe("stuck in-play lobby tables (blind level long overdue)", () => {
         expect(shouldHideEndedLobbyGame(game("live"), progress, NOW)).toBe(false);
         const justUnder = { mark: "started" as const, blindTimer: { levelStartTime: NOW - 5 * 60 * 1000 - LOBBY_STUCK_LEVEL_OVERDUE_MS + 1000, blindLevelDuration: 5 } };
         expect(shouldHideEndedLobbyGame(game("live"), justUnder, NOW)).toBe(false);
+        // A table 24h overdue is still well inside the 48h limit.
+        const dayOverdue = { mark: "started" as const, blindTimer: { levelStartTime: NOW - 5 * 60 * 1000 - 24 * 60 * 60 * 1000, blindLevelDuration: 5 } };
+        expect(shouldHideEndedLobbyGame(game("live"), dayOverdue, NOW)).toBe(false);
+    });
+
+    it("uses a 48h overdue limit", () => {
+        expect(LOBBY_STUCK_LEVEL_OVERDUE_MS).toBe(48 * 60 * 60 * 1000);
     });
 
     it("never hides started tables without a blind timer (cash-like)", () => {
