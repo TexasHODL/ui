@@ -6,6 +6,9 @@ import { SitAndGoResultModal } from "./SitAndGoResultModal";
 // what getPlayerResult returns. By varying the mock per test we can
 // drive all four states (not-finished, paid, unpaid, winner) without
 // standing up a real GameStateContext.
+const mockNavigate = jest.fn();
+jest.mock("react-router-dom", () => ({ useNavigate: () => mockNavigate }));
+
 const mockGetPlayerResult = jest.fn();
 const mockIsSitAndGo = jest.fn();
 jest.mock("../../hooks/game/useSitAndGoPlayerResults", () => ({
@@ -66,6 +69,7 @@ beforeEach(() => {
     mockIsSitAndGo.mockReset();
     mockFetchSignature.mockReset();
     mockClaim.mockReset();
+    mockNavigate.mockReset();
     mockIsSitAndGo.mockReturnValue(true);
     setStoredAddress(USER_ADDRESS);
 });
@@ -136,16 +140,41 @@ describe("SitAndGoResultModal", () => {
 
         fireEvent.click(claimBtn);
         await waitFor(() => expect(onClaim).toHaveBeenCalledTimes(1));
-        // ui#737: after collection the button must not stay on "Paid" — it
-        // becomes "Return to Table", which dismisses the modal (no chain leave).
-        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
-        expect(claimBtn).not.toHaveTextContent(/paid/i);
-        expect(screen.getByTestId("sng-result-prize-collected")).toBeInTheDocument();
+        // ui#737: after collection the Collect button never stays on "Paid";
+        // it's replaced by the collected state + next actions.
+        await screen.findByTestId("sng-result-prize-collected");
+        expect(screen.getByTestId("sng-result-prize-collected")).toHaveTextContent("Your winnings have been collected.");
+        expect(screen.getByText("WINNINGS COLLECTED")).toBeInTheDocument();
+        expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$400000");
+        expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+        expect(screen.queryByText(/paid!/i)).toBeNull();
+        // 2nd place: no Spectate (mirrors HODL: place > 2 only).
+        expect(screen.queryByTestId("sng-result-spectate-btn")).toBeNull();
 
-        fireEvent.click(screen.getByTestId("sng-result-claim-winnings-btn"));
+        fireEvent.click(screen.getByTestId("sng-result-return-to-lobby-btn"));
         expect(onClaim).toHaveBeenCalledTimes(1);
+        expect(mockNavigate).toHaveBeenCalledWith("/");
         expect(localStorage.getItem(`viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`)).toBe("true");
         expect(screen.queryByTestId("sng-result-modal")).toBeNull();
+    });
+
+    it("paid 3rd place: after collecting, Spectate table closes the modal without navigating (ui#737)", async () => {
+        const onClaim = jest.fn().mockResolvedValue(undefined);
+        const onLeave = jest.fn();
+        mockGetPlayerResult.mockReturnValue({ place: 3, payout: "200000", isWinner: false });
+        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={onLeave} onClaim={onClaim} />);
+
+        expect(screen.queryByTestId("sng-result-spectate-btn")).toBeNull();
+        fireEvent.click(screen.getByTestId("sng-result-claim-winnings-btn"));
+        const spectate = await screen.findByTestId("sng-result-spectate-btn");
+        expect(spectate).toHaveTextContent("Spectate table");
+        expect(screen.getByTestId("sng-result-return-to-lobby-btn")).toHaveTextContent("Return to lobby");
+
+        fireEvent.click(spectate);
+        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
+        expect(mockNavigate).not.toHaveBeenCalled();
+        expect(onLeave).not.toHaveBeenCalled();
+        expect(onClaim).toHaveBeenCalledTimes(1);
     });
 
     it("paid finisher: shows a disabled Collecting… state and ignores repeat clicks while collecting (ui#737)", async () => {
@@ -164,7 +193,7 @@ describe("SitAndGoResultModal", () => {
         expect(onClaim).toHaveBeenCalledTimes(1);
 
         resolveClaim();
-        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        await screen.findByTestId("sng-result-return-to-lobby-btn");
         expect(onClaim).toHaveBeenCalledTimes(1);
     });
 
@@ -183,7 +212,7 @@ describe("SitAndGoResultModal", () => {
         expect(claimBtn).not.toBeDisabled();
 
         fireEvent.click(claimBtn);
-        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        await screen.findByTestId("sng-result-prize-collected");
         expect(screen.queryByTestId("sng-result-prize-claim-error")).toBeNull();
         expect(onClaim).toHaveBeenCalledTimes(2);
     });
@@ -195,11 +224,10 @@ describe("SitAndGoResultModal", () => {
 
         const claimBtn = screen.getByTestId("sng-result-claim-winnings-btn");
         fireEvent.click(claimBtn);
-        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        await screen.findByTestId("sng-result-prize-collected");
         expect(screen.queryByTestId("sng-result-prize-claim-error")).toBeNull();
-        fireEvent.click(claimBtn);
+        expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
         expect(onClaim).toHaveBeenCalledTimes(1);
-        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
     });
 
     it("does NOT re-render on a remount once dismissed (refresh-after-close)", () => {

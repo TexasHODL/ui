@@ -17,6 +17,7 @@
  * Refs block52/ui#371, originally tracked in block52/poker-vm#2106.
  */
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { useSitAndGoPlayerResults } from "../../hooks/game/useSitAndGoPlayerResults";
 import { useFetchSngClaimSignature } from "../../hooks/game/useFetchSngClaimSignature";
@@ -66,6 +67,7 @@ interface SitAndGoResultModalProps {
 }
 
 export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onLeave, onClaim }) => {
+    const navigate = useNavigate();
     const { isSitAndGo, getPlayerResult } = useSitAndGoPlayerResults();
 
     // Read the user address fresh on mount only. The active wallet
@@ -170,10 +172,16 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
         }
     };
 
-    // Once collected, the button never stays on "Paid": it becomes
-    // "Return to Table", which closes this modal and drops the player back
-    // onto the table view it is overlaying. (ui#737)
+    // Once collected, the Collect button is replaced by next actions — never
+    // a stuck "Paid" (ui#737). Mirrors TexasHODL/ui: "Spectate table" (closes
+    // the modal so they keep watching) for 3rd place and below, plus
+    // "Return to lobby".
     const prizeCollected = prizeClaim.kind === "done";
+    const canSpectate = place > 2;
+    const handleReturnToLobby = () => {
+        handleDismiss();
+        navigate("/");
+    };
 
     const handleClaimClick = async () => {
         if (!isWeb3Connected || !web3Address) {
@@ -236,7 +244,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                     {isPaid && (
                         <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6 text-center">
                             <div className="text-xs text-green-300 font-semibold mb-1">
-                                YOUR PAYOUT
+                                {prizeCollected ? "WINNINGS COLLECTED" : "YOUR PAYOUT"}
                             </div>
                             <div
                                 className="text-3xl text-white font-bold"
@@ -247,24 +255,43 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                         </div>
                     )}
 
-                    {isPaid && (
+                    {isPaid && !prizeCollected && (
                         <button
-                            onClick={prizeCollected ? handleDismiss : handleClaimWinningsClick}
+                            onClick={handleClaimWinningsClick}
                             disabled={prizeClaim.kind === "claiming"}
                             aria-busy={prizeClaim.kind === "claiming"}
                             data-testid="sng-result-claim-winnings-btn"
                             className="w-full py-3 px-4 mb-3 rounded-lg border border-green-500/40 bg-green-500/10 text-green-300 text-sm font-semibold hover:bg-green-500/20 hover:border-green-500/60 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {prizeClaim.kind === "claiming" && "Collecting…"}
-                            {prizeCollected && "Return to Table"}
                             {(prizeClaim.kind === "idle" || prizeClaim.kind === "error") && `Collect $${formatUSDCToSimpleDollars(payout)}`}
                         </button>
                     )}
 
                     {prizeCollected && (
-                        <p className="text-xs text-green-300 text-center mb-3" role="status" data-testid="sng-result-prize-collected">
-                            ✓ Winnings collected
-                        </p>
+                        <>
+                            <p className="text-sm text-green-300 text-center mb-3" role="status" data-testid="sng-result-prize-collected">
+                                Your winnings have been collected.
+                            </p>
+                            {canSpectate && (
+                                <button
+                                    type="button"
+                                    onClick={handleDismiss}
+                                    data-testid="sng-result-spectate-btn"
+                                    className="w-full py-3 px-4 mb-3 rounded-lg border border-blue-300/70 bg-blue-500/15 text-blue-100 text-sm font-semibold hover:bg-blue-500/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 transition-colors duration-200"
+                                >
+                                    Spectate table
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleReturnToLobby}
+                                data-testid="sng-result-return-to-lobby-btn"
+                                className="w-full py-3 px-4 mb-3 rounded-lg text-white text-sm font-semibold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-300 transition-all duration-200"
+                            >
+                                Return to lobby
+                            </button>
+                        </>
                     )}
 
                     {prizeClaim.kind === "error" && (
@@ -314,7 +341,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                         </p>
                     )}
 
-                    {/* Paid finishers collect (above) and dismiss via Return to Table —
+                    {/* Paid finishers collect (above), then spectate / return to lobby —
                         no Leave. Unpaid finishers have no prize, so keep a dismiss. */}
                     {!isPaid && (
                         <button
