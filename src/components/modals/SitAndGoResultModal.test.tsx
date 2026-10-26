@@ -136,11 +136,70 @@ describe("SitAndGoResultModal", () => {
 
         fireEvent.click(claimBtn);
         await waitFor(() => expect(onClaim).toHaveBeenCalledTimes(1));
-        await waitFor(() => expect(claimBtn).toHaveTextContent(/paid!/i));
+        // ui#737: after collection the button must not stay on "Paid" — it
+        // becomes "Return to Table", which dismisses the modal (no chain leave).
+        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        expect(claimBtn).not.toHaveTextContent(/paid/i);
+        expect(screen.getByTestId("sng-result-prize-collected")).toBeInTheDocument();
 
-        // The "Paid!" button now dismisses the modal (no chain leave).
         fireEvent.click(screen.getByTestId("sng-result-claim-winnings-btn"));
+        expect(onClaim).toHaveBeenCalledTimes(1);
         expect(localStorage.getItem(`viewed_sng_result_${TABLE_ID}_${USER_ADDRESS.toLowerCase()}`)).toBe("true");
+        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
+    });
+
+    it("paid finisher: shows a disabled Collecting… state and ignores repeat clicks while collecting (ui#737)", async () => {
+        let resolveClaim: () => void = () => undefined;
+        const onClaim = jest.fn().mockReturnValue(new Promise<void>(r => { resolveClaim = r; }));
+        mockGetPlayerResult.mockReturnValue({ place: 1, payout: "1000000", isWinner: true });
+        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={onClaim} />);
+
+        const claimBtn = screen.getByTestId("sng-result-claim-winnings-btn");
+        expect(claimBtn).toHaveTextContent("Collect $1000000");
+        fireEvent.click(claimBtn);
+        fireEvent.click(claimBtn);
+        await waitFor(() => expect(claimBtn).toHaveTextContent(/collecting/i));
+        expect(claimBtn).toBeDisabled();
+        fireEvent.click(claimBtn);
+        expect(onClaim).toHaveBeenCalledTimes(1);
+
+        resolveClaim();
+        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        expect(onClaim).toHaveBeenCalledTimes(1);
+    });
+
+    it("paid finisher: a failed collection shows the error and lets the player retry (ui#737)", async () => {
+        const onClaim = jest.fn()
+            .mockRejectedValueOnce(new Error("network down"))
+            .mockResolvedValueOnce(undefined);
+        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
+        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={onClaim} />);
+
+        const claimBtn = screen.getByTestId("sng-result-claim-winnings-btn");
+        fireEvent.click(claimBtn);
+        await screen.findByTestId("sng-result-prize-claim-error");
+        expect(screen.getByTestId("sng-result-prize-claim-error")).toHaveTextContent("network down");
+        expect(claimBtn).toHaveTextContent("Collect $400000");
+        expect(claimBtn).not.toBeDisabled();
+
+        fireEvent.click(claimBtn);
+        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        expect(screen.queryByTestId("sng-result-prize-claim-error")).toBeNull();
+        expect(onClaim).toHaveBeenCalledTimes(2);
+    });
+
+    it("paid finisher: an 'already claimed' rejection is treated as collected, not an error (ui#737)", async () => {
+        const onClaim = jest.fn().mockRejectedValue(new Error("player b521user already claimed payout"));
+        mockGetPlayerResult.mockReturnValue({ place: 2, payout: "400000", isWinner: false });
+        render(<SitAndGoResultModal tableId={TABLE_ID} onLeave={jest.fn()} onClaim={onClaim} />);
+
+        const claimBtn = screen.getByTestId("sng-result-claim-winnings-btn");
+        fireEvent.click(claimBtn);
+        await waitFor(() => expect(claimBtn).toHaveTextContent("Return to Table"));
+        expect(screen.queryByTestId("sng-result-prize-claim-error")).toBeNull();
+        fireEvent.click(claimBtn);
+        expect(onClaim).toHaveBeenCalledTimes(1);
+        expect(screen.queryByTestId("sng-result-modal")).toBeNull();
     });
 
     it("does NOT re-render on a remount once dismissed (refresh-after-close)", () => {

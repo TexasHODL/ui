@@ -16,7 +16,7 @@
  *
  * Refs block52/ui#371, originally tracked in block52/poker-vm#2106.
  */
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { useSitAndGoPlayerResults } from "../../hooks/game/useSitAndGoPlayerResults";
 import { useFetchSngClaimSignature } from "../../hooks/game/useFetchSngClaimSignature";
@@ -35,6 +35,12 @@ type ClaimState =
 
 const PLACE_SUFFIX = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
 const ordinal = (place: number): string => PLACE_SUFFIX[place - 1] ?? `${place}th`;
+
+// The chain rejects a second settlement with "... already claimed ...". That
+// means the funds were collected (e.g. in another tab), so treat it as success
+// rather than a failure the player should retry. (ui#737)
+const isAlreadyCollectedError = (e: unknown): boolean =>
+    e instanceof Error && /already claimed/i.test(e.message);
 
 // localStorage flag — once the user has dismissed the modal for this
 // (tableId, userAddress), a page refresh shouldn't re-pop it.
@@ -103,6 +109,9 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const [claimState, setClaimState] = useState<ClaimState>({ kind: "idle" });
     // USDC prize claim (record hand-end + settle), distinct from the NFT claim.
     const [prizeClaim, setPrizeClaim] = useState<{ kind: "idle" | "claiming" | "done" | "error"; message?: string }>({ kind: "idle" });
+    // Synchronous guard so a double-click can't fire two collections before
+    // React re-renders the disabled button. (ui#737)
+    const collectingRef = useRef(false);
 
     // Flip to "done" once wagmi's useWaitForTransactionReceipt fires.
     useEffect(() => {
@@ -144,14 +153,27 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     };
 
     const handleClaimWinningsClick = async () => {
+        if (collectingRef.current || prizeClaim.kind === "claiming" || prizeClaim.kind === "done") return;
+        collectingRef.current = true;
         try {
             setPrizeClaim({ kind: "claiming" });
             await onClaim();
             setPrizeClaim({ kind: "done" });
         } catch (e) {
-            setPrizeClaim({ kind: "error", message: e instanceof Error ? e.message : "Claim failed" });
+            setPrizeClaim(
+                isAlreadyCollectedError(e)
+                    ? { kind: "done" }
+                    : { kind: "error", message: e instanceof Error ? e.message : "Collection failed. Please try again." },
+            );
+        } finally {
+            collectingRef.current = false;
         }
     };
+
+    // Once collected, the button never stays on "Paid": it becomes
+    // "Return to Table", which closes this modal and drops the player back
+    // onto the table view it is overlaying. (ui#737)
+    const prizeCollected = prizeClaim.kind === "done";
 
     const handleClaimClick = async () => {
         if (!isWeb3Connected || !web3Address) {
@@ -227,15 +249,22 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
 
                     {isPaid && (
                         <button
-                            onClick={prizeClaim.kind === "done" ? handleDismiss : handleClaimWinningsClick}
+                            onClick={prizeCollected ? handleDismiss : handleClaimWinningsClick}
                             disabled={prizeClaim.kind === "claiming"}
+                            aria-busy={prizeClaim.kind === "claiming"}
                             data-testid="sng-result-claim-winnings-btn"
                             className="w-full py-3 px-4 mb-3 rounded-lg border border-green-500/40 bg-green-500/10 text-green-300 text-sm font-semibold hover:bg-green-500/20 hover:border-green-500/60 transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {prizeClaim.kind === "claiming" && "Collecting…"}
-                            {prizeClaim.kind === "done" && "✓ Paid!"}
+                            {prizeCollected && "Return to Table"}
                             {(prizeClaim.kind === "idle" || prizeClaim.kind === "error") && `Collect $${formatUSDCToSimpleDollars(payout)}`}
                         </button>
+                    )}
+
+                    {prizeCollected && (
+                        <p className="text-xs text-green-300 text-center mb-3" role="status" data-testid="sng-result-prize-collected">
+                            ✓ Winnings collected
+                        </p>
                     )}
 
                     {prizeClaim.kind === "error" && (
@@ -285,7 +314,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                         </p>
                     )}
 
-                    {/* Paid finishers claim (above) and dismiss via the Paid! button —
+                    {/* Paid finishers collect (above) and dismiss via Return to Table —
                         no Leave. Unpaid finishers have no prize, so keep a dismiss. */}
                     {!isPaid && (
                         <button
