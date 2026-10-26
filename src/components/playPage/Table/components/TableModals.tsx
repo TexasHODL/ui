@@ -9,7 +9,7 @@
  * - Leave table modal
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import GameStartCountdown from "../../common/GameStartCountdown";
@@ -75,6 +75,9 @@ export const TableModals: React.FC<TableModalsProps> = ({
     isInActiveHand
 }) => {
     const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
+    // Spectate closes the entry prompt for the rest of this table visit, so a
+    // poll or re-render that remounts it does not trap the player again.
+    const [spectatingTableId, setSpectatingTableId] = useState<string | undefined>(undefined);
     return (
         <>
             {/* Game Start Countdown Modal */}
@@ -85,8 +88,8 @@ export const TableModals: React.FC<TableModalsProps> = ({
             {/* Watch is an explicit choice to view the live game, not to buy in.
                 Also protect direct links to full tables from an unusable prompt.
                 Once the tournament has started, late entry is closed. */}
-            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && (
-                <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} />
+            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && spectatingTableId !== tableId && (
+                <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} onSpectate={() => setSpectatingTableId(tableId)} />
             )}
 
             {/* Sit & Go Waiting Modal - Shows for Sit & Go games when user is playing but waiting for more players */}

@@ -9,6 +9,7 @@ import { ModalHeader } from "../common/ModalHeader";
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { ethers } from "ethers";
+import { useNavigate } from "react-router-dom";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { joinTable } from "../../hooks/playerActions/joinTable";
@@ -27,12 +28,16 @@ import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
 
-const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, onJoinSuccess }) => {
+const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, onJoinSuccess, onSpectate }) => {
     const [accountBalance, setAccountBalance] = useState<string>("0");
     const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(true);
     const [buyInError, setBuyInError] = useState("");
     const [hasJoined, setHasJoined] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
+    // A late or underfunded player must never be trapped by this prompt: they
+    // can spectate the table underneath or head back to the lobby.
+    const [isDismissed, setIsDismissed] = useState(false);
+    const navigate = useNavigate();
     const { currentNetwork } = useNetwork();
 
     // Get game options
@@ -256,16 +261,27 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         }
     }, [registrationClosed, publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess]);
 
-    // Don't show modal if user is already playing, has joined, the tournament
+    const handleSpectate = useCallback(() => {
+        if (isJoining) return;
+        setIsDismissed(true);
+        onSpectate?.();
+    }, [isJoining, onSpectate]);
+
+    const handleReturnToLobby = useCallback(() => {
+        if (isJoining) return;
+        navigate("/");
+    }, [isJoining, navigate]);
+
+    // Don't show modal if user is already playing, has joined, chose to spectate, the tournament
     // has started, or it was cancelled before it started.
-    if (isUserAlreadyPlaying || hasJoined || registrationClosed || isCancelled) {
+    if (isUserAlreadyPlaying || hasJoined || isDismissed || registrationClosed || isCancelled) {
         return null;
     }
 
     const playerCountLabel = getGameTypeMnemonic(gameOptions?.maxPlayers);
 
     return (
-        <Modal isOpen={true} onClose={() => {}} closeOnEscape={false} closeOnBackdropClick={false}
+        <Modal isOpen={true} onClose={handleSpectate} closeOnEscape={true} closeOnBackdropClick={false} isProcessing={isJoining}
             widthClass="w-full max-w-[420px]" className="tournament-entry" ariaLabel="Sit & Go Tournament" customHeader>
             <ModalHeader kicker="Take your seat" title="Sit & Go Tournament" subtitle={`${formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)} · ${playerCountLabel}`} />
 
@@ -320,6 +336,14 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 {isCancelled ? "Cancelled" : isRegistrationClosed ? "Registration Closed" : isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
                     ? "Insufficient Balance" : isEmpty(emptySeatIndexes) ? "Table Full" : "Take My Seat"}
             </button>
+            <div className="tournament-secondary-actions">
+                <button type="button" onClick={handleSpectate} disabled={isJoining} className="hodl-secondary" data-testid="sng-spectate">
+                    Spectate
+                </button>
+                <button type="button" onClick={handleReturnToLobby} disabled={isJoining} className="hodl-secondary" data-testid="sng-return-to-lobby">
+                    Return to Lobby
+                </button>
+            </div>
             <p className="tournament-note">
                 {scheduledPhase === "unscheduled"
                     ? "Tournament starts when all players are seated."
