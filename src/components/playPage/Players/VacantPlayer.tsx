@@ -29,7 +29,7 @@ import { microToUsdc } from "../../../constants/currency";
 import { hasElements } from "../../../utils/guards";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
+import { hasTournamentStarted, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
 
@@ -45,7 +45,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             minPlayers: gameOptions?.minPlayers ?? 2,
             registered: gameState?.players?.length ?? 0,
             nowMs: Date.now()
-        }) === "cancelled";
+        }) === "cancelled" && !hasTournamentStarted(gameState);
         const joinClosed = registrationClosed || cancelledBeforeStart;
         const cosmosWallet = useCosmosWallet();
         const { currentNetwork } = useNetwork();

@@ -87,7 +87,8 @@ export const TableModals: React.FC<TableModalsProps> = ({
 
             {/* Watch is an explicit choice to view the live game, not to buy in.
                 Also protect direct links to full tables from an unusable prompt.
-                Once the tournament has started, late entry is closed. */}
+                Once the tournament has started, entry stays open only while
+                late registration is open (poker-vm#2731). */}
             {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && spectatingTableId !== tableId && (
                 <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} onSpectate={() => setSpectatingTableId(tableId)} />
             )}
@@ -110,10 +111,10 @@ export const TableModals: React.FC<TableModalsProps> = ({
             {/* Transaction Popup - Bottom Right */}
             <TransactionPopup txHash={recentTxHash} onClose={handleCloseTransactionPopup} />
 
-            {/* Leave Table Modal — cash games only.
+            {/* Leave Table Modal â€” cash games only.
                 SNG/Tournament players cannot leave an in-play tournament
                 (frozen roster; the chain drops LEAVE from legal actions once a
-                blind is posted — poker-vm#2343/#2349). Showing this generic
+                blind is posted â€” poker-vm#2343/#2349). Showing this generic
                 modal after a bust-out let players wrongly leave, rebuy, and
                 re-trigger the waiting modal for everyone (block52/ui#465). SNG
                 leave/terminal flows are handled by SitAndGoWaitingModal
