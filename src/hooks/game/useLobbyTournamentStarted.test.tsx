@@ -38,6 +38,15 @@ it("reads started, finished, and still-waiting tables from public state", () => 
         round: TexasHoldemRound.ANTE,
         previousActions: []
     }))).toBeNull();
+    // Late registration (poker-vm#2731): a started table inside the window is still joinable.
+    const lateNow = Date.now();
+    expect(tournamentProgressFromPublicState(state({
+        handNumber: 3,
+        round: TexasHoldemRound.PREFLOP,
+        previousActions: [],
+        results: [],
+        gameOptions: { minBuyIn: "1", maxBuyIn: "1", minPlayers: 2, maxPlayers: 6, smallBlind: "1", bigBlind: "2", timeout: 30, blindLevelDuration: 10, scheduledStartTime: lateNow - 120_000, sngStartTime: lateNow - 60_000, lateRegistrationLevels: 2 }
+    }))).toEqual({ mark: "started", lateRegOpen: true, lateRegEndsAtMs: lateNow - 60_000 + 20 * 60_000 });
     expect(tournamentProgressFromPublicState({ game_state: "not-json" })).toBeNull();
     expect(tournamentProgressFromPublicState(undefined)).toBeNull();
 });

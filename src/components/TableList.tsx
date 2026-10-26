@@ -14,7 +14,7 @@ import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDis
 import { displayGameFormat } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
-import { filterLobbyGames, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
+import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
 import DeleteTableModal from "./modals/DeleteTableModal";
 import ForceCloseTableModal from "./modals/ForceCloseTableModal";
 import { Pagination } from "./common";
@@ -43,14 +43,16 @@ const scheduledPhase = (game: GameWithFormat): ScheduledSngPhase =>
     scheduledSngPhase({ scheduledStartTime: game.scheduledStartTime, minPlayers: game.minPlayers, registered: game.currentPlayers, nowMs: Date.now() });
 
 /** "Starts 20:30 · min 4", "Starting", "Started", "Finished", or "Cancelled…" for a scheduled sit-and-go. */
-const scheduledLabel = (game: GameWithFormat, mark: LobbyTournamentMark | undefined): string =>
+const scheduledLabel = (game: GameWithFormat, mark: LobbyTournamentMark | undefined, lateRegOpen = false, lateRegEndsAtMs?: number): string =>
     scheduledLobbyLabel({
         phase: scheduledPhase(game),
         scheduledStartTime: game.scheduledStartTime,
         minPlayers: game.minPlayers,
         started: mark === "started" || mark === "finished",
         finished: mark === "finished",
-        lateRegistrationLevels: game.lateRegistrationLevels
+        lateRegistrationLevels: game.lateRegistrationLevels,
+        lateRegistrationOpen: lateRegOpen,
+        lateRegistrationEndsAt: lateRegEndsAtMs
     });
 
 const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, refreshKey = 0 }) => {
@@ -268,8 +270,12 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 // finished sit-and-go or tournament uses that same link while seats
                                 // are still open. A cancelled game that never started has no open
                                 // link, except Return to table for someone still seated.
-                                const watch = !seated && !showCancelled && (full || (tournamentStyle && played));
-                                const schedule = scheduledLabel(game, mark);
+                                // Late registration (poker-vm#2731): a started tournament with the
+                                // window still open is joinable, not Watch.
+                                const lateRegOpen = tournamentStyle && isLateRegistrationOpenProgress(progress, Date.now());
+                                const watch = !seated && !showCancelled && (full || (tournamentStyle && played && !lateRegOpen));
+                                const lateRegister = lateRegOpen && !seated && !watch;
+                                const schedule = scheduledLabel(game, mark, lateRegOpen, progress?.lateRegEndsAtMs);
                                 const stakes = tournament
                                     ? "Tournament"
                                     : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
@@ -326,7 +332,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                 {(!showCancelled || seated) && <a
                                                     href={"/table/" + game.gameId + (watch ? "?watch=1" : "")}
                                                     className={watch ? styles.watchButton : styles.actionButton}
-                                                    aria-label={(seated ? "Return to " : watch ? "Watch " : "Open ") + tableName}
+                                                    aria-label={(seated ? "Return to " : watch ? "Watch " : lateRegister ? "Late register at " : "Open ") + tableName}
                                                 >
                                                     {watch ? (
                                                         <>
@@ -336,7 +342,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                     ) : (
                                                         <>
                                                             <span className={seated ? styles.returnLabel : undefined}>
-                                                                {seated ? "Return to table" : "Open table"}
+                                                                {seated ? "Return to table" : lateRegister ? "Late register" : "Open table"}
                                                             </span>
                                                             <FaArrowRight aria-hidden="true" />
                                                         </>

@@ -1,7 +1,7 @@
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { filterLobbyGames, isLobbyGameUnavailable, isOpenScheduledRegistration } from "./lobbyFilters";
+import { filterLobbyGames, isLateRegistrationOpenProgress, isLobbyGameUnavailable, isOpenScheduledRegistration } from "./lobbyFilters";
 import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
 
 const makeGame = (overrides: Partial<GameWithFormat>): GameWithFormat => ({
@@ -216,5 +216,25 @@ describe("lobby discovery", () => {
         const progress = { "started-scheduled": { mark: "started" as const } };
         expect(isOpenScheduledRegistration(startedScheduled, progress["started-scheduled"], nowMs)).toBe(false);
         expect(isOpenScheduledRegistration(cancelled, undefined, nowMs)).toBe(false);
+    });
+});
+
+describe("late registration in the lobby (poker-vm#2731)", () => {
+    const now = 1_700_000_000_000;
+    const sng = (gameId: string) => makeGame({ gameId, gameFormat: GameFormat.SIT_AND_GO, currentPlayers: 3, scheduledStartTime: Math.floor((now - 600_000) / 1000), minPlayers: 2 });
+    it("keeps a started tournament joinable while late registration is open", () => {
+        expect(isLateRegistrationOpenProgress({ mark: "started", lateRegOpen: true, lateRegEndsAtMs: now + 1 }, now)).toBe(true);
+        expect(isLateRegistrationOpenProgress({ mark: "started", lateRegOpen: true, lateRegEndsAtMs: now }, now)).toBe(false);
+        expect(isLateRegistrationOpenProgress({ mark: "started" }, now)).toBe(false);
+        expect(isLateRegistrationOpenProgress({ mark: "finished", lateRegOpen: true }, now)).toBe(false);
+        expect(isLobbyGameUnavailable(sng("late"), { mark: "started", lateRegOpen: true }, now)).toBe(false);
+        expect(isLobbyGameUnavailable(sng("late"), { mark: "started", lateRegOpen: true, lateRegEndsAtMs: now - 1 }, now)).toBe(true);
+        expect(isLobbyGameUnavailable(sng("closed"), { mark: "started" }, now)).toBe(true);
+        expect(isLobbyGameUnavailable({ ...sng("full"), currentPlayers: 6 }, { mark: "started", lateRegOpen: true }, now)).toBe(true);
+    });
+    it("sorts a late-reg-open tournament with joinable tables, above started ones", () => {
+        const list = [sng("closed"), makeGame({ gameId: "cash-full", currentPlayers: 6 }), sng("late")];
+        const progress = { closed: { mark: "started" as const }, late: { mark: "started" as const, lateRegOpen: true, lateRegEndsAtMs: now + 60_000 } };
+        expect(filterLobbyGames(list, { ...options, progress, nowMs: now }).map(game => game.gameId)).toEqual(["late", "cash-full", "closed"]);
     });
 });

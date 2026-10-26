@@ -133,6 +133,26 @@ describe("late registration (poker-vm#2731)", () => {
         expect(lateRegistrationPhase(state({}, [{ place: 7, playerId: "b52bust", payout: "0" }]), firstDeal)).toBe("open");
     });
 
+    it("keeps a started tournament open to new players while late registration is open", () => {
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, state(), firstDeal + 19 * 60_000)).toBe(false);
+        expect(tournamentRegistrationClosed(GameFormat.TOURNAMENT, state(), firstDeal + 19 * 60_000)).toBe(false);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, state(), firstDeal + 20 * 60_000)).toBe(true);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, state({}, [{ place: 3, playerId: "b52third", payout: "1260000" }]), firstDeal)).toBe(true);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, state({ lateRegistrationLevels: undefined }), firstDeal)).toBe(true);
+        expect(tournamentRegistrationClosed(GameFormat.SIT_AND_GO, { ...state(), results: [{ place: 1, playerId: "w", payout: "0" }] }, firstDeal)).toBe(true);
+    });
+
+    it("tolerates public state without results or options", () => {
+        expect(lateRegistrationPhase({ ...started, gameOptions: options(), results: undefined } as never, firstDeal)).toBe("open");
+        expect(lateRegistrationPhase({ ...started, gameOptions: undefined } as never, firstDeal)).toBe("none");
+    });
+
+    it("labels a started tournament with late registration open in the lobby", () => {
+        const label = scheduledLobbyLabel({ phase: "ready", scheduledStartTime: firstDeal, minPlayers: 2, started: true, finished: false, lateRegistrationOpen: true, lateRegistrationEndsAt: firstDeal + 20 * 60_000, nowMs: firstDeal });
+        expect(label).toMatch(/^Started · Late reg open until /);
+        expect(scheduledLobbyLabel({ phase: "ready", scheduledStartTime: firstDeal, minPlayers: 2, started: true, finished: false, lateRegistrationOpen: false })).toBe("Started");
+    });
+
     it("labels the window", () => {
         expect(formatLateRegistration(3)).toBe("Late reg: 3 levels");
         expect(formatLateRegistration(1)).toBe("Late reg: 1 level");

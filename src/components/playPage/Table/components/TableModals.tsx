@@ -84,7 +84,8 @@ export const TableModals: React.FC<TableModalsProps> = ({
 
             {/* Watch is an explicit choice to view the live game, not to buy in.
                 Also protect direct links to full tables from an unusable prompt.
-                Once the tournament has started, late entry is closed. */}
+                Once the tournament has started, entry stays open only while
+                late registration is open (poker-vm#2731). */}
             {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && (
                 <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} />
             )}

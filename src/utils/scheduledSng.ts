@@ -95,11 +95,15 @@ const isTournamentProgressState = (
  * closed to new players. Cash games stay open. "Started" is the same public
  * state the lobby reads; place 1 in `results` means the tournament is over.
  */
-export const tournamentRegistrationClosed = (format: GameFormat | string | null | undefined, gameState: unknown): boolean => {
+export const tournamentRegistrationClosed = (format: GameFormat | string | null | undefined, gameState: unknown, nowMs: number = Date.now()): boolean => {
     if (typeof format !== "string") return false;
     if (!isSitAndGoFormat(format) && !isTournamentFormat(format)) return false;
     if (!isTournamentProgressState(gameState)) return false;
-    return hasTournamentStarted(gameState) || hasTournamentFinished(gameState);
+    if (hasTournamentFinished(gameState)) return true;
+    if (!hasTournamentStarted(gameState)) return false;
+    // Late registration (poker-vm#2731): a started tournament stays open to new
+    // players until the late-reg window closes.
+    return lateRegistrationPhase(gameState as Parameters<typeof lateRegistrationPhase>[0], nowMs) !== "open";
 };
 
 /** "mm:ss" (or "h:mm:ss") until a time; "0:00" once passed. */
@@ -130,9 +134,16 @@ export const scheduledLobbyLabel = (input: {
     finished: boolean;
     nowMs?: number;
     lateRegistrationLevels?: number;
+    /** Started, but late registration is still open (poker-vm#2731). */
+    lateRegistrationOpen?: boolean;
+    /** When late registration closes (epoch ms), if known. */
+    lateRegistrationEndsAt?: number;
 }): string => {
     if (input.phase === "unscheduled" || isNullish(input.scheduledStartTime)) return "";
     if (input.finished) return "Finished";
+    if (input.started && input.lateRegistrationOpen) {
+        return `Started · Late reg open${hasValue(input.lateRegistrationEndsAt) ? ` until ${formatStartsAt(input.lateRegistrationEndsAt, input.nowMs)}` : ""}`;
+    }
     if (input.started) return "Started";
     if (input.phase === "cancelled") return "Cancelled: not enough players";
     if (input.phase === "ready") return "Starting";
@@ -177,8 +188,13 @@ export const lateRegistrationPhase = (
     gameState: Pick<TexasHoldemStateDTO, "gameOptions" | "results" | "handNumber" | "previousActions"> | null | undefined,
     nowMs: number
 ): LateRegistrationPhase => {
-    if (isNullish(gameState) || isNullish(gameState.gameOptions.lateRegistrationLevels) || !hasTournamentStarted(gameState)) return "none";
-    return isLateRegistrationOpen(gameState.gameOptions, gameState.results, nowMs) ? "open" : "closed";
+    if (isNullish(gameState) || isNullish(gameState.gameOptions) || isNullish(gameState.gameOptions.lateRegistrationLevels) || gameState.gameOptions.lateRegistrationLevels <= 0 || !hasTournamentStarted(gameState)) return "none";
+    try {
+        return isLateRegistrationOpen(gameState.gameOptions, Array.isArray(gameState.results) ? gameState.results : [], nowMs) ? "open" : "closed";
+    } catch {
+        // Malformed options (e.g. no blind level duration): treat as closed, as the chain would.
+        return "closed";
+    }
 };
 
 /** When late registration closes (epoch ms), once the first hand is dealt. */

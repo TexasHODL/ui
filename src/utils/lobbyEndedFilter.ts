@@ -6,6 +6,10 @@ export type LobbyEndedProgress = {
     mark: "started" | "finished";
     /** Epoch ms when the tournament ended (last previousActions.timestamp). */
     endedAtMs?: number;
+    /** Started, and late registration was open at the last poll (poker-vm#2731). */
+    lateRegOpen?: boolean;
+    /** When late registration closes (epoch ms), if known. */
+    lateRegEndsAtMs?: number;
 };
 
 /**
