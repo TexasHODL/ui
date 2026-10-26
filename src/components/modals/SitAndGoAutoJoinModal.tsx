@@ -333,15 +333,15 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
             {buyInError && <p className="tournament-error" role="alert">{buyInError}</p>}
             <button onClick={handleTakeSeat}
                 disabled={isRegistrationClosed || isJoining || isBalanceLoading || balanceFormatted < parseFloat(maxBuyInFormatted) || isEmpty(emptySeatIndexes)}
-                className="hodl-primary">
+                className={`hodl-primary${!isRegistrationClosed && !isJoining && !isBalanceLoading && balanceFormatted < parseFloat(maxBuyInFormatted) ? " sng-insufficient" : ""}`}>
                 {isCancelled ? "Cancelled" : isRegistrationClosed ? "Registration Closed" : isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
                     ? "Insufficient Balance" : isEmpty(emptySeatIndexes) ? "Table Full" : "Take My Seat"}
             </button>
             <div className="tournament-secondary-actions">
-                <button type="button" onClick={handleSpectate} disabled={isJoining} className="hodl-secondary" data-testid="sng-spectate">
+                <button type="button" onClick={handleSpectate} disabled={isJoining} className="hodl-secondary sng-spectate-btn" data-testid="sng-spectate">
                     Spectate
                 </button>
-                <button type="button" onClick={handleReturnToLobby} disabled={isJoining} className="hodl-secondary" data-testid="sng-return-to-lobby">
+                <button type="button" onClick={handleReturnToLobby} disabled={isJoining} className="hodl-secondary sng-lobby-btn" data-testid="sng-return-to-lobby">
                     Return to Lobby
                 </button>
             </div>
