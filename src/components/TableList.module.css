@@ -297,6 +297,12 @@
     font-size: 13px;
     font-weight: 600;
 }
+.ownerSlot {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+}
 .ownerAction {
     display: inline-flex;
     align-items: center;
@@ -493,6 +499,7 @@
         display: none;
     }
     .ownerAction,
+    .ownerSlot,
     .shareButton {
         width: 36px;
         min-width: 36px;

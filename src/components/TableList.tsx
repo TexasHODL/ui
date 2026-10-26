@@ -329,16 +329,6 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                         </td>
                                         <td>
                                             <div className={styles.rowActions}>
-                                                {owner && (game.currentPlayers === 0 || isCashFormat(game.gameFormat)) && <button
-                                                    type="button"
-                                                    className={styles.ownerAction}
-                                                    aria-label={game.currentPlayers === 0 ? "Delete table" : "Close & refund"}
-                                                    title={game.currentPlayers === 0 ? "Delete table" : "Close & refund"}
-                                                    disabled={game.currentPlayers === 0 ? isDeleting : isClosing}
-                                                    onClick={() => game.currentPlayers === 0 ? setDeleteId(game.gameId) : setCloseTarget(game)}
-                                                >
-                                                    <FaTrashAlt aria-hidden="true" />
-                                                </button>}
                                                 <button
                                                     type="button"
                                                     className={styles.shareButton}
@@ -365,6 +355,16 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                         </>
                                                     )}
                                                 </a>}
+                                                {owner && (game.currentPlayers === 0 || isCashFormat(game.gameFormat)) ? <button
+                                                    type="button"
+                                                    className={styles.ownerAction}
+                                                    aria-label={game.currentPlayers === 0 ? "Delete table" : "Close & refund"}
+                                                    title={game.currentPlayers === 0 ? "Delete table" : "Close & refund"}
+                                                    disabled={game.currentPlayers === 0 ? isDeleting : isClosing}
+                                                    onClick={() => game.currentPlayers === 0 ? setDeleteId(game.gameId) : setCloseTarget(game)}
+                                                >
+                                                    <FaTrashAlt aria-hidden="true" />
+                                                </button> : <span className={styles.ownerSlot} aria-hidden="true" />}
                                             </div>
                                         </td>
                                     </tr>

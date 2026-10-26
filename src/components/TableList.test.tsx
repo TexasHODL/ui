@@ -55,6 +55,18 @@ test("a seated player returns to a full tournament instead of Spectate", () => {
         expect(screen.queryByRole("link", { name: "Spectate My tournament" })).toBeNull();
     } finally { game.currentPlayers = previousCount; }
 });
+test("row actions render share, main, then the owner bin, with a slot reserved when there is no bin", () => {
+    render(<TableList />);
+    screen.getAllByRole("row").slice(1).forEach(tr => {
+        const actions = tr.querySelector("td:last-child > div");
+        if (!actions) return;
+        const last = actions.lastElementChild!;
+        const bin = within(tr).queryByRole("button", { name: /Delete table|Close & refund/ });
+        if (bin) expect(last).toBe(bin); else expect(last).toHaveAttribute("aria-hidden", "true");
+        const share = within(tr).getByRole("button", { name: /^Share / });
+        expect(actions.firstElementChild).toBe(share);
+    });
+});
 test("owner controls are visible and open confirmation without sending a transaction", () => {
     render(<TableList />);
     expect(screen.getAllByRole("button", { name: "Delete table" })).toHaveLength(1);
