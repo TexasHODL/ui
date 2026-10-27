@@ -6,7 +6,7 @@ import { createContext, useContext } from "react";
  *   sonar      thin crisp rings travel well out onto the felt, no glow
  *   halo       a bright comet of light spins around the seat border
  *   breathing  the whole border brightens and dims on a slow sine loop
- *   ripple     translucent gold fill with a steady glowing rim; ripples run from the centre out to the rim
+ *   ripple     brand pink-to-orange: translucent pink fill, glowing orange rim; ripples run centre -> rim shifting pink to orange
  */
 export const WIN_PULSE_STYLES = ["heartbeat", "sonar", "halo", "breathing", "ripple"] as const;
 export type WinPulseStyle = (typeof WIN_PULSE_STYLES)[number];

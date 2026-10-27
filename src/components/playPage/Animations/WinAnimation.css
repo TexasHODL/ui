@@ -66,6 +66,10 @@
   --win-ripple-rim-opacity: 0.85;
   --win-ripple-rim-boost: 0.15;       /* extra rim opacity as each ripple arrives */
   --win-ripple-glow: 16px;
+  /* Ripple uses the brand gradient, not gold: same values as the bet slider (sliderTravel.ts / desktopPillSlider.css). */
+  --win-ripple-orange: 255, 151, 23;  /* #ff9717 ripples at the rim, glowing rim */
+  --win-ripple-mid: 255, 74, 131;     /* #ff4a83 ripples mid-way */
+  --win-ripple-pink: 240, 43, 198;    /* #f02bc6 centre, fill tint, ripples start */
 }
 
 /* Container for win animation */
@@ -171,10 +175,11 @@
 
 /* ---------- 5. Ripple (water in a cup) ---------- */
 @keyframes win-ripple-ring {
-  0%   { transform: scale(0.04); opacity: 0; }
+  0%   { transform: scale(0.04); opacity: 0; border-color: rgb(var(--win-ripple-pink)); box-shadow: 0 0 6px rgba(var(--win-ripple-pink), 0.5); }
+  50%  { border-color: rgb(var(--win-ripple-mid)); box-shadow: 0 0 6px rgba(var(--win-ripple-mid), 0.5); }
   12%  { opacity: calc(var(--win-ripple-ring-opacity) * var(--win-pulse-intensity)); }
   70%  { opacity: calc(var(--win-ripple-ring-opacity) * 0.6 * var(--win-pulse-intensity)); }
-  100% { transform: scale(1); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; border-color: rgb(var(--win-ripple-orange)); box-shadow: 0 0 6px rgba(var(--win-ripple-orange), 0.5); }
 }
 
 /* One beat per ring arrival: period = duration / rings, so it loops seamlessly. */
@@ -191,16 +196,15 @@
 .win-pulse-ripple-cup {
   overflow: hidden;                   /* ripples stay inside the seat shape */
   background: radial-gradient(ellipse at center,
-    rgba(var(--win-pulse-color), calc(var(--win-ripple-fill-opacity) * 0.7 * var(--win-pulse-intensity))) 0%,
-    rgba(var(--win-pulse-color), calc(var(--win-ripple-fill-opacity) * 1.3 * var(--win-pulse-intensity))) 100%);
+    rgba(var(--win-ripple-pink), calc(var(--win-ripple-fill-opacity) * 0.8 * var(--win-pulse-intensity))) 0%,
+    rgba(var(--win-ripple-pink), calc(var(--win-ripple-fill-opacity) * 1.3 * var(--win-pulse-intensity))) 100%);
 }
 
 .win-pulse-ripple-ring {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  border: var(--win-ripple-ring-width) solid rgb(var(--win-pulse-color));
-  box-shadow: 0 0 6px rgba(var(--win-pulse-color), 0.5);
+  border: var(--win-ripple-ring-width) solid rgb(var(--win-ripple-pink));
   opacity: 0;
   will-change: transform, opacity;
   animation: win-ripple-ring calc(var(--win-ripple-duration) / var(--win-pulse-speed)) cubic-bezier(0.3, 0.2, 0.6, 1) infinite;
@@ -208,8 +212,8 @@
 }
 
 .win-pulse-ripple-rim {
-  border: var(--win-ripple-rim-width) solid rgb(var(--win-pulse-color));
-  box-shadow: 0 0 var(--win-ripple-glow) rgba(var(--win-pulse-color), 0.75), inset 0 0 calc(var(--win-ripple-glow) * 0.4) rgba(var(--win-pulse-color), 0.45);
+  border: var(--win-ripple-rim-width) solid rgb(var(--win-ripple-orange));
+  box-shadow: 0 0 var(--win-ripple-glow) rgba(var(--win-ripple-orange), 0.75), inset 0 0 calc(var(--win-ripple-glow) * 0.4) rgba(var(--win-ripple-orange), 0.45);
   opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity));
   animation: win-ripple-rim calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings)) ease-in-out infinite;
 }

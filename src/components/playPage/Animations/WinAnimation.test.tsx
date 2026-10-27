@@ -81,6 +81,17 @@ describe("win pulse styles", () => {
         expect(container.querySelectorAll(".bubbles li")).toHaveLength(WIN_PULSE_CHIP_FILES.length);
     });
 
+    it("defines the ripple's brand pink/orange colours from the slider gradient, keeping gold for the other styles", () => {
+        const css = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
+        expect(css).toMatch(/--win-ripple-orange: 255, 151, 23;/);
+        expect(css).toMatch(/--win-ripple-mid: 255, 74, 131;/);
+        expect(css).toMatch(/--win-ripple-pink: 240, 43, 198;/);
+        expect(css).toMatch(/--win-pulse-color: 255, 196, 30;/);
+        const rim = css.match(/\.win-pulse-ripple-rim \{\s*border[^}]*\}/)![0];
+        expect(rim).toContain("--win-ripple-orange");
+        expect(rim).not.toContain("--win-pulse-color");
+    });
+
     it("takes style and tuning from context, and the prop wins", () => {
         const value = { style: "halo" as const, tuning: { ...DEFAULT_WIN_PULSE_TUNING, speed: 2 } };
         const { container, rerender } = render(
