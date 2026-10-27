@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import { test, expect } from "./fixtures.js";
 
 /**
@@ -7,7 +6,7 @@ import { test, expect } from "./fixtures.js";
  * shows the levels the engine will play (rounded doubling, antes) instead of
  * raw doubling. Saves a screenshot for the PR.
  */
-const SHOTS = fileURLToPath(new URL("../../../screenshots/", import.meta.url));
+const SHOTS = new URL("../../../screenshots/", import.meta.url).pathname;
 
 for (const type of ["sit-and-go", "tournament"] as const) {
   test(`admin tables: a ${type} picks a blind structure, ladder by default`, async ({ page }) => {
