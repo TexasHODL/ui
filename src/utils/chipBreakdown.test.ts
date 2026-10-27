@@ -844,3 +844,23 @@ describe("chipColorClass", () => {
         expect(chipColorClass("")).toBe("bg-gray-500");
     });
 });
+
+describe("decomposeAmount for tournament / Sit & Go chips", () => {
+    it("breaks 2,460 chips into number chips only", () => {
+        expect(decomposeAmount(2460, true).map(s => [s.file, s.count])).toEqual([
+            ["1000chip.svg", 2], ["100chip.svg", 4], ["25chip.svg", 2], ["5chip.svg", 2]
+        ]);
+    });
+
+    it("never uses cent chips, even for fractional or zero amounts", () => {
+        for (const amount of [0, 0.5, 3.75, 1300, 40000]) {
+            decomposeAmount(amount, true).forEach(s => expect(s.file).not.toMatch(/cent/));
+        }
+        expect(decomposeAmount(0, true)[0].file).toBe("1chip.svg");
+    });
+
+    it("cash keeps the cent chips", () => {
+        expect(decomposeAmount(1.35).map(s => s.file)).toEqual(["1chip.svg", "25cent.svg", "10cent.svg"]);
+        expect(decomposeAmount(0)[0].file).toBe("1cent.svg");
+    });
+});

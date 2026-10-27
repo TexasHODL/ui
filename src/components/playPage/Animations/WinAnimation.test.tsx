@@ -36,9 +36,10 @@ describe("win pulse particles", () => {
     });
 
     it("uses the live chips for the Current style, not a generic dot", () => {
+        mockGameFormat = "cash";
         act(() => setTableStyle("chips", "current"));
         const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
-        expect(particleUrls(container)[0]).toMatch(/\/chips\/25chip\.svg/);
+        expect(particleUrls(container)[0]).toMatch(/\/chips\/\d+(cent|chip)\.svg/);
     });
 
     it("keeps the fixed tournament chips on tournaments", () => {
@@ -46,6 +47,20 @@ describe("win pulse particles", () => {
         act(() => setTableStyle("chips", "A"));
         const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
         expect(particleUrls(container)).toEqual(WIN_PULSE_CHIP_FILES.map(f => `url("/assets/chipstyles/A/${f}")`));
+    });
+
+    it.each(["tournament", "sit-and-go"])("draws number chips, not the Current $ chips, on %s tables", format => {
+        mockGameFormat = format;
+        act(() => setTableStyle("chips", "current"));
+        const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
+        expect(particleUrls(container)).toEqual(WIN_PULSE_CHIP_FILES.map(f => `url("/assets/chipstyles/C/${f}")`));
+    });
+
+    it("keeps the live $/c chips for the Current style on cash tables", () => {
+        mockGameFormat = "cash";
+        act(() => setTableStyle("chips", "current"));
+        const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
+        particleUrls(container).forEach(url => expect(url).toMatch(/\/chips\/\d+(cent|chip)\.svg/));
     });
 
     it("uses $/c chips from the cash denomination set on cash tables", () => {

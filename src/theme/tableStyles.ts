@@ -126,6 +126,17 @@ export const chipStyleUrl = (style: ChipStyleId, file: string): string | null =>
     if (!urls) return null;
     return urls[file] ?? urls[file.replace(/\.svg$/, ".webp")] ?? null;
 };
+/**
+ * Chip set a tournament or Sit & Go table uses when the player picked Current.
+ * The live CDN chips print "$" on every denomination, so they only suit cash
+ * tables; tournament chips are plain numbers, so fall back to the default set.
+ */
+export const TOURNAMENT_CHIP_STYLE: ChipStyleId = DEFAULT_TABLE_STYLES.chips;
+
+/** The chip style to draw with: Current swaps to a number-chip set on tournament / Sit & Go tables. */
+export const chipStyleForFormat = (style: ChipStyleId, isTournament: boolean): ChipStyleId =>
+    isTournament && style === "current" ? TOURNAMENT_CHIP_STYLE : style;
+
 /** Styled dealer button URL, or null for Current. */
 export const dealerStyleUrl = (style: StyleId): string | null => (style === "current" ? null : DEALER_STYLE_URLS[style] ?? null);
 

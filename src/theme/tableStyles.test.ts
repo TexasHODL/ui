@@ -9,6 +9,8 @@ import {
     DEFAULT_TABLE_STYLES,
     STYLE_IDS,
     TABLE_STYLE_STORAGE_KEYS,
+    TOURNAMENT_CHIP_STYLE,
+    chipStyleForFormat,
     chipStyleUrl,
     dealerStyleUrl,
     deckCardUrl,
@@ -146,5 +148,23 @@ describe("bundled style art", () => {
         // Marble (E) is a photoreal webp that object-fits the same CSS box.
         expect(dealerStyleUrl("E")).toBe("/assets/dealerstyles/E.webp");
         expect(fs.existsSync(path.join(ASSETS, "dealerstyles", "E.webp"))).toBe(true);
+    });
+});
+
+describe("chipStyleForFormat", () => {
+    it("keeps Current on cash tables (the live $ chips)", () => {
+        expect(chipStyleForFormat("current", false)).toBe("current");
+    });
+
+    it("swaps Current for a number-chip set on tournament / Sit & Go tables", () => {
+        expect(chipStyleForFormat("current", true)).toBe(TOURNAMENT_CHIP_STYLE);
+        expect(TOURNAMENT_CHIP_STYLE).not.toBe("current");
+    });
+
+    it("leaves a chosen style alone for every format", () => {
+        for (const style of CHIP_STYLE_IDS.filter(s => s !== "current")) {
+            expect(chipStyleForFormat(style, true)).toBe(style);
+            expect(chipStyleForFormat(style, false)).toBe(style);
+        }
     });
 });

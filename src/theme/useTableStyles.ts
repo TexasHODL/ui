@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { getCardImageUrl } from "../utils/cardImages";
-import { chipStyleUrl, dealerStyleUrl, deckCardUrl, getTableStyles, subscribeTableStyles, type TableStyles } from "./tableStyles";
+import { chipStyleForFormat, chipStyleUrl, dealerStyleUrl, deckCardUrl, getTableStyles, subscribeTableStyles, type TableStyles } from "./tableStyles";
 
 /** The player's saved table styles; re-renders when any of them changes. */
 export function useTableStyles(): TableStyles {
@@ -13,10 +13,15 @@ export function useCardFaceUrl(): (code: string) => string {
     return useCallback((code: string) => deckCardUrl(deck, code) ?? getCardImageUrl(code), [deck]);
 }
 
-/** Chip image URL in the chosen chip style, or `fallback` (the live CDN chip) for Current. */
-export function useChipImageUrl(): (file: string, fallback: string) => string {
+/**
+ * Chip image URL in the chosen chip style, or `fallback` (the live CDN chip) for Current.
+ * Pass `isTournament` (tournament / Sit & Go, via isTournamentFormat) so Current never
+ * falls back to the CDN $ chips on a table that plays in chips.
+ */
+export function useChipImageUrl(isTournament = false): (file: string, fallback: string) => string {
     const { chips } = useTableStyles();
-    return useCallback((file: string, fallback: string) => chipStyleUrl(chips, file) ?? fallback, [chips]);
+    const style = chipStyleForFormat(chips, isTournament);
+    return useCallback((file: string, fallback: string) => chipStyleUrl(style, file) ?? fallback, [style]);
 }
 
 /** Dealer button image URL in the chosen style, or `fallback` (the current button art). */

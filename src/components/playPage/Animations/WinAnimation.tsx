@@ -29,11 +29,12 @@ export function pickCashPulseChips(count = WIN_PULSE_CHIP_FILES.length, random: 
 
 const WinAnimation: React.FC<WinAnimationProps & { position?: { left: string; top: string } }> = React.memo(({ index, position }) => {
     const { winnerBySeat } = useWinnerInfo();
-    const chipUrl = useChipImageUrl();
     const { gameFormat } = useGameStateContext();
     // Tournaments and Sit & Gos keep the fixed chip mix; cash tables get a random
     // mix of $/c chips, picked once per pulse so the particles don't flicker.
     const isTournament = isTournamentFormat(gameFormat);
+    // Current's CDN chips are all $ chips, so tournaments resolve to a number-chip set.
+    const chipUrl = useChipImageUrl(isTournament);
     const files = useMemo<readonly string[]>(() => (isTournament ? WIN_PULSE_CHIP_FILES : pickCashPulseChips()), [isTournament]);
 
     const isWinner = winnerBySeat.has(index + 1);

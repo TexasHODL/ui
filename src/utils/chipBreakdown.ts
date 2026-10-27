@@ -103,6 +103,8 @@ export interface ChipStackEntry {
  *
  * @param dollarAmount Dollar value (not USDC micro-units). Pass the result
  *                     of formatUSDCToSimpleDollars() or similar conversion.
+ * @param isTournament  Tournament / Sit & Go amounts are whole chips: only the
+ *                     number chips (1 and up) are used, never the cent chips.
  * @returns Array of ChipStackEntry, highest denomination first.
  *          Always returns at least one entry (minimum: 1 white chip).
  *
@@ -111,13 +113,15 @@ export interface ChipStackEntry {
  *   decomposeAmount(150)  → [{ $100, black, 1 }, { $25, green, 2 }]
  *   decomposeAmount(0.50) → [{ $1, white, 1 }]  // fallback
  */
-export function decomposeAmount(dollarAmount: number): ChipStackEntry[] {
+export function decomposeAmount(dollarAmount: number, isTournament = false): ChipStackEntry[] {
+    // Tournament chips have no cents: whole number chips only.
+    const denominations = isTournament ? CHIP_DENOMINATIONS.filter(d => d.value >= 1) : CHIP_DENOMINATIONS;
     // Work in cents for full accuracy
-    const totalCents = Math.round(dollarAmount * 100);
+    const totalCents = isTournament ? Math.floor(dollarAmount) * 100 : Math.round(dollarAmount * 100);
 
     if (totalCents <= 0) {
-        // Fallback: show 1¢ chip for zero or negative
-        const fallback = CHIP_DENOMINATIONS.find(d => d.value === 0.01)!;
+        // Fallback: show the smallest chip (1¢ cash, 1 tournament) for zero or negative
+        const fallback = denominations[denominations.length - 1];
         return [{
             value: fallback.value,
             file: fallback.file,
@@ -131,7 +135,7 @@ export function decomposeAmount(dollarAmount: number): ChipStackEntry[] {
     const stacks: ChipStackEntry[] = [];
 
     // Greedy: take as many of each denomination as possible, largest first.
-    for (const denom of CHIP_DENOMINATIONS) {
+    for (const denom of denominations) {
         const denomCents = Math.round(denom.value * 100);
         if (remainder < denomCents) continue;
         const count = Math.floor(remainder / denomCents);
