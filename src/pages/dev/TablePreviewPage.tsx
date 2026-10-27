@@ -15,6 +15,8 @@ import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { getCosmosAddressSync } from "../../utils/cosmosAccountUtils";
 import {
     PREVIEW_BOARD_COUNTS,
+    PREVIEW_FORMATS,
+    type PreviewFormat,
     PREVIEW_HERO_ADDRESS,
     PREVIEW_SEAT_ACTIONS,
     PREVIEW_SEAT_COUNTS,
@@ -23,6 +25,12 @@ import {
     parsePreviewSearch,
     previewSearchParams
 } from "./previewTableState";
+
+const PREVIEW_GAME_FORMATS: Record<PreviewFormat, GameFormat> = {
+    cash: GameFormat.CASH,
+    tournament: GameFormat.TOURNAMENT,
+    sng: GameFormat.SIT_AND_GO
+};
 
 const PREVIEW_WALLET_FLAG = "b52_table_preview_wallet";
 
@@ -100,7 +108,7 @@ const TablePreviewPage = () => {
                 loadHistoricalState={loadHistoricalState}
                 loadHistoricalStateAtHeight={async () => undefined}
             >
-                <GameMetaProvider gameFormat={GameFormat.CASH} gameVariant={GameVariant.TEXAS_HOLDEM} gameName={undefined}>
+                <GameMetaProvider gameFormat={PREVIEW_GAME_FORMATS[options.format]} gameVariant={GameVariant.TEXAS_HOLDEM} gameName={undefined}>
                     <ReplayProvider isReplayMode={false} replayHandNumber={null} replayActionIndex={null}>
                         <GameUIProvider
                             isLoading={false}
@@ -206,6 +214,18 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
             >
                 Omaha
             </button>
+            <span style={labelStyle}>Format</span>
+            {PREVIEW_FORMATS.map(format => (
+                <button
+                    key={format}
+                    type="button"
+                    aria-pressed={options.format === format}
+                    onClick={() => onChange({ format })}
+                    style={buttonStyle(options.format === format)}
+                >
+                    {format === "sng" ? "SNG" : format === "tournament" ? "Tourney" : "Cash"}
+                </button>
+            ))}
             <span style={labelStyle}>Board</span>
             {PREVIEW_BOARD_COUNTS.map(count => (
                 <button

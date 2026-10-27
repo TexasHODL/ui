@@ -81,7 +81,8 @@ function getClusterBounds(count: number, chipSize: number, maxVisibleCount: numb
 
 const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
     // Chip art from Settings > Chips (Current = the live CDN chips).
-    const chipUrl = useChipImageUrl();
+    // Tournament / Sit & Go tables never draw the $ (Current) chips.
+    const chipUrl = useChipImageUrl(isTournament);
     const amountStr = amount ? amount.toString() : "0";
 
     // Format based on game type: raw chips for tournaments, USDC conversion for cash
@@ -94,7 +95,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
         ? Number(amountStr)
         : convertUSDCToNumber(amountStr);
 
-    const allStacks = decomposeAmount(dollarAmount);
+    const allStacks = decomposeAmount(dollarAmount, isTournament);
 
     const isMobile = window.innerWidth <= 768 || window.innerHeight <= 500;
     // Phone-width viewports use the 36px label. A short or wide landscape window

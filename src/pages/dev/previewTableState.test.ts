@@ -18,7 +18,8 @@ describe("parsePreviewSearch", () => {
             heroTurn: false,
             holeCards: true,
             holeCount: 2,
-            board: 5
+            board: 5,
+            format: "cash"
         });
     });
 
@@ -109,6 +110,21 @@ describe("parsePreviewSearch", () => {
         const idle = buildPreviewState(parsePreviewSearch(new URLSearchParams("seats=6")), PREVIEW_HERO_ADDRESS);
         expect(idle.players.every(player => player.legalActions.length === 0)).toBe(true);
         expect(idle.nextToAct).toBe(2);
+    });
+
+    it("reads the table format and round-trips it", () => {
+        expect(parsePreviewSearch(new URLSearchParams("")).format).toBe("cash");
+        expect(parsePreviewSearch(new URLSearchParams("format=bogus")).format).toBe("cash");
+        for (const format of ["tournament", "sng"] as const) {
+            const options = parsePreviewSearch(new URLSearchParams(`format=${format}`));
+            expect(options.format).toBe(format);
+            expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+            const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+            // Raw tournament chips, not USDC micro-units
+            expect(state.gameOptions.bigBlind).toBe("1300");
+            expect(state.players[1].sumOfBets).toBe("1300");
+            expect(state.gameOptions.nextBigBlind).toBeDefined();
+        }
     });
 
     it("reads hole cards and community-card count", () => {

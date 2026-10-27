@@ -20,6 +20,9 @@ export type PreviewSeatCount = (typeof PREVIEW_SEAT_COUNTS)[number];
 export const PREVIEW_BOARD_COUNTS = [0, 3, 4, 5] as const;
 export type PreviewBoardCount = (typeof PREVIEW_BOARD_COUNTS)[number];
 
+export const PREVIEW_FORMATS = ["cash", "tournament", "sng"] as const;
+export type PreviewFormat = (typeof PREVIEW_FORMATS)[number];
+
 const COMMUNITY = ["AH", "KD", "QC", "JH", "TS"];
 
 export interface PreviewOptions {
@@ -36,6 +39,8 @@ export interface PreviewOptions {
     /** 2 for Hold'em, 4 for Omaha. Ignored while hole cards are off. */
     holeCount: 2 | 4;
     board: PreviewBoardCount;
+    /** Table format: cash (USDC micro-units) or tournament / Sit & Go (raw chips). */
+    format: PreviewFormat;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -49,6 +54,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * seats=2|4|6|9 (default 9), dealer=<seat>|all (default seat 1, clamped to the table),
  * holes=0|1|4 (default two cards; 4 draws Omaha), board=0|3|4|5 (default a full board),
  * actions=all to pin an action badge on every seat,
+ * format=cash|tournament|sng (default cash) picks the table format and chip amounts,
  * turn=1 to make seat 1's turn and show the real action controls.
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. turn=1 writes seat 1's legal actions.
@@ -70,7 +76,9 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const board: PreviewBoardCount = isBoardCount(requestedBoard) ? requestedBoard : 5;
     const allActions = params.get("actions") === "all";
     const heroTurn = params.get("turn") === "1";
-    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, holeCount, board };
+    const formatParam = params.get("format");
+    const format: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
+    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, holeCount, board, format };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -81,6 +89,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     params.set("board", String(options.board));
     if (options.allActions) params.set("actions", "all");
     if (options.heroTurn) params.set("turn", "1");
+    if (options.format !== "cash") params.set("format", options.format);
     return params;
 };
 
@@ -169,7 +178,8 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
 
     for (let seat = 1; seat <= options.seats; seat++) {
         const address = previewSeatAddress(seat, heroAddress);
-        const amount = String(20000 * seat);
+        // Tournament / Sit & Go amounts are raw chips (650 per seat, level-7 blinds); cash is USDC micro-units.
+        const amount = String(options.format === "cash" ? 20000 * seat : 650 * seat);
         pot += BigInt(amount);
         const action: ActionDTO = {
             playerId: address,
@@ -184,7 +194,7 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         players.push({
             address,
             seat,
-            stack: HERO_STACK_MICRO,
+            stack: options.format === "cash" ? HERO_STACK_MICRO : "40000",
             isSmallBlind: seat === 1,
             isBigBlind: seat === Math.min(2, options.seats),
             isDealer: seat === options.dealer,
@@ -208,9 +218,11 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             maxBuyIn: "1000000000",
             minPlayers: 2,
             maxPlayers: options.seats,
-            smallBlind: "10000000",
-            bigBlind: "20000000",
-            timeout: 30
+            smallBlind: options.format === "cash" ? "10000000" : "650",
+            bigBlind: options.format === "cash" ? "20000000" : "1300",
+            timeout: 30,
+            // Level 7 of a tournament / Sit & Go: the blind clock needs the next level.
+            ...(options.format === "cash" ? {} : { blindLevel: 7, nextSmallBlind: "800", nextBigBlind: "1600", blindLevelDuration: 10, levelStartTime: Date.now() })
         },
         smallBlindPosition: 1,
         bigBlindPosition: Math.min(2, options.seats),
