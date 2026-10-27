@@ -19,11 +19,22 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
-import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
+import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
 import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
-import { TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
+import { SNG_PREVIEW_LEVEL_COUNT, TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
+import {
+    choiceUsesFormBlinds,
+    DEFAULT_BLIND_STRUCTURE_CHOICE,
+    DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
+    openingBlindsOf,
+    previewBlindLevels,
+    resolveBlindStructureChoice,
+    sngBlindFields,
+    type BlindStructureChoice
+} from "../utils/blindStructureChoice";
+import { BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../components/BlindStructureFields";
 
 interface TableData {
     gameId: string;
@@ -69,23 +80,41 @@ export default function TableAdminPage() {
     const [selectedBlindLevel, setSelectedBlindLevel] = useState(DEFAULT_BLIND_LEVEL_INDEX);
 
     // SNG/Tournament blind values (in chips, not dollars)
-    const [sngSmallBlind, setSngSmallBlind] = useState(25);
-    const [sngBigBlind, setSngBigBlind] = useState(50);
+    // 10/20 opens the round-number ladder (ui#905), matching the lobby's create modal.
+    const [sngSmallBlind, setSngSmallBlind] = useState(SNG_BLINDS[0].smallBlind);
+    const [sngBigBlind, setSngBigBlind] = useState(SNG_BLINDS[0].bigBlind);
+    const [blindLevelDuration, setBlindLevelDuration] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
+
+    // Blind structure (ui#905, ui#906): the same choices as the lobby's create
+    // modal, ladder by default. Ladder and doubling use the opening blinds and
+    // level time above; presets and custom text carry their own.
+    const [blindStructureChoice, setBlindStructureChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
+    const [customBlindText, setCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
+    const blindPlan = useMemo(
+        () => resolveBlindStructureChoice(blindStructureChoice, customBlindText, { smallBlind: sngSmallBlind, bigBlind: sngBigBlind, durationMinutes: blindLevelDuration }),
+        [blindStructureChoice, customBlindText, sngSmallBlind, sngBigBlind, blindLevelDuration]
+    );
+    // What the create message carries as the opening small/big blind and level time.
+    const sngOpeningBlinds = useMemo(
+        () => (blindPlan.preview ? openingBlindsOf(blindPlan.preview) : { smallBlind: sngSmallBlind, bigBlind: sngBigBlind, durationMinutes: blindLevelDuration }),
+        [blindPlan, sngSmallBlind, sngBigBlind, blindLevelDuration]
+    );
+    const blindPreviewRows = useMemo(() => (blindPlan.preview ? previewBlindLevels(blindPlan.preview, SNG_PREVIEW_LEVEL_COUNT) : []), [blindPlan]);
 
     // Get effective blind values based on game format
     const smallBlind = useMemo(() => {
         if (isTournamentFormat(gameFormat)) {
-            return sngSmallBlind.toString();
+            return sngOpeningBlinds.smallBlind.toString();
         }
         return BLIND_LEVELS[selectedBlindLevel].smallBlind.toString();
-    }, [gameFormat, sngSmallBlind, selectedBlindLevel]);
+    }, [gameFormat, sngOpeningBlinds, selectedBlindLevel]);
 
     const bigBlind = useMemo(() => {
         if (isTournamentFormat(gameFormat)) {
-            return sngBigBlind.toString();
+            return sngOpeningBlinds.bigBlind.toString();
         }
         return BLIND_LEVELS[selectedBlindLevel].bigBlind.toString();
-    }, [gameFormat, sngBigBlind, selectedBlindLevel]);
+    }, [gameFormat, sngOpeningBlinds, selectedBlindLevel]);
 
     const handleGameFormatChange = (newType: CreateGameType) => {
         setGameType(newType);
@@ -105,7 +134,6 @@ export default function TableAdminPage() {
     const [tournamentBuyIn, setTournamentBuyIn] = useState("10");
     // SNG/Tournament specific settings
     const [startingStack, setStartingStack] = useState(1500);
-    const [blindLevelDuration, setBlindLevelDuration] = useState(10);
     // Flat entry fee in USDC dollars (2dp), skimmed to the creator on top of the
     // buy-in. "0" = no fee. (poker-vm#2118)
     const [entryFee, setEntryFee] = useState("0");
@@ -222,11 +250,18 @@ export default function TableAdminPage() {
             }
         }
 
-        // Build SNG config if this is a tournament/SNG
+        if (isTournament && blindPlan.error) {
+            toast.error(`Blind structure: ${blindPlan.error}`);
+            return;
+        }
+
+        // Build SNG config if this is a tournament/SNG. The blind structure goes
+        // with it exactly as the lobby's create modal sends it (ui#906); doubling
+        // sends none and the engine plays rounded doubling (poker-vm#2738).
         const sngConfig = isTournament
             ? {
                   startingStack,
-                  blindLevelDuration,
+                  ...sngBlindFields(blindPlan, blindLevelDuration),
                   entryFee: parseFloat(entryFee) || 0,
                   ...(isScheduled && { startTime }),
                   ...(isScheduled && lateRegLevels > 0 && { lateRegistrationLevels: lateRegLevels })
@@ -651,6 +686,25 @@ export default function TableAdminPage() {
                                             </div>
                                         </div>
 
+                                        {/* Blind Structure (ui#905) */}
+                                        <div>
+                                            <BlindStructureSelect
+                                                value={blindStructureChoice}
+                                                onChange={setBlindStructureChoice}
+                                                labelClassName="text-gray-300 text-xs mb-2 block"
+                                                className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                            />
+                                            {blindStructureChoice === "custom" && (
+                                                <CustomBlindStructureInput
+                                                    value={customBlindText}
+                                                    onChange={setCustomBlindText}
+                                                    error={blindPlan.error}
+                                                    labelClassName="text-gray-300 text-xs mt-3 mb-2 block"
+                                                />
+                                            )}
+                                        </div>
+
+                                        {choiceUsesFormBlinds(blindStructureChoice) && (<>
                                         {/* Starting Blinds (chips) */}
                                         <div>
                                             <label className="text-gray-300 text-xs mb-2 block">Starting Blinds (chips)</label>
@@ -736,15 +790,16 @@ export default function TableAdminPage() {
                                                 </button>
                                             </div>
                                         </div>
+                                        </>)}
 
                                         {/* SNG Settings Summary */}
                                         <div className="bg-[#0c0911] rounded-lg p-3 border border-white/10">
                                             <p className="text-gray-400 text-xs mb-1">SNG Settings:</p>
                                             <p className="text-green-400 text-sm font-medium">
-                                                {startingStack} chips • Blinds increase every {blindLevelDuration} min
+                                                {startingStack} chips • Blinds increase every {sngOpeningBlinds.durationMinutes} min
                                             </p>
                                             <p className="text-gray-500 text-xs mt-1">
-                                                Starting blinds: {sngSmallBlind} / {sngBigBlind} chips
+                                                Starting blinds: {sngOpeningBlinds.smallBlind} / {sngOpeningBlinds.bigBlind} chips
                                             </p>
                                         </div>
 
@@ -852,33 +907,11 @@ export default function TableAdminPage() {
 
                                     {showStructure && (
                                         <div className="bg-[#0c0911] rounded-lg p-4 border border-white/10">
-                                            <table className="w-full text-sm">
-                                                <thead>
-                                                    <tr className="text-gray-400 border-b border-white/10">
-                                                        <th className="text-left py-2 px-2">Level</th>
-                                                        <th className="text-left py-2 px-2">Small Blind</th>
-                                                        <th className="text-left py-2 px-2">Big Blind</th>
-                                                        <th className="text-left py-2 px-2">Duration</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="text-gray-300">
-                                                    {Array.from({ length: 10 }, (_, i) => {
-                                                        const sb = parseInt(smallBlind) || 25;
-                                                        const bb = parseInt(bigBlind) || 50;
-                                                        const levelSB = sb * Math.pow(2, i);
-                                                        const levelBB = bb * Math.pow(2, i);
-                                                        return (
-                                                            <tr key={i} className={i === 0 ? "bg-green-900/20" : ""}>
-                                                                <td className="py-2 px-2">{i + 1}</td>
-                                                                <td className="py-2 px-2">{levelSB.toLocaleString()}</td>
-                                                                <td className="py-2 px-2">{levelBB.toLocaleString()}</td>
-                                                                <td className="py-2 px-2">{blindLevelDuration} min</td>
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                </tbody>
-                                            </table>
-                                            <p className="text-gray-500 text-xs mt-3">* Blinds double each level. Level 1 is highlighted.</p>
+                                            {blindPreviewRows.length > 0 ? (
+                                                <BlindPreviewTable rows={blindPreviewRows} choice={blindStructureChoice} className="rounded border border-white/10" />
+                                            ) : (
+                                                <p className="text-red-400 text-xs">Fix the custom structure to see its levels.</p>
+                                            )}
                                         </div>
                                     )}
                                 </div>

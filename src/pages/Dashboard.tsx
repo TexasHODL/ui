@@ -16,9 +16,9 @@ import { ETH_CHAIN_ID } from "../config/constants";
 import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
-import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, SNG_BLINDS } from "../constants/blindLevels";
-import { usdcToMicroBigInt, microToUsdc } from "../constants/currency";
 import { readUsdcBalance } from "../utils/usdcBalance";
+import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
+import { usdcToMicroBigInt, microToUsdc } from "../constants/currency";
 
 import { UpcomingSngModal } from "../components/modals";
 import TableList from "../components/TableList";
@@ -42,11 +42,14 @@ import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isSchedul
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import {
     BLIND_STRUCTURE_CHOICES,
+    choiceUsesFormBlinds,
+    DEFAULT_BLIND_STRUCTURE_CHOICE,
     DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
     isBlindStructureChoice,
     openingBlindsOf,
     previewBlindLevels,
     resolveBlindStructureChoice,
+    sngBlindFields,
     type BlindStructureChoice
 } from "../utils/blindStructureChoice";
 import { SNG_PREVIEW_LEVEL_COUNT } from "../utils/sngAdvancedParams";
@@ -126,17 +129,18 @@ const Dashboard: React.FC = () => {
     // Sit & Go settings — the chain requires them (ui#690: without them the SDK throws
     // "sit-and-go games require an sngConfig"). Same presets as /admin/tables.
     const [modalStartingStack, setModalStartingStack] = useState(1500);
-    const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(10);
+    const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
     // Tournament start (poker-vm#2680): starts at the start time with at least
     // modalSngMinPlayers registered, or earlier when full.
     const [modalScheduled, setModalScheduled] = useState(false);
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
     const [modalLateRegLevels, setModalLateRegLevels] = useState(0); // poker-vm#2731; 0 = off
-    const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(1); // 25 / 50
-    // Blind structure (ui#860, poker-vm#1734): doubling (the two selects above
-    // and below), an engine preset, or a custom structure in the SDK's text form.
-    const [modalBlindStructureChoice, setModalBlindStructureChoice] = useState<BlindStructureChoice>("doubling");
+    const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(0); // 10 / 20
+    // Blind structure (ui#860, poker-vm#1734): the ladder (default, ui#905) or
+    // doubling (both from the two selects above and below), an engine preset, or
+    // a custom structure in the SDK's text form.
+    const [modalBlindStructureChoice, setModalBlindStructureChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
     const [modalCustomBlindText, setModalCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const [entryFee, setEntryFee] = useState(0);
     const [enableRake, setEnableRake] = useState(false);
@@ -266,9 +270,8 @@ const Dashboard: React.FC = () => {
                     sng: {
                         startingStack: modalStartingStack,
                         // A structure carries its own level times; the opening level's is sent for the lobby.
-                        blindLevelDuration: sngOpeningBlinds?.durationMinutes ?? modalBlindLevelDuration,
+                        ...sngBlindFields(blindPlan, modalBlindLevelDuration),
                         entryFee,
-                        ...(blindPlan.structure && { blindStructure: blindPlan.structure }),
                         ...(scheduled && { startTime }),
                         ...(scheduled && modalLateRegLevels > 0 && { lateRegistrationLevels: modalLateRegLevels })
                     }
@@ -967,7 +970,7 @@ const Dashboard: React.FC = () => {
                                                 ))}
                                             </select>
                                             </div>
-                                            {modalBlindStructureChoice === "doubling" && (
+                                            {choiceUsesFormBlinds(modalBlindStructureChoice) && (
                                                 <>
                                             <div className="creation-span" data-testid="sng-blinds">
                                             <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>

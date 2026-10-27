@@ -1,9 +1,10 @@
 /**
  * Blind structure choice on the Create Sit & Go form (ui#860, poker-vm#1734).
  *
- * The form offers "Doubling" (today's behaviour: pick the opening blinds and
- * the minutes per level; the blinds double every level), the four engine
- * presets, or a custom structure written in the SDK's text form. This module
+ * The form offers "Ladder" (the default, ui#905: pick the opening blinds and
+ * the minutes per level; the blinds climb a round-number ladder, see
+ * blindLadder.ts), "Doubling" (pick the same; the blinds double every level),
+ * the four engine presets, or a custom structure written in the SDK's text form. This module
  * holds the pure, unit-tested logic: which structure (if any) is submitted,
  * which resolved structure the level preview expands, and the opening blinds
  * the rest of the form (creation fee, submitted small/big blind) reads.
@@ -22,8 +23,9 @@ import {
     parseBlindStructure,
     resolveBlindPreset
 } from "@block52/poker-vm-sdk";
+import { ladderStructure } from "./blindLadder";
 
-export type BlindStructureChoice = "doubling" | BlindPreset | "custom";
+export type BlindStructureChoice = "ladder" | "doubling" | BlindPreset | "custom";
 
 export interface BlindStructureChoiceOption {
     value: BlindStructureChoice;
@@ -46,7 +48,8 @@ const PRESET_NAMES: Record<BlindPreset, string> = {
 };
 
 export const BLIND_STRUCTURE_CHOICES: ReadonlyArray<BlindStructureChoiceOption> = [
-    { value: "doubling", label: "Doubling — choose the opening blinds and level time" },
+    { value: "ladder", label: "Ladder — blinds climb 20, 40, 60, 80, 100, 150, 200, 300… (choose the opening blinds and level time)" },
+    { value: "doubling", label: "Doubling — blinds double every level (choose the opening blinds and level time)" },
     ...BLIND_PRESETS.map(preset => ({ value: preset, label: `${PRESET_NAMES[preset]} — ${presetLabel(preset)}` })),
     { value: "custom", label: "Custom — write a blind structure" }
 ];
@@ -56,6 +59,9 @@ export function isBlindStructureChoice(value: string): value is BlindStructureCh
 }
 
 /** What the custom textarea starts with: the turbo preset written out. */
+/** The structure both create forms open with (ui#905). */
+export const DEFAULT_BLIND_STRUCTURE_CHOICE: BlindStructureChoice = "ladder";
+
 export const DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT = formatBlindStructure(resolveBlindPreset({ preset: "turbo" }), "custom");
 
 export interface DoublingBlinds {
@@ -75,11 +81,15 @@ export interface BlindPlan {
 
 /**
  * Resolves the form's choice into the structure to submit and the structure to
- * preview. Doubling previews as a rounded `double` structure built from the
+ * preview. The ladder submits and previews its table structure. Doubling previews as a rounded `double` structure built from the
  * form's blinds but submits nothing: the engine adopts that same structure for
  * a plain sit-and-go that has not started (poker-vm#2738).
  */
 export function resolveBlindStructureChoice(choice: BlindStructureChoice, customText: string, doubling: DoublingBlinds): BlindPlan {
+    if (choice === "ladder") {
+        const structure = ladderStructure(doubling.smallBlind, doubling.bigBlind, doubling.durationMinutes);
+        return { structure, preview: structure };
+    }
     if (choice === "doubling") {
         return {
             preview: {
@@ -127,4 +137,34 @@ export function previewBlindLevels(preview: BlindStructureDTO, count: number): B
 export function openingBlindsOf(preview: BlindStructureDTO): DoublingBlinds {
     const l = expandBlindLevel(preview, 0);
     return { smallBlind: Number(l.smallBlind), bigBlind: Number(l.bigBlind), durationMinutes: l.durationMinutes };
+}
+
+/** Whether the form's own opening blinds and level time drive the structure (ladder and doubling do; presets and custom carry their own). */
+export function choiceUsesFormBlinds(choice: BlindStructureChoice): boolean {
+    return choice === "ladder" || choice === "doubling";
+}
+
+/** One line describing how the blinds move, for the footnote under a preview table. */
+export function describeBlindStructureChoice(choice: BlindStructureChoice): string {
+    switch (choice) {
+        case "ladder":
+            return "Blinds climb a round-number ladder each level.";
+        case "doubling":
+            return "Blinds double each level, rounded to tidy numbers.";
+        case "custom":
+            return "Blinds follow your custom structure.";
+        default:
+            return `Blinds follow the ${PRESET_NAMES[choice]} preset (${presetLabel(choice)}).`;
+    }
+}
+
+/**
+ * The blind fields of a sit-and-go's create message for a resolved plan: the
+ * opening level time, plus the structure when the choice submits one (ladder,
+ * presets, custom). Doubling submits none (poker-vm#2738). Shared by the lobby
+ * modal and /admin/tables so both send the same thing (ui#905).
+ */
+export function sngBlindFields(plan: BlindPlan, fallbackMinutes: number): { blindLevelDuration: number; blindStructure?: BlindStructureDTO } {
+    const blindLevelDuration = plan.preview ? openingBlindsOf(plan.preview).durationMinutes : fallbackMinutes;
+    return plan.structure ? { blindLevelDuration, blindStructure: plan.structure } : { blindLevelDuration };
 }

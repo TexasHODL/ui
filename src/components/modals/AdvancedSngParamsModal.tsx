@@ -138,6 +138,7 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
                                 <th className="text-left py-1.5 px-2">Level</th>
                                 <th className="text-left py-1.5 px-2">Small Blind</th>
                                 <th className="text-left py-1.5 px-2">Big Blind</th>
+                                <th className="text-left py-1.5 px-2">Ante</th>
                                 <th className="text-left py-1.5 px-2">Duration</th>
                             </tr>
                         </thead>
@@ -145,14 +146,15 @@ const AdvancedSngParamsModal: React.FC<AdvancedSngParamsModalProps> = ({ isOpen,
                             {preview.levels.map(level => (
                                 <tr key={level.level} className={level.level === 1 ? "bg-green-900/20" : ""}>
                                     <td className="py-1.5 px-2">{level.level}</td>
-                                    <td className="py-1.5 px-2">{level.smallBlind.toLocaleString()}</td>
-                                    <td className="py-1.5 px-2">{level.bigBlind.toLocaleString()}</td>
+                                    <td className="py-1.5 px-2">{level.isBreak ? "Break" : level.smallBlind.toLocaleString()}</td>
+                                    <td className="py-1.5 px-2">{level.isBreak ? "" : level.bigBlind.toLocaleString()}</td>
+                                    <td className="py-1.5 px-2">{level.isBreak || level.ante === 0 ? "\u2014" : level.ante.toLocaleString()}</td>
                                     <td className="py-1.5 px-2">{level.durationMinutes} min</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                    <p className="text-gray-500 text-[12px] mt-2">* Blinds double each level. Level 1 is highlighted.</p>
+                    <p className="text-gray-500 text-[12px] mt-2">* {preview.structureNote} Level 1 is highlighted.</p>
                 </div>
             </div>
 

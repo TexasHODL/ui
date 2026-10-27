@@ -47,3 +47,6 @@ export const SNG_BLINDS: ReadonlyArray<{ smallBlind: number; bigBlind: number }>
     { smallBlind: 25, bigBlind: 50 },
     { smallBlind: 50, bigBlind: 100 }
 ];
+
+/** Default Sit & Go blind level length in minutes, shared by both create forms. */
+export const DEFAULT_SNG_BLIND_LEVEL_MINUTES = 10;
