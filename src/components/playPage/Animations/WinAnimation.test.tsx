@@ -108,10 +108,28 @@ describe("win pulse styles", () => {
         expect(container.children).toHaveLength(1);
     });
 
-    it("syncs the rim flare period to ring arrivals", () => {
+    it("lights the rim only where a wave touches it: no uniform rim flare, masked rim-hit rings tracking the waves", () => {
         const css = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
         const rim = css.match(/\.win-pulse-ripple-rim \{\s*border[^}]*\}/)![0];
-        expect(rim).toMatch(/animation: win-ripple-rim calc\(var\(--win-ripple-duration\) \/ var\(--win-pulse-speed\) \/ var\(--win-ripple-rings\)\)/);
+        expect(rim).not.toMatch(/animation/);
+        expect(css).not.toMatch(/@keyframes win-ripple-rim \{/);
+        const band = css.match(/\.win-pulse-ripple-rim-hit-band \{[^}]*\}/)![0];
+        expect(band).toContain("filter: var(--win-ripple-wobble-filter)");
+        expect(band).toMatch(/mask: linear-gradient\(#000 0 0\) content-box exclude/);
+        const ring = css.match(/\.win-pulse-ripple-ring \{[^}]*\}/)![0];
+        const hit = css.match(/\.win-pulse-ripple-hit-ring \{[^}]*\}/)![0];
+        const timing = (s: string) => s.match(/animation: win-ripple-[\w-]+ (.*);/)![1];
+        expect(timing(hit)).toBe(timing(ring));
+        expect(hit.match(/animation-delay: (.*);/)![1]).toBe(ring.match(/animation-delay: (.*);/)![1]);
+        const kf = (n: string) => css.match(new RegExp(`@keyframes ${n} \\{[^@]*?\\n\\}`))![0];
+        const transforms = (s: string) => s.match(/transform: [^;]+/g);
+        expect(transforms(kf("win-ripple-rim-hit"))).toEqual(transforms(kf("win-ripple-ring")));
+        expect(css).toMatch(/--win-ripple-rim-hit-opacity:/);
+
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="ripple" />);
+        const hits = Array.from(container.querySelectorAll<HTMLElement>(".win-pulse-ripple-rim-hit .win-pulse-ripple-rim-hit-band .win-pulse-ripple-hit-ring"));
+        expect(hits).toHaveLength(WIN_RIPPLE_RING_COUNT);
+        hits.forEach((r, i) => expect(r.style.getPropertyValue("--win-ripple-index")).toBe(String(i)));
     });
 
     it("takes style and tuning from context, and the prop wins", () => {

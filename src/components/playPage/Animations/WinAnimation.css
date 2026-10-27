@@ -67,9 +67,10 @@
   --win-ripple-highlight-blur: 3px;
   --win-ripple-highlight-duration: 4600ms;
   --win-ripple-rim-width: 2.5px;
-  --win-ripple-rim-opacity: 0.85;
-  --win-ripple-rim-rest: 0.55;        /* rim opacity between waves */
-  --win-ripple-rim-flare-glow: 34px;  /* glow when a wave hits the rim */
+  --win-ripple-rim-opacity: 0.5;      /* steady, dim base rim */
+  --win-ripple-rim-hit-opacity: 1;    /* rim highlight where a wave touches the rim */
+  --win-ripple-rim-hit-width: 7px;    /* thickness of the rim band a wave can light */
+  --win-ripple-rim-hit-glow: 10px;    /* glow around the lit part of the rim */
   --win-ripple-glow: 16px;
   /* Brand orange (bet slider #ff9717) leads; highlights are pale orange / white. */
   --win-ripple-orange: 255, 151, 23;  /* #ff9717 tint, rings, rim */
@@ -186,14 +187,13 @@
   100% { transform: scale(1.04); opacity: 0; }
 }
 
-/* One beat per ring arrival: period = duration / rings, so it loops seamlessly. */
-@keyframes win-ripple-rim {
-  /* Period = duration / rings and ring delays are multiples of it, so 0% / 100% is exactly when a wave lands. */
-  0%, 100% { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); box-shadow: 0 0 var(--win-ripple-rim-flare-glow) rgba(var(--win-ripple-orange), 0.95), inset 0 0 calc(var(--win-ripple-glow) * 0.9) rgba(var(--win-ripple-orange), 0.7); }
-  0%, 100% { filter: brightness(1.35); }
-  8%       { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); }
-  30%      { filter: brightness(1); }
-  45%, 85% { opacity: calc(var(--win-ripple-rim-rest) * var(--win-pulse-intensity)); box-shadow: 0 0 calc(var(--win-ripple-glow) * 0.6) rgba(var(--win-ripple-orange), 0.55), inset 0 0 calc(var(--win-ripple-glow) * 0.3) rgba(var(--win-ripple-orange), 0.35); }
+/* Rim-hit copy of win-ripple-ring: identical transform path (so it tracks the visible wave exactly),
+   but bright as the crest reaches the rim (~85-100%) instead of fading out there. */
+@keyframes win-ripple-rim-hit {
+  0%   { transform: scale(0.05); opacity: 0; }
+  60%  { opacity: 0; }
+  88%  { opacity: 1; }
+  100% { transform: scale(1.04); opacity: 0; }
 }
 
 /* Specular glints drift and shimmer across the surface (transform / opacity only). */
@@ -207,7 +207,8 @@
 }
 
 .win-pulse-ripple-cup,
-.win-pulse-ripple-rim {
+.win-pulse-ripple-rim,
+.win-pulse-ripple-rim-hit {
   transform: scale(calc(var(--win-ripple-inset) * var(--win-pulse-size)));
 }
 
@@ -254,11 +255,41 @@
   border: var(--win-ripple-rim-width) solid rgb(var(--win-ripple-orange));
   box-shadow: 0 0 var(--win-ripple-glow) rgba(var(--win-ripple-orange), 0.75), inset 0 0 calc(var(--win-ripple-glow) * 0.4) rgba(var(--win-ripple-orange), 0.45);
   opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity));
-  animation: win-ripple-rim calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings)) cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
-  animation-delay: calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings) * -0.02);
 }
 
-
+/* Rim highlight: same rings as the cup (same keyframes, delays, wobble filter), bright orange with a pink edge,
+   masked to the rim band. Filter runs before mask, so the wobbled wave is what gets clipped to the rim. */
+.win-pulse-ripple-rim-hit {
+  opacity: calc(var(--win-ripple-rim-hit-opacity) * var(--win-pulse-intensity));
+  filter: drop-shadow(0 0 var(--win-ripple-rim-hit-glow) rgba(var(--win-ripple-orange), 0.9));
+}
+.win-pulse-ripple-rim-hit-band {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  padding: var(--win-ripple-rim-hit-width);
+  filter: var(--win-ripple-wobble-filter);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.win-pulse-ripple-hit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side,
+    transparent 74%,
+    rgba(var(--win-ripple-orange), 0.9) 82%,
+    rgba(255, 214, 150, 1) 88%,
+    rgba(var(--win-ripple-pink), 0.8) 93%,
+    rgba(var(--win-ripple-orange), 0.6) 97%,
+    transparent 100%);
+  filter: blur(var(--win-ripple-ring-blur));
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: win-ripple-rim-hit calc(var(--win-ripple-duration) / var(--win-pulse-speed)) cubic-bezier(0.3, 0.2, 0.6, 1) infinite;
+  animation-delay: calc(var(--win-ripple-duration) / var(--win-pulse-speed) * var(--win-ripple-index, 0) / var(--win-ripple-rings) * -1);
+}
 .win-pulse-ripple-glint {
   position: absolute;
   border-radius: 9999px;
@@ -285,7 +316,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .win-pulse-ripple-rim { animation: none; }
+  .win-pulse-ripple-rim-hit { display: none; }
   .win-pulse-ripple-cup { filter: none; }
   .win-pulse-ripple-glint { animation: none; opacity: calc(var(--win-ripple-highlight-opacity) * 0.7 * var(--win-pulse-intensity)); }
   .win-pulse-ripple-ring { animation: none; opacity: 0; }
