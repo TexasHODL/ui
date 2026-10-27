@@ -15,9 +15,6 @@ import "./WinAnimation.css";
  */
 export const WIN_PULSE_CHIP_FILES = ["25chip.svg", "100chip.svg", "5chip.svg", "500chip.svg", "1chip.svg"] as const;
 
-/** Concentric rings in the win pulse wave. Keep in sync with --win-pulse-rings in WinAnimation.css. */
-export const WIN_PULSE_RING_COUNT = 3;
-
 /**
  * Cash tables are priced in dollars and cents, so their particles come from the
  * same CHIP_DENOMINATIONS set the bet / pot chips use for cash amounts: the cent
@@ -44,13 +41,8 @@ const WinAnimation: React.FC<WinAnimationProps & { position?: { left: string; to
 
     return (
         <div className="win-animation-container" style={{ left: position.left, top: position.top }}>
-            <div className="win-animation-glow" />
-            {Array.from({ length: WIN_PULSE_RING_COUNT }, (_, i) => (
-                <div
-                    key={`ring-${i}`}
-                    className="win-animation-ring"
-                    style={{ "--win-pulse-ring-index": i } as React.CSSProperties}
-                />
+            {[0, 1, 2, 3].map(i => (
+                <div key={`ring-${i}`} className={`win-animation-ring win-animation-ring-${i}`} />
             ))}
             <ul className="bubbles">
                 {files.map((file, i) => (

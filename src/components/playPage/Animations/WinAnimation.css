@@ -1,43 +1,17 @@
-/*
- * Win pulse: a gentle steady glow plus evenly spaced concentric rings that
- * expand from the seat and fade out on a seamless loop. Tweak these variables.
- *   --win-pulse-duration   one ring's full expand-and-fade cycle
- *   --win-pulse-rings      ring count; delays are duration / rings apart (keep in sync with RING_COUNT in WinAnimation.tsx)
- *   --win-pulse-start/end-scale  ring size at birth / at fade-out (1 = container size)
- *   --win-pulse-ring-width ring stroke thickness
- *   --win-pulse-color      ring colour (RGB triplet) ; --win-pulse-ring-opacity its starting opacity
- *   --win-pulse-glow-*     steady glow underneath: colour, opacity range, breathe period, size
- */
-.win-animation-container {
-  --win-pulse-duration: 2400ms;
-  --win-pulse-rings: 3;
-  --win-pulse-start-scale: 0.55;
-  --win-pulse-end-scale: 1.25;
-  --win-pulse-ring-width: 4px;
-  --win-pulse-color: 255, 196, 30;
-  --win-pulse-ring-opacity: 0.85;
-  --win-pulse-easing: cubic-bezier(0.25, 0.6, 0.4, 1);
-  --win-pulse-glow-color: 255, 190, 20;
-  --win-pulse-glow-min: 0.35;
-  --win-pulse-glow-max: 0.5;
-  --win-pulse-glow-period: 2400ms;
-  --win-pulse-glow-size: 0.8;
-}
-
-@keyframes win-pulse-wave {
+/* Ripple effect for win animation rings */
+@keyframes ripple {
   0% {
-    transform: scale(var(--win-pulse-start-scale));
-    opacity: var(--win-pulse-ring-opacity);
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  80% {
+    transform: scale(1.1);
+    opacity: 0.05;
   }
   100% {
-    transform: scale(var(--win-pulse-end-scale));
+    transform: scale(1.1);
     opacity: 0;
   }
-}
-
-@keyframes win-pulse-glow {
-  0%, 100% { opacity: var(--win-pulse-glow-min); }
-  50% { opacity: var(--win-pulse-glow-max); }
 }
 
 /* Rising bubbles (icons) behind win animation */
@@ -67,33 +41,32 @@
   will-change: transform;
 }
 
-/* Steady glow under the rings */
-.win-animation-glow {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  transform: scale(var(--win-pulse-glow-size)) translateZ(0);
-  background: radial-gradient(closest-side, rgba(var(--win-pulse-glow-color), 0.9), rgba(var(--win-pulse-glow-color), 0.35) 60%, rgba(var(--win-pulse-glow-color), 0) 100%);
-  animation: win-pulse-glow var(--win-pulse-glow-period) ease-in-out infinite;
-}
-
-/* Concentric rings: same animation, evenly staggered by --win-pulse-ring-index (set inline). */
+/* Ripple rings */
 .win-animation-ring {
   position: absolute;
-  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(222, 167, 0, 0.9);
   border-radius: 9999px;
-  border: var(--win-pulse-ring-width) solid rgba(var(--win-pulse-color), 1);
-  box-shadow: 0 0 12px rgba(var(--win-pulse-color), 0.6), inset 0 0 12px rgba(var(--win-pulse-color), 0.35);
-  opacity: 0;
   will-change: transform, opacity;
-  animation: win-pulse-wave var(--win-pulse-duration) var(--win-pulse-easing) infinite;
-  /* Negative delays start every ring mid-cycle, so the wave is already evenly spaced on the first frame. */
-  animation-delay: calc(var(--win-pulse-duration) * var(--win-pulse-ring-index, 0) / var(--win-pulse-rings) * -1);
+  transform: translateZ(0);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .win-animation-ring { animation: none; opacity: 0; }
-  .win-animation-glow { animation: none; opacity: var(--win-pulse-glow-max); }
+.win-animation-ring-0 {
+  animation: ripple 2000ms linear infinite;
+  animation-delay: 0ms;
+}
+.win-animation-ring-1 {
+  animation: ripple 2000ms linear infinite;
+  animation-delay: -455ms;
+}
+.win-animation-ring-2 {
+  animation: ripple 2000ms linear infinite;
+  animation-delay: -910ms;
+}
+.win-animation-ring-3 {
+  animation: ripple 2000ms linear infinite;
+  animation-delay: -1365ms;
 }
 
 /* Floating icons behind win animation */
