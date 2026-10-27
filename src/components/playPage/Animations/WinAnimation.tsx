@@ -16,6 +16,9 @@ export const WIN_PULSE_CHIP_FILES = ["25chip.svg", "100chip.svg", "5chip.svg", "
 /** Sonar rings in flight at once. Keep in sync with --win-sonar-rings in WinAnimation.css. */
 export const WIN_SONAR_RING_COUNT = 4;
 
+/** Ripples in flight inside the seat at once. Keep in sync with --win-ripple-rings in WinAnimation.css. */
+export const WIN_RIPPLE_RING_COUNT = 3;
+
 /** The layers each style draws. Each layer is one element with class win-pulse-<layer>. */
 const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle }> = ({ pulseStyle }) => {
     switch (pulseStyle) {
@@ -32,6 +35,17 @@ const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle }> = ({ pulseStyle }) =>
                 <>
                     <div className="win-pulse-halo-track" />
                     <div className="win-pulse-halo-comet" />
+                </>
+            );
+        case "ripple":
+            return (
+                <>
+                    <div className="win-pulse-ripple-cup">
+                        {Array.from({ length: WIN_RIPPLE_RING_COUNT }, (_, i) => (
+                            <div key={i} className="win-pulse-ripple-ring" style={{ "--win-ripple-index": i } as React.CSSProperties} />
+                        ))}
+                    </div>
+                    <div className="win-pulse-ripple-rim" />
                 </>
             );
         case "breathing":

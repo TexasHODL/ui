@@ -1,5 +1,5 @@
 /*
- * Win pulse: four distinct looks, picked by the win-pulse-<style> class on the
+ * Win pulse: five distinct looks, picked by the win-pulse-<style> class on the
  * container (see winPulseStyle.ts). Every style keeps its own size / timing /
  * intensity variables below; three global multipliers sit on top, set inline
  * by WinAnimation (the dev /table-preview panel drives them live):
@@ -54,6 +54,18 @@
   --win-breathing-glow-max: 30px;
   --win-breathing-min-opacity: 0.25;
   --win-breathing-max-opacity: 1;
+
+  /* 5. Ripple: translucent gold fill in the seat, steady glowing rim, rings run centre -> rim. */
+  --win-ripple-duration: 3000ms;      /* one ring's trip from centre to rim */
+  --win-ripple-rings: 3;
+  --win-ripple-inset: 0.86;
+  --win-ripple-fill-opacity: 0.16;    /* see-through tint so the seat still reads */
+  --win-ripple-ring-width: 2px;
+  --win-ripple-ring-opacity: 0.55;
+  --win-ripple-rim-width: 2.5px;
+  --win-ripple-rim-opacity: 0.85;
+  --win-ripple-rim-boost: 0.15;       /* extra rim opacity as each ripple arrives */
+  --win-ripple-glow: 16px;
 }
 
 /* Container for win animation */
@@ -157,7 +169,55 @@
   animation: win-breathing calc(var(--win-breathing-duration) / var(--win-pulse-speed)) ease-in-out infinite;
 }
 
+/* ---------- 5. Ripple (water in a cup) ---------- */
+@keyframes win-ripple-ring {
+  0%   { transform: scale(0.04); opacity: 0; }
+  12%  { opacity: calc(var(--win-ripple-ring-opacity) * var(--win-pulse-intensity)); }
+  70%  { opacity: calc(var(--win-ripple-ring-opacity) * 0.6 * var(--win-pulse-intensity)); }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+/* One beat per ring arrival: period = duration / rings, so it loops seamlessly. */
+@keyframes win-ripple-rim {
+  0%, 100% { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); }
+  92%      { opacity: calc((var(--win-ripple-rim-opacity) + var(--win-ripple-rim-boost)) * var(--win-pulse-intensity)); }
+}
+
+.win-pulse-ripple-cup,
+.win-pulse-ripple-rim {
+  transform: scale(calc(var(--win-ripple-inset) * var(--win-pulse-size)));
+}
+
+.win-pulse-ripple-cup {
+  overflow: hidden;                   /* ripples stay inside the seat shape */
+  background: radial-gradient(ellipse at center,
+    rgba(var(--win-pulse-color), calc(var(--win-ripple-fill-opacity) * 0.7 * var(--win-pulse-intensity))) 0%,
+    rgba(var(--win-pulse-color), calc(var(--win-ripple-fill-opacity) * 1.3 * var(--win-pulse-intensity))) 100%);
+}
+
+.win-pulse-ripple-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: var(--win-ripple-ring-width) solid rgb(var(--win-pulse-color));
+  box-shadow: 0 0 6px rgba(var(--win-pulse-color), 0.5);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: win-ripple-ring calc(var(--win-ripple-duration) / var(--win-pulse-speed)) cubic-bezier(0.3, 0.2, 0.6, 1) infinite;
+  animation-delay: calc(var(--win-ripple-duration) / var(--win-pulse-speed) * var(--win-ripple-index, 0) / var(--win-ripple-rings) * -1);
+}
+
+.win-pulse-ripple-rim {
+  border: var(--win-ripple-rim-width) solid rgb(var(--win-pulse-color));
+  box-shadow: 0 0 var(--win-ripple-glow) rgba(var(--win-pulse-color), 0.75), inset 0 0 calc(var(--win-ripple-glow) * 0.4) rgba(var(--win-pulse-color), 0.45);
+  opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity));
+  animation: win-ripple-rim calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings)) ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .win-pulse-ripple-rim { animation: none; }
+  .win-pulse-ripple-ring { animation: none; opacity: 0; }
+  .win-pulse-ripple-ring:first-child { transform: scale(0.55); opacity: calc(0.4 * var(--win-pulse-intensity)); }
   .win-pulse-heartbeat-border,
   .win-pulse-breathing-border {
     animation: none;

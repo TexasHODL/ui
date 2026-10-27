@@ -1,5 +1,5 @@
 import { act, render } from "@testing-library/react";
-import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_SONAR_RING_COUNT } from "./WinAnimation";
+import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_SONAR_RING_COUNT, WIN_RIPPLE_RING_COUNT } from "./WinAnimation";
 import { WIN_PULSE_STYLES, WinPulseStyleContext, DEFAULT_WIN_PULSE_TUNING } from "./winPulseStyle";
 import { setTableStyle } from "../../../theme/tableStyles";
 
@@ -50,7 +50,8 @@ describe("win pulse styles", () => {
             heartbeat: ".win-pulse-heartbeat-border",
             sonar: ".win-pulse-sonar-ring",
             halo: ".win-pulse-halo-comet",
-            breathing: ".win-pulse-breathing-border"
+            breathing: ".win-pulse-breathing-border",
+            ripple: ".win-pulse-ripple-rim"
         };
         WIN_PULSE_STYLES.forEach(style => {
             const { container, unmount } = render(<WinAnimation index={0} position={pos} winPulseStyle={style} />);
@@ -67,6 +68,17 @@ describe("win pulse styles", () => {
         const rings = Array.from(container.querySelectorAll<HTMLElement>(".win-pulse-sonar-ring"));
         expect(rings).toHaveLength(WIN_SONAR_RING_COUNT);
         rings.forEach((r, i) => expect(r.style.getPropertyValue("--win-sonar-index")).toBe(String(i)));
+    });
+
+    it("draws the ripple as a filled cup with evenly staggered rings inside and a glowing rim", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="ripple" />);
+        const cup = container.querySelector(".win-pulse-ripple-cup")!;
+        expect(cup).not.toBeNull();
+        const rings = Array.from(cup.querySelectorAll<HTMLElement>(".win-pulse-ripple-ring"));
+        expect(rings).toHaveLength(WIN_RIPPLE_RING_COUNT);
+        rings.forEach((r, i) => expect(r.style.getPropertyValue("--win-ripple-index")).toBe(String(i)));
+        expect(container.querySelectorAll(".win-pulse-ripple-rim")).toHaveLength(1);
+        expect(container.querySelectorAll(".bubbles li")).toHaveLength(WIN_PULSE_CHIP_FILES.length);
     });
 
     it("takes style and tuning from context, and the prop wins", () => {
