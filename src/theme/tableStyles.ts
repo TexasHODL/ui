@@ -4,7 +4,7 @@
  * like the light/dark theme. Changes apply live to every mounted table via
  * useTableStyles (useSyncExternalStore), on desktop and mobile alike.
  */
-import { DECK_FILES, CHIP_STYLE_FILES, DEALER_STYLE_FILES } from "../utils/tableStyleAssets";
+import { DECK_FILES, CHIP_STYLE_FILES, CHIP_NUMBER_STYLE_FILES, DEALER_STYLE_FILES } from "../utils/tableStyleAssets";
 
 /**
  * "block52" is the original Block52 card art (src/assets/cards, via
@@ -110,6 +110,10 @@ export const indexDealerStyleUrls = (files: Record<string, string>): Record<stri
 
 const DECK_URLS = indexDeckUrls(DECK_FILES);
 const CHIP_STYLE_URLS = indexChipStyleUrls(CHIP_STYLE_FILES);
+/** chipstyles/<set>/numbers/*: number-chip art for sets whose base art prints "$" (Marble). */
+const CHIP_NUMBER_STYLE_URLS = indexChipStyleUrls(
+    Object.fromEntries(Object.entries(CHIP_NUMBER_STYLE_FILES).map(([file, url]) => [file.replace("/numbers/", "/"), url]))
+);
 const DEALER_STYLE_URLS = indexDealerStyleUrls(DEALER_STYLE_FILES);
 
 /** Face URL for a card code in a deck, or null when the deck has no such face. */
@@ -120,8 +124,12 @@ export const deckCardUrl = (deck: DeckId, code: string): string | null => DECK_U
  * Marble (E) ships as .webp with the same base names, so "25chip.svg" resolves to
  * "25chip.webp" in that style.
  */
-export const chipStyleUrl = (style: ChipStyleId, file: string): string | null => {
+export const chipStyleUrl = (style: ChipStyleId, file: string, isTournament = false): string | null => {
     if (style === "current") return null;
+    // Tournament / Sit & Go: prefer the set's number chips (Marble's base art prints "$").
+    const numbers = isTournament ? CHIP_NUMBER_STYLE_URLS[style] : undefined;
+    const numberUrl = numbers?.[file] ?? numbers?.[file.replace(/\.svg$/, ".webp")];
+    if (numberUrl) return numberUrl;
     const urls = CHIP_STYLE_URLS[style];
     if (!urls) return null;
     return urls[file] ?? urls[file.replace(/\.svg$/, ".webp")] ?? null;

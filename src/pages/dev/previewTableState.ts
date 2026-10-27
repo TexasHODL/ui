@@ -41,6 +41,8 @@ export interface PreviewOptions {
     board: PreviewBoardCount;
     /** Table format: cash (USDC micro-units) or tournament / Sit & Go (raw chips). */
     format: PreviewFormat;
+    /** Seat 1 wins the pot: plays the win celebration (floating win chips). */
+    win: boolean;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -55,7 +57,8 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * holes=0|1|4 (default two cards; 4 draws Omaha), board=0|3|4|5 (default a full board),
  * actions=all to pin an action badge on every seat,
  * format=cash|tournament|sng (default cash) picks the table format and chip amounts,
- * turn=1 to make seat 1's turn and show the real action controls.
+ * turn=1 to make seat 1's turn and show the real action controls,
+ * win=1 to make seat 1 the winner so the win celebration plays.
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. turn=1 writes seat 1's legal actions.
  */
@@ -78,7 +81,8 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const heroTurn = params.get("turn") === "1";
     const formatParam = params.get("format");
     const format: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
-    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, holeCount, board, format };
+    const win = params.get("win") === "1";
+    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, holeCount, board, format, win };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -90,6 +94,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.allActions) params.set("actions", "all");
     if (options.heroTurn) params.set("turn", "1");
     if (options.format !== "cash") params.set("format", options.format);
+    if (options.win) params.set("win", "1");
     return params;
 };
 
@@ -237,7 +242,9 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         actionCount: options.seats,
         handNumber: 1,
         round,
-        winners: [],
+        winners: options.win
+            ? [{ address: previewSeatAddress(1, heroAddress), seat: 1, amount: pot.toString(), cards: undefined, name: undefined, description: undefined }]
+            : [],
         results: [],
         legalActions: [],
         availableSeats: [],

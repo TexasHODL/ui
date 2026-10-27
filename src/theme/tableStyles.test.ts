@@ -137,6 +137,23 @@ describe("bundled style art", () => {
         }
     });
 
+    it("uses Marble number chips (no $) on tournament / Sit & Go tables, $ chips on cash", () => {
+        const files = new Set<string>();
+        for (const amount of [1, 7, 38, 263, 1888, 27777, 388888, 6666666]) {
+            decomposeAmount(amount, true).forEach(stack => files.add(stack.file));
+        }
+        for (const file of files) {
+            const webp = file.replace(/\.svg$/, ".webp");
+            expect(chipStyleUrl("E", file, true)).toBe(`/assets/chipstyles/E/numbers/${webp}`);
+            expect(fs.existsSync(path.join(ASSETS, "chipstyles", "E", "numbers", webp))).toBe(true);
+            expect(chipStyleUrl("E", file, false)).toBe(`/assets/chipstyles/E/${webp}`);
+            // Sets with plain-number art keep their normal files on tournament tables.
+            expect(chipStyleUrl("C", file, true)).toBe(`/assets/chipstyles/C/${file}`);
+        }
+        // Current on a tournament table still swaps to a number set, never the CDN $ chips.
+        expect(chipStyleForFormat("current", true)).not.toBe("current");
+    });
+
     it("has a dealer button for every non-current style", () => {
         expect(dealerStyleUrl("current")).toBeNull();
         for (const style of ["A", "B", "C", "D"] as const) {
