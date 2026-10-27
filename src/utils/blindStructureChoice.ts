@@ -59,6 +59,9 @@ export function isBlindStructureChoice(value: string): value is BlindStructureCh
 }
 
 /** What the custom textarea starts with: the turbo preset written out. */
+/** The structure both create forms open with (ui#905). */
+export const DEFAULT_BLIND_STRUCTURE_CHOICE: BlindStructureChoice = "ladder";
+
 export const DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT = formatBlindStructure(resolveBlindPreset({ preset: "turbo" }), "custom");
 
 export interface DoublingBlinds {
@@ -154,6 +157,7 @@ export function describeBlindStructureChoice(choice: BlindStructureChoice): stri
             return `Blinds follow the ${PRESET_NAMES[choice]} preset (${presetLabel(choice)}).`;
     }
 }
+
 /**
  * The blind fields of a sit-and-go's create message for a resolved plan: the
  * opening level time, plus the structure when the choice submits one (ladder,

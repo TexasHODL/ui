@@ -10,7 +10,7 @@ import { ETH_CHAIN_ID } from "../config/constants";
 import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
-import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, SNG_BLINDS } from "../constants/blindLevels";
+import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
 import { usdcToMicroBigInt, formatMicroAsUsdc, microToUsdc } from "../constants/currency";
 
 import { WithdrawalModal, USDCDepositModal, UpcomingSngModal } from "../components/modals";
@@ -34,10 +34,13 @@ import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTo
 import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import {
+    choiceUsesFormBlinds,
+    DEFAULT_BLIND_STRUCTURE_CHOICE,
     DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
     openingBlindsOf,
     previewBlindLevels,
     resolveBlindStructureChoice,
+    sngBlindFields,
     type BlindStructureChoice
 } from "../utils/blindStructureChoice";
 import { SNG_PREVIEW_LEVEL_COUNT } from "../utils/sngAdvancedParams";
@@ -113,7 +116,7 @@ const Dashboard: React.FC = () => {
     // Sit & Go settings — the chain requires them (ui#690: without them the SDK throws
     // "sit-and-go games require an sngConfig"). Same presets as /admin/tables.
     const [modalStartingStack, setModalStartingStack] = useState(1500);
-    const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(10);
+    const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
     // Tournament start (poker-vm#2680): starts at the start time with at least
     // modalSngMinPlayers registered, or earlier when full.
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
@@ -123,7 +126,7 @@ const Dashboard: React.FC = () => {
     // Blind structure (ui#860, poker-vm#1734): the ladder (default, ui#905) or
     // doubling (both from the two selects above and below), an engine preset, or
     // a custom structure in the SDK's text form.
-    const [modalBlindStructureChoice, setModalBlindStructureChoice] = useState<BlindStructureChoice>("ladder");
+    const [modalBlindStructureChoice, setModalBlindStructureChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
     const [modalCustomBlindText, setModalCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
 
     // Cash blinds are dollars (BLIND_LEVELS); Sit & Go blinds are chips (SNG_BLINDS).
@@ -262,8 +265,7 @@ const Dashboard: React.FC = () => {
                     sng: {
                         startingStack: modalStartingStack,
                         // A structure carries its own level times; the opening level's is sent for the lobby.
-                        blindLevelDuration: sngOpeningBlinds?.durationMinutes ?? modalBlindLevelDuration,
-                        ...(blindPlan.structure && { blindStructure: blindPlan.structure }),
+                        ...sngBlindFields(blindPlan, modalBlindLevelDuration),
                         ...(scheduled && { startTime }),
                         ...(scheduled && modalLateRegLevels > 0 && { lateRegistrationLevels: modalLateRegLevels })
                     }
@@ -1035,7 +1037,7 @@ const Dashboard: React.FC = () => {
                                                 <option value={3000}>Deep Stack (3,000)</option>
                                             </select>
                                             <BlindStructureSelect value={modalBlindStructureChoice} onChange={setModalBlindStructureChoice} />
-                                            {(modalBlindStructureChoice === "ladder" || modalBlindStructureChoice === "doubling") && (
+                                            {choiceUsesFormBlinds(modalBlindStructureChoice) && (
                                                 <>
                                                     <label className="block text-white text-sm mb-1 mt-3">Starting Blinds (chips)</label>
                                                     <select

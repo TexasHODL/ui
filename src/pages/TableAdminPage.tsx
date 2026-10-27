@@ -15,7 +15,7 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
-import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX } from "../constants/blindLevels";
+import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
 import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
@@ -23,6 +23,7 @@ import AdvancedSngParamsModal from "../components/modals/AdvancedSngParamsModal"
 import { SNG_PREVIEW_LEVEL_COUNT, type AdvancedSngParams } from "../utils/sngAdvancedParams";
 import {
     choiceUsesFormBlinds,
+    DEFAULT_BLIND_STRUCTURE_CHOICE,
     DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
     openingBlindsOf,
     previewBlindLevels,
@@ -87,14 +88,14 @@ export default function TableAdminPage() {
 
     // SNG/Tournament blind values (in chips, not dollars)
     // 10/20 opens the round-number ladder (ui#905), matching the lobby's create modal.
-    const [sngSmallBlind, setSngSmallBlind] = useState(10);
-    const [sngBigBlind, setSngBigBlind] = useState(20);
-    const [blindLevelDuration, setBlindLevelDuration] = useState(10);
+    const [sngSmallBlind, setSngSmallBlind] = useState(SNG_BLINDS[0].smallBlind);
+    const [sngBigBlind, setSngBigBlind] = useState(SNG_BLINDS[0].bigBlind);
+    const [blindLevelDuration, setBlindLevelDuration] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
 
     // Blind structure (ui#905, ui#906): the same choices as the lobby's create
     // modal, ladder by default. Ladder and doubling use the opening blinds and
     // level time above; presets and custom text carry their own.
-    const [blindStructureChoice, setBlindStructureChoice] = useState<BlindStructureChoice>("ladder");
+    const [blindStructureChoice, setBlindStructureChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
     const [customBlindText, setCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const blindPlan = useMemo(
         () => resolveBlindStructureChoice(blindStructureChoice, customBlindText, { smallBlind: sngSmallBlind, bigBlind: sngBigBlind, durationMinutes: blindLevelDuration }),
