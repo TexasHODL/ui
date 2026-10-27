@@ -7,8 +7,12 @@ import { createContext, useContext } from "react";
  *   halo       a bright comet of light spins around the seat border
  *   breathing  the whole border brightens and dims on a slow sine loop
  *   ripple     brand pink-to-orange: translucent pink fill, glowing orange rim; ripples run centre -> rim shifting pink to orange
+ *   spotlight  orange-to-pink stage-light cone from above, landing as a pool of light that sways side to side
+ *   chipburst  chips (player's chip set, cash-aware denominations) and sparkles fan out once, then a steady glow
+ *   neon       the seat border lit like a neon sign: orange-to-pink gradient flowing round it, flicker on start
+ *   confetti   a short shower of orange / pink confetti round the seat, then a soft glow
  */
-export const WIN_PULSE_STYLES = ["heartbeat", "sonar", "halo", "breathing", "ripple"] as const;
+export const WIN_PULSE_STYLES = ["heartbeat", "sonar", "halo", "breathing", "ripple", "spotlight", "chipburst", "neon", "confetti"] as const;
 export type WinPulseStyle = (typeof WIN_PULSE_STYLES)[number];
 
 export const DEFAULT_WIN_PULSE_STYLE: WinPulseStyle = "heartbeat";
@@ -31,6 +35,8 @@ export const DEFAULT_WIN_PULSE_TUNING: WinPulseTuning = { speed: 1, size: 1, int
 export interface WinPulseSettings {
     style: WinPulseStyle;
     tuning: WinPulseTuning;
+    /** Bumping this replays the one-shot parts (chipburst, confetti, neon flicker). Dev preview only. */
+    replay?: number;
 }
 
 /**

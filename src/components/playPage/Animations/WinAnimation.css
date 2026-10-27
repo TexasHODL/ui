@@ -1,5 +1,5 @@
 /*
- * Win pulse: five distinct looks, picked by the win-pulse-<style> class on the
+ * Win pulse: nine distinct looks, picked by the win-pulse-<style> class on the
  * container (see winPulseStyle.ts). Every style keeps its own size / timing /
  * intensity variables below; three global multipliers sit on top, set inline
  * by WinAnimation (the dev /table-preview panel drives them live):
@@ -8,6 +8,12 @@
  *   --win-pulse-intensity  multiplies opacity
  *   --win-pulse-color      the gold win colour (RGB triplet), shared by all styles
  */
+@property --win-neon-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @property --win-halo-angle {
   syntax: "<angle>";
   inherits: false;
@@ -75,6 +81,58 @@
   --win-ripple-orange: 255, 151, 23;  /* #ff9717 tint, rings, rim */
   --win-ripple-highlight: 255, 238, 214; /* pale orange specular */
   --win-ripple-pink: 240, 43, 198;    /* #f02bc6 subtle crest edge / glint tint only */
+
+  /* Brand colours for styles 6-10 (RGB triplets for rgba(), plus solid forms). */
+  --win-brand-pink-rgb: 240, 43, 198;   /* #f02bc6 */
+  --win-brand-mid-rgb: 255, 74, 131;    /* #ff4a83 */
+  --win-brand-orange-rgb: 255, 151, 23; /* #ff9717 */
+  --win-brand-pink: #f02bc6;
+  --win-brand-mid: #ff4a83;
+  --win-brand-orange: #ff9717;
+
+  /* 6. Spotlight: stage-light cone from above landing as a swaying pool. */
+  --win-spotlight-duration: 5200ms;   /* one full sway left -> right -> left */
+  --win-spotlight-sway: 6deg;         /* beam swing either side */
+  --win-spotlight-throw: 30px;        /* pool travel either side; keep ~ beam-height * sin(sway) */
+  --win-spotlight-beam-height: 290px; /* from the light source down to the seat centre */
+  --win-spotlight-beam-top: 26px;     /* width at the source */
+  --win-spotlight-beam-bottom: 230px; /* width where it lands */
+  --win-spotlight-beam-opacity: 0.55;
+  --win-spotlight-beam-blur: 7px;
+  --win-spotlight-pool-opacity: 0.85;
+  --win-spotlight-pool-width: 1.15;   /* pool size vs seat */
+  --win-spotlight-pool-height: 1.05;
+
+  /* 7. Chipburst: one-shot fan of chips + sparkles, then a steady glow. */
+  --win-chipburst-duration: 1250ms;
+  --win-chipburst-sparkle-duration: 900ms;
+  --win-chipburst-reach: 1;           /* scales how far the chips fly (times --win-pulse-size) */
+  --win-chipburst-glow-delay: 900ms;  /* glow fades in as the chips land */
+
+  /* Shared settle glow (chipburst, confetti). */
+  --win-settle-inset: 0.9;
+  --win-settle-width: 2.5px;
+  --win-settle-glow: 20px;
+  --win-settle-opacity: 0.85;
+  --win-settle-breathe: 3200ms;
+
+  /* 8. Neon: gradient flowing round the border like a neon tube. */
+  --win-neon-duration: 2400ms;        /* one full trip of the gradient round the border */
+  --win-neon-inset: 0.88;
+  --win-neon-width: 4px;
+  --win-neon-glow: 12px;
+  --win-neon-bloom: 16px;
+  --win-neon-opacity: 1;
+  --win-neon-bloom-opacity: 0.6;
+  --win-neon-flicker-duration: 1100ms;
+
+  /* 9. Confetti: short shower then a soft glow. */
+  --win-confetti-start: -95px;        /* above the seat top */
+  --win-confetti-end: 165px;          /* fall distance */
+  --win-confetti-piece-w: 6px;
+  --win-confetti-piece-h: 9px;
+  --win-confetti-opacity: 1;
+  --win-confetti-glow-delay: 1300ms;
 }
 
 /* Container for win animation */
@@ -298,6 +356,219 @@
   .win-pulse-sonar-ring { animation: none; opacity: 0; }
   .win-pulse-sonar-ring:first-child { transform: scale(1); opacity: calc(0.6 * var(--win-pulse-intensity)); }
   .win-pulse-halo-comet { animation: none; }
+}
+
+/* ---------- 6. Spotlight ---------- */
+@keyframes win-spotlight-beam-sway {
+  0%, 100% { transform: translateX(-50%) rotate(calc(var(--win-spotlight-sway) * -1)); }
+  50%      { transform: translateX(-50%) rotate(var(--win-spotlight-sway)); }
+}
+/* rotate(-a) about the top swings the bottom right, so the pool moves +throw at the same moments. */
+@keyframes win-spotlight-pool-sway {
+  0%, 100% { transform: translateX(var(--win-spotlight-throw)) scale(var(--win-spotlight-pool-width), var(--win-spotlight-pool-height)); }
+  50%      { transform: translateX(calc(var(--win-spotlight-throw) * -1)) scale(var(--win-spotlight-pool-width), var(--win-spotlight-pool-height)); }
+}
+
+.win-animation-container > .win-pulse-spotlight-beam {
+  inset: auto;
+  left: 50%;
+  bottom: 50%;
+  width: calc(var(--win-spotlight-beam-bottom) * var(--win-pulse-size));
+  height: calc(var(--win-spotlight-beam-height) * var(--win-pulse-size));
+  border-radius: 0 0 50% 50% / 0 0 18% 18%;
+  transform-origin: 50% 0;
+  clip-path: polygon(
+    calc(50% - var(--win-spotlight-beam-top) / 2) 0,
+    calc(50% + var(--win-spotlight-beam-top) / 2) 0,
+    100% 100%, 0 100%);
+  background: linear-gradient(to bottom,
+    rgba(var(--win-brand-orange-rgb), 0) 0%,
+    rgba(var(--win-brand-orange-rgb), 0.55) 22%,
+    rgba(var(--win-brand-mid-rgb), 0.45) 65%,
+    rgba(var(--win-brand-pink-rgb), 0.5) 100%);
+  -webkit-mask: linear-gradient(to bottom, #000 70%, transparent);
+  mask: linear-gradient(to bottom, #000 70%, transparent);
+  filter: blur(var(--win-spotlight-beam-blur));
+  opacity: calc(var(--win-spotlight-beam-opacity) * var(--win-pulse-intensity));
+  mix-blend-mode: screen;
+  will-change: transform;
+  animation: win-spotlight-beam-sway calc(var(--win-spotlight-duration) / var(--win-pulse-speed)) ease-in-out infinite;
+}
+
+.win-pulse-spotlight-pool {
+  background: radial-gradient(ellipse closest-side,
+    rgba(255, 236, 214, 0.75) 0%,
+    rgba(var(--win-brand-orange-rgb), 0.6) 35%,
+    rgba(var(--win-brand-pink-rgb), 0.35) 70%,
+    rgba(var(--win-brand-pink-rgb), 0) 100%);
+  filter: blur(4px);
+  opacity: calc(var(--win-spotlight-pool-opacity) * var(--win-pulse-intensity));
+  mix-blend-mode: screen;
+  will-change: transform;
+  animation: win-spotlight-pool-sway calc(var(--win-spotlight-duration) / var(--win-pulse-speed)) ease-in-out infinite;
+}
+
+/* ---------- 7. Chipburst ---------- */
+@keyframes win-chipburst-chip {
+  0%   { transform: translate(-50%, -50%) scale(0.35) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  55%  { transform: translate(calc(-50% + var(--win-burst-dx) * var(--win-chipburst-reach) * var(--win-pulse-size)), calc(-50% + var(--win-burst-dy) * var(--win-chipburst-reach) * var(--win-pulse-size))) scale(1.05) rotate(calc(var(--win-burst-spin) * 0.8)); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--win-burst-dx) * 1.12 * var(--win-chipburst-reach) * var(--win-pulse-size)), calc(-50% + var(--win-burst-dy) * 1.12 * var(--win-chipburst-reach) * var(--win-pulse-size) + 14px)) scale(0.8) rotate(var(--win-burst-spin)); opacity: 0; }
+}
+@keyframes win-chipburst-sparkle {
+  0%   { transform: translate(calc(-50% + var(--win-burst-dx) * 0.4 * var(--win-pulse-size)), calc(-50% + var(--win-burst-dy) * 0.4 * var(--win-pulse-size))) scale(0) rotate(0deg); opacity: 0; }
+  35%  { transform: translate(calc(-50% + var(--win-burst-dx) * var(--win-pulse-size)), calc(-50% + var(--win-burst-dy) * var(--win-pulse-size))) scale(1.2) rotate(45deg); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--win-burst-dx) * 1.1 * var(--win-pulse-size)), calc(-50% + var(--win-burst-dy) * 1.1 * var(--win-pulse-size))) scale(0) rotate(120deg); opacity: 0; }
+}
+
+.win-pulse-chipburst-burst {
+  border-radius: 0 !important;
+  overflow: visible;
+}
+.win-pulse-chipburst-chip,
+.win-pulse-chipburst-sparkle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-fill-mode: both;
+  animation-iteration-count: 1;
+}
+.win-pulse-chipburst-chip {
+  width: var(--win-burst-chip);
+  height: var(--win-burst-chip);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 9999px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
+  animation-name: win-chipburst-chip;
+  animation-duration: calc(var(--win-chipburst-duration) / var(--win-pulse-speed));
+  animation-timing-function: cubic-bezier(0.15, 0.7, 0.35, 1);
+  animation-delay: calc(var(--win-burst-delay) / var(--win-pulse-speed));
+}
+/* Four-point star sparkle. */
+.win-pulse-chipburst-sparkle {
+  width: var(--win-burst-sparkle);
+  height: var(--win-burst-sparkle);
+  background: radial-gradient(circle, #fff 0 18%, var(--win-burst-sparkle-color) 40%, transparent 72%);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  filter: drop-shadow(0 0 4px var(--win-burst-sparkle-color));
+  animation-name: win-chipburst-sparkle;
+  animation-duration: calc(var(--win-chipburst-sparkle-duration) / var(--win-pulse-speed));
+  animation-timing-function: ease-out;
+  animation-delay: calc(var(--win-burst-delay) / var(--win-pulse-speed));
+}
+
+/* Shared steady glow the one-shot styles settle into. */
+@keyframes win-settle-in {
+  from { opacity: 0; }
+  to   { opacity: calc(var(--win-settle-opacity) * var(--win-pulse-intensity)); }
+}
+@keyframes win-settle-breathe {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.3); }
+}
+.win-pulse-settle-glow {
+  transform: scale(calc(var(--win-settle-inset) * var(--win-pulse-size)));
+  opacity: 0;
+  animation:
+    win-settle-in calc(500ms / var(--win-pulse-speed)) ease-out var(--win-settle-delay) both,
+    win-settle-breathe calc(var(--win-settle-breathe) / var(--win-pulse-speed)) ease-in-out var(--win-settle-delay) infinite;
+}
+.win-pulse-chipburst-glow {
+  --win-settle-delay: calc(var(--win-chipburst-glow-delay) / var(--win-pulse-speed));
+  border: var(--win-settle-width) solid rgba(var(--win-brand-orange-rgb), 0.95);
+  box-shadow: 0 0 var(--win-settle-glow) rgba(var(--win-brand-orange-rgb), 0.8), inset 0 0 calc(var(--win-settle-glow) * 0.6) rgba(var(--win-brand-mid-rgb), 0.45);
+}
+.win-pulse-confetti-glow {
+  --win-settle-delay: calc(var(--win-confetti-glow-delay) / var(--win-pulse-speed));
+  border: var(--win-settle-width) solid rgba(var(--win-brand-mid-rgb), 0.9);
+  background: radial-gradient(ellipse closest-side, rgba(var(--win-brand-pink-rgb), 0.16), rgba(var(--win-brand-orange-rgb), 0.1) 70%, transparent);
+  box-shadow: 0 0 var(--win-settle-glow) rgba(var(--win-brand-pink-rgb), 0.75), inset 0 0 calc(var(--win-settle-glow) * 0.6) rgba(var(--win-brand-orange-rgb), 0.4);
+}
+
+/* ---------- 8. Neon ---------- */
+@keyframes win-neon-flow {
+  to { --win-neon-angle: 360deg; }
+}
+/* A neon tube striking up: a few stutters, then steady. */
+@keyframes win-neon-flicker {
+  0%   { opacity: 0; }
+  8%   { opacity: var(--win-neon-on); }
+  12%  { opacity: 0.1; }
+  20%  { opacity: var(--win-neon-on); }
+  23%  { opacity: 0.25; }
+  27%  { opacity: 0.05; }
+  40%  { opacity: var(--win-neon-on); }
+  44%  { opacity: 0.45; }
+  50%, 100% { opacity: var(--win-neon-on); }
+}
+.win-pulse-neon-tube,
+.win-pulse-neon-bloom {
+  transform: scale(calc(var(--win-neon-inset) * var(--win-pulse-size)));
+  padding: var(--win-neon-width);
+  background: conic-gradient(from var(--win-neon-angle),
+    var(--win-brand-orange), var(--win-brand-mid), var(--win-brand-pink), var(--win-brand-mid), var(--win-brand-orange));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation:
+    win-neon-flow calc(var(--win-neon-duration) / var(--win-pulse-speed)) linear infinite,
+    win-neon-flicker calc(var(--win-neon-flicker-duration) / var(--win-pulse-speed)) steps(1, end) 1 both;
+}
+.win-pulse-neon-tube {
+  --win-neon-on: calc(var(--win-neon-opacity) * var(--win-pulse-intensity));
+  filter: drop-shadow(0 0 2px rgba(255, 230, 240, 0.9)) drop-shadow(0 0 var(--win-neon-glow) rgba(var(--win-brand-pink-rgb), 0.9));
+}
+/* Wider, blurred copy: the coloured haze round a neon tube. */
+.win-pulse-neon-bloom {
+  --win-neon-on: calc(var(--win-neon-bloom-opacity) * var(--win-pulse-intensity));
+  padding: calc(var(--win-neon-width) * 3);
+  margin: calc(var(--win-neon-width) * -1);
+  filter: blur(var(--win-neon-bloom));
+}
+
+/* ---------- 9. Confetti ---------- */
+@keyframes win-confetti-fall {
+  0%   { transform: translate3d(0, 0, 0) rotateZ(0deg) rotateX(0deg); opacity: 0; }
+  8%   { opacity: var(--win-confetti-on); }
+  75%  { opacity: var(--win-confetti-on); }
+  100% { transform: translate3d(var(--win-confetti-drift), calc(var(--win-confetti-end) * var(--win-pulse-size)), 0) rotateZ(var(--win-confetti-spin)) rotateX(720deg); opacity: 0; }
+}
+.win-pulse-confetti-shower {
+  border-radius: 0 !important;
+  overflow: visible;
+  --win-confetti-on: calc(var(--win-confetti-opacity) * var(--win-pulse-intensity));
+}
+.win-pulse-confetti-piece {
+  position: absolute;
+  left: var(--win-confetti-x);
+  top: calc(var(--win-confetti-start) * var(--win-pulse-size));
+  width: var(--win-confetti-piece-w);
+  height: var(--win-confetti-piece-h);
+  border-radius: 1px;
+  background: var(--win-confetti-color);
+  box-shadow: 0 0 4px var(--win-confetti-color);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: win-confetti-fall calc(var(--win-confetti-fall) / var(--win-pulse-speed)) cubic-bezier(0.35, 0.1, 0.6, 1) calc(var(--win-confetti-delay) / var(--win-pulse-speed)) 1 both;
+}
+.win-pulse-confetti-strip {
+  width: calc(var(--win-confetti-piece-w) * 0.6);
+  height: calc(var(--win-confetti-piece-h) * 1.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .win-animation-container > .win-pulse-spotlight-beam { animation: none; transform: translateX(-50%); }
+  .win-pulse-spotlight-pool { animation: none; transform: scale(var(--win-spotlight-pool-width), var(--win-spotlight-pool-height)); }
+  /* One-shot motion is dropped; the settled glow shows straight away. */
+  .win-pulse-chipburst-burst,
+  .win-pulse-confetti-shower { display: none; }
+  .win-pulse-settle-glow { animation: none; opacity: calc(var(--win-settle-opacity) * var(--win-pulse-intensity)); }
+  .win-pulse-neon-tube,
+  .win-pulse-neon-bloom { animation: none; opacity: var(--win-neon-on); }
 }
 
 /* Rising bubbles (icons) behind win animation */

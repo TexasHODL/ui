@@ -90,7 +90,8 @@ const TablePreviewPage = () => {
     }, []);
 
     const [tuning, setTuning] = useState<WinPulseTuning>(DEFAULT_WIN_PULSE_TUNING);
-    const winPulse = useMemo(() => ({ style: options.pulse, tuning }), [options.pulse, tuning]);
+    const [replay, setReplay] = useState(0);
+    const winPulse = useMemo(() => ({ style: options.pulse, tuning, replay }), [options.pulse, tuning, replay]);
 
     const connection = options.heroTurn ? PREVIEW_LIVE_CONNECTION : IDLE_CONNECTION;
 
@@ -134,7 +135,7 @@ const TablePreviewPage = () => {
                 </GameMetaProvider>
             </GameActionsProvider>
             <PreviewPanel options={options} onChange={update} />
-            <WinPulsePanel options={options} onChange={update} tuning={tuning} onTuning={setTuning} />
+            <WinPulsePanel options={options} onChange={update} tuning={tuning} onTuning={setTuning} onReplay={() => setReplay(n => n + 1)} />
         </>
     );
 };
@@ -237,6 +238,8 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
 interface WinPulsePanelProps extends PreviewPanelProps {
     tuning: WinPulseTuning;
     onTuning: (tuning: WinPulseTuning) => void;
+    /** Restarts the one-shot parts (chipburst, confetti, neon flicker). */
+    onReplay: () => void;
 }
 
 const TUNING_SLIDERS: { key: keyof WinPulseTuning; label: string; min: number; max: number; step: number }[] = [
@@ -246,7 +249,7 @@ const TUNING_SLIDERS: { key: keyof WinPulseTuning; label: string; min: number; m
 ];
 
 /** Dev-only: switch the win pulse look and tune it live (CSS variables on WinAnimation). */
-const WinPulsePanel = ({ options, onChange, tuning, onTuning }: WinPulsePanelProps) => {
+const WinPulsePanel = ({ options, onChange, tuning, onTuning, onReplay }: WinPulsePanelProps) => {
     const allSeats = options.seats > 1 && options.winners.length === options.seats;
     const toggleAllSeats = () => onChange({
         winners: allSeats ? [3 <= options.seats ? 3 : 1] : Array.from({ length: options.seats }, (_, i) => i + 1)
@@ -283,12 +286,15 @@ const WinPulsePanel = ({ options, onChange, tuning, onTuning }: WinPulsePanelPro
                     <span style={{ width: 34, textAlign: "right" }}>{tuning[key].toFixed(2)}x</span>
                 </label>
             ))}
-            <div style={{ display: "flex", gap: 4 }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                 <button type="button" aria-pressed={allSeats} onClick={toggleAllSeats} style={buttonStyle(allSeats)}>
                     All seats
                 </button>
                 <button type="button" onClick={() => onTuning(DEFAULT_WIN_PULSE_TUNING)} style={buttonStyle(false)}>
                     Reset sliders
+                </button>
+                <button type="button" onClick={onReplay} style={buttonStyle(false)}>
+                    Replay
                 </button>
                 <button type="button" aria-pressed={options.winners.length === 0} onClick={() => onChange({ winners: [] })} style={buttonStyle(false)}>
                     Off
