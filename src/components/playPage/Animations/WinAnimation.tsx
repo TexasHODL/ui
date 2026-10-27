@@ -44,10 +44,10 @@ const RippleWobbleFilter: React.FC<{ id: string; speed: number; size: number }> 
     </svg>
 );
 
-const RippleRings: React.FC<{ className?: string }> = ({ className = "win-pulse-ripple-ring" }) => (
+const RippleRings: React.FC = () => (
     <>
         {Array.from({ length: WIN_RIPPLE_RING_COUNT }, (_, i) => (
-            <div key={i} className={className} style={{ "--win-ripple-index": i } as React.CSSProperties} />
+            <div key={i} className="win-pulse-ripple-ring" style={{ "--win-ripple-index": i } as React.CSSProperties} />
         ))}
     </>
 );
@@ -80,13 +80,6 @@ const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle }> = ({ pulseStyle }) =>
                         <div className="win-pulse-ripple-glint win-pulse-ripple-glint-c" />
                     </div>
                     <div className="win-pulse-ripple-rim" />
-                    {/* Rim highlight: the same wave rings (same timing + wobble), drawn bright and masked to the rim band,
-                        so the rim lights only where a wave is touching it right now. */}
-                    <div className="win-pulse-ripple-rim-hit">
-                        <div className="win-pulse-ripple-rim-hit-band">
-                            <RippleRings className="win-pulse-ripple-hit-ring" />
-                        </div>
-                    </div>
                 </>
             );
         case "breathing":
