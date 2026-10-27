@@ -1,5 +1,6 @@
 import { act, render } from "@testing-library/react";
-import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_PULSE_RING_COUNT } from "./WinAnimation";
+import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_SONAR_RING_COUNT } from "./WinAnimation";
+import { WIN_PULSE_STYLES, WinPulseStyleContext, DEFAULT_WIN_PULSE_TUNING } from "./winPulseStyle";
 import { setTableStyle } from "../../../theme/tableStyles";
 
 jest.mock("../../../hooks/game/useWinnerInfo", () => ({
@@ -34,12 +35,55 @@ describe("win pulse particles", () => {
     });
 });
 
-describe("win pulse wave", () => {
-    it("draws a steady glow and evenly staggered rings", () => {
-        const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
-        expect(container.querySelectorAll(".win-animation-glow")).toHaveLength(1);
-        const rings = Array.from(container.querySelectorAll<HTMLElement>(".win-animation-ring"));
-        expect(rings).toHaveLength(WIN_PULSE_RING_COUNT);
-        rings.forEach((r, i) => expect(r.style.getPropertyValue("--win-pulse-ring-index")).toBe(String(i)));
+describe("win pulse styles", () => {
+    const pos = { left: "10px", top: "10px" };
+    const styleOf = (container: HTMLElement) => container.querySelector<HTMLElement>(".win-animation-container")?.dataset.winPulseStyle;
+
+    it("defaults to the heartbeat border", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} />);
+        expect(styleOf(container)).toBe("heartbeat");
+        expect(container.querySelectorAll(".win-pulse-heartbeat-border")).toHaveLength(1);
+    });
+
+    it("draws distinct layers for every style, keeping the chip particles", () => {
+        const layer: Record<string, string> = {
+            heartbeat: ".win-pulse-heartbeat-border",
+            sonar: ".win-pulse-sonar-ring",
+            halo: ".win-pulse-halo-comet",
+            breathing: ".win-pulse-breathing-border"
+        };
+        WIN_PULSE_STYLES.forEach(style => {
+            const { container, unmount } = render(<WinAnimation index={0} position={pos} winPulseStyle={style} />);
+            expect(container.querySelector(".win-animation-container")).toHaveClass(`win-pulse-${style}`);
+            WIN_PULSE_STYLES.filter(other => other !== style).forEach(other => expect(container.querySelector(layer[other])).toBeNull());
+            expect(container.querySelector(layer[style])).not.toBeNull();
+            expect(container.querySelectorAll(".bubbles li")).toHaveLength(WIN_PULSE_CHIP_FILES.length);
+            unmount();
+        });
+    });
+
+    it("staggers the sonar rings evenly", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="sonar" />);
+        const rings = Array.from(container.querySelectorAll<HTMLElement>(".win-pulse-sonar-ring"));
+        expect(rings).toHaveLength(WIN_SONAR_RING_COUNT);
+        rings.forEach((r, i) => expect(r.style.getPropertyValue("--win-sonar-index")).toBe(String(i)));
+    });
+
+    it("takes style and tuning from context, and the prop wins", () => {
+        const value = { style: "halo" as const, tuning: { ...DEFAULT_WIN_PULSE_TUNING, speed: 2 } };
+        const { container, rerender } = render(
+            <WinPulseStyleContext.Provider value={value}><WinAnimation index={0} position={pos} /></WinPulseStyleContext.Provider>
+        );
+        expect(styleOf(container)).toBe("halo");
+        expect(container.querySelector<HTMLElement>(".win-animation-container")!.style.getPropertyValue("--win-pulse-speed")).toBe("2");
+        rerender(
+            <WinPulseStyleContext.Provider value={value}><WinAnimation index={0} position={pos} winPulseStyle="sonar" /></WinPulseStyleContext.Provider>
+        );
+        expect(styleOf(container)).toBe("sonar");
+    });
+
+    it("draws nothing for a seat that is not a winner", () => {
+        const { container } = render(<WinAnimation index={4} position={pos} />);
+        expect(container.firstChild).toBeNull();
     });
 });

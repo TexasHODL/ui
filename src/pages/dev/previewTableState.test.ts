@@ -19,18 +19,31 @@ describe("parsePreviewSearch", () => {
             holeCards: true,
             holeCount: 2,
             board: 5,
-            winner: 0
+            winners: [],
+            pulse: "heartbeat"
         });
     });
 
     it("reads winner=<seat> for a looping win pulse, ignoring seats off the table", () => {
-        expect(parsePreviewSearch(new URLSearchParams("winner=3")).winner).toBe(3);
-        expect(parsePreviewSearch(new URLSearchParams("seats=2&winner=3")).winner).toBe(0);
+        expect(parsePreviewSearch(new URLSearchParams("winner=3")).winners).toEqual([3]);
+        expect(parsePreviewSearch(new URLSearchParams("seats=2&winner=3")).winners).toEqual([]);
         expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("winner=3"))).get("winner")).toBe("3");
         const state = buildPreviewState(parsePreviewSearch(new URLSearchParams("winner=3")), PREVIEW_HERO_ADDRESS);
         expect(state.winners).toHaveLength(1);
         expect(state.winners[0]).toMatchObject({ seat: 3, address: state.players[2].address });
         expect(buildPreviewState(parsePreviewSearch(new URLSearchParams()), PREVIEW_HERO_ADDRESS).winners).toEqual([]);
+    });
+
+    it("reads a comma list or all for side-by-side win pulses, and the pulse style", () => {
+        expect(parsePreviewSearch(new URLSearchParams("winner=5,2,x,2,12")).winners).toEqual([2, 5]);
+        const all = parsePreviewSearch(new URLSearchParams("seats=6&winner=all&pulse=halo"));
+        expect(all.winners).toEqual([1, 2, 3, 4, 5, 6]);
+        expect(all.pulse).toBe("halo");
+        expect(previewSearchParams(all).get("winner")).toBe("all");
+        expect(previewSearchParams(all).get("pulse")).toBe("halo");
+        expect(parsePreviewSearch(previewSearchParams(all))).toEqual(all);
+        expect(buildPreviewState(all, PREVIEW_HERO_ADDRESS).winners.map(w => w.seat)).toEqual([1, 2, 3, 4, 5, 6]);
+        expect(parsePreviewSearch(new URLSearchParams("pulse=bogus")).pulse).toBe("heartbeat");
     });
 
     it("accepts seats 2, 4, and 6 and a dealer seat", () => {

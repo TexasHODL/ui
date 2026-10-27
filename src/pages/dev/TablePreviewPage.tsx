@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useMemo } from "react";
+import { useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import Table from "../../components/playPage/Table";
@@ -13,6 +13,12 @@ import { ShowAllDealerButtonsProvider } from "../../context/ShowAllDealerButtons
 import { ReplayProvider } from "../../context/gameState/ReplayContext";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { getCosmosAddressSync } from "../../utils/cosmosAccountUtils";
+import {
+    DEFAULT_WIN_PULSE_TUNING,
+    WIN_PULSE_STYLES,
+    WinPulseStyleContext,
+    type WinPulseTuning
+} from "../../components/playPage/Animations/winPulseStyle";
 import {
     PREVIEW_BOARD_COUNTS,
     PREVIEW_HERO_ADDRESS,
@@ -83,6 +89,9 @@ const TablePreviewPage = () => {
         return releasePreviewWallet;
     }, []);
 
+    const [tuning, setTuning] = useState<WinPulseTuning>(DEFAULT_WIN_PULSE_TUNING);
+    const winPulse = useMemo(() => ({ style: options.pulse, tuning }), [options.pulse, tuning]);
+
     const connection = options.heroTurn ? PREVIEW_LIVE_CONNECTION : IDLE_CONNECTION;
 
     const update = useCallback((patch: Partial<PreviewOptions>) => {
@@ -113,7 +122,9 @@ const TablePreviewPage = () => {
                                 <GameDataProvider gameState={gameState} isOptimistic={false}>
                                     <PreviewSeatActionsContext.Provider value={options.allActions ? PREVIEW_SEAT_ACTIONS : null}>
                                         <ShowAllDealerButtonsProvider enabled={options.allDealers}>
-                                            <Table />
+                                            <WinPulseStyleContext.Provider value={winPulse}>
+                                                <Table />
+                                            </WinPulseStyleContext.Provider>
                                         </ShowAllDealerButtonsProvider>
                                     </PreviewSeatActionsContext.Provider>
                                 </GameDataProvider>
@@ -123,6 +134,7 @@ const TablePreviewPage = () => {
                 </GameMetaProvider>
             </GameActionsProvider>
             <PreviewPanel options={options} onChange={update} />
+            <WinPulsePanel options={options} onChange={update} tuning={tuning} onTuning={setTuning} />
         </>
     );
 };
@@ -218,6 +230,70 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
                     {count}
                 </button>
             ))}
+        </div>
+    );
+};
+
+interface WinPulsePanelProps extends PreviewPanelProps {
+    tuning: WinPulseTuning;
+    onTuning: (tuning: WinPulseTuning) => void;
+}
+
+const TUNING_SLIDERS: { key: keyof WinPulseTuning; label: string; min: number; max: number; step: number }[] = [
+    { key: "speed", label: "Speed", min: 0.25, max: 3, step: 0.05 },
+    { key: "size", label: "Size", min: 0.5, max: 2, step: 0.05 },
+    { key: "intensity", label: "Intensity", min: 0, max: 1.5, step: 0.05 }
+];
+
+/** Dev-only: switch the win pulse look and tune it live (CSS variables on WinAnimation). */
+const WinPulsePanel = ({ options, onChange, tuning, onTuning }: WinPulsePanelProps) => {
+    const allSeats = options.seats > 1 && options.winners.length === options.seats;
+    const toggleAllSeats = () => onChange({
+        winners: allSeats ? [3 <= options.seats ? 3 : 1] : Array.from({ length: options.seats }, (_, i) => i + 1)
+    });
+    return (
+        <div data-testid="win-pulse-panel" style={{ ...panelStyle, top: "auto", bottom: 8, flexDirection: "column", alignItems: "stretch", width: 260 }}>
+            <div style={{ display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                <span style={{ ...labelStyle, marginLeft: 0 }}>Win pulse</span>
+                {WIN_PULSE_STYLES.map(style => (
+                    <button
+                        key={style}
+                        type="button"
+                        aria-pressed={options.pulse === style}
+                        onClick={() => onChange({ pulse: style, winners: options.winners.length ? options.winners : [Math.min(3, options.seats)] })}
+                        style={buttonStyle(options.pulse === style)}
+                    >
+                        {style}
+                    </button>
+                ))}
+            </div>
+            {TUNING_SLIDERS.map(({ key, label, min, max, step }) => (
+                <label key={key} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span style={{ width: 56, opacity: 0.7 }}>{label}</span>
+                    <input
+                        type="range"
+                        aria-label={`Win pulse ${label.toLowerCase()}`}
+                        min={min}
+                        max={max}
+                        step={step}
+                        value={tuning[key]}
+                        onChange={e => onTuning({ ...tuning, [key]: Number(e.target.value) })}
+                        style={{ flex: 1 }}
+                    />
+                    <span style={{ width: 34, textAlign: "right" }}>{tuning[key].toFixed(2)}x</span>
+                </label>
+            ))}
+            <div style={{ display: "flex", gap: 4 }}>
+                <button type="button" aria-pressed={allSeats} onClick={toggleAllSeats} style={buttonStyle(allSeats)}>
+                    All seats
+                </button>
+                <button type="button" onClick={() => onTuning(DEFAULT_WIN_PULSE_TUNING)} style={buttonStyle(false)}>
+                    Reset sliders
+                </button>
+                <button type="button" aria-pressed={options.winners.length === 0} onClick={() => onChange({ winners: [] })} style={buttonStyle(false)}>
+                    Off
+                </button>
+            </div>
         </div>
     );
 };
