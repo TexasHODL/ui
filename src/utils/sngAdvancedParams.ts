@@ -15,6 +15,7 @@
  */
 
 import { hasValue, isNullish, isBlank } from "./guards";
+import { describeBlindStructureChoice, previewBlindLevels, resolveBlindStructureChoice, type BlindStructureChoice } from "./blindStructureChoice";
 
 /** Chain-defined valid entrant counts for a Sit & Go. */
 export const VALID_SNG_RUNNER_COUNTS = [2, 4, 6, 9] as const;
@@ -61,7 +62,9 @@ export interface BlindLevelPreview {
     level: number;
     smallBlind: number;
     bigBlind: number;
+    ante: number;
     durationMinutes: number;
+    isBreak: boolean;
 }
 
 export interface SngPreview {
@@ -72,6 +75,8 @@ export interface SngPreview {
     /** Total chips in play across all runners. */
     totalChipsInPlay: number;
     levels: BlindLevelPreview[];
+    /** How the blinds move, for the note under the preview table. */
+    structureNote: string;
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -166,20 +171,35 @@ export interface SngPreviewInput {
     smallBlind: number;
     bigBlind: number;
     blindLevelDuration: number;
+    /** The create form's blind structure (ui#905); omitted = doubling, what the chain plays when none is sent. */
+    blindStructureChoice?: BlindStructureChoice;
+    /** The custom structure text, read when blindStructureChoice is "custom". */
+    customBlindText?: string;
 }
 
 /**
  * Build a preview of the resulting Sit & Go from effective values (form
- * values merged with any applied advanced params). Blinds double each level,
- * matching the structure shown in the create form.
+ * values merged with any applied advanced params). The levels are the ones the
+ * engine will play for the form's blind structure (ladder, rounded doubling,
+ * a preset or custom), expanded by the SDK exactly as the create form's preview.
  */
 export function buildSngPreview(input: SngPreviewInput): SngPreview {
-    const levels: BlindLevelPreview[] = Array.from({ length: SNG_PREVIEW_LEVEL_COUNT }, (_, i) => ({
-        level: i + 1,
-        smallBlind: input.smallBlind * Math.pow(2, i),
-        bigBlind: input.bigBlind * Math.pow(2, i),
+    const choice = input.blindStructureChoice ?? "doubling";
+    const plan = resolveBlindStructureChoice(choice, input.customBlindText ?? "", {
+        smallBlind: input.smallBlind,
+        bigBlind: input.bigBlind,
         durationMinutes: input.blindLevelDuration
-    }));
+    });
+    const levels: BlindLevelPreview[] = plan.preview
+        ? previewBlindLevels(plan.preview, SNG_PREVIEW_LEVEL_COUNT).map(r => ({
+              level: r.number,
+              smallBlind: Number(r.smallBlind),
+              bigBlind: Number(r.bigBlind),
+              ante: Number(r.ante),
+              durationMinutes: r.durationMinutes,
+              isBreak: r.isBreak
+          }))
+        : [];
 
     return {
         runners: input.maxPlayers,
@@ -187,7 +207,8 @@ export function buildSngPreview(input: SngPreviewInput): SngPreview {
         buyIn: input.buyIn,
         blindLevelDuration: input.blindLevelDuration,
         totalChipsInPlay: input.startingStack * input.maxPlayers,
-        levels
+        levels,
+        structureNote: describeBlindStructureChoice(choice)
     };
 }
 
@@ -197,6 +218,7 @@ export function buildSngPreview(input: SngPreviewInput): SngPreview {
  */
 export function mergeAdvancedParams(current: SngPreviewInput, params: AdvancedSngParams): SngPreviewInput {
     return {
+        ...current,
         maxPlayers: hasValue(params.maxPlayers) ? params.maxPlayers : current.maxPlayers,
         buyIn: hasValue(params.buyIn) ? params.buyIn : current.buyIn,
         startingStack: hasValue(params.startingStack) ? params.startingStack : current.startingStack,
