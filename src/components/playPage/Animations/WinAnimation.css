@@ -86,7 +86,9 @@
   bottom: 80px;
   list-style: none;
   overflow: visible;
-  background-image: url("../../../assets/DollarChip.svg");
+  /* Chip art comes from the player's chip style (inline style in WinAnimation.tsx). */
+  background-position: center;
+  border-radius: 9999px;
   background-size: contain;
   background-repeat: no-repeat;
   animation: bubble-rise linear infinite;
