@@ -9,12 +9,14 @@ import { GameMetaProvider } from "../../context/gameState/GameMetaContext";
 import { GameUIProvider } from "../../context/gameState/GameUIContext";
 import { IDLE_CONNECTION, type ConnectionState } from "../../context/gameState/connection";
 import { PreviewSeatActionsContext } from "../../context/PreviewSeatActionsContext";
+import { GameSettingsOverride } from "../../context/GameSettingsContext";
 import { ShowAllDealerButtonsProvider } from "../../context/ShowAllDealerButtonsContext";
 import { ReplayProvider } from "../../context/gameState/ReplayContext";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { getCosmosAddressSync } from "../../utils/cosmosAccountUtils";
 import {
     PREVIEW_BOARD_COUNTS,
+    PREVIEW_BUTTON_STATES,
     PREVIEW_FORMATS,
     type PreviewFormat,
     PREVIEW_HERO_ADDRESS,
@@ -23,6 +25,7 @@ import {
     type PreviewOptions,
     buildPreviewState,
     parsePreviewSearch,
+    previewIsHeroTurn,
     previewSearchParams
 } from "./previewTableState";
 
@@ -91,7 +94,14 @@ const TablePreviewPage = () => {
         return releasePreviewWallet;
     }, []);
 
-    const connection = options.heroTurn ? PREVIEW_LIVE_CONNECTION : IDLE_CONNECTION;
+    const connection = previewIsHeroTurn(options) ? PREVIEW_LIVE_CONNECTION : IDLE_CONNECTION;
+
+    // Pin the settings that decide the hero bar: the pre-action bar shows only
+    // for "preaction", and auto-muck never answers the Show / Muck bar for you.
+    const settingsOverrides = useMemo(
+        () => ({ preSelectCheck: options.buttons === "preaction", autoMuck: false }),
+        [options.buttons]
+    );
 
     const update = useCallback((patch: Partial<PreviewOptions>) => {
         const next: PreviewOptions = { ...options, ...patch };
@@ -121,7 +131,9 @@ const TablePreviewPage = () => {
                                 <GameDataProvider gameState={gameState} isOptimistic={false}>
                                     <PreviewSeatActionsContext.Provider value={options.allActions ? PREVIEW_SEAT_ACTIONS : null}>
                                         <ShowAllDealerButtonsProvider enabled={options.allDealers}>
-                                            <Table />
+                                            <GameSettingsOverride overrides={settingsOverrides}>
+                                                <Table />
+                                            </GameSettingsOverride>
                                         </ShowAllDealerButtonsProvider>
                                     </PreviewSeatActionsContext.Provider>
                                 </GameDataProvider>
@@ -192,14 +204,6 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
             </button>
             <button
                 type="button"
-                aria-pressed={options.heroTurn}
-                onClick={() => onChange({ heroTurn: !options.heroTurn })}
-                style={buttonStyle(options.heroTurn)}
-            >
-                Your turn
-            </button>
-            <button
-                type="button"
                 aria-pressed={options.holeCards}
                 onClick={() => onChange({ holeCards: !options.holeCards })}
                 style={buttonStyle(options.holeCards)}
@@ -226,6 +230,19 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
                     {format === "sng" ? "SNG" : format === "tournament" ? "Tourney" : "Cash"}
                 </button>
             ))}
+            <span style={labelStyle}>Buttons</span>
+            {PREVIEW_BUTTON_STATES.map(state => (
+                <button
+                    key={state}
+                    type="button"
+                    data-testid={`table-preview-buttons-${state}`}
+                    aria-pressed={options.buttons === state}
+                    onClick={() => onChange({ buttons: state })}
+                    style={buttonStyle(options.buttons === state)}
+                >
+                    {PREVIEW_BUTTON_LABELS[state]}
+                </button>
+            ))}
             <span style={labelStyle}>Board</span>
             {PREVIEW_BOARD_COUNTS.map(count => (
                 <button
@@ -240,6 +257,13 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
             ))}
         </div>
     );
+};
+
+const PREVIEW_BUTTON_LABELS: Record<(typeof PREVIEW_BUTTON_STATES)[number], string> = {
+    none: "None",
+    actions: "Actions",
+    preaction: "Pre-action",
+    muck: "Muck/Show"
 };
 
 const panelStyle: React.CSSProperties = {

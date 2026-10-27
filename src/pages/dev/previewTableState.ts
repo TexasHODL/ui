@@ -23,6 +23,15 @@ export type PreviewBoardCount = (typeof PREVIEW_BOARD_COUNTS)[number];
 export const PREVIEW_FORMATS = ["cash", "tournament", "sng"] as const;
 export type PreviewFormat = (typeof PREVIEW_FORMATS)[number];
 
+/**
+ * Which hero (bottom) controls the preview shows:
+ * none, actions (fold/check/call/raise + sizing, seat 1's turn),
+ * preaction (Fold / Call / Call Any while another seat acts),
+ * muck (Show / Muck at showdown, seat 1's turn).
+ */
+export const PREVIEW_BUTTON_STATES = ["none", "actions", "preaction", "muck"] as const;
+export type PreviewButtonState = (typeof PREVIEW_BUTTON_STATES)[number];
+
 const COMMUNITY = ["AH", "KD", "QC", "JH", "TS"];
 
 export interface PreviewOptions {
@@ -33,8 +42,8 @@ export interface PreviewOptions {
     allDealers: boolean;
     /** Pin the real action badge on every seat at once. */
     allActions: boolean;
-    /** Seat 1's turn: the real fold / check / call / raise controls. */
-    heroTurn: boolean;
+    /** Hero controls on screen. "actions" and "muck" make it seat 1's turn. */
+    buttons: PreviewButtonState;
     holeCards: boolean;
     /** 2 for Hold'em, 4 for Omaha. Ignored while hole cards are off. */
     holeCount: 2 | 4;
@@ -57,10 +66,10 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * holes=0|1|4 (default two cards; 4 draws Omaha), board=0|3|4|5 (default a full board),
  * actions=all to pin an action badge on every seat,
  * format=cash|tournament|sng (default cash) picks the table format and chip amounts,
- * turn=1 to make seat 1's turn and show the real action controls,
+ * buttons=none|actions|preaction|muck picks the hero controls (turn=1 is an alias for actions),
  * win=1 to make seat 1 the winner so the win celebration plays.
  * dealer=all and actions=all are preview-only: the snapshot still has one
- * dealer and one newest action. turn=1 writes seat 1's legal actions.
+ * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
  */
 export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const requestedSeats = Number(params.get("seats"));
@@ -78,11 +87,14 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const requestedBoard = boardParam === null ? Number.NaN : Number(boardParam);
     const board: PreviewBoardCount = isBoardCount(requestedBoard) ? requestedBoard : 5;
     const allActions = params.get("actions") === "all";
-    const heroTurn = params.get("turn") === "1";
+    const buttonsParam = params.get("buttons");
+    const buttons: PreviewButtonState = (PREVIEW_BUTTON_STATES as readonly string[]).includes(buttonsParam ?? "")
+        ? (buttonsParam as PreviewButtonState)
+        : params.get("turn") === "1" ? "actions" : "none";
     const formatParam = params.get("format");
     const format: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
     const win = params.get("win") === "1";
-    return { seats, dealer, allDealers, allActions, heroTurn, holeCards, holeCount, board, format, win };
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -92,7 +104,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     params.set("holes", !options.holeCards ? "0" : options.holeCount === 4 ? "4" : "1");
     params.set("board", String(options.board));
     if (options.allActions) params.set("actions", "all");
-    if (options.heroTurn) params.set("turn", "1");
+    if (options.buttons !== "none") params.set("buttons", options.buttons);
     if (options.format !== "cash") params.set("format", options.format);
     if (options.win) params.set("win", "1");
     return params;
@@ -170,13 +182,25 @@ export const previewHeroLegalActions = (index: number): LegalActionDTO[] => [
     { action: PlayerActionType.RAISE, min: HERO_RAISE_MIN_MICRO, max: HERO_STACK_MICRO, index }
 ];
 
+/** Show and Muck: the losing-hand player's choices at showdown. */
+export const previewHeroShowdownActions = (index: number): LegalActionDTO[] => [
+    { action: PlayerActionType.SHOW, min: undefined, max: undefined, index },
+    { action: PlayerActionType.MUCK, min: undefined, max: undefined, index }
+];
+
+/** Seat 1 acts (and the socket must read live) for the action and showdown bars. */
+export const previewIsHeroTurn = (options: Pick<PreviewOptions, "buttons">): boolean =>
+    options.buttons === "actions" || options.buttons === "muck";
+
 /**
  * Cash-table snapshot: every seat filled, every player with a bet of a
  * different size ($0.02 × seat), dealer on `options.dealer`.
- * With heroTurn, seat 1 is next and holds the action controls' legal actions.
+ * With buttons=actions|muck, seat 1 is next and holds the matching legal actions.
+ * buttons=muck moves the hand to SHOWDOWN so the Show / Muck bar applies.
  */
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
-    const round = roundForBoard(options.board);
+    const round = options.buttons === "muck" ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
+    const heroTurn = previewIsHeroTurn(options);
     const players: PlayerDTO[] = [];
     const previousActions: ActionDTO[] = [];
     let pot = 0n;
@@ -210,7 +234,9 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
                 : undefined,
             status: PlayerStatus.ACTIVE,
             lastAction: action,
-            legalActions: options.heroTurn && seat === 1 ? previewHeroLegalActions(options.seats + 1) : [],
+            legalActions: heroTurn && seat === 1
+                ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1))
+                : [],
             sumOfBets: amount,
             timeout: 30,
             signature: ""
@@ -237,7 +263,7 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         deck: "",
         pots: [pot.toString()],
         totalPot: pot.toString(),
-        nextToAct: options.heroTurn ? 1 : Math.min(2, options.seats),
+        nextToAct: heroTurn ? 1 : Math.min(2, options.seats),
         previousActions,
         actionCount: options.seats,
         handNumber: 1,
