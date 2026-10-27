@@ -8,6 +8,7 @@ import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { WinnerInfo, WinnerInfoReturn } from "../../types/index";
 import { hasElements } from "../../utils/guards";
 import { findSeatFromActions, validSeat } from "../../utils/playerSeatUtils";
+import { getWinType } from "../../utils/winnerDescriptions";
 
 /**
  * Format a won amount the way the action log formats bets (ui#727): SNG and
@@ -50,7 +51,7 @@ function getWinnerInfo(gameData: TexasHoldemStateDTO, isTournament: boolean) {
                 avatar: player?.avatar,
                 amount: winner.amount.toString(),
                 formattedAmount: formatWinAmount(winner.amount.toString(), isTournament),
-                winType: hasElements(winner.cards) ? "showdown" : "uncontested",
+                winType: getWinType(winner),
                 description: winner.description,
                 handName: winner.name,
                 cards: winner.cards

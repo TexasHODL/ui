@@ -73,7 +73,8 @@ export function parseGameStateJson(json: string): ParsedGameState {
         throw new Error("Game state has no handNumber");
     }
     const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
-    return { state: withWinnerDescriptions(state), format: str(parsed.format), variant: str(parsed.variant), name: str(parsed.name) };
+    const variant = str(parsed.variant);
+    return { state: withWinnerDescriptions(state, variant), format: str(parsed.format), variant, name: str(parsed.name) };
 }
 
 /** Parses the chain's `Game` query response (`{ game: "<GameStateResponseDTO JSON>" }`). */
