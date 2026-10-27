@@ -43,7 +43,7 @@ yarn dev
 
 Then open `http://localhost:5173`.
 
-To switch back to the upstream Block52 default, remove `VITE_DEFAULT_NETWORK` from `.env.local` or set it to `Block52`. The network selector can also be changed in the app.
+Texas Hodl is now the built-in default network, so removing `VITE_DEFAULT_NETWORK` from `.env.local` still gives Texas Hodl. To use Block52 instead, set `VITE_DEFAULT_NETWORK=Block52`. The network selector can also be changed in the app.
 
 ## Visual work completed
 

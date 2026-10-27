@@ -44,7 +44,7 @@ export interface NetworkEndpoints {
 // Same pattern applies to all validator domains (block52.xyz, texashodl.net, etc.)
 //
 // NETWORK STATUS (Last tested: 2026-03-23):
-// ✅ Block52 (node1.block52.xyz) - Official production node (default)
+// ✅ Block52 (node1.block52.xyz) - Official production node
 // ✅ Localhost - Works with `ignite chain serve`
 // ✅ Texas Hodl (node.texashodl.net) - Working, use for production testing
 //
@@ -123,10 +123,12 @@ export const NETWORK_PRESETS: NetworkEndpoints[] = [
     }
 ];
 
-// Local branded builds can opt into a production test network without changing
-// the shared preset order or the default used by the upstream app/tests.
-const DEFAULT_NETWORK_NAME = viteEnv.VITE_DEFAULT_NETWORK || "Block52";
-const DEFAULT_NETWORK = NETWORK_PRESETS.find(network => network.name === DEFAULT_NETWORK_NAME) || NETWORK_PRESETS[0];
+// Texas Hodl is the built-in default network for this app. VITE_DEFAULT_NETWORK
+// can still override it (e.g. set it to "Block52" for the upstream default).
+export const BUILT_IN_DEFAULT_NETWORK_NAME = "Texas Hodl";
+const BUILT_IN_DEFAULT_NETWORK = NETWORK_PRESETS.find(network => network.name === BUILT_IN_DEFAULT_NETWORK_NAME) ?? NETWORK_PRESETS[0];
+const DEFAULT_NETWORK_NAME = viteEnv.VITE_DEFAULT_NETWORK || BUILT_IN_DEFAULT_NETWORK_NAME;
+const DEFAULT_NETWORK = NETWORK_PRESETS.find(network => network.name === DEFAULT_NETWORK_NAME) || BUILT_IN_DEFAULT_NETWORK;
 
 interface NetworkContextType {
     currentNetwork: NetworkEndpoints;
@@ -142,7 +144,7 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
 const DISCOVERED_NETWORKS_KEY = "discoveredNetworks";
 
 export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    // Initialize network from localStorage or default to Block52
+    // Initialize network from localStorage or the default network (Texas Hodl)
     const [currentNetwork, setCurrentNetwork] = useState<NetworkEndpoints>(() => {
         // Try to load user's saved network preference from localStorage
         const saved = localStorage.getItem(STORAGE_KEYS.selectedNetwork);
@@ -155,11 +157,11 @@ export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children })
                 }
                 return parsed;
             } catch {
-                // If localStorage is corrupted, default to Block52
+                // If localStorage is corrupted, use the default network
                 return DEFAULT_NETWORK;
             }
         }
-        // First time user - default to Block52
+        // First time user - use the default network (Texas Hodl unless overridden)
         return DEFAULT_NETWORK;
     });
 
