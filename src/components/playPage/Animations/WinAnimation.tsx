@@ -172,6 +172,162 @@ const ConfettiShower: React.FC = () => (
     </div>
 );
 
+/** Firework bursts above the seat, and sparks per burst. */
+export const WIN_FIREWORK_BURSTS = 3;
+export const WIN_FIREWORK_SPARKS = 12;
+/** Glitter dust motes orbiting the seat. */
+export const WIN_GLITTER_COUNT = 26;
+/** Sparkles riding the pot stream. */
+export const WIN_POTSTREAM_SPARKLES = 7;
+
+const FIREWORK_COLORS = ["var(--win-brand-orange)", "var(--win-brand-pink)", "var(--win-brand-mid)"];
+/** Burst centres: % of the seat box (x) and px above its top (y, before --win-pulse-size). */
+const FIREWORKS = [
+    { x: 24, y: -22, delay: 0, reach: 1 },
+    { x: 74, y: -34, delay: 380, reach: 1.15 },
+    { x: 50, y: -58, delay: 760, reach: 0.85 }
+].slice(0, WIN_FIREWORK_BURSTS);
+
+const Fireworks: React.FC = () => (
+    <div className="win-pulse-fireworks-sky">
+        {FIREWORKS.map((b, bi) => (
+            <span
+                key={bi}
+                className="win-pulse-fireworks-burst"
+                style={{
+                    "--win-fw-x": `${b.x}%`,
+                    "--win-fw-y": `${b.y}px`,
+                    "--win-fw-delay": `${b.delay}ms`,
+                    "--win-fw-reach": b.reach
+                } as React.CSSProperties}
+            >
+                <span className="win-pulse-fireworks-flash" />
+                {Array.from({ length: WIN_FIREWORK_SPARKS }, (_, i) => (
+                    <span
+                        key={i}
+                        className="win-pulse-fireworks-spark"
+                        style={{
+                            "--win-fw-angle": `${Math.round((i / WIN_FIREWORK_SPARKS) * 360 + jitter(i + bi * 31, 14) * 14)}deg`,
+                            "--win-fw-dist": (0.8 + jitter(i + bi * 31, 15) * 0.35).toFixed(2),
+                            "--win-fw-color": FIREWORK_COLORS[(i + bi) % FIREWORK_COLORS.length]
+                        } as React.CSSProperties}
+                    />
+                ))}
+            </span>
+        ))}
+    </div>
+);
+
+const GLITTER_COLORS = ["#fff", "var(--win-brand-orange)", "var(--win-brand-pink)", "#ffe3b8", "var(--win-brand-mid)"];
+const GLITTER = Array.from({ length: WIN_GLITTER_COUNT }, (_, i) => ({
+    start: Math.round(jitter(i, 16) * 360),
+    radius: (0.78 + jitter(i, 17) * 0.4).toFixed(2),  /* times --win-glitter-radius */
+    orbit: Math.round(9000 + jitter(i, 18) * 9000),
+    reverse: i % 4 === 3,
+    twinkle: Math.round(900 + jitter(i, 19) * 1400),
+    delay: Math.round(jitter(i, 20) * 2000),
+    size: (2 + jitter(i, 21) * 3).toFixed(1),
+    star: i % 5 === 0,
+    color: GLITTER_COLORS[i % GLITTER_COLORS.length]
+}));
+
+const Glitter: React.FC = () => (
+    <div className="win-pulse-glitter-field">
+        {GLITTER.map((g, i) => (
+            <span
+                key={i}
+                className={`win-pulse-glitter-orbit${g.reverse ? " win-pulse-glitter-reverse" : ""}`}
+                style={{
+                    "--win-glitter-start": `${g.start}deg`,
+                    "--win-glitter-r": g.radius,
+                    "--win-glitter-orbit": `${g.orbit}ms`
+                } as React.CSSProperties}
+            >
+                <span
+                    className={`win-pulse-glitter-mote${g.star ? " win-pulse-glitter-star" : ""}`}
+                    style={{
+                        "--win-glitter-twinkle": `${g.twinkle}ms`,
+                        "--win-glitter-delay": `${g.delay}ms`,
+                        "--win-glitter-size": `${g.size}px`,
+                        "--win-glitter-color": g.color
+                    } as React.CSSProperties}
+                />
+            </span>
+        ))}
+    </div>
+);
+
+/** Pot elements on the table, best first. */
+const POT_SELECTOR = ".pot-pill, .pot-display, .community-pots";
+/** Used when no pot is on screen (or no layout, e.g. tests): straight up towards the felt centre. */
+const POTSTREAM_FALLBACK = { dx: 0, dy: -160 };
+
+/**
+ * Vector (seat-box px, so CSS-scaled tables still line up) from the seat centre to the pot.
+ * Measured once on mount / replay, never per frame. Falls back to the table centre, then straight up.
+ */
+export const measurePotVector = (seatBox: HTMLElement): { dx: number; dy: number } => {
+    const seat = seatBox.getBoundingClientRect();
+    const scale = seatBox.offsetWidth ? seat.width / seatBox.offsetWidth : 1;
+    if (!seat.width || !scale) return POTSTREAM_FALLBACK;
+    let target: DOMRect | null = null;
+    for (let node = seatBox.parentElement; node && !target; node = node.parentElement) {
+        const pot = node.querySelector<HTMLElement>(POT_SELECTOR);
+        if (pot) {
+            const r = pot.getBoundingClientRect();
+            if (r.width) target = r;
+        }
+    }
+    if (!target) {
+        const table = seatBox.offsetParent as HTMLElement | null;
+        target = table ? table.getBoundingClientRect() : null;
+    }
+    if (!target || !target.width) return POTSTREAM_FALLBACK;
+    const dx = (target.left + target.width / 2 - (seat.left + seat.width / 2)) / scale;
+    const dy = (target.top + target.height / 2 - (seat.top + seat.height / 2)) / scale;
+    return Math.hypot(dx, dy) < 40 ? POTSTREAM_FALLBACK : { dx: Math.round(dx), dy: Math.round(dy) };
+};
+
+const PotStream: React.FC = () => {
+    const ref = React.useRef<HTMLDivElement>(null);
+    const [vec, setVec] = React.useState<{ dx: number; dy: number } | null>(null);
+    React.useLayoutEffect(() => {
+        const box = ref.current?.parentElement;
+        setVec(box ? measurePotVector(box) : POTSTREAM_FALLBACK);
+    }, []);
+    const v = vec ?? POTSTREAM_FALLBACK;
+    const len = Math.round(Math.hypot(v.dx, v.dy));
+    const angle = Math.round((Math.atan2(-v.dy, -v.dx) * 180) / Math.PI);
+    return (
+        <div
+            ref={ref}
+            className="win-pulse-potstream-path"
+            data-measured={vec ? "1" : "0"}
+            style={{
+                "--win-stream-dx": `${v.dx}px`,
+                "--win-stream-dy": `${v.dy}px`,
+                "--win-stream-len": `${len}px`,
+                "--win-stream-angle": `${angle}deg`,
+                visibility: vec ? undefined : "hidden"
+            } as React.CSSProperties}
+        >
+            <span className="win-pulse-potstream-beam" />
+            <span className="win-pulse-potstream-head" />
+            {Array.from({ length: WIN_POTSTREAM_SPARKLES }, (_, i) => (
+                <span
+                    key={i}
+                    className={`win-pulse-potstream-sparkle${i % 3 === 2 ? " win-pulse-potstream-chip" : ""}`}
+                    style={{
+                        "--win-stream-delay": `${Math.round(60 + i * 70 + jitter(i, 22) * 40)}ms`,
+                        "--win-stream-wobble": `${Math.round((jitter(i, 23) - 0.5) * 18)}px`,
+                        "--win-stream-sparkle-color": i % 2 ? "var(--win-brand-pink)" : "var(--win-brand-orange)"
+                    } as React.CSSProperties}
+                />
+            ))}
+        </div>
+    );
+};
+
 /** The layers each style draws. Each layer is one element with class win-pulse-<layer>. */
 const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle; replay: number; burstFiles: string[] }> = ({ pulseStyle, replay, burstFiles }) => {
     switch (pulseStyle) {
@@ -194,6 +350,38 @@ const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle; replay: number; burstFi
                 <>
                     <div className="win-pulse-settle-glow win-pulse-confetti-glow" key={`g${replay}`} />
                     <ConfettiShower key={`c${replay}`} />
+                </>
+            );
+        case "fireworks":
+            return (
+                <>
+                    <div className="win-pulse-settle-glow win-pulse-fireworks-glow" key={`g${replay}`} />
+                    <Fireworks key={`f${replay}`} />
+                </>
+            );
+        case "glitter":
+            return (
+                <>
+                    <div className="win-pulse-glitter-haze" />
+                    <Glitter />
+                </>
+            );
+        case "cardfan":
+            return <div className="win-pulse-settle-glow win-pulse-cardfan-glow" key={`g${replay}`} />;
+        case "aura":
+            return (
+                <div className="win-pulse-aura-sky">
+                    <div className="win-pulse-aura-ring" />
+                    <div className="win-pulse-aura-blob win-pulse-aura-blob-a" />
+                    <div className="win-pulse-aura-blob win-pulse-aura-blob-b" />
+                    <div className="win-pulse-aura-blob win-pulse-aura-blob-c" />
+                </div>
+            );
+        case "potstream":
+            return (
+                <>
+                    <div className="win-pulse-settle-glow win-pulse-potstream-glow" key={`g${replay}`} />
+                    <PotStream key={`s${replay}`} />
                 </>
             );
         case "ripple":
@@ -248,7 +436,7 @@ const WinAnimation: React.FC<Props> = React.memo(({ index, position, winPulseSty
 
     const pulse = (
         <div
-            className={`win-animation-container win-pulse-${pulseStyle}`}
+            className={`win-animation-container win-pulse-${pulseStyle}${pulseStyle === "cardfan" ? ` win-pulse-replay-${replay % 2}` : ""}`}
             data-win-pulse-style={pulseStyle}
             style={{ left: position.left, top: position.top, ...(isRipple ? vars : { "--win-pulse-speed": speed, "--win-pulse-size": size, "--win-pulse-intensity": intensity }) } as React.CSSProperties}
         >

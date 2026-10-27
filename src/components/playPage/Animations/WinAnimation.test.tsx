@@ -6,7 +6,12 @@ import WinAnimation, {
     WIN_CHIPBURST_COUNT,
     WIN_CHIPBURST_SPARKLE_COUNT,
     WIN_CONFETTI_COUNT,
-    burstChipFiles
+    WIN_FIREWORK_BURSTS,
+    WIN_FIREWORK_SPARKS,
+    WIN_GLITTER_COUNT,
+    WIN_POTSTREAM_SPARKLES,
+    burstChipFiles,
+    measurePotVector
 } from "./WinAnimation";
 import { WIN_PULSE_STYLES, WinPulseStyleContext, DEFAULT_WIN_PULSE_TUNING } from "./winPulseStyle";
 import { setTableStyle } from "../../../theme/tableStyles";
@@ -63,7 +68,12 @@ describe("win pulse styles", () => {
             ripple: ".win-pulse-ripple-rim",
             chipburst: ".win-pulse-chipburst-chip",
             neon: ".win-pulse-neon-tube",
-            confetti: ".win-pulse-confetti-piece"
+            confetti: ".win-pulse-confetti-piece",
+            fireworks: ".win-pulse-fireworks-spark",
+            glitter: ".win-pulse-glitter-mote",
+            cardfan: ".win-pulse-cardfan-glow",
+            aura: ".win-pulse-aura-ring",
+            potstream: ".win-pulse-potstream-beam"
         };
         WIN_PULSE_STYLES.forEach(style => {
             const { container, unmount } = render(<WinAnimation index={0} position={pos} winPulseStyle={style} />);
@@ -132,8 +142,83 @@ describe("win pulse styles", () => {
         expect(styleOf(container)).toBe("neon");
     });
 
-    it("lists all five styles", () => {
-        expect(WIN_PULSE_STYLES).toEqual(["breathing", "ripple", "chipburst", "neon", "confetti"]);
+    it("lists all ten styles, the original five first", () => {
+        expect(WIN_PULSE_STYLES).toEqual([
+            "breathing", "ripple", "chipburst", "neon", "confetti",
+            "fireworks", "glitter", "cardfan", "aura", "potstream"
+        ]);
+    });
+
+    it("pops staggered firework bursts of brand-coloured sparks, then a settle glow", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="fireworks" />);
+        const bursts = Array.from(container.querySelectorAll<HTMLElement>(".win-pulse-fireworks-burst"));
+        expect(bursts).toHaveLength(WIN_FIREWORK_BURSTS);
+        expect(new Set(bursts.map(b => b.style.getPropertyValue("--win-fw-delay"))).size).toBe(WIN_FIREWORK_BURSTS);
+        expect(container.querySelectorAll(".win-pulse-fireworks-spark")).toHaveLength(WIN_FIREWORK_BURSTS * WIN_FIREWORK_SPARKS);
+        const colors = new Set(Array.from(container.querySelectorAll<HTMLElement>(".win-pulse-fireworks-spark")).map(s => s.style.getPropertyValue("--win-fw-color")));
+        expect(colors).toEqual(new Set(["var(--win-brand-orange)", "var(--win-brand-pink)", "var(--win-brand-mid)"]));
+        expect(container.querySelectorAll(".win-pulse-fireworks-glow")).toHaveLength(1);
+    });
+
+    it("swirls glitter motes on orbits round the seat", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="glitter" />);
+        expect(container.querySelectorAll(".win-pulse-glitter-orbit .win-pulse-glitter-mote")).toHaveLength(WIN_GLITTER_COUNT);
+        expect(container.querySelectorAll(".win-pulse-glitter-star").length).toBeGreaterThan(0);
+        expect(container.querySelectorAll(".win-pulse-glitter-reverse").length).toBeGreaterThan(0);
+    });
+
+    it("cardfan only adds a glow plus a replay-parity class; the card motion is CSS on the sibling seat's fan slots", () => {
+        const wrap = (replay: number) => (
+            <WinPulseStyleContext.Provider value={{ style: "cardfan", tuning: DEFAULT_WIN_PULSE_TUNING, replay }}>
+                <WinAnimation index={0} position={pos} />
+            </WinPulseStyleContext.Provider>
+        );
+        const { container, rerender } = render(wrap(0));
+        const root = () => container.querySelector<HTMLElement>(".win-animation-container")!;
+        expect(root()).toHaveClass("win-pulse-cardfan", "win-pulse-replay-0");
+        expect(container.querySelectorAll(".win-pulse-cardfan-glow")).toHaveLength(1);
+        rerender(wrap(1));
+        expect(root()).toHaveClass("win-pulse-replay-1");
+        const css: string = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
+        // Transforms only, on the slots (never the images, which carry the win-card lift).
+        expect(css).toMatch(/\.win-pulse-cardfan ~ \* \.hole-card-fan-slot \{/);
+        expect(css).toMatch(/\.win-pulse-cardfan\.win-pulse-replay-1 ~ \* \.hole-card-fan-slot \{ animation-name: win-cardfan-left-1; \}/);
+        const fan = css.match(/@keyframes win-cardfan-left-0 \{[\s\S]*?\n\}/)![0];
+        expect(fan).not.toMatch(/width|height|margin|left:|top:/);
+    });
+
+    it("draws the aura as a flowing band plus drifting orange, pink and purple blobs", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="aura" />);
+        expect(container.querySelectorAll(".win-pulse-aura-sky .win-pulse-aura-ring")).toHaveLength(1);
+        expect(container.querySelectorAll(".win-pulse-aura-blob")).toHaveLength(3);
+        const css: string = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
+        expect(css).toMatch(/--win-brand-purple-rgb: /);
+    });
+
+    it("streams light and sparkles towards the seat, falling back to straight up without layout", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="potstream" />);
+        const path = container.querySelector<HTMLElement>(".win-pulse-potstream-path")!;
+        expect(path.dataset.measured).toBe("1");
+        expect(path.style.getPropertyValue("--win-stream-dy")).toBe("-160px");
+        expect(path.style.getPropertyValue("--win-stream-len")).toBe("160px");
+        expect(path.style.getPropertyValue("--win-stream-angle")).toBe("90deg");
+        expect(container.querySelectorAll(".win-pulse-potstream-sparkle")).toHaveLength(WIN_POTSTREAM_SPARKLES);
+        expect(container.querySelectorAll(".win-pulse-potstream-glow")).toHaveLength(1);
+    });
+
+    it("measures the pot vector in unscaled seat px", () => {
+        const table = document.createElement("div");
+        const seat = document.createElement("div");
+        const pot = document.createElement("div");
+        pot.className = "pot-pill";
+        table.append(seat, pot);
+        document.body.append(table);
+        const rect = (x: number, y: number, w: number, h: number) => ({ left: x, top: y, width: w, height: h, right: x + w, bottom: y + h, x, y, toJSON: () => ({}) }) as DOMRect;
+        Object.defineProperty(seat, "offsetWidth", { value: 240 });
+        seat.getBoundingClientRect = () => rect(100, 400, 120, 65); // table drawn at 0.5x
+        pot.getBoundingClientRect = () => rect(300, 200, 40, 20);
+        expect(measurePotVector(seat)).toEqual({ dx: 320, dy: -445 });
+        table.remove();
     });
 
     it("bursts chips picked cash-aware from the win amount in the selected chip set, with sparkles and a settle glow", () => {
@@ -159,8 +244,14 @@ describe("win pulse styles", () => {
     });
 
     it("replays the one-shot burst and confetti when the replay counter changes", () => {
-        (["chipburst", "confetti"] as const).forEach(style => {
-            const sel = style === "chipburst" ? ".win-pulse-chipburst-chip" : ".win-pulse-confetti-piece";
+        const sels = {
+            chipburst: ".win-pulse-chipburst-chip",
+            confetti: ".win-pulse-confetti-piece",
+            fireworks: ".win-pulse-fireworks-spark",
+            potstream: ".win-pulse-potstream-beam"
+        } as const;
+        (Object.keys(sels) as (keyof typeof sels)[]).forEach(style => {
+            const sel = sels[style];
             const wrap = (replay: number) => (
                 <WinPulseStyleContext.Provider value={{ style, tuning: DEFAULT_WIN_PULSE_TUNING, replay }}>
                     <WinAnimation index={0} position={pos} />
@@ -198,7 +289,11 @@ describe("win pulse styles", () => {
     it("respects reduced motion for every new style", () => {
         const css: string = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
         const reduced = Array.from(css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)).map(m => m[1]).join("\n");
-        [".win-pulse-chipburst-burst", ".win-pulse-confetti-shower", ".win-pulse-settle-glow", ".win-pulse-neon-tube"].forEach(sel =>
+        [
+            ".win-pulse-chipburst-burst", ".win-pulse-confetti-shower", ".win-pulse-settle-glow", ".win-pulse-neon-tube",
+            ".win-pulse-fireworks-sky", ".win-pulse-potstream-path", ".win-pulse-cardfan ~ * .hole-card-fan-slot",
+            ".win-pulse-glitter-orbit", ".win-pulse-glitter-mote", ".win-pulse-aura-ring", ".win-pulse-aura-blob"
+        ].forEach(sel =>
             expect(reduced).toContain(sel)
         );
     });

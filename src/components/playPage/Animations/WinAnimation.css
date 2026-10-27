@@ -8,6 +8,12 @@
  *   --win-pulse-intensity  multiplies opacity
  *   --win-pulse-color      the gold win colour (RGB triplet), shared by all styles
  */
+@property --win-aura-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 @property --win-neon-angle {
   syntax: "<angle>";
   inherits: false;
@@ -88,6 +94,39 @@
   --win-confetti-piece-h: 9px;
   --win-confetti-opacity: 1;
   --win-confetti-glow-delay: 1300ms;
+
+  /* Brand purple: a touch of it in the aura only. */
+  --win-brand-purple-rgb: 150, 70, 235;  /* #9646eb */
+
+  /* 10. Fireworks: staggered bursts just above the seat, then a soft glow. */
+  --win-fireworks-duration: 1100ms;      /* one burst, flash to last spark fading */
+  --win-fireworks-reach: 46px;           /* spark travel from the burst centre (times --win-pulse-size) */
+  --win-fireworks-spark-w: 11px;
+  --win-fireworks-spark-h: 2px;
+  --win-fireworks-opacity: 1;
+  --win-fireworks-glow-delay: 1500ms;
+
+  /* 11. Glitter: twinkling dust orbiting the seat (continuous). */
+  --win-glitter-radius-x: 128px;         /* orbit half-width (times --win-pulse-size) */
+  --win-glitter-squash: 0.56;            /* orbit height / width */
+  --win-glitter-opacity: 0.95;
+  --win-glitter-haze-opacity: 0.22;
+
+  /* 12. Cardfan: soft glow here; the card motion's own vars sit on the seat (see section 12). */
+  --win-cardfan-glow-delay: 700ms;
+
+  /* 13. Aura: northern-lights glow drifting round the seat (continuous). */
+  --win-aura-duration: 9000ms;           /* one turn of the colour band */
+  --win-aura-drift: 6200ms;              /* blob drift period */
+  --win-aura-inset: 1.08;
+  --win-aura-blur: 14px;
+  --win-aura-opacity: 0.8;
+
+  /* 14. Potstream: trail of light from the pot to the seat, then a glow. */
+  --win-potstream-duration: 1000ms;      /* head travels pot -> seat */
+  --win-potstream-width: 6px;
+  --win-potstream-opacity: 0.95;
+  --win-potstream-glow-delay: 850ms;
 }
 
 /* Container for win animation */
@@ -404,6 +443,352 @@
   .win-pulse-settle-glow { animation: none; opacity: calc(var(--win-settle-opacity) * var(--win-pulse-intensity)); }
   .win-pulse-neon-tube,
   .win-pulse-neon-bloom { animation: none; opacity: var(--win-neon-on); }
+}
+
+/* ---------- 10. Fireworks ---------- */
+.win-pulse-fireworks-sky {
+  border-radius: 0 !important;
+  overflow: visible;
+  --win-fw-on: calc(var(--win-fireworks-opacity) * var(--win-pulse-intensity));
+}
+.win-pulse-fireworks-burst {
+  position: absolute;
+  left: var(--win-fw-x);
+  top: calc(var(--win-fw-y) * var(--win-pulse-size));
+  width: 0;
+  height: 0;
+}
+@keyframes win-fireworks-spark {
+  0%   { transform: rotate(var(--win-fw-angle)) translateX(0) scaleX(0.2); opacity: 0; }
+  6%   { opacity: var(--win-fw-on); }
+  45%  { transform: rotate(var(--win-fw-angle)) translateX(calc(var(--win-fireworks-reach) * var(--win-fw-reach) * var(--win-fw-dist) * var(--win-pulse-size))) scaleX(1); opacity: var(--win-fw-on); }
+  100% { transform: rotate(var(--win-fw-angle)) translateX(calc(var(--win-fireworks-reach) * var(--win-fw-reach) * var(--win-fw-dist) * 1.25 * var(--win-pulse-size))) translateY(6px) scaleX(0.15); opacity: 0; }
+}
+@keyframes win-fireworks-flash {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  12%  { transform: translate(-50%, -50%) scale(1); opacity: var(--win-fw-on); }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+/* A short streak with a hot white head, pointing outward. */
+.win-pulse-fireworks-spark {
+  position: absolute;
+  left: 0;
+  top: calc(var(--win-fireworks-spark-h) / -2);
+  width: var(--win-fireworks-spark-w);
+  height: var(--win-fireworks-spark-h);
+  border-radius: 9999px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, transparent, var(--win-fw-color) 55%, #fff);
+  box-shadow: 0 0 5px var(--win-fw-color);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: win-fireworks-spark calc(var(--win-fireworks-duration) / var(--win-pulse-speed)) cubic-bezier(0.1, 0.7, 0.3, 1) calc(var(--win-fw-delay) / var(--win-pulse-speed)) 1 both;
+}
+.win-pulse-fireworks-flash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0 15%, rgba(var(--win-brand-orange-rgb), 0.8) 40%, transparent 70%);
+  opacity: 0;
+  animation: win-fireworks-flash calc(var(--win-fireworks-duration) * 0.45 / var(--win-pulse-speed)) ease-out calc(var(--win-fw-delay) / var(--win-pulse-speed)) 1 both;
+}
+.win-pulse-fireworks-glow {
+  --win-settle-delay: calc(var(--win-fireworks-glow-delay) / var(--win-pulse-speed));
+  border: var(--win-settle-width) solid rgba(var(--win-brand-orange-rgb), 0.85);
+  background: radial-gradient(ellipse closest-side, rgba(var(--win-brand-orange-rgb), 0.12), transparent);
+  box-shadow: 0 0 var(--win-settle-glow) rgba(var(--win-brand-pink-rgb), 0.6), inset 0 0 calc(var(--win-settle-glow) * 0.6) rgba(var(--win-brand-orange-rgb), 0.4);
+}
+
+/* ---------- 11. Glitter ---------- */
+.win-pulse-glitter-field {
+  border-radius: 0 !important;
+  overflow: visible;
+  /* Squash the circular orbits into the seat's oval. */
+  transform: scaleY(var(--win-glitter-squash));
+}
+@keyframes win-glitter-orbit {
+  from { transform: rotate(var(--win-glitter-start)); }
+  to   { transform: rotate(calc(var(--win-glitter-start) + 360deg)); }
+}
+@keyframes win-glitter-twinkle {
+  0%, 100% { opacity: calc(var(--win-glitter-opacity) * 0.15 * var(--win-pulse-intensity)); transform: translateX(calc(var(--win-glitter-radius-x) * var(--win-glitter-r) * var(--win-pulse-size))) scale(0.5, calc(0.5 / var(--win-glitter-squash))); }
+  50%      { opacity: calc(var(--win-glitter-opacity) * var(--win-pulse-intensity));        transform: translateX(calc(var(--win-glitter-radius-x) * var(--win-glitter-r) * var(--win-pulse-size))) scale(1.15, calc(1.15 / var(--win-glitter-squash))); }
+}
+/* Zero-size pivot at the seat centre; the mote sits out on its radius. */
+.win-pulse-glitter-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  will-change: transform;
+  animation: win-glitter-orbit calc(var(--win-glitter-orbit) / var(--win-pulse-speed)) linear infinite;
+}
+.win-pulse-glitter-reverse { animation-direction: reverse; }
+.win-pulse-glitter-mote {
+  position: absolute;
+  left: calc(var(--win-glitter-size) / -2);
+  top: calc(var(--win-glitter-size) / -2);
+  width: var(--win-glitter-size);
+  height: var(--win-glitter-size);
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0 30%, var(--win-glitter-color) 65%, transparent 100%);
+  box-shadow: 0 0 4px var(--win-glitter-color);
+  will-change: transform, opacity;
+  animation: win-glitter-twinkle calc(var(--win-glitter-twinkle) / var(--win-pulse-speed)) ease-in-out calc(var(--win-glitter-delay) / var(--win-pulse-speed) * -1) infinite;
+}
+/* Every fifth mote is a four-point star glint. */
+.win-pulse-glitter-star {
+  --win-glitter-size: 11px !important;
+  border-radius: 0;
+  background: radial-gradient(circle, #fff 0 20%, var(--win-glitter-color) 45%, transparent 72%);
+  clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%);
+  box-shadow: none;
+}
+/* Faint warm haze so the dust has something to sparkle against. */
+.win-pulse-glitter-haze {
+  transform: scale(calc(0.95 * var(--win-pulse-size)));
+  background: radial-gradient(ellipse closest-side, rgba(var(--win-brand-orange-rgb), 0.5), rgba(var(--win-brand-pink-rgb), 0.35) 60%, transparent);
+  filter: blur(8px);
+  opacity: calc(var(--win-glitter-haze-opacity) * var(--win-pulse-intensity));
+}
+
+/* ---------- 12. Cardfan ----------
+ * WinAnimation sits just before the seat in the same wrapper (PlayerSeating), so the
+ * sibling selector reaches the seat's hole-card slots while (and only while) the win
+ * pulse is mounted. It animates the independent translate / rotate properties, which
+ * stack on the slots' own fan transform and leave the images (and their win-card
+ * lift) alone. Layout never changes: transforms only. Two identical keyframe sets,
+ * picked by the replay parity class, let the Replay button restart it. */
+@keyframes win-cardfan-left-0 {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  30%, 62% { translate: calc(var(--win-cardfan-spread) * -1 * var(--win-pulse-size)) calc(var(--win-cardfan-lift) * -1); rotate: calc(var(--win-cardfan-rotate) * -1); }
+}
+@keyframes win-cardfan-right-0 {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  30%, 62% { translate: calc(var(--win-cardfan-spread) * var(--win-pulse-size)) calc(var(--win-cardfan-lift) * -1); rotate: var(--win-cardfan-rotate); }
+}
+@keyframes win-cardfan-left-1 {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  30%, 62% { translate: calc(var(--win-cardfan-spread) * -1 * var(--win-pulse-size)) calc(var(--win-cardfan-lift) * -1); rotate: calc(var(--win-cardfan-rotate) * -1); }
+}
+@keyframes win-cardfan-right-1 {
+  0%, 100% { translate: 0 0; rotate: 0deg; }
+  30%, 62% { translate: calc(var(--win-cardfan-spread) * var(--win-pulse-size)) calc(var(--win-cardfan-lift) * -1); rotate: var(--win-cardfan-rotate); }
+}
+@keyframes win-cardfan-shine-0 {
+  0%   { background-position: 150% 0; opacity: 0; }
+  20%  { opacity: var(--win-cardfan-shine-on); }
+  75%  { background-position: -50% 0; opacity: var(--win-cardfan-shine-on); }
+  100% { background-position: -50% 0; opacity: 0; }
+}
+@keyframes win-cardfan-shine-1 {
+  0%   { background-position: 150% 0; opacity: 0; }
+  20%  { opacity: var(--win-cardfan-shine-on); }
+  75%  { background-position: -50% 0; opacity: var(--win-cardfan-shine-on); }
+  100% { background-position: -50% 0; opacity: 0; }
+}
+/* The seat is a sibling, so it can't inherit the container's vars: the card motion's tunables live here.
+   (The dev sliders' speed / size / intensity only reach the glow, not the cards.) */
+.win-pulse-cardfan ~ * {
+  --win-cardfan-duration: 1600ms;
+  --win-cardfan-spread: 7px;             /* each card slides sideways this far */
+  --win-cardfan-rotate: 6deg;            /* extra tilt on top of the normal fan */
+  --win-cardfan-lift: 4px;
+  --win-cardfan-shine-opacity: 0.75;
+  --win-cardfan-t: var(--win-cardfan-duration);
+  --win-pulse-size: 1;
+  --win-pulse-intensity: 1;
+}
+.win-pulse-cardfan ~ * .hole-card-fan-slot {
+  animation: win-cardfan-left-0 var(--win-cardfan-t) cubic-bezier(0.3, 0.7, 0.3, 1) 1 both;
+}
+.win-pulse-cardfan ~ * .hole-card-fan-slot + .hole-card-fan-slot {
+  animation-name: win-cardfan-right-0;
+}
+.win-pulse-cardfan.win-pulse-replay-1 ~ * .hole-card-fan-slot { animation-name: win-cardfan-left-1; }
+.win-pulse-cardfan.win-pulse-replay-1 ~ * .hole-card-fan-slot + .hole-card-fan-slot { animation-name: win-cardfan-right-1; }
+/* Shine: a soft diagonal band, clipped to the card's own rounded rect, sweeping across once. */
+.win-pulse-cardfan ~ * .hole-card-fan-slot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: 5px;
+  pointer-events: none;
+  --win-cardfan-shine-on: calc(var(--win-cardfan-shine-opacity) * var(--win-pulse-intensity));
+  background: linear-gradient(110deg, transparent 35%, rgba(255, 236, 214, 0.15) 42%, rgba(255, 255, 255, 0.85) 50%, rgba(var(--win-brand-orange-rgb), 0.25) 56%, transparent 64%) no-repeat;
+  background-size: 250% 100%;
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: win-cardfan-shine-0 calc(var(--win-cardfan-t) * 0.8) ease-in-out calc(var(--win-cardfan-t) * 0.15) 1 both;
+}
+.win-pulse-cardfan ~ * .hole-card-fan-slot + .hole-card-fan-slot::after { animation-delay: calc(var(--win-cardfan-t) * 0.25); }
+.win-pulse-cardfan.win-pulse-replay-1 ~ * .hole-card-fan-slot::after { animation-name: win-cardfan-shine-1; }
+.win-pulse-cardfan-glow {
+  --win-settle-delay: calc(var(--win-cardfan-glow-delay) / var(--win-pulse-speed));
+  border: var(--win-settle-width) solid rgba(var(--win-brand-mid-rgb), 0.85);
+  background: radial-gradient(ellipse closest-side, rgba(var(--win-brand-orange-rgb), 0.14), rgba(var(--win-brand-pink-rgb), 0.08) 70%, transparent);
+  box-shadow: 0 0 var(--win-settle-glow) rgba(var(--win-brand-orange-rgb), 0.65), inset 0 0 calc(var(--win-settle-glow) * 0.6) rgba(var(--win-brand-pink-rgb), 0.4);
+}
+
+/* ---------- 13. Aura ---------- */
+@keyframes win-aura-turn {
+  to { --win-aura-angle: 360deg; }
+}
+@keyframes win-aura-drift-a {
+  0%, 100% { transform: translate(-22%, -8%) scale(1, 0.8); }
+  50%      { transform: translate(18%, 10%) scale(1.25, 1.05); }
+}
+@keyframes win-aura-drift-b {
+  0%, 100% { transform: translate(20%, 6%) scale(1.1, 0.9); }
+  50%      { transform: translate(-16%, -12%) scale(0.85, 1.15); }
+}
+@keyframes win-aura-drift-c {
+  0%, 100% { transform: translate(0, 14%) scale(0.9); }
+  33%      { transform: translate(-14%, -6%) scale(1.2, 0.85); }
+  66%      { transform: translate(14%, -4%) scale(1, 1.2); }
+}
+.win-pulse-aura-sky {
+  transform: scale(calc(var(--win-aura-inset) * var(--win-pulse-size)));
+  filter: blur(var(--win-aura-blur));
+  opacity: calc(var(--win-aura-opacity) * var(--win-pulse-intensity));
+}
+/* Flowing colour band round the seat (a thick ring, softened by the sky's blur). */
+.win-pulse-aura-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  padding: 16px;
+  background: conic-gradient(from var(--win-aura-angle),
+    rgba(var(--win-brand-orange-rgb), 0.95), rgba(var(--win-brand-pink-rgb), 0.9), rgba(var(--win-brand-purple-rgb), 0.85),
+    rgba(var(--win-brand-mid-rgb), 0.6), rgba(var(--win-brand-orange-rgb), 0.95));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: win-aura-turn calc(var(--win-aura-duration) / var(--win-pulse-speed)) linear infinite;
+}
+.win-pulse-aura-blob {
+  position: absolute;
+  width: 62%;
+  height: 70%;
+  border-radius: 9999px;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+.win-pulse-aura-blob-a {
+  left: 4%; top: 6%;
+  background: radial-gradient(closest-side, rgba(var(--win-brand-orange-rgb), 0.75), transparent);
+  animation: win-aura-drift-a calc(var(--win-aura-drift) / var(--win-pulse-speed)) ease-in-out infinite;
+}
+.win-pulse-aura-blob-b {
+  right: 2%; top: 18%;
+  background: radial-gradient(closest-side, rgba(var(--win-brand-pink-rgb), 0.75), transparent);
+  animation: win-aura-drift-b calc(var(--win-aura-drift) * 1.3 / var(--win-pulse-speed)) ease-in-out infinite;
+}
+.win-pulse-aura-blob-c {
+  left: 22%; bottom: 0;
+  background: radial-gradient(closest-side, rgba(var(--win-brand-purple-rgb), 0.6), transparent);
+  animation: win-aura-drift-c calc(var(--win-aura-drift) * 1.7 / var(--win-pulse-speed)) ease-in-out infinite;
+}
+
+/* ---------- 14. Potstream ----------
+ * WinAnimation measures the seat -> pot vector once (no per-frame JS) into
+ * --win-stream-dx / -dy / -len / -angle. The beam starts at the pot and grows
+ * towards the seat; sparkles ride along it; then the seat glow settles in. */
+.win-pulse-potstream-path {
+  border-radius: 0 !important;
+  overflow: visible;
+  --win-stream-t: calc(var(--win-potstream-duration) / var(--win-pulse-speed));
+  --win-stream-on: calc(var(--win-potstream-opacity) * var(--win-pulse-intensity));
+}
+@keyframes win-potstream-beam {
+  0%   { transform: translateY(-50%) rotate(var(--win-stream-angle)) scaleX(0); opacity: var(--win-stream-on); }
+  55%  { transform: translateY(-50%) rotate(var(--win-stream-angle)) scaleX(1); opacity: var(--win-stream-on); }
+  100% { transform: translateY(-50%) rotate(var(--win-stream-angle)) scaleX(1); opacity: 0; }
+}
+@keyframes win-potstream-head {
+  0%   { transform: translate(calc(-50% + var(--win-stream-dx)), calc(-50% + var(--win-stream-dy))) scale(0.6); opacity: 0; }
+  8%   { opacity: var(--win-stream-on); }
+  55%  { transform: translate(-50%, -50%) scale(1.3); opacity: var(--win-stream-on); }
+  80%  { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(2.4); opacity: 0; }
+}
+@keyframes win-potstream-sparkle {
+  0%   { transform: translate(calc(-50% + var(--win-stream-dx)), calc(-50% + var(--win-stream-dy))) scale(0.5) rotate(0deg); opacity: 0; }
+  12%  { opacity: var(--win-stream-on); }
+  50%  { transform: translate(calc(-50% + var(--win-stream-dx) * 0.5), calc(-50% + var(--win-stream-dy) * 0.5 + var(--win-stream-wobble))) scale(1) rotate(90deg); }
+  85%  { opacity: var(--win-stream-on); }
+  100% { transform: translate(-50%, -50%) scale(0.4) rotate(180deg); opacity: 0; }
+}
+/* Trail: fades in from the pot end, brightest at the leading (seat) end. */
+.win-pulse-potstream-beam {
+  position: absolute;
+  left: calc(50% + var(--win-stream-dx));
+  top: calc(50% + var(--win-stream-dy));
+  width: var(--win-stream-len);
+  height: var(--win-potstream-width);
+  border-radius: 9999px;
+  transform-origin: 0 0;
+  background: linear-gradient(90deg, transparent, rgba(var(--win-brand-pink-rgb), 0.55) 35%, rgba(var(--win-brand-mid-rgb), 0.85) 70%, rgba(var(--win-brand-orange-rgb), 1) 92%, #fff);
+  box-shadow: 0 0 10px rgba(var(--win-brand-pink-rgb), 0.8), 0 0 18px rgba(var(--win-brand-orange-rgb), 0.5);
+  filter: blur(0.6px);
+  opacity: 0;
+  animation: win-potstream-beam calc(var(--win-stream-t) * 1.6) cubic-bezier(0.45, 0, 0.3, 1) 1 both;
+}
+.win-pulse-potstream-head {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0 20%, rgba(var(--win-brand-orange-rgb), 0.9) 45%, transparent 72%);
+  opacity: 0;
+  animation: win-potstream-head calc(var(--win-stream-t) * 1.6) cubic-bezier(0.45, 0, 0.3, 1) 1 both;
+}
+.win-pulse-potstream-sparkle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  background: radial-gradient(circle, #fff 0 18%, var(--win-stream-sparkle-color) 42%, transparent 72%);
+  clip-path: polygon(50% 0, 60% 40%, 100% 50%, 60% 60%, 50% 100%, 40% 60%, 0 50%, 40% 40%);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: win-potstream-sparkle var(--win-stream-t) cubic-bezier(0.45, 0, 0.35, 1) calc(var(--win-stream-delay) / var(--win-pulse-speed)) 1 both;
+}
+/* A few round chip-like dots among the sparkles. */
+.win-pulse-potstream-chip {
+  width: 8px;
+  height: 8px;
+  clip-path: none;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 35%, #fff 0 15%, var(--win-stream-sparkle-color) 50%, rgba(0, 0, 0, 0.2) 100%);
+  box-shadow: 0 0 6px var(--win-stream-sparkle-color);
+}
+.win-pulse-potstream-glow {
+  --win-settle-delay: calc(var(--win-potstream-glow-delay) / var(--win-pulse-speed));
+  border: var(--win-settle-width) solid rgba(var(--win-brand-orange-rgb), 0.9);
+  background: radial-gradient(ellipse closest-side, rgba(var(--win-brand-orange-rgb), 0.16), rgba(var(--win-brand-pink-rgb), 0.08) 70%, transparent);
+  box-shadow: 0 0 var(--win-settle-glow) rgba(var(--win-brand-mid-rgb), 0.75), inset 0 0 calc(var(--win-settle-glow) * 0.6) rgba(var(--win-brand-orange-rgb), 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* One-shots are dropped (their settle glow shows at once); loops hold still. */
+  .win-pulse-fireworks-sky,
+  .win-pulse-potstream-path { display: none; }
+  .win-pulse-cardfan ~ * .hole-card-fan-slot,
+  .win-pulse-cardfan ~ * .hole-card-fan-slot + .hole-card-fan-slot { animation: none; }
+  .win-pulse-cardfan ~ * .hole-card-fan-slot::after { animation: none; opacity: 0; }
+  .win-pulse-glitter-orbit { animation: none; transform: rotate(var(--win-glitter-start)); }
+  .win-pulse-glitter-mote { animation: none; opacity: calc(var(--win-glitter-opacity) * 0.6 * var(--win-pulse-intensity)); transform: translateX(calc(var(--win-glitter-radius-x) * var(--win-glitter-r) * var(--win-pulse-size))) scale(0.8, calc(0.8 / var(--win-glitter-squash))); }
+  .win-pulse-aura-ring,
+  .win-pulse-aura-blob { animation: none; }
 }
 
 /* Rising bubbles (icons) behind win animation */
