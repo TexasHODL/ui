@@ -199,7 +199,10 @@
 }
 .popover {
     position: absolute;
-    z-index: 2;
+    /* Above the sub-header (.sub-header is z-index 50 in Table.css), which is a
+       later sibling in the same .roomHeader stacking context: at z-index 2 the
+       banner painted over the top of the ⋯ / wallet menus. */
+    z-index: 60;
     top: calc(100% + 16px);
     right: 0;
     width: 260px;
