@@ -190,7 +190,9 @@
 @keyframes win-ripple-rim {
   /* Period = duration / rings and ring delays are multiples of it, so 0% / 100% is exactly when a wave lands. */
   0%, 100% { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); box-shadow: 0 0 var(--win-ripple-rim-flare-glow) rgba(var(--win-ripple-orange), 0.95), inset 0 0 calc(var(--win-ripple-glow) * 0.9) rgba(var(--win-ripple-orange), 0.7); }
-  6%       { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); }
+  0%, 100% { filter: brightness(1.35); }
+  8%       { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); }
+  30%      { filter: brightness(1); }
   45%, 85% { opacity: calc(var(--win-ripple-rim-rest) * var(--win-pulse-intensity)); box-shadow: 0 0 calc(var(--win-ripple-glow) * 0.6) rgba(var(--win-ripple-orange), 0.55), inset 0 0 calc(var(--win-ripple-glow) * 0.3) rgba(var(--win-ripple-orange), 0.35); }
 }
 
