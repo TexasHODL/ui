@@ -23,6 +23,7 @@ import TurnAnimation from "../../Animations/TurnAnimation";
 import WinAnimation from "../../Animations/WinAnimation";
 import { CardBackStyle } from "../../../../utils/cardImages";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
+import { winPulseSeats } from "../../../../utils/winPulse";
 
 // Memoize TurnAnimation
 const MemoizedTurnAnimation = React.memo(TurnAnimation);
@@ -42,7 +43,7 @@ export interface PlayerSeatingProps {
     // Animation states
     hasWinner: boolean;
     isSitAndGoWaitingForPlayers: boolean;
-    winnerInfo: Array<{ seat: number }> | null;
+    winnerInfo: Array<{ seat: number; address?: string }> | null;
 
     // Card back style
     cardBackStyle: CardBackStyle;
@@ -83,11 +84,9 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
 
     const { winCelebration } = useGameSettings();
 
-    const winnerSeats = React.useMemo(() => {
-        const seats = new Set<number>();
-        if (winnerInfo) for (const w of winnerInfo) seats.add(w.seat);
-        return seats;
-    }, [winnerInfo]);
+    // Only pulse seats the winner still occupies: winners linger until the next
+    // hand, so a winner who left would otherwise keep glowing on an empty seat.
+    const winnerSeats = React.useMemo(() => winPulseSeats(winnerInfo, activePlayerBySeat), [winnerInfo, activePlayerBySeat]);
 
     // Seat colour is bound to the SEAT NUMBER, not the physical UI position.
     // The layout config lists colours in seat order (index i → seat i+1), so we
