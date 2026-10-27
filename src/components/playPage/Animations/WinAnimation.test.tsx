@@ -1,5 +1,5 @@
 import { act, render } from "@testing-library/react";
-import WinAnimation, { WIN_PULSE_CHIP_FILES } from "./WinAnimation";
+import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_PULSE_RING_COUNT } from "./WinAnimation";
 import { setTableStyle } from "../../../theme/tableStyles";
 
 jest.mock("../../../hooks/game/useWinnerInfo", () => ({
@@ -31,5 +31,15 @@ describe("win pulse particles", () => {
         act(() => setTableStyle("chips", "current"));
         const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
         expect(particleUrls(container)[0]).toMatch(/\/chips\/25chip\.svg/);
+    });
+});
+
+describe("win pulse wave", () => {
+    it("draws a steady glow and evenly staggered rings", () => {
+        const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
+        expect(container.querySelectorAll(".win-animation-glow")).toHaveLength(1);
+        const rings = Array.from(container.querySelectorAll<HTMLElement>(".win-animation-ring"));
+        expect(rings).toHaveLength(WIN_PULSE_RING_COUNT);
+        rings.forEach((r, i) => expect(r.style.getPropertyValue("--win-pulse-ring-index")).toBe(String(i)));
     });
 });
