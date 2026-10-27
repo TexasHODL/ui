@@ -21,7 +21,7 @@ export function useCardFaceUrl(): (code: string) => string {
 export function useChipImageUrl(isTournament = false): (file: string, fallback: string) => string {
     const { chips } = useTableStyles();
     const style = chipStyleForFormat(chips, isTournament);
-    return useCallback((file: string, fallback: string) => chipStyleUrl(style, file) ?? fallback, [style]);
+    return useCallback((file: string, fallback: string) => chipStyleUrl(style, file, isTournament) ?? fallback, [style, isTournament]);
 }
 
 /** Dealer button image URL in the chosen style, or `fallback` (the current button art). */

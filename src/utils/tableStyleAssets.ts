@@ -19,6 +19,13 @@ export const CHIP_STYLE_FILES = import.meta.glob("../assets/chipstyles/*/*.{svg,
     import: "default"
 }) as Record<string, string>;
 
+/** Number-chip (no $) art for sets whose cash chips print "$" (Marble), used on tournament / Sit & Go tables. */
+export const CHIP_NUMBER_STYLE_FILES = import.meta.glob("../assets/chipstyles/*/numbers/*.{svg,webp}", {
+    eager: true,
+    query: "?url&no-inline",
+    import: "default"
+}) as Record<string, string>;
+
 export const DEALER_STYLE_FILES = import.meta.glob("../assets/dealerstyles/*.{svg,webp}", {
     eager: true,
     query: "?url&no-inline",

@@ -32,7 +32,21 @@ describe("win pulse particles", () => {
         act(() => setTableStyle("chips", "A"));
         const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
         act(() => setTableStyle("chips", "E"));
-        expect(particleUrls(container)[0]).toBe('url("/assets/chipstyles/E/25chip.webp")');
+        // Sit & Go: Marble swaps to its number chips (no $).
+        expect(particleUrls(container)[0]).toBe('url("/assets/chipstyles/E/numbers/25chip.webp")');
+    });
+
+    it("floats Marble number chips on tournament and Sit & Go tables, Marble $ chips on cash", () => {
+        act(() => setTableStyle("chips", "E"));
+        for (const format of ["sit-and-go", "tournament"]) {
+            mockGameFormat = format;
+            const { container, unmount } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
+            particleUrls(container).forEach(url => expect(url).toMatch(/^url\("\/assets\/chipstyles\/E\/numbers\/\d+chip\.webp"\)$/));
+            unmount();
+        }
+        mockGameFormat = "cash";
+        const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
+        particleUrls(container).forEach(url => expect(url).not.toContain("/numbers/"));
     });
 
     it("uses the live chips for the Current style, not a generic dot", () => {

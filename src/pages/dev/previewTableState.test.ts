@@ -19,8 +19,19 @@ describe("parsePreviewSearch", () => {
             holeCards: true,
             holeCount: 2,
             board: 5,
-            format: "cash"
+            format: "cash",
+            win: false
         });
+    });
+
+    it("win=1 makes seat 1 the winner of the whole pot", () => {
+        const options = parsePreviewSearch(new URLSearchParams("format=sng&win=1"));
+        expect(options.win).toBe(true);
+        expect(previewSearchParams(options).get("win")).toBe("1");
+        const state = buildPreviewState(options, "b521hero");
+        expect(state.winners).toHaveLength(1);
+        expect(state.winners[0]).toMatchObject({ seat: 1, amount: state.totalPot });
+        expect(buildPreviewState(parsePreviewSearch(new URLSearchParams()), "b521hero").winners).toEqual([]);
     });
 
     it("accepts seats 2, 4, and 6 and a dealer seat", () => {

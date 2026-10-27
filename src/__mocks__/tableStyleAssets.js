@@ -8,7 +8,7 @@ const list = (dir, depth) => {
     const walk = (rel, d) => {
         for (const name of fs.readdirSync(path.join(assets, rel))) {
             const r = `${rel}/${name}`;
-            if (d > 0) walk(r, d - 1);
+            if (d > 0) { if (fs.statSync(path.join(assets, r)).isDirectory()) walk(r, d - 1); }
             else if (name.endsWith(".svg") || name.endsWith(".webp")) out[`../assets/${r}`] = `/assets/${r}`;
         }
     };
@@ -18,5 +18,6 @@ const list = (dir, depth) => {
 module.exports = {
     DECK_FILES: list("decks", 1),
     CHIP_STYLE_FILES: list("chipstyles", 1),
+    CHIP_NUMBER_STYLE_FILES: Object.fromEntries(Object.entries(list("chipstyles", 2)).filter(([k]) => k.includes("/numbers/"))),
     DEALER_STYLE_FILES: list("dealerstyles", 0)
 };
