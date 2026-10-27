@@ -59,6 +59,9 @@ export function isBlindStructureChoice(value: string): value is BlindStructureCh
 }
 
 /** What the custom textarea starts with: the turbo preset written out. */
+/** The structure both create forms open with (ui#905). */
+export const DEFAULT_BLIND_STRUCTURE_CHOICE: BlindStructureChoice = "ladder";
+
 export const DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT = formatBlindStructure(resolveBlindPreset({ preset: "turbo" }), "custom");
 
 export interface DoublingBlinds {
@@ -134,4 +137,34 @@ export function previewBlindLevels(preview: BlindStructureDTO, count: number): B
 export function openingBlindsOf(preview: BlindStructureDTO): DoublingBlinds {
     const l = expandBlindLevel(preview, 0);
     return { smallBlind: Number(l.smallBlind), bigBlind: Number(l.bigBlind), durationMinutes: l.durationMinutes };
+}
+
+/** Whether the form's own opening blinds and level time drive the structure (ladder and doubling do; presets and custom carry their own). */
+export function choiceUsesFormBlinds(choice: BlindStructureChoice): boolean {
+    return choice === "ladder" || choice === "doubling";
+}
+
+/** One line describing how the blinds move, for the footnote under a preview table. */
+export function describeBlindStructureChoice(choice: BlindStructureChoice): string {
+    switch (choice) {
+        case "ladder":
+            return "Blinds climb a round-number ladder each level.";
+        case "doubling":
+            return "Blinds double each level, rounded to tidy numbers.";
+        case "custom":
+            return "Blinds follow your custom structure.";
+        default:
+            return `Blinds follow the ${PRESET_NAMES[choice]} preset (${presetLabel(choice)}).`;
+    }
+}
+
+/**
+ * The blind fields of a sit-and-go's create message for a resolved plan: the
+ * opening level time, plus the structure when the choice submits one (ladder,
+ * presets, custom). Doubling submits none (poker-vm#2738). Shared by the lobby
+ * modal and /admin/tables so both send the same thing (ui#905).
+ */
+export function sngBlindFields(plan: BlindPlan, fallbackMinutes: number): { blindLevelDuration: number; blindStructure?: BlindStructureDTO } {
+    const blindLevelDuration = plan.preview ? openingBlindsOf(plan.preview).durationMinutes : fallbackMinutes;
+    return plan.structure ? { blindLevelDuration, blindStructure: plan.structure } : { blindLevelDuration };
 }
