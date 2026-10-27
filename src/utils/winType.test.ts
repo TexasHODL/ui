@@ -1,4 +1,4 @@
-import { PlayerActionType, PlayerStatus, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { GameVariant, PlayerActionType, PlayerStatus, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { getWinType, withWinnerDescriptions } from "./winnerDescriptions";
 import { winnerBannerText } from "./winnerBanner";
 
@@ -98,5 +98,15 @@ describe("uncontested only when everyone folded", () => {
         const out = withWinnerDescriptions(s);
         expect(out.winners.map(w => getWinType(w))).toEqual(["showdown", "showdown"]);
         expect(banner(s)).toMatch(/^Split pot/);
+    });
+
+    it("uses the table variant: an Omaha winner plays exactly two hole cards", () => {
+        const s = state(
+            [{ address: "b521a", seat: 1, status: PlayerStatus.SHOWING, holeCards: ["7S", "7D", "7C", "AS"] }],
+            [win("b521a", 1)],
+            [{ playerId: "b521a", action: PlayerActionType.SHOW }, { playerId: "b521b", action: PlayerActionType.MUCK }]
+        );
+        // Three hole sevens + the board's 7H would be quads if Hold'em rules applied.
+        expect(withWinnerDescriptions(s, GameVariant.OMAHA).winners[0].description).toBe("Set of Sevens");
     });
 });

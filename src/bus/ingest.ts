@@ -138,7 +138,7 @@ export function classifyMessage(raw: RawWsMessage | null | undefined, tableId: s
 
         // The chain no longer carries the winning hand in words (poker-vm#2721);
         // fill it in once here so both tracks see it.
-        const snapshot = withWinnerDescriptions(gameStateData);
+        const snapshot = withWinnerDescriptions(gameStateData, rawVariant);
         const validation = validateGameState(rawFormat, rawVariant, snapshot.gameOptions);
 
         if (!validation.valid) {

@@ -1,4 +1,5 @@
 import { GameVariant, PlayerActionType, PlayerStatus, PokerGameIntegration, TexasHoldemStateDTO, WinnerDTO } from "@block52/poker-vm-sdk";
+import { isRevealedHand } from "../bus/deriveEvents";
 import { hasElements, isEmpty } from "./guards";
 import { evaluateHand } from "./handEvaluation";
 
@@ -15,9 +16,11 @@ export function getWinType(winner: Pick<WinnerDTO, "cards"> | null | undefined):
     return hasElements(winner?.cards) ? "showdown" : "uncontested";
 }
 
-/** Face-up cards only: masked placeholders ("X") mean the cards are hidden. */
-const isRevealed = (cards: string[] | undefined): cards is string[] =>
-    hasElements(cards) && cards.every(c => !!c && !c.toUpperCase().startsWith("X"));
+/**
+ * Cards in a made poker hand. Hold'em and Omaha (two hole + three board) both
+ * play a best five, which is also how many `winner.cards` the engine sends.
+ */
+export const BEST_HAND_SIZE = 5;
 
 /**
  * The winner's hole cards when they showed them this hand (a SHOW action or a
@@ -30,7 +33,7 @@ export function getShownHoleCards(state: TexasHoldemStateDTO, winner: WinnerDTO)
     const address = winner.address?.toLowerCase();
     if (!address) return null;
     const player = state.players?.find(p => p.address?.toLowerCase() === address);
-    if (!player || !isRevealed(player.holeCards)) return null;
+    if (!player || !player.holeCards || !isRevealedHand(player.holeCards)) return null;
     const showed =
         player.status === PlayerStatus.SHOWING ||
         (state.previousActions ?? []).some(a => a.action === PlayerActionType.SHOW && a.playerId?.toLowerCase() === address);
@@ -53,16 +56,17 @@ export function getShownHoleCards(state: TexasHoldemStateDTO, winner: WinnerDTO)
  * new state object is returned; the input is not modified.
  *
  * @param state The game state as it arrived from the chain
+ * @param variant The table's variant (from the message root), so an Omaha
+ *        winner's hand uses exactly two hole cards; Hold'em when absent
  */
-export function withWinnerDescriptions(state: TexasHoldemStateDTO): TexasHoldemStateDTO {
+export function withWinnerDescriptions(state: TexasHoldemStateDTO, variant?: GameVariant | string): TexasHoldemStateDTO {
     if (isEmpty(state.winners)) return state;
-    const variant = (state as TexasHoldemStateDTO & { variant?: GameVariant }).variant;
     const winners = state.winners.map(winner => {
         if (hasElements(winner.cards)) return winner;
         const shown = getShownHoleCards(state, winner);
         if (!shown) return winner;
         const hand = evaluateHand(shown, state.communityCards ?? [], variant);
-        if (!hand || hand.hand.length !== 5) return winner;
+        if (!hand || hand.hand.length !== BEST_HAND_SIZE) return winner;
         return { ...winner, cards: hand.hand };
     });
     return PokerGameIntegration.withWinnerDescriptions({ ...state, winners });
