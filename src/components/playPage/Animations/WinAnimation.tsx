@@ -17,9 +17,6 @@ import "./WinAnimation.css";
  */
 export const WIN_PULSE_CHIP_FILES = ["25chip.svg", "100chip.svg", "5chip.svg", "500chip.svg", "1chip.svg"] as const;
 
-/** Sonar rings in flight at once. Keep in sync with --win-sonar-rings in WinAnimation.css. */
-export const WIN_SONAR_RING_COUNT = 4;
-
 /** Ripples in flight inside the seat at once. Keep in sync with --win-ripple-rings in WinAnimation.css. */
 export const WIN_RIPPLE_RING_COUNT = 3;
 
@@ -178,13 +175,6 @@ const ConfettiShower: React.FC = () => (
 /** The layers each style draws. Each layer is one element with class win-pulse-<layer>. */
 const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle; replay: number; burstFiles: string[] }> = ({ pulseStyle, replay, burstFiles }) => {
     switch (pulseStyle) {
-        case "spotlight":
-            return (
-                <>
-                    <div className="win-pulse-spotlight-beam" />
-                    <div className="win-pulse-spotlight-pool" />
-                </>
-            );
         case "chipburst":
             return (
                 <>
@@ -206,21 +196,6 @@ const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle; replay: number; burstFi
                     <ConfettiShower key={`c${replay}`} />
                 </>
             );
-        case "sonar":
-            return (
-                <>
-                    {Array.from({ length: WIN_SONAR_RING_COUNT }, (_, i) => (
-                        <div key={i} className="win-pulse-sonar-ring" style={{ "--win-sonar-index": i } as React.CSSProperties} />
-                    ))}
-                </>
-            );
-        case "halo":
-            return (
-                <>
-                    <div className="win-pulse-halo-track" />
-                    <div className="win-pulse-halo-comet" />
-                </>
-            );
         case "ripple":
             return (
                 <>
@@ -234,16 +209,14 @@ const PulseLayers: React.FC<{ pulseStyle: WinPulseStyle; replay: number; burstFi
                 </>
             );
         case "breathing":
-            return <div className="win-pulse-breathing-border" />;
-        case "heartbeat":
         default:
-            return <div className="win-pulse-heartbeat-border" />;
+            return <div className="win-pulse-breathing-border" />;
     }
 };
 
 type Props = WinAnimationProps & {
     position?: { left: string; top: string };
-    /** Overrides the style from WinPulseStyleContext (default: heartbeat). */
+    /** Overrides the style from WinPulseStyleContext (default: breathing). */
     winPulseStyle?: WinPulseStyle;
 };
 

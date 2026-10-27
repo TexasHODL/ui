@@ -1,5 +1,5 @@
 /*
- * Win pulse: nine distinct looks, picked by the win-pulse-<style> class on the
+ * Win pulse: five distinct looks, picked by the win-pulse-<style> class on the
  * container (see winPulseStyle.ts). Every style keeps its own size / timing /
  * intensity variables below; three global multipliers sit on top, set inline
  * by WinAnimation (the dev /table-preview panel drives them live):
@@ -14,43 +14,11 @@
   initial-value: 0deg;
 }
 
-@property --win-halo-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
 .win-animation-container {
   --win-pulse-speed: 1;
   --win-pulse-size: 1;
   --win-pulse-intensity: 1;
   --win-pulse-color: 255, 196, 30;
-
-  /* 1. Heartbeat: strong lub-dub on the seat border, then rest. */
-  --win-heartbeat-duration: 1300ms;
-  --win-heartbeat-beat-scale: 0.09;   /* extra scale at the first (lub) beat; dub is 70% */
-  --win-heartbeat-inset: 0.84;        /* border size vs container (tight to the seat) */
-  --win-heartbeat-width: 3px;
-  --win-heartbeat-glow: 22px;
-  --win-heartbeat-rest-opacity: 0.3;
-  --win-heartbeat-peak-opacity: 1;
-
-  /* 2. Sonar: thin crisp rings far out onto the felt, no glow. */
-  --win-sonar-duration: 4200ms;
-  --win-sonar-rings: 4;
-  --win-sonar-start-scale: 0.85;
-  --win-sonar-end-scale: 2.4;
-  --win-sonar-width: 1.5px;
-  --win-sonar-opacity: 0.9;
-
-  /* 3. Spinning halo: bright comet rotating round the border. */
-  --win-halo-duration: 1600ms;
-  --win-halo-inset: 0.86;
-  --win-halo-width: 5px;
-  --win-halo-tail: 110deg;            /* length of the comet's fading tail */
-  --win-halo-glow: 10px;
-  --win-halo-track-opacity: 0.22;
-  --win-halo-opacity: 1;
 
   /* 4. Breathing: whole border brightens and dims on a sine loop. */
   --win-breathing-duration: 3600ms;
@@ -82,26 +50,13 @@
   --win-ripple-highlight: 255, 238, 214; /* pale orange specular */
   --win-ripple-pink: 240, 43, 198;    /* #f02bc6 subtle crest edge / glint tint only */
 
-  /* Brand colours for styles 6-10 (RGB triplets for rgba(), plus solid forms). */
+  /* Brand colours for chipburst, neon and confetti (RGB triplets for rgba(), plus solid forms). */
   --win-brand-pink-rgb: 240, 43, 198;   /* #f02bc6 */
   --win-brand-mid-rgb: 255, 74, 131;    /* #ff4a83 */
   --win-brand-orange-rgb: 255, 151, 23; /* #ff9717 */
   --win-brand-pink: #f02bc6;
   --win-brand-mid: #ff4a83;
   --win-brand-orange: #ff9717;
-
-  /* 6. Spotlight: stage-light cone from above landing as a swaying pool. */
-  --win-spotlight-duration: 5200ms;   /* one full sway left -> right -> left */
-  --win-spotlight-sway: 6deg;         /* beam swing either side */
-  --win-spotlight-throw: 30px;        /* pool travel either side; keep ~ beam-height * sin(sway) */
-  --win-spotlight-beam-height: 290px; /* from the light source down to the seat centre */
-  --win-spotlight-beam-top: 26px;     /* width at the source */
-  --win-spotlight-beam-bottom: 230px; /* width where it lands */
-  --win-spotlight-beam-opacity: 0.55;
-  --win-spotlight-beam-blur: 7px;
-  --win-spotlight-pool-opacity: 0.85;
-  --win-spotlight-pool-width: 1.15;   /* pool size vs seat */
-  --win-spotlight-pool-height: 1.05;
 
   /* 7. Chipburst: one-shot fan of chips + sparkles, then a steady glow. */
   --win-chipburst-duration: 1250ms;
@@ -151,70 +106,6 @@
   inset: 0;
   border-radius: 9999px;
   pointer-events: none;
-}
-
-/* ---------- 1. Heartbeat ---------- */
-@keyframes win-heartbeat {
-  0%   { transform: scale(calc(var(--win-heartbeat-inset) * var(--win-pulse-size))); opacity: calc(var(--win-heartbeat-rest-opacity) * var(--win-pulse-intensity)); }
-  9%   { transform: scale(calc((var(--win-heartbeat-inset) + var(--win-heartbeat-beat-scale)) * var(--win-pulse-size))); opacity: calc(var(--win-heartbeat-peak-opacity) * var(--win-pulse-intensity)); }
-  18%  { transform: scale(calc(var(--win-heartbeat-inset) * var(--win-pulse-size))); opacity: calc(var(--win-heartbeat-rest-opacity) * 1.6 * var(--win-pulse-intensity)); }
-  27%  { transform: scale(calc((var(--win-heartbeat-inset) + var(--win-heartbeat-beat-scale) * 0.7) * var(--win-pulse-size))); opacity: calc(var(--win-heartbeat-peak-opacity) * 0.9 * var(--win-pulse-intensity)); }
-  42%, 100% { transform: scale(calc(var(--win-heartbeat-inset) * var(--win-pulse-size))); opacity: calc(var(--win-heartbeat-rest-opacity) * var(--win-pulse-intensity)); }
-}
-
-.win-pulse-heartbeat-border {
-  border: var(--win-heartbeat-width) solid rgb(var(--win-pulse-color));
-  box-shadow: 0 0 var(--win-heartbeat-glow) rgba(var(--win-pulse-color), 0.9), inset 0 0 calc(var(--win-heartbeat-glow) * 0.6) rgba(var(--win-pulse-color), 0.6);
-  will-change: transform, opacity;
-  animation: win-heartbeat calc(var(--win-heartbeat-duration) / var(--win-pulse-speed)) ease-out infinite;
-}
-
-/* ---------- 2. Sonar ripple ---------- */
-@keyframes win-sonar {
-  0%   { transform: scale(var(--win-sonar-start-scale)); opacity: calc(var(--win-sonar-opacity) * var(--win-pulse-intensity)); }
-  100% { transform: scale(calc(var(--win-sonar-start-scale) + (var(--win-sonar-end-scale) - var(--win-sonar-start-scale)) * var(--win-pulse-size))); opacity: 0; }
-}
-
-.win-pulse-sonar-ring {
-  border: var(--win-sonar-width) solid rgb(var(--win-pulse-color));
-  opacity: 0;
-  will-change: transform, opacity;
-  animation: win-sonar calc(var(--win-sonar-duration) / var(--win-pulse-speed)) linear infinite;
-  /* Negative delays: rings are evenly spaced from the first frame. */
-  animation-delay: calc(var(--win-sonar-duration) / var(--win-pulse-speed) * var(--win-sonar-index, 0) / var(--win-sonar-rings) * -1);
-}
-
-/* ---------- 3. Spinning halo ---------- */
-@keyframes win-halo-spin {
-  to { --win-halo-angle: 360deg; }
-}
-
-.win-pulse-halo-track,
-.win-pulse-halo-comet {
-  transform: scale(calc(var(--win-halo-inset) * var(--win-pulse-size)));
-  padding: var(--win-halo-width);
-  /* Keep only the border band: full box minus the content box. */
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
-
-.win-pulse-halo-track {
-  background: rgb(var(--win-pulse-color));
-  opacity: calc(var(--win-halo-track-opacity) * var(--win-pulse-intensity));
-}
-
-.win-pulse-halo-comet {
-  background: conic-gradient(
-    from var(--win-halo-angle),
-    rgba(var(--win-pulse-color), 0) 0deg,
-    rgba(var(--win-pulse-color), 0) calc(360deg - var(--win-halo-tail)),
-    rgba(var(--win-pulse-color), 1) 350deg,
-    rgb(255, 250, 225) 360deg
-  );
-  opacity: calc(var(--win-halo-opacity) * var(--win-pulse-intensity));
-  filter: drop-shadow(0 0 var(--win-halo-glow) rgba(var(--win-pulse-color), 0.9));
-  animation: win-halo-spin calc(var(--win-halo-duration) / var(--win-pulse-speed)) linear infinite;
 }
 
 /* ---------- 4. Breathing border ---------- */
@@ -348,64 +239,10 @@
   .win-pulse-ripple-glint { animation: none; opacity: calc(var(--win-ripple-highlight-opacity) * 0.7 * var(--win-pulse-intensity)); }
   .win-pulse-ripple-ring { animation: none; opacity: 0; }
   .win-pulse-ripple-ring:first-child { transform: scale(0.55); opacity: calc(0.4 * var(--win-pulse-intensity)); }
-  .win-pulse-heartbeat-border,
   .win-pulse-breathing-border {
     animation: none;
     opacity: calc(0.85 * var(--win-pulse-intensity));
   }
-  .win-pulse-sonar-ring { animation: none; opacity: 0; }
-  .win-pulse-sonar-ring:first-child { transform: scale(1); opacity: calc(0.6 * var(--win-pulse-intensity)); }
-  .win-pulse-halo-comet { animation: none; }
-}
-
-/* ---------- 6. Spotlight ---------- */
-@keyframes win-spotlight-beam-sway {
-  0%, 100% { transform: translateX(-50%) rotate(calc(var(--win-spotlight-sway) * -1)); }
-  50%      { transform: translateX(-50%) rotate(var(--win-spotlight-sway)); }
-}
-/* rotate(-a) about the top swings the bottom right, so the pool moves +throw at the same moments. */
-@keyframes win-spotlight-pool-sway {
-  0%, 100% { transform: translateX(var(--win-spotlight-throw)) scale(var(--win-spotlight-pool-width), var(--win-spotlight-pool-height)); }
-  50%      { transform: translateX(calc(var(--win-spotlight-throw) * -1)) scale(var(--win-spotlight-pool-width), var(--win-spotlight-pool-height)); }
-}
-
-.win-animation-container > .win-pulse-spotlight-beam {
-  inset: auto;
-  left: 50%;
-  bottom: 50%;
-  width: calc(var(--win-spotlight-beam-bottom) * var(--win-pulse-size));
-  height: calc(var(--win-spotlight-beam-height) * var(--win-pulse-size));
-  border-radius: 0 0 50% 50% / 0 0 18% 18%;
-  transform-origin: 50% 0;
-  clip-path: polygon(
-    calc(50% - var(--win-spotlight-beam-top) / 2) 0,
-    calc(50% + var(--win-spotlight-beam-top) / 2) 0,
-    100% 100%, 0 100%);
-  background: linear-gradient(to bottom,
-    rgba(var(--win-brand-orange-rgb), 0) 0%,
-    rgba(var(--win-brand-orange-rgb), 0.55) 22%,
-    rgba(var(--win-brand-mid-rgb), 0.45) 65%,
-    rgba(var(--win-brand-pink-rgb), 0.5) 100%);
-  -webkit-mask: linear-gradient(to bottom, #000 70%, transparent);
-  mask: linear-gradient(to bottom, #000 70%, transparent);
-  filter: blur(var(--win-spotlight-beam-blur));
-  opacity: calc(var(--win-spotlight-beam-opacity) * var(--win-pulse-intensity));
-  mix-blend-mode: screen;
-  will-change: transform;
-  animation: win-spotlight-beam-sway calc(var(--win-spotlight-duration) / var(--win-pulse-speed)) ease-in-out infinite;
-}
-
-.win-pulse-spotlight-pool {
-  background: radial-gradient(ellipse closest-side,
-    rgba(255, 236, 214, 0.75) 0%,
-    rgba(var(--win-brand-orange-rgb), 0.6) 35%,
-    rgba(var(--win-brand-pink-rgb), 0.35) 70%,
-    rgba(var(--win-brand-pink-rgb), 0) 100%);
-  filter: blur(4px);
-  opacity: calc(var(--win-spotlight-pool-opacity) * var(--win-pulse-intensity));
-  mix-blend-mode: screen;
-  will-change: transform;
-  animation: win-spotlight-pool-sway calc(var(--win-spotlight-duration) / var(--win-pulse-speed)) ease-in-out infinite;
 }
 
 /* ---------- 7. Chipburst ---------- */
@@ -561,8 +398,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .win-animation-container > .win-pulse-spotlight-beam { animation: none; transform: translateX(-50%); }
-  .win-pulse-spotlight-pool { animation: none; transform: scale(var(--win-spotlight-pool-width), var(--win-spotlight-pool-height)); }
   /* One-shot motion is dropped; the settled glow shows straight away. */
   .win-pulse-chipburst-burst,
   .win-pulse-confetti-shower { display: none; }

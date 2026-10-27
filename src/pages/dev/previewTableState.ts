@@ -56,7 +56,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * actions=all to pin an action badge on every seat,
  * turn=1 to make seat 1's turn and show the real action controls.
  * winner=<seat>[,<seat>...]|all marks those seats as winners so their win pulse loops,
- * pulse=heartbeat|sonar|halo|breathing|ripple|spotlight|chipburst|neon|confetti picks the win pulse look (dev preview only).
+ * pulse=breathing|ripple|chipburst|neon|confetti picks the win pulse look (dev preview only).
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. turn=1 writes seat 1's legal actions.
  */

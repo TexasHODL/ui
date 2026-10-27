@@ -20,7 +20,7 @@ describe("parsePreviewSearch", () => {
             holeCount: 2,
             board: 5,
             winners: [],
-            pulse: "heartbeat"
+            pulse: "breathing"
         });
     });
 
@@ -36,14 +36,14 @@ describe("parsePreviewSearch", () => {
 
     it("reads a comma list or all for side-by-side win pulses, and the pulse style", () => {
         expect(parsePreviewSearch(new URLSearchParams("winner=5,2,x,2,12")).winners).toEqual([2, 5]);
-        const all = parsePreviewSearch(new URLSearchParams("seats=6&winner=all&pulse=halo"));
+        const all = parsePreviewSearch(new URLSearchParams("seats=6&winner=all&pulse=neon"));
         expect(all.winners).toEqual([1, 2, 3, 4, 5, 6]);
-        expect(all.pulse).toBe("halo");
+        expect(all.pulse).toBe("neon");
         expect(previewSearchParams(all).get("winner")).toBe("all");
-        expect(previewSearchParams(all).get("pulse")).toBe("halo");
+        expect(previewSearchParams(all).get("pulse")).toBe("neon");
         expect(parsePreviewSearch(previewSearchParams(all))).toEqual(all);
         expect(buildPreviewState(all, PREVIEW_HERO_ADDRESS).winners.map(w => w.seat)).toEqual([1, 2, 3, 4, 5, 6]);
-        expect(parsePreviewSearch(new URLSearchParams("pulse=bogus")).pulse).toBe("heartbeat");
+        expect(parsePreviewSearch(new URLSearchParams("pulse=bogus")).pulse).toBe("breathing");
     });
 
     it("accepts seats 2, 4, and 6 and a dealer seat", () => {

@@ -1,7 +1,6 @@
 import { act, render } from "@testing-library/react";
 import WinAnimation, {
     WIN_PULSE_CHIP_FILES,
-    WIN_SONAR_RING_COUNT,
     WIN_RIPPLE_RING_COUNT,
     WIN_RIPPLE_WOBBLE_SCALE,
     WIN_CHIPBURST_COUNT,
@@ -52,20 +51,16 @@ describe("win pulse styles", () => {
     const pos = { left: "10px", top: "10px" };
     const styleOf = (container: HTMLElement) => container.querySelector<HTMLElement>(".win-animation-container")?.dataset.winPulseStyle;
 
-    it("defaults to the heartbeat border", () => {
+    it("defaults to the breathing border", () => {
         const { container } = render(<WinAnimation index={0} position={pos} />);
-        expect(styleOf(container)).toBe("heartbeat");
-        expect(container.querySelectorAll(".win-pulse-heartbeat-border")).toHaveLength(1);
+        expect(styleOf(container)).toBe("breathing");
+        expect(container.querySelectorAll(".win-pulse-breathing-border")).toHaveLength(1);
     });
 
     it("draws distinct layers for every style, keeping the chip particles", () => {
         const layer: Record<string, string> = {
-            heartbeat: ".win-pulse-heartbeat-border",
-            sonar: ".win-pulse-sonar-ring",
-            halo: ".win-pulse-halo-comet",
             breathing: ".win-pulse-breathing-border",
             ripple: ".win-pulse-ripple-rim",
-            spotlight: ".win-pulse-spotlight-beam",
             chipburst: ".win-pulse-chipburst-chip",
             neon: ".win-pulse-neon-tube",
             confetti: ".win-pulse-confetti-piece"
@@ -78,13 +73,6 @@ describe("win pulse styles", () => {
             expect(container.querySelectorAll(".bubbles li")).toHaveLength(WIN_PULSE_CHIP_FILES.length);
             unmount();
         });
-    });
-
-    it("staggers the sonar rings evenly", () => {
-        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="sonar" />);
-        const rings = Array.from(container.querySelectorAll<HTMLElement>(".win-pulse-sonar-ring"));
-        expect(rings).toHaveLength(WIN_SONAR_RING_COUNT);
-        rings.forEach((r, i) => expect(r.style.getPropertyValue("--win-sonar-index")).toBe(String(i)));
     });
 
     it("draws the ripple as a filled cup with evenly staggered rings inside and a glowing rim", () => {
@@ -132,26 +120,20 @@ describe("win pulse styles", () => {
     });
 
     it("takes style and tuning from context, and the prop wins", () => {
-        const value = { style: "halo" as const, tuning: { ...DEFAULT_WIN_PULSE_TUNING, speed: 2 } };
+        const value = { style: "ripple" as const, tuning: { ...DEFAULT_WIN_PULSE_TUNING, speed: 2 } };
         const { container, rerender } = render(
             <WinPulseStyleContext.Provider value={value}><WinAnimation index={0} position={pos} /></WinPulseStyleContext.Provider>
         );
-        expect(styleOf(container)).toBe("halo");
+        expect(styleOf(container)).toBe("ripple");
         expect(container.querySelector<HTMLElement>(".win-animation-container")!.style.getPropertyValue("--win-pulse-speed")).toBe("2");
         rerender(
-            <WinPulseStyleContext.Provider value={value}><WinAnimation index={0} position={pos} winPulseStyle="sonar" /></WinPulseStyleContext.Provider>
+            <WinPulseStyleContext.Provider value={value}><WinAnimation index={0} position={pos} winPulseStyle="neon" /></WinPulseStyleContext.Provider>
         );
-        expect(styleOf(container)).toBe("sonar");
+        expect(styleOf(container)).toBe("neon");
     });
 
-    it("lists all nine styles", () => {
-        expect(WIN_PULSE_STYLES).toEqual(["heartbeat", "sonar", "halo", "breathing", "ripple", "spotlight", "chipburst", "neon", "confetti"]);
-    });
-
-    it("draws the spotlight as a beam from above plus a pool on the seat", () => {
-        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="spotlight" />);
-        expect(container.querySelectorAll(".win-pulse-spotlight-beam")).toHaveLength(1);
-        expect(container.querySelectorAll(".win-pulse-spotlight-pool")).toHaveLength(1);
+    it("lists all five styles", () => {
+        expect(WIN_PULSE_STYLES).toEqual(["breathing", "ripple", "chipburst", "neon", "confetti"]);
     });
 
     it("bursts chips picked cash-aware from the win amount in the selected chip set, with sparkles and a settle glow", () => {
@@ -216,7 +198,7 @@ describe("win pulse styles", () => {
     it("respects reduced motion for every new style", () => {
         const css: string = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
         const reduced = Array.from(css.matchAll(/@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/g)).map(m => m[1]).join("\n");
-        [".win-pulse-spotlight-beam", ".win-pulse-spotlight-pool", ".win-pulse-chipburst-burst", ".win-pulse-confetti-shower", ".win-pulse-settle-glow", ".win-pulse-neon-tube"].forEach(sel =>
+        [".win-pulse-chipburst-burst", ".win-pulse-confetti-shower", ".win-pulse-settle-glow", ".win-pulse-neon-tube"].forEach(sel =>
             expect(reduced).toContain(sel)
         );
     });
