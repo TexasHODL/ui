@@ -55,21 +55,26 @@
   --win-breathing-min-opacity: 0.25;
   --win-breathing-max-opacity: 1;
 
-  /* 5. Ripple: translucent gold fill in the seat, steady glowing rim, rings run centre -> rim. */
+  /* 5. Ripple: orange water in a cup. Wobbling (SVG turbulence) surface, soft rings centre -> rim,
+     drifting highlights, glowing orange rim. Everything stays BEHIND the seat; the cup fills and slightly overflows the seat so the water shows around and between the cards / nameplate. */
   --win-ripple-duration: 3000ms;      /* one ring's trip from centre to rim */
   --win-ripple-rings: 3;
-  --win-ripple-inset: 0.86;
-  --win-ripple-fill-opacity: 0.16;    /* see-through tint so the seat still reads */
-  --win-ripple-ring-width: 2px;
-  --win-ripple-ring-opacity: 0.55;
+  --win-ripple-inset: 1.02;          /* cup / rim reach slightly past the seat */
+  --win-ripple-fill-opacity: 0.2;     /* orange tint under the seat */
+  --win-ripple-ring-opacity: 0.6;
+  --win-ripple-ring-blur: 1.2px;      /* soft, not crisp, ring edges */
+  --win-ripple-highlight-opacity: 0.6;
+  --win-ripple-highlight-blur: 3px;
+  --win-ripple-highlight-duration: 4600ms;
   --win-ripple-rim-width: 2.5px;
   --win-ripple-rim-opacity: 0.85;
-  --win-ripple-rim-boost: 0.15;       /* extra rim opacity as each ripple arrives */
+  --win-ripple-rim-rest: 0.55;        /* rim opacity between waves */
+  --win-ripple-rim-flare-glow: 34px;  /* glow when a wave hits the rim */
   --win-ripple-glow: 16px;
-  /* Ripple uses the brand gradient, not gold: same values as the bet slider (sliderTravel.ts / desktopPillSlider.css). */
-  --win-ripple-orange: 255, 151, 23;  /* #ff9717 ripples at the rim, glowing rim */
-  --win-ripple-mid: 255, 74, 131;     /* #ff4a83 ripples mid-way */
-  --win-ripple-pink: 240, 43, 198;    /* #f02bc6 centre, fill tint, ripples start */
+  /* Brand orange (bet slider #ff9717) leads; highlights are pale orange / white. */
+  --win-ripple-orange: 255, 151, 23;  /* #ff9717 tint, rings, rim */
+  --win-ripple-highlight: 255, 238, 214; /* pale orange specular */
+  --win-ripple-pink: 240, 43, 198;    /* #f02bc6 subtle crest edge / glint tint only */
 }
 
 /* Container for win animation */
@@ -173,19 +178,30 @@
   animation: win-breathing calc(var(--win-breathing-duration) / var(--win-pulse-speed)) ease-in-out infinite;
 }
 
-/* ---------- 5. Ripple (water in a cup) ---------- */
+/* ---------- 5. Ripple (orange water in a cup) ---------- */
 @keyframes win-ripple-ring {
-  0%   { transform: scale(0.04); opacity: 0; border-color: rgb(var(--win-ripple-pink)); box-shadow: 0 0 6px rgba(var(--win-ripple-pink), 0.5); }
-  50%  { border-color: rgb(var(--win-ripple-mid)); box-shadow: 0 0 6px rgba(var(--win-ripple-mid), 0.5); }
-  12%  { opacity: calc(var(--win-ripple-ring-opacity) * var(--win-pulse-intensity)); }
-  70%  { opacity: calc(var(--win-ripple-ring-opacity) * 0.6 * var(--win-pulse-intensity)); }
-  100% { transform: scale(1); opacity: 0; border-color: rgb(var(--win-ripple-orange)); box-shadow: 0 0 6px rgba(var(--win-ripple-orange), 0.5); }
+  0%   { transform: scale(0.05); opacity: 0; }
+  12%  { opacity: var(--win-ripple-ring-peak); }
+  70%  { opacity: calc(var(--win-ripple-ring-peak) * 0.6); }
+  100% { transform: scale(1.04); opacity: 0; }
 }
 
 /* One beat per ring arrival: period = duration / rings, so it loops seamlessly. */
 @keyframes win-ripple-rim {
-  0%, 100% { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); }
-  92%      { opacity: calc((var(--win-ripple-rim-opacity) + var(--win-ripple-rim-boost)) * var(--win-pulse-intensity)); }
+  /* Period = duration / rings and ring delays are multiples of it, so 0% / 100% is exactly when a wave lands. */
+  0%, 100% { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); box-shadow: 0 0 var(--win-ripple-rim-flare-glow) rgba(var(--win-ripple-orange), 0.95), inset 0 0 calc(var(--win-ripple-glow) * 0.9) rgba(var(--win-ripple-orange), 0.7); }
+  6%       { opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity)); }
+  45%, 85% { opacity: calc(var(--win-ripple-rim-rest) * var(--win-pulse-intensity)); box-shadow: 0 0 calc(var(--win-ripple-glow) * 0.6) rgba(var(--win-ripple-orange), 0.55), inset 0 0 calc(var(--win-ripple-glow) * 0.3) rgba(var(--win-ripple-orange), 0.35); }
+}
+
+/* Specular glints drift and shimmer across the surface (transform / opacity only). */
+@keyframes win-ripple-glint-a {
+  0%, 100% { transform: translate(-30%, -20%) scale(1, 0.8); opacity: calc(var(--win-ripple-highlight-opacity) * 0.5 * var(--win-pulse-intensity)); }
+  50%      { transform: translate(40%, 15%) scale(1.25, 1);   opacity: calc(var(--win-ripple-highlight-opacity) * var(--win-pulse-intensity)); }
+}
+@keyframes win-ripple-glint-b {
+  0%, 100% { transform: translate(35%, 25%) scale(0.9);       opacity: calc(var(--win-ripple-highlight-opacity) * 0.9 * var(--win-pulse-intensity)); }
+  50%      { transform: translate(-35%, -15%) scale(1.2, 0.8); opacity: calc(var(--win-ripple-highlight-opacity) * 0.35 * var(--win-pulse-intensity)); }
 }
 
 .win-pulse-ripple-cup,
@@ -195,16 +211,37 @@
 
 .win-pulse-ripple-cup {
   overflow: hidden;                   /* ripples stay inside the seat shape */
-  background: radial-gradient(ellipse at center,
-    rgba(var(--win-ripple-pink), calc(var(--win-ripple-fill-opacity) * 0.8 * var(--win-pulse-intensity))) 0%,
-    rgba(var(--win-ripple-pink), calc(var(--win-ripple-fill-opacity) * 1.3 * var(--win-pulse-intensity))) 100%);
+  border-radius: 9999px;
+  filter: var(--win-ripple-wobble-filter); /* SVG turbulence + displacement: liquid wobble */
 }
 
+.win-pulse-ripple-cup {
+  --win-ripple-ring-peak: calc(var(--win-ripple-ring-opacity) * var(--win-pulse-intensity));
+  background: radial-gradient(ellipse at center,
+    rgba(var(--win-ripple-orange), calc(var(--win-ripple-fill-opacity) * 0.6 * var(--win-pulse-intensity))) 0%,
+    rgba(var(--win-ripple-orange), calc(var(--win-ripple-fill-opacity) * 1.3 * var(--win-pulse-intensity))) 100%);
+}
+
+.win-pulse-ripple-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* Soft wobbly ring: a blurred gradient band (orange with a pale crest), not a crisp border. */
 .win-pulse-ripple-ring {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
-  border: var(--win-ripple-ring-width) solid rgb(var(--win-ripple-pink));
+  background: radial-gradient(closest-side,
+    transparent 68%,
+    rgba(var(--win-ripple-orange), 0.55) 78%,
+    rgba(var(--win-ripple-highlight), 0.85) 86%,
+    rgba(var(--win-ripple-pink), 0.45) 92%,
+    rgba(var(--win-ripple-orange), 0.35) 96%,
+    transparent 100%);
+  filter: blur(var(--win-ripple-ring-blur));
   opacity: 0;
   will-change: transform, opacity;
   animation: win-ripple-ring calc(var(--win-ripple-duration) / var(--win-pulse-speed)) cubic-bezier(0.3, 0.2, 0.6, 1) infinite;
@@ -215,11 +252,40 @@
   border: var(--win-ripple-rim-width) solid rgb(var(--win-ripple-orange));
   box-shadow: 0 0 var(--win-ripple-glow) rgba(var(--win-ripple-orange), 0.75), inset 0 0 calc(var(--win-ripple-glow) * 0.4) rgba(var(--win-ripple-orange), 0.45);
   opacity: calc(var(--win-ripple-rim-opacity) * var(--win-pulse-intensity));
-  animation: win-ripple-rim calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings)) ease-in-out infinite;
+  animation: win-ripple-rim calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings)) cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+  animation-delay: calc(var(--win-ripple-duration) / var(--win-pulse-speed) / var(--win-ripple-rings) * -0.02);
+}
+
+
+.win-pulse-ripple-glint {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(var(--win-ripple-highlight-blur));
+  will-change: transform, opacity;
+}
+.win-pulse-ripple-glint-a {
+  left: 22%; top: 18%; width: 26%; height: 16%;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(var(--win-ripple-highlight), 0.4) 60%, transparent);
+  animation: win-ripple-glint-a calc(var(--win-ripple-highlight-duration) / var(--win-pulse-speed)) ease-in-out infinite;
+}
+.win-pulse-ripple-glint-b {
+  right: 20%; bottom: 20%; width: 20%; height: 13%;
+  background: radial-gradient(closest-side, rgba(var(--win-ripple-highlight), 0.95), rgba(var(--win-ripple-pink), 0.35) 65%, transparent);
+  animation: win-ripple-glint-b calc(var(--win-ripple-highlight-duration) * 1.37 / var(--win-pulse-speed)) ease-in-out infinite;
+}
+/* Thin crescent along the top inner edge, like light catching the meniscus. */
+.win-pulse-ripple-glint-c {
+  left: 12%; right: 12%; top: 3%; height: 18%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(var(--win-ripple-highlight), 0.9), transparent 70%);
+  filter: blur(calc(var(--win-ripple-highlight-blur) * 0.4));
+  opacity: calc(var(--win-ripple-highlight-opacity) * 1.2 * var(--win-pulse-intensity));
+  animation: win-ripple-glint-a calc(var(--win-ripple-highlight-duration) * 0.8 / var(--win-pulse-speed)) ease-in-out infinite reverse;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .win-pulse-ripple-rim { animation: none; }
+  .win-pulse-ripple-cup { filter: none; }
+  .win-pulse-ripple-glint { animation: none; opacity: calc(var(--win-ripple-highlight-opacity) * 0.7 * var(--win-pulse-intensity)); }
   .win-pulse-ripple-ring { animation: none; opacity: 0; }
   .win-pulse-ripple-ring:first-child { transform: scale(0.55); opacity: calc(0.4 * var(--win-pulse-intensity)); }
   .win-pulse-heartbeat-border,

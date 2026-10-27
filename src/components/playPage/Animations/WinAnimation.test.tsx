@@ -1,5 +1,5 @@
 import { act, render } from "@testing-library/react";
-import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_SONAR_RING_COUNT, WIN_RIPPLE_RING_COUNT } from "./WinAnimation";
+import WinAnimation, { WIN_PULSE_CHIP_FILES, WIN_SONAR_RING_COUNT, WIN_RIPPLE_RING_COUNT, WIN_RIPPLE_WOBBLE_SCALE } from "./WinAnimation";
 import { WIN_PULSE_STYLES, WinPulseStyleContext, DEFAULT_WIN_PULSE_TUNING } from "./winPulseStyle";
 import { setTableStyle } from "../../../theme/tableStyles";
 
@@ -81,15 +81,37 @@ describe("win pulse styles", () => {
         expect(container.querySelectorAll(".bubbles li")).toHaveLength(WIN_PULSE_CHIP_FILES.length);
     });
 
-    it("defines the ripple's brand pink/orange colours from the slider gradient, keeping gold for the other styles", () => {
+    it("leads the ripple with brand orange (pink only as a crest accent), keeping gold for the other styles", () => {
         const css = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
         expect(css).toMatch(/--win-ripple-orange: 255, 151, 23;/);
-        expect(css).toMatch(/--win-ripple-mid: 255, 74, 131;/);
         expect(css).toMatch(/--win-ripple-pink: 240, 43, 198;/);
         expect(css).toMatch(/--win-pulse-color: 255, 196, 30;/);
+        const cup = css.match(/\.win-pulse-ripple-cup \{\s*--win-ripple-ring-peak[^}]*\}/)![0];
+        expect(cup).toContain("--win-ripple-orange");
+        expect(cup).not.toContain("--win-ripple-pink");
         const rim = css.match(/\.win-pulse-ripple-rim \{\s*border[^}]*\}/)![0];
         expect(rim).toContain("--win-ripple-orange");
         expect(rim).not.toContain("--win-pulse-color");
+        expect(css).toMatch(/filter: var\(--win-ripple-wobble-filter\)/);
+    });
+
+    it("wobbles the ripple with an SVG turbulence filter, keeps highlights inside the cup and nothing above the seat", () => {
+        const { container } = render(<WinAnimation index={0} position={pos} winPulseStyle="ripple" />);
+        const filter = container.querySelector("filter#win-ripple-wobble-0")!;
+        expect(filter).not.toBeNull();
+        expect(filter.querySelector("feTurbulence animate")).not.toBeNull();
+        expect(filter.querySelector("feDisplacementMap")!.getAttribute("scale")).toBe(String(WIN_RIPPLE_WOBBLE_SCALE));
+        const root = container.querySelector<HTMLElement>(".win-animation-container")!;
+        expect(root.style.getPropertyValue("--win-ripple-wobble-filter")).toBe("url(#win-ripple-wobble-0)");
+        expect(container.querySelectorAll(".win-pulse-ripple-cup .win-pulse-ripple-glint")).toHaveLength(3);
+        expect(container.querySelector(".win-ripple-overlay")).toBeNull();
+        expect(container.children).toHaveLength(1);
+    });
+
+    it("syncs the rim flare period to ring arrivals", () => {
+        const css = require("fs").readFileSync(require("path").join(__dirname, "WinAnimation.css"), "utf8");
+        const rim = css.match(/\.win-pulse-ripple-rim \{\s*border[^}]*\}/)![0];
+        expect(rim).toMatch(/animation: win-ripple-rim calc\(var\(--win-ripple-duration\) \/ var\(--win-pulse-speed\) \/ var\(--win-ripple-rings\)\)/);
     });
 
     it("takes style and tuning from context, and the prop wins", () => {
