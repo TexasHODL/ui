@@ -176,16 +176,21 @@ const HERO_RAISE_MIN_MICRO = "40000000";
 const HERO_STACK_MICRO = "500000000";
 
 /**
- * Fold, check, call, and raise on one index, after the posted bets.
- * A live hand would not offer check and call together; the preview does,
- * so every control the panel can paint is on screen at once.
+ * The hero's legal actions, like a live hand: facing a bet it is fold, call, raise;
+ * with no bets out (bet=none) it is fold, check, bet.
  */
-export const previewHeroLegalActions = (index: number): LegalActionDTO[] => [
-    { action: PlayerActionType.FOLD, min: undefined, max: undefined, index },
-    { action: PlayerActionType.CHECK, min: undefined, max: undefined, index },
-    { action: PlayerActionType.CALL, min: HERO_CALL_MICRO, max: HERO_CALL_MICRO, index },
-    { action: PlayerActionType.RAISE, min: HERO_RAISE_MIN_MICRO, max: HERO_STACK_MICRO, index }
-];
+export const previewHeroLegalActions = (index: number, noBets = false): LegalActionDTO[] =>
+    noBets
+        ? [
+              { action: PlayerActionType.FOLD, min: undefined, max: undefined, index },
+              { action: PlayerActionType.CHECK, min: undefined, max: undefined, index },
+              { action: PlayerActionType.BET, min: HERO_RAISE_MIN_MICRO, max: HERO_STACK_MICRO, index }
+          ]
+        : [
+              { action: PlayerActionType.FOLD, min: undefined, max: undefined, index },
+              { action: PlayerActionType.CALL, min: HERO_CALL_MICRO, max: HERO_CALL_MICRO, index },
+              { action: PlayerActionType.RAISE, min: HERO_RAISE_MIN_MICRO, max: HERO_STACK_MICRO, index }
+          ];
 
 /** Show and Muck: the losing-hand player's choices at showdown. */
 export const previewHeroShowdownActions = (index: number): LegalActionDTO[] => [
@@ -241,7 +246,7 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             status: PlayerStatus.ACTIVE,
             lastAction: options.noBets && seat === 1 ? undefined : action,
             legalActions: heroTurn && seat === 1
-                ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1))
+                ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1, !!options.noBets))
                 : [],
             sumOfBets: amount,
             timeout: 30,
