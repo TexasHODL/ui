@@ -267,9 +267,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         }
     };
 
-    const showEquityChip =
-        !isWinner &&
-        hasValue(playerEquity);
+    const showEquityChip = hasValue(playerEquity);
 
     return (
         <div className="badge-container">

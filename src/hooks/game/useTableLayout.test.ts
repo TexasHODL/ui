@@ -195,3 +195,16 @@ describe("useTableLayout", () => {
         });
     });
 });
+
+describe("useTableLayout memoisation (ui#835 review)", () => {
+    it("returns the same positions object across rerenders with unchanged inputs", () => {
+        const { result, rerender } = renderHook(({ size }) => useTableLayout(size), { initialProps: { size: 9 as const } });
+        const first = result.current.positions;
+        const firstLayout = result.current;
+        rerender({ size: 9 as const });
+        rerender({ size: 9 as const });
+        expect(result.current.positions).toBe(first);
+        expect(result.current.positions.chips).toBe(first.chips);
+        expect(result.current).toBe(firstLayout);
+    });
+});
