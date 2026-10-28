@@ -60,6 +60,7 @@ const SettingsTab: React.FC = () => {
         leftHandMode,
         winCelebration,
         potAsChips,
+        showMainPot,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
@@ -68,7 +69,8 @@ const SettingsTab: React.FC = () => {
         togglePreSelectCheck,
         toggleLeftHandMode,
         toggleWinCelebration,
-        togglePotAsChips
+        togglePotAsChips,
+        toggleShowMainPot
     } = useGameSettings();
     // Same classifier as the betting UI: left-hand mode only applies in mobile landscape.
     const [viewportMode, setViewportMode] = useState(getViewportMode);
@@ -104,6 +106,12 @@ const SettingsTab: React.FC = () => {
                 description="Show the pot as a chip stack with the amount, like the bets in front of players. When off, it shows as plain text."
                 checked={potAsChips}
                 onToggle={togglePotAsChips}
+            />
+            <ToggleRow
+                label="Show Main Pot"
+                description="Show the main pot next to the total pot once there are side pots or bets in the round. Off by default: only the total pot is shown."
+                checked={showMainPot}
+                onToggle={toggleShowMainPot}
             />
             <ToggleRow
                 label="Auto Muck"

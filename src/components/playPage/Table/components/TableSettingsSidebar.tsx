@@ -110,6 +110,7 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
         leftHandMode,
         winCelebration,
         potAsChips,
+        showMainPot,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
@@ -118,6 +119,7 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
         toggleLeftHandMode,
         toggleWinCelebration,
         togglePotAsChips,
+        toggleShowMainPot,
         seatAtBottom,
         toggleSeatAtBottom
     } = useGameSettings();
@@ -206,6 +208,12 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                 description="Show the pot as a chip stack with the amount. Off keeps plain text."
                 checked={potAsChips}
                 onToggle={togglePotAsChips}
+            />
+            <ToggleRow
+                label="Show Main Pot"
+                description="Show the main pot next to the total pot once there are side pots or bets in the round. Off by default: only the total pot is shown."
+                checked={showMainPot}
+                onToggle={toggleShowMainPot}
             />
             <ToggleRow
                 label="Auto Muck"
