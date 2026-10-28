@@ -41,9 +41,20 @@ const writeStoredOpen = (open: boolean): void => {
 /** "800/1,600" → "800 / 1,600": spaced slash reads cleaner in a list. */
 const spacedBlinds = (formatted: string): string => formatted.replace("/", " / ");
 
-const BlindsPanel: React.FC = () => {
+interface BlindsPanelProps {
+    /** Hide the floating "Blinds" tab (mobile opens the panel from the burger menu instead). */
+    hideTab?: boolean;
+    /** Bump to open the panel from elsewhere (e.g. the mobile menu's Blinds item). */
+    openSignal?: number;
+}
+
+const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal = 0 }) => {
     const blindLevel = useBlindLevel();
     const [isOpen, setIsOpen] = useState<boolean>(readStoredOpen);
+
+    useEffect(() => {
+        if (openSignal > 0) setIsOpen(true);
+    }, [openSignal]);
     const rootRef = useRef<HTMLDivElement>(null);
     const currentRowRef = useRef<HTMLSpanElement>(null);
 
@@ -100,6 +111,7 @@ const BlindsPanel: React.FC = () => {
 
     return (
         <div ref={rootRef} className={styles.root} data-testid="blinds-panel-root">
+            {!hideTab && (
             <button
                 type="button"
                 onClick={toggle}
@@ -111,6 +123,7 @@ const BlindsPanel: React.FC = () => {
             >
                 Blinds
             </button>
+            )}
 
             {isOpen && (
                 <div className={styles.panel} role="dialog" aria-label="Blind structure" data-testid="blinds-panel">

@@ -1028,6 +1028,8 @@ const Table = React.memo(() => {
 
     // Optimize window width detection - only check on resize
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 414);
+    // Mobile opens the Blinds panel from the burger menu (the floating tab is hidden there).
+    const [blindsOpenSignal, setBlindsOpenSignal] = useState(0);
     const [isMobileLandscape, setIsMobileLandscape] = useState(getViewportMode() === "mobile-landscape");
     const envTableStyle = import.meta.env.VITE_TABLE_STYLE;
     const defaultTableStyle: "modern" | "classic" | "nouns" = envTableStyle === "classic" || envTableStyle === "nouns" ? envTableStyle : "modern";
@@ -1341,6 +1343,7 @@ const Table = React.memo(() => {
                         tableName={gameName}
                         handleOpenReplay={isReplayMode ? undefined : handleOpenReplay}
                         replayHand={replayHand}
+                        onOpenBlinds={isReplayMode ? undefined : () => setBlindsOpenSignal(n => n + 1)}
                         currentNetwork={currentNetwork}
                         gameFormat={gameFormat || null}
                         gameVariant={gameVariant}
@@ -1411,7 +1414,7 @@ const Table = React.memo(() => {
                 </div>
                 {/* Blinds structure panel (ui#794) — self-gates to SNG/tournament;
                     non-modal floating tab + panel. Hidden in replay mode. */}
-                {!isReplayMode && <BlindsPanel />}
+                {!isReplayMode && <BlindsPanel hideTab={isCompactMobile} openSignal={blindsOpenSignal} />}
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
                 {isCompactMobile && <LiveHandStrengthDisplay />}

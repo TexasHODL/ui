@@ -10,7 +10,7 @@
  */
 
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { FaBars, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare, FaTimes } from "react-icons/fa";
+import { FaBars, FaLayerGroup, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare, FaTimes } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
@@ -95,6 +95,8 @@ export interface MobileTableHeaderProps {
     /** Opens the latest completed hand's replay in a new tab; absent in replay mode. */
     handleOpenReplay?: () => void;
     replayHand?: number | null;
+    /** Opens the blind-structure panel; the item shows only on SNG/tournament tables. */
+    onOpenBlinds?: () => void;
 }
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
@@ -135,7 +137,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     handleLeaveTableClick,
     handleShareHand,
     handleOpenReplay,
-    replayHand = null
+    replayHand = null,
+    onOpenBlinds
 }) => {
     const blindLevel = useBlindLevel();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -425,6 +428,13 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 <button className={menuRowClass} onClick={closeMenuAnd(handleOpenReplay)} disabled={replayHand === null} data-testid="open-replay">
                                     <FaRedo size={14} />
                                     <span>{replayHand === null ? "Replay (no completed hand yet)" : `Replay hand #${replayHand}`}</span>
+                                </button>
+                            )}
+    
+                            {onOpenBlinds && blindLevel.isActive && (
+                                <button className={menuRowClass} onClick={closeMenuAnd(onOpenBlinds)} data-testid="open-blinds">
+                                    <FaLayerGroup size={14} />
+                                    <span>Blinds</span>
                                 </button>
                             )}
     
