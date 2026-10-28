@@ -33,6 +33,7 @@ import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { formatBlindCountdown } from "./TableHeader";
 import styles from "./TableHeader.module.css";
+import { TableSettingsOptions } from "./TableSettingsSidebar";
 import { ThemeToggle } from "../../../ThemeToggle";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
@@ -136,7 +137,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     fetchAccountBalance,
     copyToClipboard,
     onCloseSideBar,
-    onToggleSettings,
     handleLeaveTableClick,
     handleShareHand,
     handleOpenReplay,
@@ -253,15 +253,18 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
             <div className="fixed inset-0 z-[1999] bg-black/60" onClick={onClose} />
             <div
                 data-testid={testId}
-                className={`fixed top-0 right-0 bottom-0 z-[2000] w-[290px] max-w-[85vw] flex flex-col overflow-y-auto border-l-2 ${styles.headerRoot}`}
+                className={`fixed top-0 right-0 bottom-0 z-[2000] w-[290px] max-w-[85vw] max-h-[100dvh] overflow-y-auto overscroll-contain border-l-2 ${styles.headerRoot}`}
                 style={{
                     // The last row must clear the home indicator; the top row
                     // must clear the Dynamic Island.
                     paddingTop: "env(safe-area-inset-top)",
                     paddingBottom: "env(safe-area-inset-bottom)",
-                    paddingRight: "env(safe-area-inset-right)"
+                    paddingRight: "env(safe-area-inset-right)",
+                    WebkitOverflowScrolling: "touch",
+                    touchAction: "pan-y"
                 }}
             >
+                <div className="min-h-full flex flex-col">
                 <div className="flex items-center justify-between pl-4 min-h-[44px] border-b border-white/10">
                     <span className="text-white text-sm font-bold">{title}</span>
                     <button onClick={onClose} className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80" aria-label={closeLabel}>
@@ -269,6 +272,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     </button>
                 </div>
                 {children}
+                </div>
             </div>
         </>
     );
@@ -431,11 +435,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                     <span>{replayHand === null ? "Replay (no completed hand yet)" : `Replay hand #${replayHand}`}</span>
                                 </button>
                             )}
-                            <button className={menuRowClass} onClick={closeMenuAnd(onToggleSettings)}>
-                                <IoSettingsOutline size={16} />
-                                <span>Settings</span>
-                            </button>
-
+    
                             {/* Table-only view — moved here from the header row */}
                             <button className={menuRowClass} onClick={closeMenuAnd(onToggleFocus)} title="Table-only view — hide banners">
                                 <FaExpand size={14} aria-hidden="true" />
@@ -489,7 +489,14 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 </>
                             )}
 
-                            {/* Spectating hint. Non-interactive: the only way to sit is
+                            {/* In-game settings, inline (formerly a separate Settings panel).
+                            Theme stays in the header row; Style above covers appearance. */}
+                        <div className="mobile-menu-settings px-4 py-2 border-t border-white/10" role="group" aria-label="Settings">
+                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
+                            <TableSettingsOptions showTheme={false} />
+                        </div>
+
+                        {/* Spectating hint. Non-interactive: the only way to sit is
                                 tapping an open seat, and this is what tells a first-time
                                 player that (#684). */}
                             {!isCurrentUserSeated && (

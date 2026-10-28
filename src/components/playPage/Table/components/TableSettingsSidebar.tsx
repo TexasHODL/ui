@@ -82,14 +82,15 @@ const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, checked, onTo
     </div>
 );
 
-export interface TableSettingsSidebarProps {
-    isOpen: boolean;
+export interface TableSettingsOptionsProps {
     tableStyle?: TableStyleOption;
     onTableStyleChange?: (style: TableStyleOption) => void;
-    onClose?: () => void;
+    /** The theme toggle; off where the host chrome already shows it (mobile header). */
+    showTheme?: boolean;
 }
 
-export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOpen, tableStyle, onTableStyleChange, onClose }) => {
+/** The settings controls themselves, shared by the sidebar and the mobile Table menu. */
+export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({ tableStyle, onTableStyleChange, showTheme = true }) => {
     const {
         turnNotificationSound,
         playerActionSounds,
@@ -120,6 +121,111 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
     const showLeftHandMode = viewportMode === "mobile-landscape";
 
     return (
+        <>
+            {showTheme && (
+                <div className="settings-theme-row">
+                    <ThemeToggle />
+                </div>
+            )}
+            {tableStyle && onTableStyleChange && (
+                <label className="settings-appearance">
+                    Table appearance
+                    <select
+                        aria-label="Table appearance"
+                        value={tableStyle}
+                        className={SELECT_CLASS}
+                        onChange={event => {
+                            const value = event.target.value;
+                            if (value === "modern" || value === "classic" || value === "nouns") onTableStyleChange(value);
+                        }}
+                    >
+                        <option value="modern">Texas HODL</option>
+                        <option value="classic">Classic</option>
+                        <option value="nouns">Nouns</option>
+                    </select>
+                </label>
+            )}
+            <StyleSelect
+                label="Cards"
+                value={tableStyles.deck}
+                options={DECK_OPTIONS}
+                onChange={value => isDeckId(value) && setTableStyle("deck", value)}
+            />
+            <StyleSelect
+                label="Chips"
+                value={tableStyles.chips}
+                options={CHIP_OPTIONS}
+                onChange={value => isChipStyleId(value) && setTableStyle("chips", value)}
+            />
+            <StyleSelect
+                label="Dealer button"
+                value={tableStyles.dealer}
+                options={DEALER_OPTIONS}
+                onChange={value => isStyleId(value) && setTableStyle("dealer", value)}
+            />
+            <ToggleRow
+                label="Turn Notification Sound"
+                description="Sound and tab flash when it’s your turn."
+                checked={turnNotificationSound}
+                onToggle={toggleTurnNotificationSound}
+            />
+            <ToggleRow
+                label="Player Action Sounds"
+                description="Sounds for bets, raises, calls, folds and checks."
+                checked={playerActionSounds}
+                onToggle={togglePlayerActionSounds}
+            />
+            <ToggleRow
+                label="Win Celebration"
+                description="Play the gold-chip celebration on the winning seat. Off = calmer table; the pot still awards."
+                checked={winCelebration}
+                onToggle={toggleWinCelebration}
+            />
+            <ToggleRow
+                label="Pot as Chips"
+                description="Show the pot as a chip stack with the amount. Off keeps plain text."
+                checked={potAsChips}
+                onToggle={togglePotAsChips}
+            />
+            <ToggleRow
+                label="Auto Muck"
+                description="Hide losing cards automatically at showdown."
+                checked={autoMuck}
+                onToggle={toggleAutoMuck}
+            />
+            <ToggleRow
+                label="Sit-In Options"
+                description="Choose next hand or next big blind. Off: join next hand."
+                checked={sitInOptions}
+                onToggle={toggleSitInOptions}
+            />
+            <ToggleRow
+                label="Pre-Select Check/Fold"
+                description="Show a Check/Fold box before your turn. It checks if checking is free, or folds if someone bets first."
+                checked={preSelectCheck}
+                onToggle={togglePreSelectCheck}
+            />
+            {showLeftHandMode && (
+                <ToggleRow
+                    label="Left-hand mode"
+                    description="Landscape controls sit on the left edge. Off: right edge."
+                    checked={leftHandMode}
+                    onToggle={toggleLeftHandMode}
+                />
+            )}
+        </>
+    );
+};
+
+export interface TableSettingsSidebarProps {
+    isOpen: boolean;
+    tableStyle?: TableStyleOption;
+    onTableStyleChange?: (style: TableStyleOption) => void;
+    onClose?: () => void;
+}
+
+export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOpen, tableStyle, onTableStyleChange, onClose }) => {
+    return (
         <div
             id="table-settings-panel"
             role={isOpen ? "region" : undefined}
@@ -144,95 +250,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
 
                     {/* Toggle list */}
                     <div className="settings-content">
-                        <div className="settings-theme-row">
-                            <ThemeToggle />
-                        </div>
-                        {tableStyle && onTableStyleChange && (
-                            <label className="settings-appearance">
-                                Table appearance
-                                <select
-                                    aria-label="Table appearance"
-                                    value={tableStyle}
-                                    className={SELECT_CLASS}
-                                    onChange={event => {
-                                        const value = event.target.value;
-                                        if (value === "modern" || value === "classic" || value === "nouns") onTableStyleChange(value);
-                                    }}
-                                >
-                                    <option value="modern">Texas HODL</option>
-                                    <option value="classic">Classic</option>
-                                    <option value="nouns">Nouns</option>
-                                </select>
-                            </label>
-                        )}
-                        <StyleSelect
-                            label="Cards"
-                            value={tableStyles.deck}
-                            options={DECK_OPTIONS}
-                            onChange={value => isDeckId(value) && setTableStyle("deck", value)}
-                        />
-                        <StyleSelect
-                            label="Chips"
-                            value={tableStyles.chips}
-                            options={CHIP_OPTIONS}
-                            onChange={value => isChipStyleId(value) && setTableStyle("chips", value)}
-                        />
-                        <StyleSelect
-                            label="Dealer button"
-                            value={tableStyles.dealer}
-                            options={DEALER_OPTIONS}
-                            onChange={value => isStyleId(value) && setTableStyle("dealer", value)}
-                        />
-                        <ToggleRow
-                            label="Turn Notification Sound"
-                            description="Sound and tab flash when it’s your turn."
-                            checked={turnNotificationSound}
-                            onToggle={toggleTurnNotificationSound}
-                        />
-                        <ToggleRow
-                            label="Player Action Sounds"
-                            description="Sounds for bets, raises, calls, folds and checks."
-                            checked={playerActionSounds}
-                            onToggle={togglePlayerActionSounds}
-                        />
-                        <ToggleRow
-                            label="Win Celebration"
-                            description="Play the gold-chip celebration on the winning seat. Off = calmer table; the pot still awards."
-                            checked={winCelebration}
-                            onToggle={toggleWinCelebration}
-                        />
-                        <ToggleRow
-                            label="Pot as Chips"
-                            description="Show the pot as a chip stack with the amount. Off keeps plain text."
-                            checked={potAsChips}
-                            onToggle={togglePotAsChips}
-                        />
-                        <ToggleRow
-                            label="Auto Muck"
-                            description="Hide losing cards automatically at showdown."
-                            checked={autoMuck}
-                            onToggle={toggleAutoMuck}
-                        />
-                        <ToggleRow
-                            label="Sit-In Options"
-                            description="Choose next hand or next big blind. Off: join next hand."
-                            checked={sitInOptions}
-                            onToggle={toggleSitInOptions}
-                        />
-                        <ToggleRow
-                            label="Pre-Select Check/Fold"
-                            description="Show a Check/Fold box before your turn. It checks if checking is free, or folds if someone bets first."
-                            checked={preSelectCheck}
-                            onToggle={togglePreSelectCheck}
-                        />
-                        {showLeftHandMode && (
-                            <ToggleRow
-                                label="Left-hand mode"
-                                description="Landscape controls sit on the left edge. Off: right edge."
-                                checked={leftHandMode}
-                                onToggle={toggleLeftHandMode}
-                            />
-                        )}
+                        <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} />
                     </div>
                 </div>
             )}
