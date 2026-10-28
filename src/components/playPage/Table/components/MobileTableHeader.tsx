@@ -34,6 +34,7 @@ import { formatBlindCountdown } from "./TableHeader";
 import styles from "./TableHeader.module.css";
 import { TableSettingsOptions } from "./TableSettingsSidebar";
 import { ThemeToggle } from "../../../ThemeToggle";
+import SngPayoutPanel from "../../SngPayoutPanel";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -424,6 +425,16 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     () => setMenuOpen(false),
                     "table-menu-drawer",
                     <>
+                            {/* SNG payout structure first (self-gates to Sit & Go; mobile has no footer for it). */}
+                            <div className="mobile-menu-payouts empty:hidden px-4 pt-2 pb-1 [&>div]:w-full">
+                                <SngPayoutPanel />
+                            </div>
+                            {onOpenBlinds && blindLevel.isActive && (
+                                <button className={menuRowClass} onClick={closeMenuAnd(onOpenBlinds)} data-testid="open-blinds">
+                                    <FaLayerGroup size={14} />
+                                    <span>Blinds</span>
+                                </button>
+                            )}
                             {handleOpenReplay && (
                                 <button className={menuRowClass} onClick={closeMenuAnd(handleOpenReplay)} disabled={replayHand === null} data-testid="open-replay">
                                     <FaRedo size={14} />
@@ -431,12 +442,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 </button>
                             )}
     
-                            {onOpenBlinds && blindLevel.isActive && (
-                                <button className={menuRowClass} onClick={closeMenuAnd(onOpenBlinds)} data-testid="open-blinds">
-                                    <FaLayerGroup size={14} />
-                                    <span>Blinds</span>
-                                </button>
-                            )}
     
                             {/* Table-only view — moved here from the header row */}
                             <button className={menuRowClass} onClick={closeMenuAnd(onToggleFocus)} title="Table-only view — hide banners">

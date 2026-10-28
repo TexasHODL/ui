@@ -852,7 +852,7 @@ const Table = React.memo(() => {
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
     const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory, expandHistory } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
-    const chromeObserver = useRef<ResizeObserver | null>(null);
+    const chromeObserver = useRef<{ disconnect: () => void } | null>(null);
     const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
         chromeObserver.current?.disconnect();
         chromeObserver.current = null;
@@ -867,7 +867,21 @@ const Table = React.memo(() => {
         observer.observe(banner);
         const stage = root.querySelector(".table-stage");
         if (stage) observer.observe(stage);
-        chromeObserver.current = observer;
+        // The bet dock mounts/unmounts on the hero's turn: re-place History beside it.
+        let frame = 0;
+        const dockWatcher = new MutationObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => placeMobileHistory(root));
+        });
+        const playRow = root.querySelector(".table-play-row");
+        if (playRow) dockWatcher.observe(playRow, { childList: true, subtree: true });
+        chromeObserver.current = {
+            disconnect: () => {
+                observer.disconnect();
+                dockWatcher.disconnect();
+                cancelAnimationFrame(frame);
+            }
+        };
     }, []);
     useLayoutEffect(() => {
         const root = tableContainerRef.current?.closest(".table-container");

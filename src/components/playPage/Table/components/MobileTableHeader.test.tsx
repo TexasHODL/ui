@@ -44,6 +44,7 @@ jest.mock("../../../common/Modal", () => ({ Modal: ({ children }: { children?: R
 jest.mock("../../../NetworkSelector", () => ({ NetworkSelector: () => <div /> }));
 jest.mock("../../../profile", () => ({ ProfileAvatarButton: () => <div /> }));
 jest.mock("../../../modals", () => ({ TopUpModal: () => <div /> }));
+jest.mock("../../SngPayoutPanel", () => ({ __esModule: true, default: () => <div data-testid="sng-payout-structure" /> }));
 
 const sitOutLegal: LegalActionDTO[] = [{ action: NonPlayerActionType.SIT_OUT, min: "0", max: "0", index: 1 } as LegalActionDTO];
 
