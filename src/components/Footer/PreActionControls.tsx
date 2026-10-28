@@ -97,18 +97,17 @@ export const PreActionControls: React.FC<PreActionControlsProps> = ({
     };
 
     if (landscapeSlots) {
-        // Same container and .mobile-actions-stack as MobileBettingCluster, so the
-        // slot rectangles come from one stylesheet and cannot drift apart.
-        const { fold, passive } = landscapePreActionSlots(buttons);
+        // Same container, stack and button classes as MobileBettingCluster, one button
+        // per slot as direct children, so every pre-action has exactly the size and
+        // position of the action it turns into. Stack is column-reverse: DOM order is
+        // bottom-up FOLD, CHECK, CALL, RAISE; empty slots are spacers of slot height.
+        const rows = landscapePreActionSlots(buttons);
         return (
             <div className={`pre-action-bar pre-action-slots mobile-bet mobile-bet-landscape${leftHand ? " hand-left" : ""}`} data-testid="pre-action-bar">
                 <div className="mobile-actions-stack">
-                    <div className="mobile-slot" data-slot="fold">
-                        {fold.map(renderButton)}
-                    </div>
-                    <div className="mobile-slot" data-slot="check-call">
-                        {passive.map(renderButton)}
-                    </div>
+                    {rows.map((action, i) =>
+                        action ? renderButton(action) : <div key={`empty-${SLOT_NAMES[i]}`} className="mobile-slot" data-slot={SLOT_NAMES[i]} aria-hidden="true" />
+                    )}
                 </div>
             </div>
         );
@@ -121,19 +120,33 @@ export const PreActionControls: React.FC<PreActionControlsProps> = ({
     );
 };
 
+const SLOT_NAMES = ["fold", "check", "call", "raise"] as const;
+
 /**
- * Mobile-landscape slot mapping. The action column is bottom-up FOLD, then
- * CHECK or CALL (never both), then RAISE/BET. Pre-actions only use the first two:
- *  - fold slot: Fold
- *  - check/call slot: Check/Fold, Check, Call $x, Call Any, All In (calls all-in)
- * With three pre-actions and no Fold (can-check state) Call Any takes the fold
- * slot rather than ever touching RAISE's slot.
+ * Mobile-landscape slot mapping, bottom-up to match the action column:
+ * index 0 FOLD, 1 CHECK, 2 CALL, 3 RAISE (always empty). null = empty slot.
+ *  - owing a bet: Fold on FOLD, Call Any on CHECK (free, checking is impossible), Call $x on CALL
+ *  - all-in call: Fold on FOLD, All In on CALL
+ *  - free check: Check on FOLD (folding is never needed), Check/Fold on CHECK, Call Any on CALL
+ *  - lone Check/Fold: on CHECK
  */
-export function landscapePreActionSlots(buttons: PreAction[]): { fold: PreAction[]; passive: PreAction[] } {
-    const fold = buttons.filter(a => a === "fold");
-    const passive = buttons.filter(a => a !== "fold");
-    if (fold.length === 0 && passive.length > 2 && passive.includes("call-any")) {
-        return { fold: ["call-any"], passive: passive.filter(a => a !== "call-any") };
+export function landscapePreActionSlots(buttons: PreAction[]): (PreAction | null)[] {
+    const has = (a: PreAction) => buttons.includes(a);
+    const slots: (PreAction | null)[] = [null, null, null, null];
+    if (has("fold")) slots[0] = "fold";
+    if (has("check-fold")) {
+        slots[1] = "check-fold";
+        if (has("check")) slots[0] = "check";
+    } else if (has("check")) {
+        slots[1] = "check";
     }
-    return { fold, passive };
+    if (has("call-exact")) {
+        slots[2] = "call-exact";
+        if (has("call-any")) slots[1] = "call-any";
+    } else if (has("all-in")) {
+        slots[2] = "all-in";
+    } else if (has("call-any")) {
+        slots[2] = "call-any";
+    }
+    return slots;
 }
