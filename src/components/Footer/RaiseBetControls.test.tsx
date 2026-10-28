@@ -6,7 +6,7 @@ import type { RaiseBetControlsProps } from "./types";
 
 const baseProps: RaiseBetControlsProps = {
     amount: 320, minAmount: 320, maxAmount: 1390, formattedMaxAmount: "1390",
-    step: 320, displayOffset: 0, totalPotMicro: 1280n, callAmountMicro: 0n,
+    displayOffset: 0, totalPotMicro: 1280n, callAmountMicro: 0n,
     isInvalid: false, isMobileLandscape: true,
     isTournament: true, currentRound: TexasHoldemRound.FLOP, previousActions: [],
     disabled: false, onAmountChange: jest.fn(), onIncrement: jest.fn(),

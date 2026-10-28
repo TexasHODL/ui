@@ -2,29 +2,36 @@ import React, { useRef } from "react";
 import { formatDisplayAmount, formatSliderInputValue, parseSliderInput } from "../../utils/numberUtils";
 import { hasValue } from "../../utils/guards";
 import type { RaiseSliderProps } from "./types";
-import { betFromHorizontalTravel, DESKTOP_PILL_GRADIENT, desktopPillColor } from "./desktopPillTravel";
+import { amountAtStep, sliderStepCount, stepForAmount } from "../../utils/raiseSlider";
+import styles from "./RaiseSlider.module.css";
+import { DESKTOP_PILL_GRADIENT, desktopPillColor } from "./desktopPillTravel";
 import "./desktopPillSlider.css";
 
 export const RaiseSlider: React.FC<RaiseSliderProps> = ({
     value,
     min,
     max,
-    step,
     formattedMax,
     displayOffset,
     isInvalid,
     disabled,
     isMobileLandscape,
     isTournament,
+    isAllIn,
     onChange,
     onIncrement,
     onDecrement
 }) => {
     const travelRef = useRef<HTMLDivElement>(null);
     const displayValue = value + displayOffset;
-    const span = max - min;
-    const pct = span <= 0 ? 0 : Math.min(1, Math.max(0, (value - min) / span));
+    // The slider works in whole steps of 1¢ (1 chip in tournaments) from the
+    // legal min; the last step is exactly the legal max, so all-in (or the pot
+    // cap) is always reachable (ui#890).
+    const stepCount = sliderStepCount(min, max, isTournament);
+    const position = stepForAmount(value, min, max, isTournament);
+    const pct = stepCount > 0 ? position / stepCount : 0;
     const percentage = pct * 100;
+    const moveBy = (delta: number) => onChange(amountAtStep(position + delta, min, max, isTournament));
 
     // Tournaments show whole chips (no "$", no decimals); cash shows "$X.XX".
     const displayString = formatSliderInputValue(displayValue, isTournament);
@@ -41,8 +48,9 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
         const el = travelRef.current;
         if (!el || disabled) return;
         const rect = el.getBoundingClientRect();
-        const next = betFromHorizontalTravel(clientX, rect.left, rect.width, min, max, step);
-        if (next !== null) onChange(next);
+        if (rect.width <= 0 || stepCount === 0 || !Number.isFinite(clientX)) return;
+        const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+        onChange(amountAtStep(Math.round(ratio * stepCount), min, max, isTournament));
     };
 
     if (!isMobileLandscape) {
@@ -75,10 +83,11 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                             if (disabled) return;
                             if (event.key === "ArrowRight" || event.key === "ArrowUp") {
                                 event.preventDefault();
-                                onIncrement();
+                                // Arrow keys move 1¢ / 1 chip; the +/− caps step one big blind (ui#890).
+                                moveBy(1);
                             } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
                                 event.preventDefault();
-                                onDecrement();
+                                moveBy(-1);
                             }
                         }}
                     >
@@ -105,6 +114,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                         +
                     </button>
                 </div>
+                {isAllIn && <span className={styles.allInTag}>ALL-IN</span>}
                 <input
                     type="text"
                     inputMode={isTournament ? "numeric" : "decimal"}
@@ -149,19 +159,19 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
             {/* Slider with dynamic fill */}
             <input
                 type="range"
-                min={min}
-                max={max}
-                step={step}
-                value={value}
-                onChange={(e) => onChange(Number(e.target.value))}
-                className={
-                    isMobileLandscape
-                        ? "flex-1 accent-[#64ffda] h-1 rounded-full transition-all duration-200"
-                        : "flex-1 accent-[#64ffda] h-2 rounded-full transition-all duration-200"
+                min={0}
+                max={stepCount}
+                step={1}
+                value={position}
+                onChange={(e) => onChange(amountAtStep(Number(e.target.value), min, max, isTournament))}
+                aria-label="Bet amount"
+                aria-valuetext={displayString}
+                className={`${styles.slider} ${isMobileLandscape ? styles.compact : ""}`}
+                style={
+                    {
+                        "--fill": `linear-gradient(to right, #64ffda 0%, #64ffda ${percentage}%, #1e293b ${percentage}%, #1e293b 100%)`
+                    } as React.CSSProperties
                 }
-                style={{
-                    background: `linear-gradient(to right, #64ffda 0%, #64ffda ${percentage}%, #1e293b ${percentage}%, #1e293b 100%)`
-                }}
                 disabled={disabled}
             />
 
@@ -192,6 +202,7 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                 </div>
             )}
 
+            {isMobileLandscape && isAllIn && <span className={styles.allInTag}>ALL-IN</span>}
             {isMobileLandscape && (
                 <input
                     type="text"

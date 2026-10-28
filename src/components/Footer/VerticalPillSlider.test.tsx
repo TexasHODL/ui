@@ -10,7 +10,7 @@ describe("VerticalPillSlider", () => {
                 value={20}
                 min={20}
                 max={220}
-                step={20}
+                isTournament
                 label="20"
                 onChange={jest.fn()}
                 onIncrement={jest.fn()}
@@ -31,7 +31,7 @@ describe("VerticalPillSlider", () => {
                 value={100}
                 min={20}
                 max={220}
-                step={20}
+                isTournament
                 label="100"
                 onChange={jest.fn()}
                 onIncrement={onIncrement}
@@ -50,7 +50,7 @@ describe("VerticalPillSlider", () => {
                 value={100}
                 min={20}
                 max={220}
-                step={20}
+                isTournament
                 label="100"
                 onChange={jest.fn()}
                 onIncrement={jest.fn()}
