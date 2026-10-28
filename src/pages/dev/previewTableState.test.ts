@@ -211,3 +211,18 @@ describe("buildPreviewState", () => {
         expect(parsePreviewSearch(new URLSearchParams("buttons=bogus")).buttons).toBe("none");
     });
 });
+
+describe("bet=none preview", () => {
+    it("round-trips through the query string", () => {
+        const options = parsePreviewSearch(new URLSearchParams("buttons=preaction&bet=none"));
+        expect(options.noBets).toBe(true);
+        expect(previewSearchParams(options).get("bet")).toBe("none");
+        expect(parsePreviewSearch(new URLSearchParams("buttons=preaction")).noBets).toBeUndefined();
+    });
+    it("has no bets out and no hero action, so checking is free", () => {
+        const state = buildPreviewState(parsePreviewSearch(new URLSearchParams("buttons=preaction&bet=none")), "b521hero");
+        expect(state.players.every(p => p.sumOfBets === "0")).toBe(true);
+        expect(state.previousActions.some(a => a.seat === 1)).toBe(false);
+        expect(state.previousActions.every(a => a.action === PlayerActionType.CHECK)).toBe(true);
+    });
+});

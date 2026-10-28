@@ -52,6 +52,8 @@ export interface PreviewOptions {
     format: PreviewFormat;
     /** Seat 1 wins the pot: plays the win celebration (floating win chips). */
     win: boolean;
+    /** bet=none: no bets out this round, so the hero can check (free-check pre-actions). */
+    noBets?: boolean;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -67,6 +69,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * actions=all to pin an action badge on every seat,
  * format=cash|tournament|sng (default cash) picks the table format and chip amounts,
  * buttons=none|actions|preaction|muck picks the hero controls (turn=1 is an alias for actions),
+ * bet=none for a round with no bets out (seat 1 can check: Check/Fold, Check, Call Any pre-actions),
  * win=1 to make seat 1 the winner so the win celebration plays.
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
@@ -94,7 +97,8 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const formatParam = params.get("format");
     const format: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
     const win = params.get("win") === "1";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win };
+    const noBets = params.get("bet") === "none";
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(noBets ? { noBets } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -107,6 +111,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.buttons !== "none") params.set("buttons", options.buttons);
     if (options.format !== "cash") params.set("format", options.format);
     if (options.win) params.set("win", "1");
+    if (options.noBets) params.set("bet", "none");
     return params;
 };
 
@@ -208,18 +213,19 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
     for (let seat = 1; seat <= options.seats; seat++) {
         const address = previewSeatAddress(seat, heroAddress);
         // Tournament / Sit & Go amounts are raw chips (650 per seat, level-7 blinds); cash is USDC micro-units.
-        const amount = String(options.format === "cash" ? 20000 * seat : 650 * seat);
+        const amount = options.noBets ? "0" : String(options.format === "cash" ? 20000 * seat : 650 * seat);
         pot += BigInt(amount);
         const action: ActionDTO = {
             playerId: address,
             seat,
-            action: PlayerActionType.BET,
+            action: options.noBets ? PlayerActionType.CHECK : PlayerActionType.BET,
             amount,
             round,
             index: seat,
             timestamp: Date.now()
         };
-        previousActions.push(action);
+        // No bets out: seat 1 has not acted yet, so checking stays free for the hero.
+        if (!(options.noBets && seat === 1)) previousActions.push(action);
         players.push({
             address,
             seat,
@@ -233,7 +239,7 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
                     : (options.holeCount === 4 ? ["??", "??", "??", "??"] : ["??", "??"]))
                 : undefined,
             status: PlayerStatus.ACTIVE,
-            lastAction: action,
+            lastAction: options.noBets && seat === 1 ? undefined : action,
             legalActions: heroTurn && seat === 1
                 ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1))
                 : [],
