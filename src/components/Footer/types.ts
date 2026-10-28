@@ -89,6 +89,10 @@ export interface DealButtonGroupProps {
  * Props for ShowdownButtons component
  */
 export interface ShowdownButtonsProps {
+    /** Mobile landscape: stack Muck/Show in the action column, centred vertically. */
+    stacked?: boolean;
+    /** Left-hand mode mirrors the landscape column. */
+    leftHand?: boolean;
     canMuck: boolean;
     canShow: boolean;
     loading: string | null;

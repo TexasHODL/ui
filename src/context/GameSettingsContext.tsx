@@ -312,6 +312,16 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return <GameSettingsContext.Provider value={value}>{children}</GameSettingsContext.Provider>;
 };
 
+/**
+ * Dev-only (/table-preview): override some settings for a subtree, keeping the
+ * rest from the real provider. Lets the preview pin which hero controls show.
+ */
+export const GameSettingsOverride: React.FC<{ overrides: Partial<GameSettingsContextValue>; children: React.ReactNode }> = ({ overrides, children }) => {
+    const parent = useGameSettings();
+    const value = useMemo(() => ({ ...parent, ...overrides }), [parent, overrides]);
+    return <GameSettingsContext.Provider value={value}>{children}</GameSettingsContext.Provider>;
+};
+
 export const useGameSettings = (): GameSettingsContextValue => {
     const context = useContext(GameSettingsContext);
     if (!context) {

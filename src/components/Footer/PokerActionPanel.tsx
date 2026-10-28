@@ -645,6 +645,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                         callAmountLabel={preActionCallLabel}
                         isMobileLandscape={isMobileLandscape}
                         compact={isMobileBetting}
+                        landscapeSlots={isMobileLandscape}
+                        leftHand={leftHandMode}
                     />
                 )}
 
@@ -708,6 +710,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                                 loading={loadingAction}
                                 onMuck={handleMuckAction}
                                 onShow={handleShowAction}
+                                stacked={isMobileLandscape}
+                                leftHand={leftHandMode}
                             />
                         )}
 

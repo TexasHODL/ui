@@ -115,8 +115,9 @@
 
 /* Landscape buttons stay a short tap target so the pill track can use the
    column. 12px keeps RAISE TO $40.02 on one line; a longer amount can wrap. */
-.poker-action-dock .mobile-bet-landscape .mobile-actions-stack > button {
-    min-height: 38px;
+.poker-action-dock .mobile-bet-landscape .mobile-actions-stack > button,
+.poker-action-dock .mobile-bet-landscape.mobile-showdown-stack > button {
+    min-height: var(--mobile-slot-h);
     padding: 2px;
     font-size: 12px;
     line-height: 1.15;
@@ -305,3 +306,78 @@
     z-index: 5;
 }
 
+
+/* Landscape slot geometry, shared by the action stack, the pre-action slots and
+   Muck/Show so a pre-action sits exactly on the action it becomes. Bottom-up the
+   stack is FOLD, CHECK|CALL, RAISE; pre-actions only ever use the first two. */
+.mobile-bet-landscape {
+    --mobile-slot-h: 38px;
+}
+
+.poker-action-dock .mobile-bet-landscape .mobile-actions-stack > :is(.btn-fold, .btn-check, .btn-call),
+.poker-action-dock .mobile-bet-landscape.mobile-showdown-stack > button {
+    height: var(--mobile-slot-h);
+}
+
+.mobile-actions-stack > .mobile-slot {
+    display: flex;
+    gap: 2px;
+    width: 100%;
+    height: var(--mobile-slot-h);
+    flex: 0 0 var(--mobile-slot-h);
+}
+
+.poker-action-dock .mobile-slot > button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    justify-content: center;
+    gap: 3px;
+    padding: 2px;
+    font-size: 11px;
+    line-height: 1.1;
+}
+
+/* Muck / Show: same width and slot height as the actions, centred in the column. */
+/* Landscape Muck / Show: centred between the bottom of the 44px top banner and the
+   bottom of the screen. Fixed with only
+   top set keeps the column's own horizontal (static) position and width. */
+.poker-action-dock .mobile-bet-landscape.mobile-showdown-stack {
+    position: fixed;
+    top: calc(50% + var(--landscape-banner-h, 44px) / 2);
+    transform: translateY(-50%);
+    height: auto;
+    z-index: 5;
+}
+
+.mobile-showdown-stack {
+    justify-content: center;
+    gap: 6px;
+}
+
+.poker-action-dock .mobile-showdown-stack > button {
+    width: 100%;
+    height: var(--mobile-slot-h);
+    padding: 2px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Muck / Show get a thin accent border and faint glow everywhere they render:
+   theme pink on Muck, theme purple on Show, so the pair never reads as one. */
+.poker-action-dock button.showdown-btn[data-action="muck"] {
+    border: 1px solid color-mix(in srgb, var(--theme-hot, #ff4a83) 80%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--theme-hot, #ff4a83) 40%, transparent);
+}
+
+.poker-action-dock button.showdown-btn[data-action="show"] {
+    border: 1px solid color-mix(in srgb, var(--theme-accent, #7c36c8) 90%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--theme-accent, #7c36c8) 50%, transparent);
+}
+
+/* Landscape pre-actions: checkbox + label centred in the box like the action text. */
+.poker-action-dock .pre-action-slots .mobile-actions-stack > button {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}

@@ -5,6 +5,7 @@ import {
     buildPreviewState,
     parsePreviewSearch,
     previewHeroLegalActions,
+    previewHeroShowdownActions,
     previewSearchParams
 } from "./previewTableState";
 
@@ -15,7 +16,7 @@ describe("parsePreviewSearch", () => {
             dealer: 1,
             allDealers: false,
             allActions: false,
-            heroTurn: false,
+            buttons: "none",
             holeCards: true,
             holeCount: 2,
             board: 5,
@@ -98,10 +99,10 @@ describe("parsePreviewSearch", () => {
 
     it("reads turn=1 and gives seat 1 fold, check, call, and a sized raise", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=6&turn=1"));
-        expect(options.heroTurn).toBe(true);
-        expect(previewSearchParams(options).get("turn")).toBe("1");
+        expect(options.buttons).toBe("actions");
+        expect(previewSearchParams(options).get("buttons")).toBe("actions");
         expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
-        expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("seats=6"))).has("turn")).toBe(false);
+        expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("seats=6"))).has("buttons")).toBe(false);
 
         const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
         expect(state.nextToAct).toBe(1);
@@ -191,5 +192,37 @@ describe("buildPreviewState", () => {
     it("round-trips through the query string", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=2&dealer=2&holes=0&board=3"));
         expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+    });
+
+    it("reads buttons=preaction|muck: muck is seat 1's showdown turn, preaction is another seat's turn", () => {
+        const muck = parsePreviewSearch(new URLSearchParams("seats=6&buttons=muck"));
+        expect(muck.buttons).toBe("muck");
+        expect(parsePreviewSearch(previewSearchParams(muck))).toEqual(muck);
+        const muckState = buildPreviewState(muck, PREVIEW_HERO_ADDRESS);
+        expect(muckState.round).toBe(TexasHoldemRound.SHOWDOWN);
+        expect(muckState.nextToAct).toBe(1);
+        expect(muckState.players[0].legalActions).toEqual(previewHeroShowdownActions(7));
+
+        const pre = parsePreviewSearch(new URLSearchParams("seats=6&buttons=preaction"));
+        expect(pre.buttons).toBe("preaction");
+        const preState = buildPreviewState(pre, PREVIEW_HERO_ADDRESS);
+        expect(preState.nextToAct).toBe(2);
+        expect(preState.players.every(player => player.legalActions.length === 0)).toBe(true);
+        expect(parsePreviewSearch(new URLSearchParams("buttons=bogus")).buttons).toBe("none");
+    });
+});
+
+describe("bet=none preview", () => {
+    it("round-trips through the query string", () => {
+        const options = parsePreviewSearch(new URLSearchParams("buttons=preaction&bet=none"));
+        expect(options.noBets).toBe(true);
+        expect(previewSearchParams(options).get("bet")).toBe("none");
+        expect(parsePreviewSearch(new URLSearchParams("buttons=preaction")).noBets).toBeUndefined();
+    });
+    it("has no bets out and no hero action, so checking is free", () => {
+        const state = buildPreviewState(parsePreviewSearch(new URLSearchParams("buttons=preaction&bet=none")), "b521hero");
+        expect(state.players.every(p => p.sumOfBets === "0")).toBe(true);
+        expect(state.previousActions.some(a => a.seat === 1)).toBe(false);
+        expect(state.previousActions.every(a => a.action === PlayerActionType.CHECK)).toBe(true);
     });
 });
