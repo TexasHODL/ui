@@ -2,6 +2,7 @@ import { formatMicroUsd } from "../utils/moneyDisplay";
 import { ModalHeader } from "../components/common/ModalHeader";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { truncateMiddle } from "../utils/stringUtils";
 import { isEmpty } from "../utils/guards";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
@@ -550,8 +551,9 @@ export default function WithdrawalDashboard() {
             </div>
 
             {/* Initiate Withdrawal Modal */}
-            {showInitiateModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            {/* Portal to <body> so the sticky header can't paint over the dialog. */}
+            {showInitiateModal && createPortal(
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
                     <div className="hodl-modal rounded-lg p-6 max-w-md w-full border border-white/10">
                         <ModalHeader title="Initiate Withdrawal" />
 
@@ -603,7 +605,8 @@ export default function WithdrawalDashboard() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Signature Modal */}
