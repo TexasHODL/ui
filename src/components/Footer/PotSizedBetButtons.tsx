@@ -82,7 +82,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
                     return (
                         <button
                             key={label}
-                            className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[10px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
+                            className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full min-w-0 whitespace-nowrap border shadow-md text-[10px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
                             onClick={() => onAmountSelect(minAmount)}
                             disabled={disabled || cannotAffordMin}
                         >
@@ -100,7 +100,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
                 return (
                     <button
                         key={label}
-                        className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[10px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
+                        className="btn-pot px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full min-w-0 whitespace-nowrap border shadow-md text-[10px] lg:text-xs transition-all duration-200 transform hover:scale-105 disabled:hover:scale-100"
                         // Capped only for cent rounding: a pot-limit Pot whose true size
                         // fits the cap can round a fraction of a cent above it.
                         onClick={() => onAmountSelect(Math.min(amount, maxAmount))}
@@ -113,7 +113,7 @@ export const PotSizedBetButtons: React.FC<PotSizedBetButtonsProps> = ({
             })}
 
             <button
-                className="btn-all-in px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full border shadow-md text-[10px] lg:text-xs transition-all duration-200 font-medium transform active:scale-105"
+                className="btn-all-in px-1 lg:px-2 py-1 lg:py-1.5 rounded-lg w-full min-w-0 whitespace-nowrap border shadow-md text-[10px] lg:text-xs transition-all duration-200 font-medium transform active:scale-105"
                 onClick={onAllIn}
                 // At pot-limit, Pot already is the max: ALL-IN only lights up when the
                 // whole stack is less than a pot-sized bet (ui#857), never as "MAX".
