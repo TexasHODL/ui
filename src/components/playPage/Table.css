@@ -631,6 +631,11 @@
     left: max(8px, env(safe-area-inset-left, 0px));
     right: auto;
 }
+/* Hero's turn in landscape: beside the bet slider, never over its + cap. */
+.table-container[data-compact-mobile="true"][data-history-anchor="dock"]:not([data-table-only="true"]) .mobile-history-trigger {
+    left: var(--history-left, 8px);
+    right: auto;
+}
 .table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-history-panel[data-expanded="true"],
 .table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-settings-panel.action-log-open {
     top: calc(var(--mobile-chrome-end, 70px) + 8px);

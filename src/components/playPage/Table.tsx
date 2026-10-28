@@ -852,7 +852,7 @@ const Table = React.memo(() => {
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
     const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory, expandHistory } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
-    const chromeObserver = useRef<ResizeObserver | null>(null);
+    const chromeObserver = useRef<{ disconnect: () => void } | null>(null);
     const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
         chromeObserver.current?.disconnect();
         chromeObserver.current = null;
@@ -867,7 +867,21 @@ const Table = React.memo(() => {
         observer.observe(banner);
         const stage = root.querySelector(".table-stage");
         if (stage) observer.observe(stage);
-        chromeObserver.current = observer;
+        // The bet dock mounts/unmounts on the hero's turn: re-place History beside it.
+        let frame = 0;
+        const dockWatcher = new MutationObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => placeMobileHistory(root));
+        });
+        const playRow = root.querySelector(".table-play-row");
+        if (playRow) dockWatcher.observe(playRow, { childList: true, subtree: true });
+        chromeObserver.current = {
+            disconnect: () => {
+                observer.disconnect();
+                dockWatcher.disconnect();
+                cancelAnimationFrame(frame);
+            }
+        };
     }, []);
     useLayoutEffect(() => {
         const root = tableContainerRef.current?.closest(".table-container");
@@ -1028,6 +1042,8 @@ const Table = React.memo(() => {
 
     // Optimize window width detection - only check on resize
     const [isMobile, setIsMobile] = useState(window.innerWidth <= 414);
+    // Mobile opens the Blinds panel from the burger menu (the floating tab is hidden there).
+    const [blindsOpenSignal, setBlindsOpenSignal] = useState(0);
     const [isMobileLandscape, setIsMobileLandscape] = useState(getViewportMode() === "mobile-landscape");
     const envTableStyle = import.meta.env.VITE_TABLE_STYLE;
     const defaultTableStyle: "modern" | "classic" | "nouns" = envTableStyle === "classic" || envTableStyle === "nouns" ? envTableStyle : "modern";
@@ -1341,6 +1357,7 @@ const Table = React.memo(() => {
                         tableName={gameName}
                         handleOpenReplay={isReplayMode ? undefined : handleOpenReplay}
                         replayHand={replayHand}
+                        onOpenBlinds={isReplayMode ? undefined : () => setBlindsOpenSignal(n => n + 1)}
                         currentNetwork={currentNetwork}
                         gameFormat={gameFormat || null}
                         gameVariant={gameVariant}
@@ -1363,6 +1380,7 @@ const Table = React.memo(() => {
                         openSidebar={openSidebar}
                         openSettings={openSettings}
                         tableStyle={tableStyle}
+                        onTableStyleChange={setTableStyle}
                         onCycleTableStyle={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
                         handleLobbyClick={handleLobbyClick}
                         handleCopyTableLink={handleCopyTableLink}
@@ -1410,7 +1428,7 @@ const Table = React.memo(() => {
                 </div>
                 {/* Blinds structure panel (ui#794) — self-gates to SNG/tournament;
                     non-modal floating tab + panel. Hidden in replay mode. */}
-                {!isReplayMode && <BlindsPanel />}
+                {!isReplayMode && <BlindsPanel hideTab={isCompactMobile} openSignal={blindsOpenSignal} />}
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
                 {isCompactMobile && <LiveHandStrengthDisplay />}

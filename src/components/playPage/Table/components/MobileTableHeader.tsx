@@ -2,7 +2,7 @@
  * MobileTableHeader Component
  *
  * Phone replacement for TableHeader. The top row stays 44px: back, table name,
- * blinds / hand / next-to-act when they fit, theme, balance, fullscreen, menu.
+ * blinds / hand / next-to-act when they fit, theme, balance, table settings, menu.
  * A 22px text row appears only when that status does not fit beside the name.
  * History is a floating overlay owned by TableSidebar, not part of this chrome.
  * Everything else lives in the hamburger drawer. Leave table stays visible
@@ -10,7 +10,7 @@
  */
 
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { FaBars, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare, FaTimes } from "react-icons/fa";
+import { FaBars, FaLayerGroup, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare, FaTimes } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
@@ -26,14 +26,15 @@ import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handRepla
 import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { useTableTopUp } from "../../../../hooks/game/useTableTopUp";
-import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useGameStateContext } from "../../../../context/GameStateContext";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { formatBlindCountdown } from "./TableHeader";
 import styles from "./TableHeader.module.css";
+import { TableSettingsOptions } from "./TableSettingsSidebar";
 import { ThemeToggle } from "../../../ThemeToggle";
+import SngPayoutPanel from "../../SngPayoutPanel";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -79,6 +80,8 @@ export interface MobileTableHeaderProps {
     // Table style (the fixed bottom-left selector is hidden on mobile)
     tableStyle: TableStyleOption;
     onCycleTableStyle: () => void;
+    /** Sets the felt from the menu's Felt dropdown (same setter as the settings sidebar). */
+    onTableStyleChange?: (style: TableStyleOption) => void;
 
     // Handlers
     onToggleFocus: () => void;
@@ -93,13 +96,9 @@ export interface MobileTableHeaderProps {
     /** Opens the latest completed hand's replay in a new tab; absent in replay mode. */
     handleOpenReplay?: () => void;
     replayHand?: number | null;
+    /** Opens the blind-structure panel; the item shows only on SNG/tournament tables. */
+    onOpenBlinds?: () => void;
 }
-
-const TABLE_STYLE_LABELS: Record<TableStyleOption, string> = {
-    modern: "Modern",
-    classic: "Classic",
-    nouns: "Nouns"
-};
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
 const menuRowClass = "w-full min-h-[44px] flex items-center gap-3 px-4 text-sm text-left text-white transition-colors duration-150 hover:bg-white/10";
@@ -129,21 +128,22 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     openSidebar,
     openSettings,
     tableStyle,
-    onCycleTableStyle,
+    onTableStyleChange,
     onToggleFocus,
     handleLobbyClick,
     handleCopyTableLink,
     fetchAccountBalance,
     copyToClipboard,
     onCloseSideBar,
-    onToggleSettings,
     handleLeaveTableClick,
     handleShareHand,
     handleOpenReplay,
-    replayHand = null
+    replayHand = null,
+    onOpenBlinds
 }) => {
     const blindLevel = useBlindLevel();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [tableSettingsOpen, setTableSettingsOpen] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [showTopUp, setShowTopUp] = useState(false);
     const tableUrl = `${window.location.origin}/table/${tableId}`;
@@ -156,9 +156,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     // Same gating as TableHeader: no Leave for SNG (roster frozen once play
     // starts, poker-vm#2343; SNG leave/claim lives in the SNG modals, ui#465).
     const showLeaveTable = !!currentPlayerData && !isSNG;
-    // Seat orientation is a view preference, read straight from settings rather
-    // than drilled through props — the drawer is its only mobile home (#684).
-    const { seatAtBottom, toggleSeatAtBottom } = useGameSettings();
     // Sit-out lives here on phones rather than pinned over the felt (#684).
     const { nextHandChecked, toggleNextHand, nextBbQueued, toggleNextBb, canSitOut } = useSitOutIntent();
     const isTableFull = !!gameOptions?.maxPlayers && tableActivePlayers.length >= gameOptions.maxPlayers;
@@ -242,8 +239,39 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
 
     const closeMenuAnd = (action: () => void) => () => {
         setMenuOpen(false);
+        setTableSettingsOpen(false);
         action();
     };
+
+    /** Right-hand drawer shell shared by the Table menu and Table settings. */
+    const renderDrawer = (title: string, closeLabel: string, onClose: () => void, testId: string, children: React.ReactNode) => (
+        <>
+            <div className="fixed inset-0 z-[1999] bg-black/60" onClick={onClose} />
+            <div
+                data-testid={testId}
+                className={`fixed top-0 right-0 bottom-0 z-[2000] w-[290px] max-w-[85vw] max-h-[100dvh] overflow-y-auto overscroll-contain border-l-2 ${styles.headerRoot}`}
+                style={{
+                    // The last row must clear the home indicator; the top row
+                    // must clear the Dynamic Island.
+                    paddingTop: "env(safe-area-inset-top)",
+                    paddingBottom: "env(safe-area-inset-bottom)",
+                    paddingRight: "env(safe-area-inset-right)",
+                    WebkitOverflowScrolling: "touch",
+                    touchAction: "pan-y"
+                }}
+            >
+                <div className="min-h-full flex flex-col">
+                <div className="flex items-center justify-between pl-4 min-h-[44px] border-b border-white/10">
+                    <span className="text-white text-sm font-bold">{title}</span>
+                    <button onClick={onClose} className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80" aria-label={closeLabel}>
+                        <FaTimes size={16} />
+                    </button>
+                </div>
+                {children}
+                </div>
+            </div>
+        </>
+    );
 
     return (
         <div className="mobile-table-chrome flex-shrink-0">
@@ -287,15 +315,21 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         )}
                     </button>
                     <button
-                        onClick={closeMenuAnd(onToggleFocus)}
+                        onClick={() => {
+                            setMenuOpen(false);
+                            setTableSettingsOpen(true);
+                        }}
                         className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-300"
-                        title="Table-only view — hide banners"
-                        aria-label="Full screen"
+                        title="Table settings"
+                        aria-label="Open table settings"
                     >
-                        <FaExpand size={16} aria-hidden="true" />
+                        <IoSettingsOutline size={18} aria-hidden="true" />
                     </button>
                     <button
-                        onClick={() => setMenuOpen(true)}
+                        onClick={() => {
+                            setTableSettingsOpen(false);
+                            setMenuOpen(true);
+                        }}
                         className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80"
                         title="Menu"
                         aria-label="Open menu"
@@ -318,172 +352,172 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 </div>
             )}
 
-            {/* Hamburger drawer */}
-            {menuOpen && (
-                <>
-                    <div className="fixed inset-0 z-[1999] bg-black/60" onClick={() => setMenuOpen(false)} />
-                    <div
-                        className={`fixed top-0 right-0 bottom-0 z-[2000] w-[290px] max-w-[85vw] flex flex-col overflow-y-auto border-l-2 ${styles.headerRoot}`}
-                        style={{
-                            // Leave Table (the drawer's last row) must clear the home
-                            // indicator; the top row must clear the Dynamic Island.
-                            paddingTop: "env(safe-area-inset-top)",
-                            paddingBottom: "env(safe-area-inset-bottom)",
-                            paddingRight: "env(safe-area-inset-right)"
-                        }}
-                    >
-                        <div className="flex items-center justify-between pl-4 min-h-[44px] border-b border-white/10">
-                            <span className="text-white text-sm font-bold">Table menu</span>
-                            <button
-                                onClick={() => setMenuOpen(false)}
-                                className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80"
-                                aria-label="Close menu"
-                            >
-                                <FaTimes size={16} />
-                            </button>
-                        </div>
-
-                        {/* Game info (read-only) */}
-                        {gameOptions && (
-                            <div className="px-4 py-2 border-b border-white/10">
-                                <span className={`text-xs font-semibold ${styles.brandText}`}>
-                                    {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay)} • ` : ""}
-                                    {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
-                                    <span className={`ml-1 ${styles.secondaryText}`}>
-                                        ({tableActivePlayers.length}/{gameOptions.maxPlayers} Players)
+            {/* Table settings drawer — table info, network, address, sharing, action log */}
+            {tableSettingsOpen &&
+                renderDrawer(
+                    "Table settings",
+                    "Close table settings",
+                    () => setTableSettingsOpen(false),
+                    "table-settings-drawer",
+                    <>
+                            {/* Game info (read-only) */}
+                            {gameOptions && (
+                                <div className="px-4 py-2 border-b border-white/10">
+                                    <span className={`text-xs font-semibold ${styles.brandText}`}>
+                                        {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay)} • ` : ""}
+                                        {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
+                                        <span className={`ml-1 ${styles.secondaryText}`}>
+                                            ({tableActivePlayers.length}/{gameOptions.maxPlayers} Players)
+                                        </span>
                                     </span>
-                                </span>
+                                </div>
+                            )}
+
+                            {/* Network */}
+                            <div className="px-4 py-2 flex items-center gap-3 border-b border-white/10">
+                                <span className="text-xs text-gray-400">Network</span>
+                                <NetworkSelector />
                             </div>
-                        )}
 
-                        {/* Network */}
-                        <div className="px-4 py-2 flex items-center gap-3 border-b border-white/10">
-                            <span className="text-xs text-gray-400">Network</span>
-                            <NetworkSelector />
-                        </div>
-
-                        {/* Wallet address (tap to copy) + avatar */}
-                        <button className={menuRowClass} onClick={() => copyToClipboard(publicKey || "")} title="Copy full address">
-                            <FaCopy size={14} className={styles.brandText} />
-                            <span className={`font-mono text-xs truncate ${styles.brandText}`}>{formattedAddress}</span>
-                        </button>
-
-                        {/* Sharing */}
-                        <button className={menuRowClass} onClick={closeMenuAnd(handleCopyTableLink)}>
-                            <FaCopy size={14} />
-                            <span>Copy Table Link</span>
-                        </button>
-                        <button className={menuRowClass} onClick={closeMenuAnd(() => setShowQR(true))}>
-                            <FaQrcode size={14} />
-                            <span>Share via QR Code</span>
-                        </button>
-                        {handleOpenReplay && (
-                            <button className={menuRowClass} onClick={closeMenuAnd(handleOpenReplay)} disabled={replayHand === null} data-testid="open-replay">
-                                <FaRedo size={14} />
-                                <span>{replayHand === null ? "Replay (no completed hand yet)" : `Replay hand #${replayHand}`}</span>
+                            {/* Wallet address (tap to copy) + avatar */}
+                            <button className={menuRowClass} onClick={() => copyToClipboard(publicKey || "")} title="Copy full address">
+                                <FaCopy size={14} className={styles.brandText} />
+                                <span className={`font-mono text-xs truncate ${styles.brandText}`}>{formattedAddress}</span>
                             </button>
-                        )}
-                        <button className={menuRowClass} onClick={closeMenuAnd(handleShareHand)}>
-                            <FaShare size={14} />
-                            <span>Share this hand</span>
-                        </button>
-                        <a
-                            href={buildShareOnXUrl(buildHandShareUrl(window.location.origin, tableId, handNumber))}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={menuRowClass}
-                        >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                            </svg>
-                            <span>Share on X</span>
-                        </a>
 
-                        {/* Panels */}
-                        <button className={menuRowClass} onClick={closeMenuAnd(onCloseSideBar)}>
-                            {openSidebar ? <LuPanelLeftOpen size={16} /> : <LuPanelLeftClose size={16} />}
-                            <span>Action log</span>
-                        </button>
-                        <button className={menuRowClass} onClick={closeMenuAnd(onToggleSettings)}>
-                            <IoSettingsOutline size={16} />
-                            <span>Settings</span>
-                        </button>
-
-                        {/* Top-up — disabled while in the current hand, same rule as the
-                            desktop button (#597): enablement comes from the TOP_UP legal action. */}
-                        {showTopUpEntry && (
-                            <button
-                                className={`${menuRowClass} ${canTopUp ? "" : "opacity-50 cursor-not-allowed"}`}
-                                onClick={canTopUp ? closeMenuAnd(() => setShowTopUp(true)) : undefined}
-                                title={canTopUp ? "Add chips for the next hand" : "You can top up between hands — not while you're in the current hand."}
+                            {/* Sharing */}
+                            <button className={menuRowClass} onClick={closeMenuAnd(handleCopyTableLink)}>
+                                <FaCopy size={14} />
+                                <span>Copy Table Link</span>
+                            </button>
+                            <button className={menuRowClass} onClick={closeMenuAnd(() => setShowQR(true))}>
+                                <FaQrcode size={14} />
+                                <span>Share via QR Code</span>
+                            </button>
+                            <button className={menuRowClass} onClick={closeMenuAnd(handleShareHand)}>
+                                <FaShare size={14} />
+                                <span>Share this hand</span>
+                            </button>
+                            <a
+                                href={buildShareOnXUrl(buildHandShareUrl(window.location.origin, tableId, handNumber))}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={menuRowClass}
                             >
-                                <span>💰</span>
-                                <span>Top-Up Chips</span>
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                </svg>
+                                <span>Share on X</span>
+                            </a>
+
+                            <button className={menuRowClass} onClick={closeMenuAnd(onCloseSideBar)}>
+                                {openSidebar ? <LuPanelLeftOpen size={16} /> : <LuPanelLeftClose size={16} />}
+                                <span>Action log</span>
                             </button>
-                        )}
+                    </>
+                )}
 
-                        {/* Table style — replaces the fixed bottom-left selector on mobile */}
-                        <button className={menuRowClass} onClick={onCycleTableStyle}>
-                            <span className="text-xs text-gray-400">Style</span>
-                            <span>{TABLE_STYLE_LABELS[tableStyle]}</span>
-                        </button>
-
-                        {/* Seat orientation (#392). A persisted VIEW preference — it
-                            rotates the table so the local seat renders at the bottom,
-                            it does not seat anyone. So it belongs here whether or not
-                            the player is seated, and it is useful mainly once they
-                            are. It used to be a full-width button pinned below the
-                            felt while spectating (#684). */}
-                        <button className={menuRowClass} onClick={toggleSeatAtBottom} role="switch" aria-checked={seatAtBottom}>
-                            <span className="text-xs text-gray-400">Seat</span>
-                            <span className={seatAtBottom ? "text-amber-300" : undefined}>{seatAtBottom ? "✓ " : ""}Seat me at 6 o&apos;clock</span>
-                        </button>
-
-                        {/* Sit-out intents (#684). Queued conditions, not immediate
-                            actions: "next hand" fires at the next hand boundary,
-                            "next big blind" holds you in until the BB comes round
-                            again. Both may be ticked (#763). Shown whenever the
-                            engine allows sitting out. */}
-                        {canSitOut && (
-                            <>
-                                <button className={menuRowClass} onClick={toggleNextHand} role="switch" aria-checked={nextHandChecked}>
-                                    <span className="text-xs text-gray-400">Sit out</span>
-                                    <span className={nextHandChecked ? "text-amber-300" : undefined}>{nextHandChecked ? "☑ " : "☐ "}Next hand</span>
+            {/* Hamburger drawer */}
+            {menuOpen &&
+                renderDrawer(
+                    "Table menu",
+                    "Close menu",
+                    () => setMenuOpen(false),
+                    "table-menu-drawer",
+                    <>
+                            {/* SNG payout structure first (self-gates to Sit & Go; mobile has no footer for it). */}
+                            <div className="mobile-menu-payouts empty:hidden px-4 pt-2 pb-1 [&>div]:w-full">
+                                <SngPayoutPanel />
+                            </div>
+                            {onOpenBlinds && blindLevel.isActive && (
+                                <button className={menuRowClass} onClick={closeMenuAnd(onOpenBlinds)} data-testid="open-blinds">
+                                    <FaLayerGroup size={14} />
+                                    <span>Blinds</span>
                                 </button>
-                                <button className={menuRowClass} onClick={toggleNextBb} role="switch" aria-checked={nextBbQueued}>
-                                    <span className="text-xs text-gray-400">Sit out</span>
-                                    <span className={nextBbQueued ? "text-amber-300" : undefined}>{nextBbQueued ? "☑ " : "☐ "}Next big blind</span>
+                            )}
+                            {handleOpenReplay && (
+                                <button className={menuRowClass} onClick={closeMenuAnd(handleOpenReplay)} disabled={replayHand === null} data-testid="open-replay">
+                                    <FaRedo size={14} />
+                                    <span>{replayHand === null ? "Replay (no completed hand yet)" : `Replay hand #${replayHand}`}</span>
                                 </button>
-                            </>
-                        )}
+                            )}
+    
+    
+                            {/* Table-only view — moved here from the header row */}
+                            <button className={menuRowClass} onClick={closeMenuAnd(onToggleFocus)} title="Table-only view — hide banners">
+                                <FaExpand size={14} aria-hidden="true" />
+                                <span>Full screen</span>
+                            </button>
+                            {/* Top-up — disabled while in the current hand, same rule as the
+                                desktop button (#597): enablement comes from the TOP_UP legal action. */}
+                            {showTopUpEntry && (
+                                <button
+                                    className={`${menuRowClass} ${canTopUp ? "" : "opacity-50 cursor-not-allowed"}`}
+                                    onClick={canTopUp ? closeMenuAnd(() => setShowTopUp(true)) : undefined}
+                                    title={canTopUp ? "Add chips for the next hand" : "You can top up between hands — not while you're in the current hand."}
+                                >
+                                    <span>💰</span>
+                                    <span>Top-Up Chips</span>
+                                </button>
+                            )}
+
+                            {/* Sit-out intents (#684). Queued conditions, not immediate
+                                actions: "next hand" fires at the next hand boundary,
+                                "next big blind" holds you in until the BB comes round
+                                again. Both may be ticked (#763). Shown whenever the
+                                engine allows sitting out. */}
+                            {canSitOut && (
+                                <>
+                                    <button className={menuRowClass} onClick={toggleNextHand} role="switch" aria-checked={nextHandChecked}>
+                                        <span className="text-xs text-gray-400">Sit out</span>
+                                        <span className={nextHandChecked ? "text-amber-300" : undefined}>{nextHandChecked ? "☑ " : "☐ "}Next hand</span>
+                                    </button>
+                                    <button className={menuRowClass} onClick={toggleNextBb} role="switch" aria-checked={nextBbQueued}>
+                                        <span className="text-xs text-gray-400">Sit out</span>
+                                        <span className={nextBbQueued ? "text-amber-300" : undefined}>{nextBbQueued ? "☑ " : "☐ "}Next big blind</span>
+                                    </button>
+                                </>
+                            )}
+
+                            {/* In-game settings, inline (formerly a separate Settings panel).
+                            Theme stays in the header row. */}
+                        <div className="mobile-menu-settings px-4 py-2 border-t border-white/10" role="group" aria-label="Settings">
+                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
+                            <TableSettingsOptions
+                                showTheme={false}
+                                tableStyle={tableStyle}
+                                onTableStyleChange={onTableStyleChange}
+                                appearanceLabel="Felt"
+                                showSeatToggle
+                            />
+                        </div>
 
                         {/* Spectating hint. Non-interactive: the only way to sit is
-                            tapping an open seat, and this is what tells a first-time
-                            player that (#684). */}
-                        {!isCurrentUserSeated && (
-                            <div className={`${menuRowClass} cursor-default hover:bg-transparent`}>
-                                <span className="animate-pulse w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-                                <span className="text-blue-300 text-xs">
-                                    {registrationClosed ? "You’re watching" : isTableFull ? "Spectating — the table is full" : "Spectating — tap an open seat to join"}
-                                </span>
-                            </div>
-                        )}
+                                tapping an open seat, and this is what tells a first-time
+                                player that (#684). */}
+                            {!isCurrentUserSeated && (
+                                <div className={`${menuRowClass} cursor-default hover:bg-transparent`}>
+                                    <span className="animate-pulse w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+                                    <span className="text-blue-300 text-xs">
+                                        {registrationClosed ? "You’re watching" : isTableFull ? "Spectating — the table is full" : "Spectating — tap an open seat to join"}
+                                    </span>
+                                </div>
+                            )}
 
-                        <div className="flex-1" />
+                            <div className="flex-1" />
 
-                        {/* Destructive action, isolated at the bottom of the menu */}
-                        {showLeaveTable && (
-                            <button
-                                className={`${menuRowClass} border-t border-white/10 text-red-400 hover:bg-red-500/10 ${styles.leaveTableButton}`}
-                                onClick={closeMenuAnd(handleLeaveTableClick)}
-                            >
-                                <RxExit size={16} />
-                                <span className="font-semibold">Leave Table</span>
-                            </button>
-                        )}
-                    </div>
-                </>
-            )}
+                            {/* Destructive action, isolated at the bottom of the menu */}
+                            {showLeaveTable && (
+                                <button
+                                    className={`${menuRowClass} border-t border-white/10 text-red-400 hover:bg-red-500/10 ${styles.leaveTableButton}`}
+                                    onClick={closeMenuAnd(handleLeaveTableClick)}
+                                >
+                                    <RxExit size={16} />
+                                    <span className="font-semibold">Leave Table</span>
+                                </button>
+                            )}
+                    </>
+                )}
 
             {/* QR Code Modal */}
             <Modal

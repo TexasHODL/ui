@@ -44,6 +44,7 @@ jest.mock("../../../common/Modal", () => ({ Modal: ({ children }: { children?: R
 jest.mock("../../../NetworkSelector", () => ({ NetworkSelector: () => <div /> }));
 jest.mock("../../../profile", () => ({ ProfileAvatarButton: () => <div /> }));
 jest.mock("../../../modals", () => ({ TopUpModal: () => <div /> }));
+jest.mock("../../SngPayoutPanel", () => ({ __esModule: true, default: () => <div data-testid="sng-payout-structure" /> }));
 
 const sitOutLegal: LegalActionDTO[] = [{ action: NonPlayerActionType.SIT_OUT, min: "0", max: "0", index: 1 } as LegalActionDTO];
 
@@ -140,14 +141,37 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         expect(screen.queryByRole("button", { name: "Leave table" })).not.toBeInTheDocument();
     });
 
-    it("offers table-only fullscreen directly in the mobile header without submitting a game action", () => {
+    it("offers table-only fullscreen from the Table menu without submitting a game action", () => {
         renderHeader();
-        const fullscreen = screen.getByRole("button", { name: "Full screen" });
-        expect(fullscreen).toHaveClass("w-11", "h-11");
-        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
-        fireEvent.click(fullscreen);
+        expect(screen.queryByRole("button", { name: "Full screen" })).not.toBeInTheDocument();
+        openMenu();
+        fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
         expect(mockToggleFocus).toHaveBeenCalledTimes(1);
         expect(mockSubmit).not.toHaveBeenCalled();
+        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
+    });
+
+    it("splits table info, network, sharing and action log into Table settings", () => {
+        const onHistory = jest.fn();
+        renderHeader({ onHistory });
+        fireEvent.click(screen.getByLabelText("Open table settings"));
+        const settings = screen.getByTestId("table-settings-drawer");
+        for (const label of ["Network", "b521...abc", "Copy Table Link", "Share via QR Code", "Share this hand", "Share on X", "Action log"]) {
+            expect(settings).toHaveTextContent(label);
+        }
+        expect(screen.queryByText("Table menu")).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText("Action log"));
+        expect(onHistory).toHaveBeenCalledTimes(1);
+        expect(screen.queryByTestId("table-settings-drawer")).not.toBeInTheDocument();
+
+        openMenu();
+        const menu = screen.getByTestId("table-menu-drawer");
+        expect(menu).toHaveTextContent("Settings");
+        expect(menu).toHaveTextContent("Full screen");
+        expect(menu).toHaveTextContent("Seat me at 6");
+        for (const label of ["Network", "Copy Table Link", "Share via QR Code", "Share on X", "Action log"]) {
+            expect(menu).not.toHaveTextContent(label);
+        }
     });
 
     it("offers the 6 o'clock view preference, seated or not", () => {

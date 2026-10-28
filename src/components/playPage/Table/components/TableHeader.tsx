@@ -163,15 +163,15 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             <span>Replay</span>
                         </button>
                     )}
-                    <button className={styles.toolButton} aria-label="Full screen" title="Table-only view — hide banners" onClick={onToggleFocus}>
-                        <FaExpand />
-                    </button>
                     <details className={styles.moreMenu}>
                         <summary aria-label="Table options">
                             <FaEllipsisH />
                         </summary>
                         <div className={styles.popover}>
                             <p>TABLE OPTIONS</p>
+                            <button title="Table-only view — hide banners" onClick={onToggleFocus}>
+                                <FaExpand /> Full screen
+                            </button>
                             <button onClick={() => setShowQR(true)}>
                                 <FaQrcode /> Invite by QR code
                             </button>
