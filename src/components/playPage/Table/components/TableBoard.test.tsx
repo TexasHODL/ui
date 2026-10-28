@@ -8,6 +8,7 @@ jest.mock("../../../../hooks/animations/useCardAnimations", () => ({ useCardAnim
 jest.mock("../../../../utils/cardImages", () => ({ getCardImageUrl: (card: string) => `/cards/${card}.svg`, getCardBackUrl: () => "/back.svg" }));
 jest.mock("./TotalPotDisplay", () => ({ TotalPotDisplay: () => <div>Total pot</div> }));
 jest.mock("./MainPotDisplay", () => ({ MainPotDisplay: () => <div>Main pot</div> }));
+jest.mock("../../../../context/GameSettingsContext", () => ({ useGameSettings: () => ({ potAsChips: false, showMainPot: true }) }));
 
 const props = {
     clubLogo: "/logo.png",

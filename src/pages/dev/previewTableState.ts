@@ -254,6 +254,12 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         });
     }
 
+    // Post-flop the main pot holds earlier streets and the total adds this round's bets,
+    // so Main Pot and Total Pot differ (Settings: Show Main Pot). Preflop it is all one pot.
+    const preflop = round === TexasHoldemRound.PREFLOP;
+    const mainPot = preflop ? pot : BigInt(options.format === "cash" ? 100000 : 3000) * BigInt(options.seats);
+    const totalPot = preflop ? pot : mainPot + pot;
+
     return {
         gameOptions: {
             minBuyIn: "100000000",
@@ -272,15 +278,15 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         players,
         communityCards: COMMUNITY.slice(0, options.board),
         deck: "",
-        pots: [pot.toString()],
-        totalPot: pot.toString(),
+        pots: [mainPot.toString()],
+        totalPot: totalPot.toString(),
         nextToAct: heroTurn ? 1 : Math.min(2, options.seats),
         previousActions,
         actionCount: options.seats,
         handNumber: 1,
         round,
         winners: options.win
-            ? [{ address: previewSeatAddress(1, heroAddress), seat: 1, amount: pot.toString(), cards: undefined, name: undefined, description: undefined }]
+            ? [{ address: previewSeatAddress(1, heroAddress), seat: 1, amount: totalPot.toString(), cards: undefined, name: undefined, description: undefined }]
             : [],
         results: [],
         legalActions: [],

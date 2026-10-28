@@ -170,7 +170,9 @@ describe("buildPreviewState", () => {
             state.previousActions.map(action => action.amount)
         );
         expect(state.players.filter(player => player.isDealer).map(player => player.seat)).toEqual([7]);
-        expect(state.totalPot).toBe("900000");
+        // 900000 in this round's bets + 100000 a seat already in the main pot from earlier streets.
+        expect(state.totalPot).toBe("1800000");
+        expect(state.pots).toEqual(["900000"]);
     });
 
     it("puts the round and the board in step, and can hide hole cards", () => {

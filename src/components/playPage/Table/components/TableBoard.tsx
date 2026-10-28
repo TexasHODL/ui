@@ -58,7 +58,9 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     // into place when its staggered flag turns on, one after another. Late mount /
     // replay reveals already-dealt slots immediately.
     const { revealedSlots } = useCardAnimations();
-    const { potAsChips } = useGameSettings();
+    const { potAsChips, showMainPot: mainPotSetting } = useGameSettings();
+    // Main Pot shows only if the player turned it on (Settings, default off).
+    const showMainPot = mainPotSetting && potDisplayValues.showMainPot;
     // Faces come from the deck chosen in Settings > Cards.
     const getCardImageUrl = useCardFaceUrl();
 
@@ -127,18 +129,18 @@ export const TableBoard: React.FC<TableBoardProps> = ({
             <div className="community-board relative z-[1] flex flex-col items-center justify-center -mt-8" data-portrait-four={isPortrait && tableSize === 4} data-portrait-seats={isPortrait ? tableSize : undefined}>
                 {/* Hide pot display when sit-and-go is waiting for players */}
                 {!isSitAndGoWaitingForPlayers && (
-                    <div className="community-pots flex flex-col items-center">
+                    <div className="community-pots flex flex-col items-center lg:flex-row lg:items-end lg:gap-6">
                         {potDisplayValues.showTotalPot && (
                             <TotalPotDisplay
                                 amount={potDisplayValues.totalPot}
                                 rawAmount={potDisplayValues.totalPotRaw}
                                 isTournamentStyle={potDisplayValues.isTournamentStyle}
-                                hasMainPot={potDisplayValues.showMainPot}
+                                hasMainPot={showMainPot}
                                 asChips={potAsChips}
                             />
                         )}
                         {/* Main Pot only post-flop, and only when it differs from Total Pot (#639) */}
-                        {potDisplayValues.showMainPot && (
+                        {showMainPot && (
                             <MainPotDisplay
                                 amount={potDisplayValues.mainPot}
                                 rawAmount={potDisplayValues.mainPotRaw}

@@ -29,6 +29,7 @@ const PRE_SELECT_CHECK_DEFAULT = true;
 const LS_KEY_LEFT_HAND = "setting_lefthand";
 const LS_KEY_WIN_CELEBRATION = "setting_wincelebration";
 const LS_KEY_POT_AS_CHIPS = "setting_potaschips";
+const LS_KEY_SHOW_MAIN_POT = "setting_showmainpot";
 
 function readBoolSetting(key: string, fallback: boolean): boolean {
     const stored = localStorage.getItem(key);
@@ -68,6 +69,8 @@ export interface GameSettings {
     // caption, matching the player bets on the table (ui#772). When OFF, plain
     // "Total Pot: $x" text. A missing saved value uses this default; stored false stays off.
     potAsChips: boolean;
+    // Show the separate Main Pot beside the total. OFF by default: two pot figures confused players.
+    showMainPot: boolean;
 }
 
 export interface GameSettingsContextValue extends GameSettings {
@@ -85,6 +88,7 @@ export interface GameSettingsContextValue extends GameSettings {
     toggleLeftHandMode: () => void;
     toggleWinCelebration: () => void;
     togglePotAsChips: () => void;
+    toggleShowMainPot: () => void;
 }
 
 const GameSettingsContext = createContext<GameSettingsContextValue | null>(null);
@@ -128,6 +132,9 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
     const [potAsChips, setPotAsChips] = useState<boolean>(() =>
         readBoolSetting(LS_KEY_POT_AS_CHIPS, true)
+    );
+    const [showMainPot, setShowMainPot] = useState<boolean>(() =>
+        readBoolSetting(LS_KEY_SHOW_MAIN_POT, false)
     );
 
     const [winCelebration, setWinCelebration] = useState<boolean>(() =>
@@ -246,6 +253,14 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
         });
     }, []);
 
+    const toggleShowMainPot = useCallback(() => {
+        setShowMainPot(prev => {
+            const next = !prev;
+            localStorage.setItem(LS_KEY_SHOW_MAIN_POT, String(next));
+            return next;
+        });
+    }, []);
+
     const value = useMemo<GameSettingsContextValue>(
         () => ({
             autoDeal,
@@ -262,6 +277,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             leftHandMode,
             winCelebration,
             potAsChips,
+            showMainPot,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
@@ -275,7 +291,8 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             togglePreSelectCheck,
             toggleLeftHandMode,
             toggleWinCelebration,
-            togglePotAsChips
+            togglePotAsChips,
+            toggleShowMainPot
         }),
         [
             autoDeal,
@@ -292,6 +309,7 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             leftHandMode,
             winCelebration,
             potAsChips,
+            showMainPot,
             toggleAutoDeal,
             toggleAutoPostBlinds,
             toggleAutoNewHand,
@@ -305,7 +323,8 @@ export const GameSettingsProvider: React.FC<{ children: React.ReactNode }> = ({ 
             togglePreSelectCheck,
             toggleLeftHandMode,
             toggleWinCelebration,
-            togglePotAsChips
+            togglePotAsChips,
+            toggleShowMainPot
         ]
     );
 
