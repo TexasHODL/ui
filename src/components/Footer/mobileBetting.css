@@ -116,7 +116,7 @@
 /* Landscape buttons stay a short tap target so the pill track can use the
    column. 12px keeps RAISE TO $40.02 on one line; a longer amount can wrap. */
 .poker-action-dock .mobile-bet-landscape .mobile-actions-stack > button {
-    min-height: 38px;
+    min-height: var(--mobile-slot-h);
     padding: 2px;
     font-size: 12px;
     line-height: 1.15;
@@ -305,3 +305,53 @@
     z-index: 5;
 }
 
+
+/* Landscape slot geometry, shared by the action stack, the pre-action slots and
+   Muck/Show so a pre-action sits exactly on the action it becomes. Bottom-up the
+   stack is FOLD, CHECK|CALL, RAISE; pre-actions only ever use the first two. */
+.mobile-bet-landscape {
+    --mobile-slot-h: 38px;
+}
+
+.poker-action-dock .mobile-bet-landscape .mobile-actions-stack > :is(.btn-fold, .btn-check, .btn-call) {
+    height: var(--mobile-slot-h);
+}
+
+.mobile-actions-stack > .mobile-slot {
+    display: flex;
+    gap: 2px;
+    width: 100%;
+    height: var(--mobile-slot-h);
+    flex: 0 0 var(--mobile-slot-h);
+}
+
+.poker-action-dock .mobile-slot > button {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    justify-content: center;
+    gap: 3px;
+    padding: 2px;
+    font-size: 11px;
+    line-height: 1.1;
+}
+
+/* Muck / Show: same width and slot height as the actions, centred in the column. */
+.mobile-showdown-stack {
+    justify-content: center;
+    gap: 6px;
+}
+
+.poker-action-dock .mobile-showdown-stack > button {
+    width: 100%;
+    height: var(--mobile-slot-h);
+    padding: 2px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Muck / Show get a thin accent border and faint glow everywhere they render. */
+.poker-action-dock button.showdown-btn {
+    border: 1px solid color-mix(in srgb, var(--theme-hot, #ff4a83) 75%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--theme-accent, #7c36c8) 45%, transparent);
+}
