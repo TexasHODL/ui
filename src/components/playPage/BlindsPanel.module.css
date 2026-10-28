@@ -4,7 +4,10 @@
 
 .root {
     position: fixed;
-    top: 104px; /* clears the desktop header (≈65px) + sub-header (≈35px) */
+    /* Sit below the whole banner (header row + blinds/level bar). Table.tsx measures
+       the banner's bottom edge into --mobile-chrome-end on .table-container for every
+       viewport mode; its height varies (wrapping on narrow desktop windows). */
+    top: calc(var(--mobile-chrome-end, 104px) + 8px);
     left: 8px;
     z-index: 40; /* above the felt, below modals/overlays (which sit ≥100) */
     display: flex;
