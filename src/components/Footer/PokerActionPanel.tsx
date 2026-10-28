@@ -599,7 +599,6 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         minAmount: hasBetAction ? minBet : minRaise,
         maxAmount: hasBetAction ? maxBet : maxRaise,
         formattedMaxAmount: formattedMaxBetAmount,
-        step: getStep(),
         displayOffset: hasRaiseAction
             ? getRaiseToAmount(raiseAmount, gameState?.previousActions || [], gameState?.round || TexasHoldemRound.ANTE, userAddress || "", isTournament) - raiseAmount
             : 0,

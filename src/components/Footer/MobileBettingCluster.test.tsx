@@ -40,7 +40,6 @@ const sizing: RaiseBetControlsProps = {
     minAmount: 20,
     maxAmount: 1330,
     formattedMaxAmount: "1,330",
-    step: 20,
     displayOffset: 0,
     totalPotMicro: 400n,
     callAmountMicro: 0n,

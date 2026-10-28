@@ -1,11 +1,13 @@
 import React, { useRef } from "react";
+import { amountAtStep, sliderStepCount } from "../../utils/raiseSlider";
 import { betFromTravel, SLIDER_TRAVEL_GRADIENT, sliderTravelColor } from "./sliderTravel";
 
 export interface VerticalPillSliderProps {
     value: number;
     min: number;
     max: number;
-    step: number;
+    /** Tournaments drag in whole chips; cash in 1¢ (ui#890). */
+    isTournament: boolean;
     label: string;
     disabled?: boolean;
     invalid?: boolean;
@@ -22,7 +24,7 @@ export const VerticalPillSlider: React.FC<VerticalPillSliderProps> = ({
     value,
     min,
     max,
-    step,
+    isTournament,
     label,
     disabled,
     invalid,
@@ -39,7 +41,10 @@ export const VerticalPillSlider: React.FC<VerticalPillSliderProps> = ({
         const el = travelRef.current;
         if (!el || disabled) return;
         const rect = el.getBoundingClientRect();
-        const next = betFromTravel(clientY, rect.top, rect.height, min, max, step);
+        // Drag on the 1¢ / 1-chip grid from the legal min; the top is exactly the max (ui#890).
+        const count = sliderStepCount(min, max, isTournament);
+        const ratio = betFromTravel(clientY, rect.top, rect.height, 0, 1, 0);
+        const next = ratio === null ? null : amountAtStep(Math.round(ratio * count), min, max, isTournament);
         if (next !== null) onChange(next);
     };
 

@@ -1,3 +1,4 @@
+import { isNullish } from "../../utils/guards";
 import React from "react";
 import { LoadingSpinner } from "../common";
 import { PlayerStatus } from "@block52/poker-vm-sdk";
@@ -47,7 +48,8 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
     const raiseButton = (canRaise || canBet) ? (
         <button
             onClick={onBetOrRaise}
-            disabled={loading !== null || (canRaise ? isRaiseAmountInvalid : false)}
+            // Out-of-range amounts can't be sent, for a BET as well as a RAISE (ui#890).
+            disabled={!isNullish(loading) || isRaiseAmountInvalid}
             className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
         >
             {loading === "raise" || loading === "bet" ? (
@@ -57,7 +59,8 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                 </>
             ) : (
                 <>
-                    {canRaise ? "RAISE TO" : "BET"}{" "}
+                    {/* At the whole stack the button confirms an all-in (ui#890). */}
+                    {isAllIn ? "ALL-IN" : canRaise ? "RAISE TO" : "BET"}{" "}
                     <span className={styles.primaryAmount}>{formatDisplayAmount(raiseToAmount, isTournament)}</span>
                 </>
             )}
@@ -69,7 +72,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
             {(canFold || loading === "fold") && (
                 <FoldButton
                     loading={loading === "fold"}
-                    disabled={loading !== null}
+                    disabled={!isNullish(loading)}
                     isMobileLandscape={isMobileLandscape}
                     className={presentation ? sizeClass : undefined}
                     onClick={onFold}
@@ -87,7 +90,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     className={`btn-check cursor-pointer rounded-lg w-full shadow-md backdrop-blur-sm
                     transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
                     onClick={onCheck}
-                    disabled={loading !== null}
+                    disabled={!isNullish(loading)}
                 >
                     {loading === "check" ? (
                         <>
@@ -105,7 +108,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     className={`btn-call cursor-pointer rounded-lg w-full border shadow-md backdrop-blur-sm
                     transition-all duration-200 font-medium transform active:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
                     onClick={onCall}
-                    disabled={loading !== null}
+                    disabled={!isNullish(loading)}
                 >
                     {loading === "call" ? (
                         <>
@@ -129,7 +132,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
             {canAllIn && (
                 <button
                     onClick={onAllIn}
-                    disabled={loading !== null}
+                    disabled={!isNullish(loading)}
                     className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
                 >
                     {loading === "raise" ? (
