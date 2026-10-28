@@ -646,8 +646,16 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                         isMobileLandscape={isMobileLandscape}
                         compact={isMobileBetting}
                         landscapeSlots={isMobileLandscape}
+                        desktopSlots={!isMobileBetting}
                         leftHand={leftHandMode}
                     />
+                )}
+                {/* Desktop: reserve the slider/presets block under the pre-action row so the
+                    row sits exactly where the action buttons will (the dock grows upward). */}
+                {showPreActions && !isMobileBetting && (
+                    <div className="invisible pointer-events-none space-y-2 lg:space-y-3" aria-hidden="true" data-testid="pre-action-sizing-spacer">
+                        <RaiseBetControls {...sizingProps} disabled />
+                    </div>
                 )}
 
                 {/* Deal Button Group */}
