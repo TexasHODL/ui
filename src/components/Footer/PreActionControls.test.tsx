@@ -61,4 +61,14 @@ describe("PreActionControls", () => {
         expect(screen.getByLabelText("Pre-select Call Any for your turn")).toHaveAttribute("aria-checked", "true");
         expect(screen.getByLabelText("Pre-select Check/Fold for your turn")).toHaveAttribute("aria-checked", "false");
     });
+
+    it("desktopSlots: four equal slots left to right FOLD, CHECK, CALL, RAISE (RAISE empty)", () => {
+        setup(["fold", "call-exact", "call-any"], { desktopSlots: true });
+        const bar = screen.getByTestId("pre-action-bar");
+        const kids = Array.from(bar.children);
+        expect(kids).toHaveLength(4);
+        expect(kids.map(k => k.getAttribute("data-action") ?? k.getAttribute("data-slot"))).toEqual(["fold", "call-any", "call-exact", "raise"]);
+        expect(kids[3]).toHaveAttribute("aria-hidden", "true");
+        kids.forEach(k => expect(k).toHaveClass("w-full"));
+    });
 });

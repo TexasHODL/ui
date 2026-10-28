@@ -8,6 +8,7 @@ import { formatDisplayAmount } from "../../utils/numberUtils";
 import type { MainActionButtonsProps } from "./types";
 import styles from "./MainActionButtons.module.css";
 import { hasFoldedOrMucked } from "../../utils/playerStatus";
+import { DESKTOP_ACTION_SIZE } from "./desktopActionSlot";
 
 export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
     canFold,
@@ -44,7 +45,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
         ? "mobile-action-tap"
         : isMobileLandscape
             ? "px-2 py-0.5 text-[12px]"
-            : "px-2 lg:px-4 py-1.5 lg:py-2 text-xs lg:text-sm";
+            : DESKTOP_ACTION_SIZE;
     const raiseButton = (canRaise || canBet) ? (
         <button
             onClick={onBetOrRaise}
@@ -74,7 +75,7 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                     loading={loading === "fold"}
                     disabled={!isNullish(loading)}
                     isMobileLandscape={isMobileLandscape}
-                    className={presentation ? sizeClass : undefined}
+                    className={presentation || !isMobileLandscape ? sizeClass : undefined}
                     onClick={onFold}
                 />
             )}
