@@ -104,8 +104,8 @@ export const PreActionControls: React.FC<PreActionControlsProps> = ({
     if (desktopSlots) {
         // Same row container and button size classes as MainActionButtons on desktop:
         // one equal-width slot per action, left to right FOLD, CHECK, CALL, RAISE.
-        // RAISE is always an empty spacer so a late click can never land on Raise.
-        const slots = preActionSlots(buttons);
+        // Three columns like the live action row (FOLD, CHECK, CALL slots).
+        const slots = preActionSlots(buttons).slice(0, 3);
         return (
             <div className={`pre-action-bar pre-action-slots-desktop ${DESKTOP_SLOT_ROW}`} data-testid="pre-action-bar">
                 {slots.map((action, i) =>
