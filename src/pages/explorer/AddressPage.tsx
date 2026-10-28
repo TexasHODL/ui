@@ -23,8 +23,9 @@ import { TransactionResponse, type CosmosTxResponse } from "../../components/Tra
 import { describeTransaction, fetchGameFormats, fetchGamePrizeMeta, formatActionAmount, formatPrizeClaimLabel, formatGameId, resolvePrizePlace, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
 
 /** One row of the Transactions tab: the tx plus what it was for (shared with the lobby card). */
-type AddressTx = CosmosTxResponse & TxDescription;
-import { useCosmosApi } from "../../context/CosmosApiContext";
+type AddressTx = CosmosTxResponse & TxDescription & { linkTo?: string; displayHash?: string };
+import { useCosmosApi, useCometRpcApiFactory } from "../../context/CosmosApiContext";
+import { bridgeDepositRow, fetchBridgeDeposits } from "../../utils/bridgeDeposits";
 import { copyToClipboard } from "../../components/playPage/Table/utils";
 
 export default function AddressPage() {
@@ -41,6 +42,7 @@ export default function AddressPage() {
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<"balances" | "transactions">("balances");
     const cosmosApi = useCosmosApi();
+    const cometRpcApiFactory = useCometRpcApiFactory();
 
     const handleSearch = useCallback(
         async (addressToSearch?: string) => {
@@ -81,9 +83,14 @@ export default function AddressPage() {
 
                     // Full history: page through both event queries (node caps page size at 100).
                     // Lobby TransactionPanel still uses getSent/getReceived (default limit=10) then slice(0, 6).
-                    const [sentResponse, receivedResponse] = await Promise.all([
+                    // Bridge deposits are credited in EndBlock (no tx), so read them from block events.
+                    const [sentResponse, receivedResponse, deposits] = await Promise.all([
                         cosmosApi.getAllTransactionsMatching(senderQuery) as Promise<TransactionResponse>,
-                        cosmosApi.getAllTransactionsMatching(recipientQuery) as Promise<TransactionResponse>
+                        cosmosApi.getAllTransactionsMatching(recipientQuery) as Promise<TransactionResponse>,
+                        fetchBridgeDeposits(cometRpcApiFactory(currentNetwork.rpc), searchAddress.trim(), 100).catch(err => {
+                            console.error("Could not load bridge deposits:", err);
+                            return [];
+                        })
                     ]);
 
                     // Join each response to its decoded body (parallel `txs` array) so
@@ -93,11 +100,10 @@ export default function AddressPage() {
                     const allTxs = [...withBodies(sentResponse), ...withBodies(receivedResponse)];
                     const uniqueTxs = Array.from(new Map(allTxs.map(tx => [tx.txhash, tx])).values());
 
-                    // Sort by height (descending)
-                    uniqueTxs.sort((a, b) => parseInt(b.height) - parseInt(a.height));
-
                     const viewer = searchAddress.trim();
-                    const described = uniqueTxs.map(tx => ({ ...tx, ...describeTransaction(tx, viewer) }));
+                    const described: AddressTx[] = [...uniqueTxs.map(tx => ({ ...tx, ...describeTransaction(tx, viewer) })), ...deposits.map(bridgeDepositRow)];
+                    // Sort by height (descending)
+                    described.sort((a, b) => parseInt(b.height) - parseInt(a.height));
                     setTransactions(described);
                     const gameIds = described.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId);
                     fetchGamePrizeMeta(id => cosmosApi.getGame(id), gameIds).then(meta => {
@@ -308,7 +314,7 @@ export default function AddressPage() {
                                                 <li
                                                     key={index}
                                                     onClick={() =>
-                                                        navigate(`/explorer/tx/${tx.txhash}`, {
+                                                        navigate(tx.linkTo ?? `/explorer/tx/${tx.txhash}`, {
                                                             state: { fromAddress: currentAddress }
                                                         })
                                                     }
@@ -342,7 +348,7 @@ export default function AddressPage() {
                                                             {tx.gameId && <span className="text-gray-400">Game: {formatGameId(tx.gameId)}</span>}
                                                         </p>
                                                     )}
-                                                    <p className="mt-1 font-mono text-xs sm:text-sm text-gray-300 truncate">{tx.txhash}</p>
+                                                    <p className="mt-1 font-mono text-xs sm:text-sm text-gray-300 truncate">{tx.displayHash ?? tx.txhash}</p>
                                                     <p className="mt-0.5 text-xs text-gray-400">
                                                         Block {tx.height} · {formatTimestampRelative(tx.timestamp)}
                                                     </p>

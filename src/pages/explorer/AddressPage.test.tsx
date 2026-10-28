@@ -34,7 +34,30 @@ function mockManySent(count: number) {
     return { tx_responses, txs };
 }
 
+
+/** CometBFT RPC: one bridge deposit credited in EndBlock (no tx) at block 15. */
+const mockRpc = {
+    blockSearch: async () => ({ result: { blocks: [{ block: { header: { height: "15", time: "2026-10-28T01:51:12Z" } } }], total_count: "1" } }),
+    blockResults: async () => ({
+        result: {
+            finalize_block_events: [
+                { type: "transfer", attributes: [{ key: "recipient", value: ADDRESS }, { key: "amount", value: "1000000usdc" }] },
+                {
+                    type: "bridge_deposit_processed",
+                    attributes: [
+                        { key: "eth_tx_hash", value: "0xdf5b4d6ebe9839b8de37c4cc9b95fff28e41066eea9bb007d91acedb61421310" },
+                        { key: "recipient", value: ADDRESS },
+                        { key: "amount", value: "1000000usdc" },
+                        { key: "nonce", value: "100" }
+                    ]
+                }
+            ]
+        }
+    })
+};
+
 jest.mock("../../context/CosmosApiContext", () => ({
+    useCometRpcApiFactory: () => () => mockRpc,
     useCosmosApi: () => ({
         getGame: async (id: string) => ({ game: JSON.stringify({ gameId: id, format: id === "0xcash" ? "cash" : "sit-and-go" }) }),
         // AddressPage loads full history via getAllTransactionsMatching (not the limit=10 helpers).
@@ -111,10 +134,10 @@ function renderAddress() {
 describe("AddressPage transactions", () => {
     it("shows what each tx was for, with its full hash, block and time", async () => {
         renderAddress();
-        // 5 labelled sent + 15 bulk sent + 1 unique received + 6 extra received = 27 (AAA111 deduped)
-        fireEvent.click(await screen.findByRole("tab", { name: /Transactions \(27\)/ }));
+        // 5 labelled sent + 15 bulk sent + 1 unique received + 6 extra received + 1 bridge deposit = 28 (AAA111 deduped)
+        fireEvent.click(await screen.findByRole("tab", { name: /Transactions \(28\)/ }));
         const rows = await screen.findAllByTestId("address-tx");
-        expect(rows).toHaveLength(27);
+        expect(rows).toHaveLength(28);
 
         // Newest-first among the labelled fixtures (bulk/extra use lower heights).
         expect(within(rows[0]).getByTestId("tx-action").textContent).toBe("Post-big-blind");
@@ -138,8 +161,20 @@ describe("AddressPage transactions", () => {
 
     it("can show more than the old 10 sent + 10 received cap", async () => {
         renderAddress();
-        fireEvent.click(await screen.findByRole("tab", { name: /Transactions \(27\)/ }));
-        expect(await screen.findAllByTestId("address-tx")).toHaveLength(27);
-        expect(27).toBeGreaterThan(20);
+        fireEvent.click(await screen.findByRole("tab", { name: /Transactions \(28\)/ }));
+        expect(await screen.findAllByTestId("address-tx")).toHaveLength(28);
+        expect(28).toBeGreaterThan(20);
+    });
+
+    it("lists bridge deposits (credited in EndBlock, no tx) with amount, linked to their block", async () => {
+        renderAddress();
+        fireEvent.click(await screen.findByRole("tab", { name: /Transactions \(28\)/ }));
+        const rows = await screen.findAllByTestId("address-tx");
+        // Height 15 sits between the Join table (20) and the failed tx (10).
+        const deposit = rows.find(row => within(row).getByTestId("tx-action").textContent === "Deposit");
+        expect(deposit).toBeTruthy();
+        expect(within(deposit!).getByText("1.00 USDC")).toBeInTheDocument();
+        expect(within(deposit!).getByText(/0xdf5b4d6ebe98/)).toBeInTheDocument();
+        expect(rows.indexOf(deposit!)).toBe(3);
     });
 });

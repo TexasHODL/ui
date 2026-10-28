@@ -131,6 +131,11 @@ export class CometRpcApi extends HTTPClient {
     /** ABCI query of a gRPC method path with hex-encoded protobuf `data`, at `height` (0 = latest). */
     public abciQuery = (path: string, dataHex: string, height: number) =>
         this.get(`abci_query?path=${encodeURIComponent(`"${path}"`)}&data=${dataHex}&height=${height}`);
+    /** Blocks whose finalize-block (EndBlock) events match a query, e.g. `bridge_deposit_processed.recipient='b521...'`. */
+    public blockSearch = (query: string, perPage = 10, orderBy: "asc" | "desc" = "desc") =>
+        this.get(`block_search?query=${encodeURIComponent(`"${query}"`)}&per_page=${perPage}&order_by=${encodeURIComponent(`"${orderBy}"`)}`);
+    /** Events emitted while executing the block at `height` (incl. finalize_block_events). */
+    public blockResults = (height: number | string) => this.get(`block_results?height=${height}`);
     /** The block at `height` (its header carries the block time signed queries must match). */
     public block = (height: number) => this.get(`block?height=${height}`);
 }
