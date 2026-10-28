@@ -87,10 +87,20 @@ export interface TableSettingsOptionsProps {
     onTableStyleChange?: (style: TableStyleOption) => void;
     /** The theme toggle; off where the host chrome already shows it (mobile header). */
     showTheme?: boolean;
+    /** Label for the table appearance dropdown (the mobile menu calls it "Felt"). */
+    appearanceLabel?: string;
+    /** Adds the 6 o'clock seat-orientation toggle (mobile menu only). */
+    showSeatToggle?: boolean;
 }
 
 /** The settings controls themselves, shared by the sidebar and the mobile Table menu. */
-export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({ tableStyle, onTableStyleChange, showTheme = true }) => {
+export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
+    tableStyle,
+    onTableStyleChange,
+    showTheme = true,
+    appearanceLabel = "Table appearance",
+    showSeatToggle = false
+}) => {
     const {
         turnNotificationSound,
         playerActionSounds,
@@ -107,7 +117,9 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({ tabl
         togglePreSelectCheck,
         toggleLeftHandMode,
         toggleWinCelebration,
-        togglePotAsChips
+        togglePotAsChips,
+        seatAtBottom,
+        toggleSeatAtBottom
     } = useGameSettings();
     const tableStyles = useTableStyles();
     // Same classifier as the betting UI (PokerActionPanel): only mobile landscape
@@ -129,9 +141,9 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({ tabl
             )}
             {tableStyle && onTableStyleChange && (
                 <label className="settings-appearance">
-                    Table appearance
+                    {appearanceLabel}
                     <select
-                        aria-label="Table appearance"
+                        aria-label={appearanceLabel}
                         value={tableStyle}
                         className={SELECT_CLASS}
                         onChange={event => {
@@ -163,6 +175,14 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({ tabl
                 options={DEALER_OPTIONS}
                 onChange={value => isStyleId(value) && setTableStyle("dealer", value)}
             />
+            {showSeatToggle && (
+                <ToggleRow
+                    label="Seat me at 6 o'clock"
+                    description="Rotate the table so your seat is at the bottom. A view preference only."
+                    checked={seatAtBottom}
+                    onToggle={toggleSeatAtBottom}
+                />
+            )}
             <ToggleRow
                 label="Turn Notification Sound"
                 description="Sound and tab flash when it’s your turn."

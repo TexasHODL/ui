@@ -1363,6 +1363,7 @@ const Table = React.memo(() => {
                         openSidebar={openSidebar}
                         openSettings={openSettings}
                         tableStyle={tableStyle}
+                        onTableStyleChange={setTableStyle}
                         onCycleTableStyle={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
                         handleLobbyClick={handleLobbyClick}
                         handleCopyTableLink={handleCopyTableLink}

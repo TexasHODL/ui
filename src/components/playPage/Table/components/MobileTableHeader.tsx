@@ -26,7 +26,6 @@ import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handRepla
 import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { useTableTopUp } from "../../../../hooks/game/useTableTopUp";
-import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useGameStateContext } from "../../../../context/GameStateContext";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
@@ -80,6 +79,8 @@ export interface MobileTableHeaderProps {
     // Table style (the fixed bottom-left selector is hidden on mobile)
     tableStyle: TableStyleOption;
     onCycleTableStyle: () => void;
+    /** Sets the felt from the menu's Felt dropdown (same setter as the settings sidebar). */
+    onTableStyleChange?: (style: TableStyleOption) => void;
 
     // Handlers
     onToggleFocus: () => void;
@@ -95,12 +96,6 @@ export interface MobileTableHeaderProps {
     handleOpenReplay?: () => void;
     replayHand?: number | null;
 }
-
-const TABLE_STYLE_LABELS: Record<TableStyleOption, string> = {
-    modern: "Modern",
-    classic: "Classic",
-    nouns: "Nouns"
-};
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
 const menuRowClass = "w-full min-h-[44px] flex items-center gap-3 px-4 text-sm text-left text-white transition-colors duration-150 hover:bg-white/10";
@@ -130,7 +125,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     openSidebar,
     openSettings,
     tableStyle,
-    onCycleTableStyle,
+    onTableStyleChange,
     onToggleFocus,
     handleLobbyClick,
     handleCopyTableLink,
@@ -157,9 +152,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     // Same gating as TableHeader: no Leave for SNG (roster frozen once play
     // starts, poker-vm#2343; SNG leave/claim lives in the SNG modals, ui#465).
     const showLeaveTable = !!currentPlayerData && !isSNG;
-    // Seat orientation is a view preference, read straight from settings rather
-    // than drilled through props — the drawer is its only mobile home (#684).
-    const { seatAtBottom, toggleSeatAtBottom } = useGameSettings();
     // Sit-out lives here on phones rather than pinned over the felt (#684).
     const { nextHandChecked, toggleNextHand, nextBbQueued, toggleNextBb, canSitOut } = useSitOutIntent();
     const isTableFull = !!gameOptions?.maxPlayers && tableActivePlayers.length >= gameOptions.maxPlayers;
@@ -454,23 +446,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 </button>
                             )}
 
-                            {/* Table style — replaces the fixed bottom-left selector on mobile */}
-                            <button className={menuRowClass} onClick={onCycleTableStyle}>
-                                <span className="text-xs text-gray-400">Style</span>
-                                <span>{TABLE_STYLE_LABELS[tableStyle]}</span>
-                            </button>
-
-                            {/* Seat orientation (#392). A persisted VIEW preference — it
-                                rotates the table so the local seat renders at the bottom,
-                                it does not seat anyone. So it belongs here whether or not
-                                the player is seated, and it is useful mainly once they
-                                are. It used to be a full-width button pinned below the
-                                felt while spectating (#684). */}
-                            <button className={menuRowClass} onClick={toggleSeatAtBottom} role="switch" aria-checked={seatAtBottom}>
-                                <span className="text-xs text-gray-400">Seat</span>
-                                <span className={seatAtBottom ? "text-amber-300" : undefined}>{seatAtBottom ? "✓ " : ""}Seat me at 6 o&apos;clock</span>
-                            </button>
-
                             {/* Sit-out intents (#684). Queued conditions, not immediate
                                 actions: "next hand" fires at the next hand boundary,
                                 "next big blind" holds you in until the BB comes round
@@ -490,10 +465,16 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             )}
 
                             {/* In-game settings, inline (formerly a separate Settings panel).
-                            Theme stays in the header row; Style above covers appearance. */}
+                            Theme stays in the header row. */}
                         <div className="mobile-menu-settings px-4 py-2 border-t border-white/10" role="group" aria-label="Settings">
                             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
-                            <TableSettingsOptions showTheme={false} />
+                            <TableSettingsOptions
+                                showTheme={false}
+                                tableStyle={tableStyle}
+                                onTableStyleChange={onTableStyleChange}
+                                appearanceLabel="Felt"
+                                showSeatToggle
+                            />
                         </div>
 
                         {/* Spectating hint. Non-interactive: the only way to sit is
