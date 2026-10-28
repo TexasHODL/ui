@@ -21,7 +21,8 @@ import {
     type TransferEvent,
     type TxMessage
 } from "../utils/transactionUtils";
-import { useCosmosApi } from "../context/CosmosApiContext";
+import { useCosmosApi, useCometRpcApiFactory } from "../context/CosmosApiContext";
+import { bridgeDepositRow, fetchBridgeDeposits } from "../utils/bridgeDeposits";
 import { isEmpty, hasElements } from "../utils/guards";
 
 interface Transaction {
@@ -42,6 +43,9 @@ interface Transaction {
     // SNG/tournament prize claim (from describeTransaction / sng_prize_claimed)
     prizePlace?: number;
     isPrizeClaim?: boolean;
+    // Rows that are not a Cosmos tx (bridge deposits credited in EndBlock)
+    linkTo?: string;
+    displayHash?: string;
 }
 
 interface TransactionPanelProps {
@@ -94,6 +98,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const cosmosApi = useCosmosApi();
+    const cometRpcApiFactory = useCometRpcApiFactory();
 
     const fetchTransactions = useCallback(async () => {
         if (!cosmosWalletAddress) return;
@@ -108,9 +113,15 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
             const senderQuery = `message.sender='${address}'`;
             const recipientQuery = `transfer.recipient='${address}'`;
             // Fetch both sent and received transactions
-            const [sentResponse, receivedResponse] = await Promise.all([
+            // Bridge deposits are credited in EndBlock, not in a tx, so the tx
+            // search above never sees them; read them from block events.
+            const [sentResponse, receivedResponse, deposits] = await Promise.all([
                 cosmosApi.getSentTransactions(senderQuery) as Promise<TransactionResponse>,
-                cosmosApi.getReceivedTransactions(recipientQuery) as Promise<TransactionResponse>
+                cosmosApi.getReceivedTransactions(recipientQuery) as Promise<TransactionResponse>,
+                fetchBridgeDeposits(cometRpcApiFactory(currentNetwork.rpc), address, 6).catch(err => {
+                    console.error("Could not load bridge deposits:", err);
+                    return [];
+                })
             ]);
 
             // Combine tx_responses with their txs for message type extraction
@@ -127,15 +138,15 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
             const allTxs = [...sentTxs, ...receivedTxs];
             const uniqueTxs = Array.from(new Map(allTxs.map(tx => [tx.txhash, tx])).values());
 
-            // Sort by height (descending) and take first 6
-            uniqueTxs.sort((a, b) => parseInt(b.height) - parseInt(a.height));
-            const recentTxs = uniqueTxs.slice(0, 6);
-
             // Same labelling as the explorer's address Transactions list.
-            const formattedTxs: Transaction[] = recentTxs.map(tx => {
+            const txRows: Transaction[] = uniqueTxs.map(tx => {
                 const { label, action, amount, actionAmount, gameId, transferAmount, transferDirection, prizePlace, isPrizeClaim } = describeTransaction(tx, address);
                 return { txhash: tx.txhash, height: tx.height, timestamp: tx.timestamp, code: tx.code, label, action, amount, actionAmount, gameId, transferAmount, transferDirection, prizePlace, isPrizeClaim };
             });
+            const depositRows: Transaction[] = deposits.map(bridgeDepositRow);
+
+            // Sort by height (descending) and take first 6
+            const formattedTxs = [...txRows, ...depositRows].sort((a, b) => parseInt(b.height) - parseInt(a.height)).slice(0, 6);
             const gameIds = formattedTxs.filter(tx => tx.actionAmount || tx.isPrizeClaim).map(tx => tx.gameId);
             fetchGamePrizeMeta(id => cosmosApi.getGame(id), gameIds).then(meta => {
                 setGameFormats(Object.fromEntries(Object.entries(meta).map(([id, m]) => [id, m.format])));
@@ -162,7 +173,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
         } finally {
             setLoading(false);
         }
-    }, [cosmosWalletAddress, currentNetwork.rest]);
+    }, [cosmosWalletAddress, currentNetwork.rest, currentNetwork.rpc, cometRpcApiFactory]);
 
     // Fetch transactions on mount and when wallet changes
     useEffect(() => {
@@ -233,7 +244,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                         {transactions.map(tx => (
                             <div
                                 key={tx.txhash}
-                                onClick={() => navigate(`/explorer/tx/${tx.txhash}`)}
+                                onClick={() => navigate(tx.linkTo ?? `/explorer/tx/${tx.txhash}`)}
                                 className="p-3 rounded-lg bg-gray-900 border border-gray-700 cursor-pointer hover:bg-gray-700/50 transition-colors"
                             >
                                 <div className="flex items-center justify-between mb-1">
@@ -266,7 +277,7 @@ const TransactionPanel: React.FC<TransactionPanelProps> = ({ cosmosWalletAddress
                                     </div>
                                 )}
                                 <div className="flex items-center justify-between">
-                                    <span className="text-gray-400 text-xs font-mono">{formatShortHash(tx.txhash)}</span>
+                                    <span className="text-gray-400 text-xs font-mono">{formatShortHash(tx.displayHash ?? tx.txhash)}</span>
                                     <span className="text-gray-500 text-xs">{formatTimestampRelative(tx.timestamp)}</span>
                                 </div>
                             </div>

@@ -23,7 +23,28 @@ const mockApi = {
     }),
     getReceivedTransactions: async () => ({ pagination: null, total: "0", tx_responses: [], txs: [] })
 };
-jest.mock("../context/CosmosApiContext", () => ({ useCosmosApi: () => mockApi }));
+
+/** CometBFT RPC: one bridge deposit credited in EndBlock (no tx) at block 5. */
+const mockRpc = {
+    blockSearch: async () => ({ result: { blocks: [{ block: { header: { height: "5", time: "2026-10-28T01:51:12Z" } } }], total_count: "1" } }),
+    blockResults: async () => ({
+        result: {
+            finalize_block_events: [
+                { type: "transfer", attributes: [{ key: "recipient", value: ME }, { key: "amount", value: "1000000usdc" }] },
+                {
+                    type: "bridge_deposit_processed",
+                    attributes: [
+                        { key: "eth_tx_hash", value: "0xdf5b4d6ebe9839b8de37c4cc9b95fff28e41066eea9bb007d91acedb61421310" },
+                        { key: "recipient", value: ME },
+                        { key: "amount", value: "1000000usdc" },
+                        { key: "nonce", value: "100" }
+                    ]
+                }
+            ]
+        }
+    })
+};
+jest.mock("../context/CosmosApiContext", () => ({ useCosmosApi: () => mockApi, useCometRpcApiFactory: () => () => mockRpc }));
 
 describe("TransactionPanel (lobby Recent Transactions)", () => {
     it("shows action amounts in chips for Sit & Go and USDC for cash, none for fold", async () => {
@@ -36,6 +57,16 @@ describe("TransactionPanel (lobby Recent Transactions)", () => {
         expect(screen.getByText("0.02 USDC")).toBeInTheDocument();
         expect(screen.getByText("Bet")).toBeInTheDocument();
         expect(screen.getByText("Fold")).toBeInTheDocument();
-        expect(screen.getAllByText(/chips|USDC/)).toHaveLength(2);
+        expect(screen.getAllByText(/chips|USDC/)).toHaveLength(3);
+    });
+
+    it("shows a bridge deposit (credited in EndBlock, not a tx) as the newest row", async () => {
+        render(
+            <MemoryRouter>
+                <TransactionPanel cosmosWalletAddress={ME} usdcBalance="0" />
+            </MemoryRouter>
+        );
+        expect(await screen.findByText("Deposit")).toBeInTheDocument();
+        expect(screen.getByText("1.00 USDC")).toBeInTheDocument();
     });
 });
