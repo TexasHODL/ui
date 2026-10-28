@@ -1,6 +1,7 @@
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 import React from "react";
+import { createPortal } from "react-dom";
 import { useCosmosWallet } from "../../hooks";
 
 import DepositCore from "./DepositCore";
@@ -24,14 +25,15 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
 
     if (!isOpen) return null;
 
-    return (
+    // Portal to <body>: the wallet panels create stacking contexts that let the sticky header paint over the dialog.
+    return createPortal(
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 overflow-y-auto"
             onClick={onClose}
         >
             <div
                 role="dialog" aria-modal="true" aria-label="Deposit funds"
-                className={`hodl-modal modal-inset-content relative rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
+                className={`hodl-modal modal-inset-content hodl-deposit-modal relative rounded-xl max-w-md w-full my-auto flex flex-col max-h-[90vh] ${styles.modalSurface}`}
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
@@ -59,7 +61,8 @@ const USDCDepositModal: React.FC<USDCDepositModalProps> = ({ isOpen, onClose, on
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -183,3 +183,13 @@
 /* Disabled "Insufficient Balance": same red as the insufficient balance value (Tailwind text-red-400). */
 .hodl-modal .hodl-primary.sng-insufficient:disabled { --sng-red: var(--color-red-400, #f87171);
     background: color-mix(in srgb, var(--sng-red) 14%, transparent); border: 1px solid color-mix(in srgb, var(--sng-red) 55%, transparent); color: var(--sng-red); }
+
+/* Deposit Funds dialog: .hodl-modal.hodl-modal's viewport-wide max-width/max-height
+   outrank Tailwind's max-w-md / max-h-[90vh], which stretched it to fill the screen.
+   Keep it a normal centred dialog; phones still get full width minus the backdrop padding. */
+.hodl-modal.hodl-modal.hodl-deposit-modal {
+    width: 100%;
+    max-width: min(34rem, calc(100vw - 24px));
+    max-height: min(90vh, calc(100dvh - 32px));
+    overflow-y: hidden;
+}
