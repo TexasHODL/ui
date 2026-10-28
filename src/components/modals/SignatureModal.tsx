@@ -1,6 +1,7 @@
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 import React from "react";
+import { createPortal } from "react-dom";
 import { copyToClipboard as copyToClipboardUtil } from "../../utils/clipboard";
 
 
@@ -60,7 +61,8 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
 
     const sigComponents = parseSignatureComponents(signatureHex);
 
-    return (
+    // Portal to <body> so a stacking context in the host page can't let the sticky header paint over the dialog.
+    return createPortal(
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="hodl-modal rounded-lg p-6 max-w-2xl w-full border border-gray-700 max-h-[90vh] overflow-y-auto">
                 <ModalHeader title="Signature Details" onClose={onClose} />
@@ -303,7 +305,8 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

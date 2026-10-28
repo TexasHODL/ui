@@ -1,6 +1,7 @@
 import { formatUsd, formatMicroUsd } from "../../utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ethers } from "ethers";
 import useCosmosWallet from "../../hooks/wallet/useCosmosWallet";
 import { microToUsdc, parseUsdcToMicro } from "../../constants/currency";
@@ -274,7 +275,8 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
 
     const balanceDisplay = formatUsd(balanceInUSDC);
 
-    return (
+    // Portal to <body> so a stacking context in the host page can't let the sticky header paint over the dialog.
+    return createPortal(
         <div className={`fixed inset-0 z-50 flex items-center justify-center ${styles.overlay}`}>
             <div className={`hodl-modal rounded-xl p-6 w-full max-w-md mx-4 ${styles.modalContainer}`}>
                 <ModalHeader title="Withdraw Funds" />
@@ -487,7 +489,8 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, onSu
                     </div>
                 )}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

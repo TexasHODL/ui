@@ -1,6 +1,7 @@
 import { formatUsd } from "../../utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 import React, { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { usdcToMicroBigInt } from "../../constants/currency";
 import type { SendUsdcModalProps } from "./types";
 import styles from "./SendUsdcModal.module.css";
@@ -76,8 +77,9 @@ const SendUsdcModal: React.FC<SendUsdcModalProps> = ({ isOpen, onClose, usdcBala
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+    // Portal to <body> so a stacking context in the host page can't let the sticky header paint over the dialog.
+    return createPortal(
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm p-4">
             <div
                 role="dialog"
                 aria-modal="true"
@@ -140,7 +142,8 @@ const SendUsdcModal: React.FC<SendUsdcModalProps> = ({ isOpen, onClose, usdcBala
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -76,8 +76,9 @@
     border: 1px solid var(--ui-border-color);
     border-radius: 18px;
     box-shadow: 0 24px 80px #0009;
-    max-width: calc(100vw - 24px);
-    max-height: calc(100dvh - 32px);
+    /* Viewport clamp, capped by the dialog's intended size (see size vars below). */
+    max-width: min(var(--hodl-modal-max-w, 100vw), calc(100vw - 24px));
+    max-height: min(var(--hodl-modal-max-h, 100dvh), calc(100dvh - 32px));
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -183,6 +184,20 @@
 /* Disabled "Insufficient Balance": same red as the insufficient balance value (Tailwind text-red-400). */
 .hodl-modal .hodl-primary.sng-insufficient:disabled { --sng-red: var(--color-red-400, #f87171);
     background: color-mix(in srgb, var(--sng-red) 14%, transparent); border: 1px solid color-mix(in srgb, var(--sng-red) 55%, transparent); color: var(--sng-red); }
+
+/* .hodl-modal.hodl-modal outranks Tailwind's max-w-* / max-h-[90vh], so a w-full dialog
+   would stretch to the viewport. Re-expose the intended Tailwind cap as a size var that the
+   viewport clamp above respects. Dialogs without a max-w-* class (fixed w-*, big debug
+   panels) keep the plain viewport clamp. */
+.hodl-modal.max-w-xs { --hodl-modal-max-w: 20rem; }
+.hodl-modal.max-w-sm { --hodl-modal-max-w: 24rem; }
+.hodl-modal.max-w-md { --hodl-modal-max-w: 28rem; }
+.hodl-modal.max-w-lg { --hodl-modal-max-w: 32rem; }
+.hodl-modal.max-w-xl { --hodl-modal-max-w: 36rem; }
+.hodl-modal.max-w-2xl { --hodl-modal-max-w: 42rem; }
+.hodl-modal.max-w-3xl { --hodl-modal-max-w: 48rem; }
+.hodl-modal.max-w-4xl { --hodl-modal-max-w: 56rem; }
+.hodl-modal.max-h-\[90vh\] { --hodl-modal-max-h: 90vh; }
 
 /* Deposit Funds dialog: .hodl-modal.hodl-modal's viewport-wide max-width/max-height
    outrank Tailwind's max-w-md / max-h-[90vh], which stretched it to fill the screen.
