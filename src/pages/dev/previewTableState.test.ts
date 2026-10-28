@@ -97,7 +97,7 @@ describe("parsePreviewSearch", () => {
         expect(previewSearchParams(parsePreviewSearch(new URLSearchParams("seats=6"))).has("actions")).toBe(false);
     });
 
-    it("reads turn=1 and gives seat 1 fold, check, call, and a sized raise", () => {
+    it("reads turn=1 and gives seat 1 fold, call, and a sized raise (no check while facing a bet)", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=6&turn=1"));
         expect(options.buttons).toBe("actions");
         expect(previewSearchParams(options).get("buttons")).toBe("actions");
@@ -111,7 +111,6 @@ describe("parsePreviewSearch", () => {
         expect(hero.legalActions).toEqual(previewHeroLegalActions(7));
         expect(hero.legalActions.map(action => action.action)).toEqual([
             PlayerActionType.FOLD,
-            PlayerActionType.CHECK,
             PlayerActionType.CALL,
             PlayerActionType.RAISE
         ]);
@@ -224,5 +223,6 @@ describe("bet=none preview", () => {
         expect(state.players.every(p => p.sumOfBets === "0")).toBe(true);
         expect(state.previousActions.some(a => a.seat === 1)).toBe(false);
         expect(state.previousActions.every(a => a.action === PlayerActionType.CHECK)).toBe(true);
+        expect(state.players[0].legalActions.map(a => a.action)).toEqual([]);
     });
 });

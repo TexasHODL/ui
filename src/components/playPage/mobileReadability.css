@@ -129,8 +129,8 @@
     height: calc(86px + env(safe-area-inset-bottom, 0px));
     min-height: calc(86px + env(safe-area-inset-bottom, 0px));
     max-height: calc(86px + env(safe-area-inset-bottom, 0px));
-    padding-top: 4px;
-    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
+    padding-top: 0; /* buttons sit 5px higher; slot height unchanged */
+    padding-bottom: calc(9px + env(safe-area-inset-bottom, 0px));
 }
 .mobile-bet-portrait .mobile-actions-row > button,
 .mobile-bet-portrait .mobile-raise-anchor > button {
