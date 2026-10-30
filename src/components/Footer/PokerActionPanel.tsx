@@ -67,6 +67,7 @@ import { MainActionButtons } from "./MainActionButtons";
 import { MobileBettingCluster } from "./MobileBettingCluster";
 import { RaiseBetControls } from "./RaiseBetControls";
 import { PreActionControls } from "./PreActionControls";
+import { DESKTOP_ACTION_HEIGHT, DESKTOP_SLOT_ROW } from "./desktopActionSlot";
 import { allowsBlindMultiples } from "../../utils/preflopPresets";
 import { isCheckFreeForPlayer, hasVoluntarilyCommittedThisRound, amountToCallMicroForPlayer } from "../../utils/chipUtils";
 import { shouldShowPreActions, shouldClearPreAction, isPreActionStale, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
@@ -346,8 +347,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
 
     // Show the bar while it is not the player's turn, they are in the hand, on a betting
     // street, and there is at least one applicable button. See utils/preActions.
-    const showPreActions =
-        shouldShowPreActions({ enabled: preSelectCheck, isUsersTurn, playerStatus, round: gameState?.round }) && preActionBtns.length > 0;
+    const showPreActions = shouldShowPreActions({ enabled: preSelectCheck, isUsersTurn, playerStatus, round: gameState?.round }) && preActionBtns.length > 0;
 
     // Scope an armed pre-action to the current round.
     useEffect(() => {
@@ -374,8 +374,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const preActionLegal = { hasCheckAction, hasCallAction, hasFoldAction };
     // "Call {amount}" fires only at the amount it was armed at (ui#875).
     const preActionCallGuard = { armedCallMicro, owedMicro: preActionCallMicro };
-    const preActionFiring =
-        isUsersTurn && !isNullish(preAction) && !isNullish(resolvePreAction(preAction, preActionLegal, preActionCallGuard));
+    const preActionFiring = isUsersTurn && !isNullish(preAction) && !isNullish(resolvePreAction(preAction, preActionLegal, preActionCallGuard));
 
     const clearPreAction = useCallback(() => {
         setPreAction(null);
@@ -600,7 +599,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         maxAmount: hasBetAction ? maxBet : maxRaise,
         formattedMaxAmount: formattedMaxBetAmount,
         displayOffset: hasRaiseAction
-            ? getRaiseToAmount(raiseAmount, gameState?.previousActions || [], gameState?.round || TexasHoldemRound.ANTE, userAddress || "", isTournament) - raiseAmount
+            ? getRaiseToAmount(raiseAmount, gameState?.previousActions || [], gameState?.round || TexasHoldemRound.ANTE, userAddress || "", isTournament) -
+              raiseAmount
             : 0,
         totalPotMicro,
         callAmountMicro,
@@ -618,6 +618,139 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         allowBlindMultiples: allowsBlindMultiples(gameVariant, gameState?.gameOptions?.bettingLimit)
     };
 
+    const dockBody = (
+        <>
+            {/* Pre-action bar (ui#388) â€” shown when it's not your turn: Check/Fold,
+                    Check | Call {amount}, and Call Any. Arm one and it fires on your turn
+                    with no betting bar. On a phone it stays inside the action dock. */}
+            {showPreActions && (
+                <PreActionControls
+                    buttons={preActionBtns}
+                    armed={preAction}
+                    onArm={armPreAction}
+                    callAmountLabel={preActionCallLabel}
+                    isMobileLandscape={isMobileLandscape}
+                    compact={isMobileBetting}
+                    landscapeSlots={isMobileLandscape}
+                    desktopSlots={!isMobileBetting}
+                    leftHand={leftHandMode}
+                />
+            )}
+            {/* Desktop: reserve the slider/presets block under the pre-action row so the
+                    row sits exactly where the action buttons will (the dock grows upward). */}
+            {showPreActions && !isMobileBetting && (
+                <div className="invisible pointer-events-none space-y-2 lg:space-y-3" aria-hidden="true" data-testid="pre-action-sizing-spacer">
+                    <RaiseBetControls {...sizingProps} disabled />
+                </div>
+            )}
+
+            {/* Deal Button Group */}
+            {shouldShowDealButton && (
+                <DealButtonGroup
+                    tableId={tableId}
+                    onDeal={handleDealWithEntropy}
+                    loading={loadingAction === "deal"}
+                    disabled={!isUsersTurn}
+                    autoDealEnabled={autoDealEnabled}
+                />
+            )}
+
+            {/* New Hand Button - hidden when auto-new-hand is enabled */}
+            {gameState?.round === TexasHoldemRound.END && !autoNewHandEnabled && !controlsPending && (
+                <div className="flex justify-center mb-2 lg:mb-3">
+                    <ActionButton
+                        action="new-hand"
+                        label="START NEW HAND"
+                        loading={loadingAction === "new-hand"}
+                        onClick={handleNewHandAction}
+                        variant="primary"
+                        className="px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base font-bold"
+                    />
+                </div>
+            )}
+
+            {/* Auto-new-hand: hold on the showdown for a beat, showing a
+                    "Dealing hand #Xâ€¦" indicator before the next hand deals (ui#443) */}
+            {autoNewHandEnabled && isDealingNewHand && !controlsPending && (
+                <div className="flex justify-center mb-2 lg:mb-3">
+                    <ActionButton
+                        action="new-hand"
+                        label={`Dealing hand #${(gameState?.handNumber ?? 0) + 1}`}
+                        loading={true}
+                        disabled={true}
+                        onClick={() => {}}
+                        variant="primary"
+                        className="px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base font-bold"
+                    />
+                </div>
+            )}
+
+            {/* Only show other buttons if deal button is not showing */}
+            {!hideOtherButtons && (
+                <>
+                    {/* Showdown Buttons â€” gated on isUsersTurn like every other
+                            control (ui#697). In the sequenced clockwise showdown
+                            (poker-vm#2140) the engine offers SHOW/MUCK only to the single
+                            pending losing-hand player (nextToAct); a forced/auto reveal
+                            flips a seat to SHOWING with no action and is never the actor.
+                            Without this gate an auto-revealed seat still rendered a Show
+                            button. `!controlsPending` additionally hides the bar the
+                            instant this player submits, until the next snapshot (ui#678,
+                            mirroring #650). */}
+                    {shouldShowShowdownBar({ hasShowAction, hasMuckAction, isUsersTurn, controlsPending }) && (
+                        <ShowdownButtons
+                            canMuck={hasMuckAction}
+                            canShow={hasShowAction}
+                            loading={loadingAction}
+                            onMuck={handleMuckAction}
+                            onShow={handleShowAction}
+                            stacked={isMobileLandscape}
+                            leftHand={leftHandMode}
+                        />
+                    )}
+
+                    {/* Blind Buttons */}
+                    {(showSmallBlindButton || showBigBlindButton) && !controlsPending && (
+                        <BlindButtonGroup
+                            showSmallBlind={showSmallBlindButton}
+                            showBigBlind={showBigBlindButton}
+                            smallBlindAmount={formattedSmallBlindAmount}
+                            bigBlindAmount={formattedBigBlindAmount}
+                            canFold={canFoldAnytime && (!showActionButtons || showSmallBlindButton || showBigBlindButton)}
+                            playerStatus={userPlayer?.status || PlayerStatus.SEATED}
+                            loading={loadingAction}
+                            isMobileLandscape={isMobileLandscape}
+                            isTournament={isTournament}
+                            onPostSmallBlind={handlePostSmallBlindAction}
+                            onPostBigBlind={handlePostBigBlindAction}
+                            onFold={handleFoldAction}
+                        />
+                    )}
+
+                    {/* Main Action Buttons. Mobile uses the overlay / side column.
+                            Desktop and tablet keep the horizontal bar and range slider. */}
+                    {showActionButtons &&
+                        !showSmallBlindButton &&
+                        !showBigBlindButton &&
+                        (isMobileBetting ? (
+                            <MobileBettingCluster
+                                presentation={isMobilePortrait ? "portrait" : "landscape"}
+                                leftHand={leftHandMode}
+                                showSizing={showSizing}
+                                actions={actionButtonProps}
+                                sizing={sizingProps}
+                            />
+                        ) : (
+                            <>
+                                <MainActionButtons {...actionButtonProps} />
+                                {showSizing && <RaiseBetControls {...sizingProps} />}
+                            </>
+                        ))}
+                </>
+            )}
+        </>
+    );
+
     return (
         <div
             ref={dockRef}
@@ -627,141 +760,24 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
                     : "poker-action-dock fixed left-0 right-0 text-white flex justify-center items-center relative bottom-12 lg:bottom-0 p-2 lg:p-0 pb-4 lg:pb-[6px]"
             }
         >
-            <div
-                className={
-                    isMobileBetting
-                        ? "mobile-dock-inner"
-                        : "flex flex-col w-full justify-center rounded-lg relative z-10 lg:w-[570px] mx-4 lg:mx-0 space-y-2 lg:space-y-3 max-w-full"
-                }
-            >
-                {/* Pre-action bar (ui#388) â€” shown when it's not your turn: Check/Fold,
-                    Check | Call {amount}, and Call Any. Arm one and it fires on your turn
-                    with no betting bar. On a phone it stays inside the action dock. */}
-                {showPreActions && (
-                    <PreActionControls
-                        buttons={preActionBtns}
-                        armed={preAction}
-                        onArm={armPreAction}
-                        callAmountLabel={preActionCallLabel}
-                        isMobileLandscape={isMobileLandscape}
-                        compact={isMobileBetting}
-                        landscapeSlots={isMobileLandscape}
-                        desktopSlots={!isMobileBetting}
-                        leftHand={leftHandMode}
-                    />
-                )}
-                {/* Desktop: reserve the slider/presets block under the pre-action row so the
-                    row sits exactly where the action buttons will (the dock grows upward). */}
-                {showPreActions && !isMobileBetting && (
-                    <div className="invisible pointer-events-none space-y-2 lg:space-y-3" aria-hidden="true" data-testid="pre-action-sizing-spacer">
+            {isMobileBetting ? (
+                <div className="mobile-dock-inner">{dockBody}</div>
+            ) : (
+                /* Desktop: the banner is always as tall as the action row + slider/presets
+                   (the tallest state), so its top edge never moves between no buttons,
+                   pre-actions, the action row and Muck/Show. An invisible sizer and the live
+                   content share one grid cell; the content stays bottom-aligned where it was,
+                   except Muck/Show, which are centred vertically in the banner. */
+                <div className="grid w-full rounded-lg relative z-10 lg:w-[570px] mx-4 lg:mx-0 max-w-full" data-testid="desktop-dock-frame">
+                    <div className="invisible pointer-events-none space-y-2 lg:space-y-3 [grid-area:1/1]" aria-hidden="true" data-testid="desktop-dock-sizer">
+                        <div className={DESKTOP_SLOT_ROW}>
+                            <div className={DESKTOP_ACTION_HEIGHT} />
+                        </div>
                         <RaiseBetControls {...sizingProps} disabled />
                     </div>
-                )}
-
-                {/* Deal Button Group */}
-                {shouldShowDealButton && (
-                    <DealButtonGroup
-                        tableId={tableId}
-                        onDeal={handleDealWithEntropy}
-                        loading={loadingAction === "deal"}
-                        disabled={!isUsersTurn}
-                        autoDealEnabled={autoDealEnabled}
-                    />
-                )}
-
-                {/* New Hand Button - hidden when auto-new-hand is enabled */}
-                {gameState?.round === TexasHoldemRound.END && !autoNewHandEnabled && !controlsPending && (
-                    <div className="flex justify-center mb-2 lg:mb-3">
-                        <ActionButton
-                            action="new-hand"
-                            label="START NEW HAND"
-                            loading={loadingAction === "new-hand"}
-                            onClick={handleNewHandAction}
-                            variant="primary"
-                            className="px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base font-bold"
-                        />
-                    </div>
-                )}
-
-                {/* Auto-new-hand: hold on the showdown for a beat, showing a
-                    "Dealing hand #Xâ€¦" indicator before the next hand deals (ui#443) */}
-                {autoNewHandEnabled && isDealingNewHand && !controlsPending && (
-                    <div className="flex justify-center mb-2 lg:mb-3">
-                        <ActionButton
-                            action="new-hand"
-                            label={`Dealing hand #${(gameState?.handNumber ?? 0) + 1}`}
-                            loading={true}
-                            disabled={true}
-                            onClick={() => {}}
-                            variant="primary"
-                            className="px-6 lg:px-8 py-2 lg:py-3 text-sm lg:text-base font-bold"
-                        />
-                    </div>
-                )}
-
-                {/* Only show other buttons if deal button is not showing */}
-                {!hideOtherButtons && (
-                    <>
-                        {/* Showdown Buttons â€” gated on isUsersTurn like every other
-                            control (ui#697). In the sequenced clockwise showdown
-                            (poker-vm#2140) the engine offers SHOW/MUCK only to the single
-                            pending losing-hand player (nextToAct); a forced/auto reveal
-                            flips a seat to SHOWING with no action and is never the actor.
-                            Without this gate an auto-revealed seat still rendered a Show
-                            button. `!controlsPending` additionally hides the bar the
-                            instant this player submits, until the next snapshot (ui#678,
-                            mirroring #650). */}
-                        {shouldShowShowdownBar({ hasShowAction, hasMuckAction, isUsersTurn, controlsPending }) && (
-                            <ShowdownButtons
-                                canMuck={hasMuckAction}
-                                canShow={hasShowAction}
-                                loading={loadingAction}
-                                onMuck={handleMuckAction}
-                                onShow={handleShowAction}
-                                stacked={isMobileLandscape}
-                                leftHand={leftHandMode}
-                            />
-                        )}
-
-                        {/* Blind Buttons */}
-                        {(showSmallBlindButton || showBigBlindButton) && !controlsPending && (
-                            <BlindButtonGroup
-                                showSmallBlind={showSmallBlindButton}
-                                showBigBlind={showBigBlindButton}
-                                smallBlindAmount={formattedSmallBlindAmount}
-                                bigBlindAmount={formattedBigBlindAmount}
-                                canFold={canFoldAnytime && (!showActionButtons || showSmallBlindButton || showBigBlindButton)}
-                                playerStatus={userPlayer?.status || PlayerStatus.SEATED}
-                                loading={loadingAction}
-                                isMobileLandscape={isMobileLandscape}
-                                isTournament={isTournament}
-                                onPostSmallBlind={handlePostSmallBlindAction}
-                                onPostBigBlind={handlePostBigBlindAction}
-                                onFold={handleFoldAction}
-                            />
-                        )}
-
-                        {/* Main Action Buttons. Mobile uses the overlay / side column.
-                            Desktop and tablet keep the horizontal bar and range slider. */}
-                        {showActionButtons && !showSmallBlindButton && !showBigBlindButton && (
-                            isMobileBetting ? (
-                                <MobileBettingCluster
-                                    presentation={isMobilePortrait ? "portrait" : "landscape"}
-                                    leftHand={leftHandMode}
-                                    showSizing={showSizing}
-                                    actions={actionButtonProps}
-                                    sizing={sizingProps}
-                                />
-                            ) : (
-                                <>
-                                    <MainActionButtons {...actionButtonProps} />
-                                    {showSizing && <RaiseBetControls {...sizingProps} />}
-                                </>
-                            )
-                        )}
-                    </>
-                )}
-            </div>
+                    <div className="flex flex-col justify-end min-w-0 space-y-2 lg:space-y-3 [grid-area:1/1] [&>[data-testid=showdown-buttons]]:my-auto">{dockBody}</div>
+                </div>
+            )}
         </div>
     );
 };
