@@ -4,7 +4,7 @@ import type { ShowdownButtonsProps } from "./types";
 
 export const ShowdownButtons: React.FC<ShowdownButtonsProps> = ({ canMuck, canShow, loading, onMuck, onShow, stacked = false, leftHand = false }) => {
     // Landscape reuses the action column (same width and slot height as FOLD/CHECK/CALL).
-    const btnClass = stacked ? "showdown-btn mobile-slot-btn" : "showdown-btn px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base";
+    const btnClass = stacked ? "showdown-btn type-btn-showdown mobile-slot-btn" : "showdown-btn type-btn-showdown px-4 lg:px-6 py-2 lg:py-3 text-sm lg:text-base";
     return (
         <div
             className={
@@ -13,9 +13,9 @@ export const ShowdownButtons: React.FC<ShowdownButtonsProps> = ({ canMuck, canSh
             data-testid="showdown-buttons"
         >
             {canMuck && (
-                <ActionButton action="muck" label="MUCK CARDS" loading={loading === "muck"} onClick={onMuck} variant="secondary" className={btnClass} />
+                <ActionButton action="muck" label="Muck cards" loading={loading === "muck"} onClick={onMuck} variant="secondary" className={btnClass} />
             )}
-            {canShow && <ActionButton action="show" label="SHOW CARDS" loading={loading === "show"} onClick={onShow} variant="success" className={btnClass} />}
+            {canShow && <ActionButton action="show" label="Show cards" loading={loading === "show"} onClick={onShow} variant="success" className={btnClass} />}
         </div>
     );
 };

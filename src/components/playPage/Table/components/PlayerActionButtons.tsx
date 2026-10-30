@@ -186,7 +186,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                     onChange={toggleSeatAtBottom}
                     className="form-checkbox h-4 w-4 text-amber-500 border-gray-500 rounded focus:ring-0"
                 />
-                <span className={`ml-2 ${seatAtBottom ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>Seat me at 6 o'clock</span>
+                <span className={`ml-2 type-body-seat ${seatAtBottom ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>Seat me at 6 o'clock</span>
             </label>
         </div>
     );
@@ -261,7 +261,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                 <button
                     onClick={handleSitInClick}
                     disabled={sittingIn}
-                    className={`flex items-center justify-center gap-2 rounded-lg shadow-lg border-2 font-bold tracking-wide uppercase transition-all duration-150 ${
+                    className={`flex items-center justify-center gap-2 rounded-lg shadow-lg border-2 type-btn-action transition-all duration-150 ${
                         sittingIn
                             ? "bg-[#6d32a8] border-[#b14cff] text-white cursor-wait"
                             : "bg-[#b14cff] border-[#e3b8ff] text-white hover:bg-[#c16cff] hover:border-[#f1d8ff] hover:scale-105 active:scale-95"
@@ -287,7 +287,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                 <button
                     onClick={handleSitInClick}
                     disabled={sittingIn}
-                    className={`flex items-center gap-2 rounded-lg shadow-lg border-2 font-bold tracking-wide uppercase transition-all duration-150 ${
+                    className={`flex items-center gap-2 rounded-lg shadow-lg border-2 type-btn-action transition-all duration-150 ${
                         sittingIn
                             ? "bg-[#6d32a8] border-[#b14cff] text-white cursor-wait"
                             : "bg-[#b14cff] border-[#e3b8ff] text-white hover:bg-[#c16cff] hover:border-[#f1d8ff] hover:scale-105 active:scale-95 animate-pulse"

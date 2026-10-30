@@ -85,7 +85,7 @@ export const PreActionControls: React.FC<PreActionControlsProps> = ({
                 title={TITLES[action]}
                 data-action={action}
                 onClick={() => onArm(isArmed ? null : action)}
-                className={`${BUTTON_CLASS[action]} flex items-center gap-2 rounded-lg border font-semibold ${
+                className={`${BUTTON_CLASS[action]} flex items-center gap-2 rounded-lg border type-btn-pre ${
                     isArmed ? "pre-action-on" : ""
                 } ${desktopSlots ? DESKTOP_SLOT_CLASS : compact ? "" : isMobileLandscape ? "px-3 py-1 text-xs" : "px-4 py-3 text-sm lg:text-base"}`}
             >

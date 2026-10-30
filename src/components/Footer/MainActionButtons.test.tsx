@@ -42,23 +42,23 @@ const renderButtons = (over: Partial<MainActionButtonsProps> = {}) => {
 describe("MainActionButtons — bet/raise rules (ui#890)", () => {
     it("a BET outside min/max is disabled (not just a RAISE)", () => {
         renderButtons({ isRaiseAmountInvalid: true });
-        expect(screen.getByRole("button", { name: /^BET/ })).toBeDisabled();
+        expect(screen.getByRole("button", { name: /^Bet/ })).toBeDisabled();
     });
 
     it("a valid BET is enabled", () => {
         renderButtons();
-        expect(screen.getByRole("button", { name: /^BET/ })).toBeEnabled();
+        expect(screen.getByRole("button", { name: /^Bet/ })).toBeEnabled();
     });
 
     it("a RAISE outside min/max is disabled", () => {
         renderButtons({ canBet: false, canRaise: true, isRaiseAmountInvalid: true });
-        expect(screen.getByRole("button", { name: /^RAISE TO/ })).toBeDisabled();
+        expect(screen.getByRole("button", { name: /^Raise to/ })).toBeDisabled();
     });
 
-    it("at the whole stack the button reads ALL-IN and stays enabled to confirm", () => {
+    it("at the whole stack the button reads All-in and stays enabled to confirm", () => {
         renderButtons({ raiseAmount: 1.99, isAllIn: true });
-        const btn = screen.getByRole("button", { name: /^ALL-IN/ });
-        expect(btn).toHaveTextContent("ALL-IN $1.99");
+        const btn = screen.getByRole("button", { name: /^All-in/ });
+        expect(btn).toHaveTextContent("All-in $1.99");
         expect(btn).toBeEnabled();
     });
 });

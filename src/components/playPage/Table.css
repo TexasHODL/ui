@@ -86,8 +86,9 @@
 }
 .table-container .badge-value {
     color: var(--theme-ink, #f4eafc);
-    font-family: "DM Mono", monospace;
-    font-weight: 500;
+    font-family: var(--type-num-family, "DM Mono", monospace);
+    font-weight: var(--type-num-weight, 500);
+    font-variant-numeric: var(--type-num-variant, normal);
 }
 .table-container .badge-number {
     font-size: 13px;
@@ -125,6 +126,7 @@
     min-height: 44px;
     box-shadow: none;
     letter-spacing: 0.01em;
+    --dock-btn-tracking: 0.01em;
 }
 .poker-action-dock button[data-action]:hover {
     transform: none;
@@ -408,6 +410,8 @@
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.01em;
+    --dock-btn-weight: 700;
+    --dock-btn-tracking: 0.01em;
     white-space: nowrap;
 }
 .table-play-row.is-landscape .mobile-dock-inner {
@@ -528,9 +532,9 @@
 }
 
 .pot-pill-label {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+    font-size: var(--type-pot-label-size, 11px);
+    font-weight: var(--type-label-weight, 600);
+    letter-spacing: var(--type-label-tracking, 0.12em);
     text-transform: uppercase;
     color: color-mix(in srgb, #ffffff 65%, transparent);
 }
@@ -962,7 +966,8 @@
     border: 1px solid rgba(177, 76, 255, 0.42);
     background: rgba(7, 7, 9, 0.78);
     box-shadow: 0 0 22px rgba(177, 76, 255, 0.16);
-    font-family: "DM Mono", ui-monospace, monospace;
+    font-family: var(--type-num-family, "DM Mono", ui-monospace, monospace);
+    font-variant-numeric: var(--type-num-variant, normal);
 }
 
 .network-display {

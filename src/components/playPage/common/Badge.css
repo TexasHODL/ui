@@ -53,7 +53,9 @@
 .badge-value {
   margin-left: 0.5rem;
   font-size: var(--seat-amount-size);
-  font-weight: 600;
+  font-weight: var(--type-num-weight, 600);
+  font-family: var(--type-num-family, inherit);
+  font-variant-numeric: var(--type-num-variant, normal);
   color: black;
   display: flex;
   justify-content: space-between;
@@ -429,12 +431,12 @@
 .tournament-place {
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
-  font-weight: 800;
-  font-size: 1rem;
+  font-weight: var(--type-label-weight, 800);
+  font-size: var(--type-place-size, 1rem);
   box-shadow: 0 4px 12px color-mix(in srgb, #000000 30%, transparent);
   white-space: nowrap;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--type-label-tracking, 0.05em);
 }
 
 .tournament-place-first {

@@ -11,6 +11,9 @@
 .poker-action-dock :is(button, input[type="text"]) {
   font-family: "HODL Action", Arial, sans-serif;
   font-weight: 900;
+  --dock-btn-family: "HODL Action", Arial, sans-serif;
+  --dock-btn-weight: 900;
+  --dock-btn-tracking: 0.01em;
   font-size: clamp(14px, calc(1.2vw + 2px), 16px);
   line-height: 1.25;
   letter-spacing: 0.01em;

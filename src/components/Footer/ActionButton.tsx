@@ -33,7 +33,7 @@ export const ActionButton: React.FC<ActionButtonProps> = ({
             {loading ? (
                 <>
                     <LoadingSpinner size="sm" />
-                    {label.toUpperCase()}...
+                    {label}...
                 </>
             ) : (
                 <>

@@ -71,10 +71,10 @@ describe("MobileBettingCluster", () => {
         );
         const cluster = screen.getByTestId("mobile-bet-cluster");
         expect(cluster).toHaveAttribute("data-presentation", "portrait");
-        expect(screen.getByRole("button", { name: "FOLD" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /CALL/ })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Fold" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^Call/ })).toBeInTheDocument();
         expect(screen.getByRole("slider", { name: "Bet amount" }).parentElement).toHaveClass("portrait-raise-slider");
-        fireEvent.click(screen.getByRole("button", { name: /RAISE TO/ }));
+        fireEvent.click(screen.getByRole("button", { name: /^Raise to/ }));
         expect(onBetOrRaise).toHaveBeenCalledTimes(1);
         expect(screen.getByRole("button", { name: "Min" })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "1/4 Pot" })).not.toBeInTheDocument();
