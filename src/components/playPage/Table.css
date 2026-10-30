@@ -585,7 +585,7 @@
 .table-container[data-compact-mobile="false"] #table-history-panel {
     top: var(--history-top, 127px);
     height: var(--history-height, 100px);
-    /* The fixed action bar is 160px, and the hand-strength pill sits just above it. */
+    /* The fixed action bar is ~160px, and the hand-strength pill sits 3px above it. */
     max-height: calc(100dvh - var(--history-top, 127px) - 232px);
 }
 .table-banner-wrap { flex-shrink: 0; }
