@@ -35,6 +35,7 @@ import styles from "./TableHeader.module.css";
 import { TableSettingsOptions } from "./TableSettingsSidebar";
 import { ThemeToggle } from "../../../ThemeToggle";
 import SngPayoutPanel from "../../SngPayoutPanel";
+import { MobileDrawerShell } from "./MobileDrawerShell";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -101,7 +102,8 @@ export interface MobileTableHeaderProps {
 }
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
-const menuRowClass = "w-full min-h-[44px] flex items-center gap-3 px-4 text-sm text-left text-white transition-colors duration-150 hover:bg-white/10";
+// PC Settings label size (text-xs = 14px, semibold); the row stays a 44px tap target.
+const menuRowClass = "w-full min-h-[44px] flex items-center gap-3 px-4 text-xs font-semibold text-left text-white transition-colors duration-150 hover:bg-white/10";
 
 export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     tableId,
@@ -245,33 +247,11 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
 
     /** Right-hand drawer shell shared by the burger menu ("Table settings") and the gear drawer ("Settings"). */
     const renderDrawer = (title: string, closeLabel: string, onClose: () => void, testId: string, children: React.ReactNode) => (
-        <>
-            <div className="fixed inset-0 z-[1999] bg-black/60" onClick={onClose} />
-            <div
-                data-testid={testId}
-                className={`fixed top-0 right-0 bottom-0 z-[2000] w-[290px] max-w-[85vw] max-h-[100dvh] overflow-y-auto overscroll-contain border-l-2 ${styles.headerRoot}`}
-                style={{
-                    // The last row must clear the home indicator; the top row
-                    // must clear the Dynamic Island.
-                    paddingTop: "env(safe-area-inset-top)",
-                    paddingBottom: "env(safe-area-inset-bottom)",
-                    paddingRight: "env(safe-area-inset-right)",
-                    WebkitOverflowScrolling: "touch",
-                    touchAction: "pan-y"
-                }}
-            >
-                <div className="min-h-full flex flex-col">
-                <div className="flex items-center justify-between pl-4 min-h-[44px] border-b border-white/10">
-                    <span className="text-white text-sm font-bold">{title}</span>
-                    <button onClick={onClose} className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80" aria-label={closeLabel}>
-                        <FaTimes size={16} />
-                    </button>
-                </div>
-                {children}
-                </div>
-            </div>
-        </>
+        <MobileDrawerShell title={title} closeLabel={closeLabel} onClose={onClose} testId={testId}>
+            {children}
+        </MobileDrawerShell>
     );
+
 
     return (
         <div className="mobile-table-chrome flex-shrink-0">
@@ -482,7 +462,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             {/* In-game settings, inline (formerly a separate Settings panel).
                             Theme stays in the header row. */}
                         <div className="mobile-menu-settings px-4 py-2 border-t border-white/10" role="group" aria-label="Settings">
-                            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
+                            <p className="text-[12px] text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
                             <TableSettingsOptions
                                 showTheme={false}
                                 tableStyle={tableStyle}

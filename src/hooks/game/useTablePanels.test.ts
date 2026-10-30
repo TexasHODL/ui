@@ -67,4 +67,48 @@ describe("table panel selection", () => {
         expect(result.current.openSidebar).toBe(true);
         expect(result.current.openSettings).toBe(false);
     });
-});
+    it("keeps History, Settings and Blinds mutually exclusive on PC", () => {
+        const { result } = renderHook(() => useTablePanels(true));
+        const shown = () => [result.current.openSidebar, result.current.openSettings, result.current.blindsOpen];
+        act(() => result.current.openBlinds());
+        expect(shown()).toEqual([false, false, true]);
+        act(() => result.current.onCloseSideBar()); // History while Blinds is open
+        expect(shown()).toEqual([true, false, false]);
+        act(() => result.current.onToggleSettings()); // Settings while History is open
+        expect(shown()).toEqual([false, true, false]);
+        act(() => result.current.openBlinds()); // Blinds from the Settings row
+        expect(shown()).toEqual([false, false, true]);
+        act(() => result.current.onToggleSettings()); // Settings while Blinds is open
+        expect(shown()).toEqual([false, true, false]);
+        act(() => result.current.openBlinds());
+        act(() => result.current.expandHistory()); // expanding History closes Blinds
+        expect(shown()).toEqual([true, false, false]);
+        act(() => result.current.openBlinds());
+        act(() => result.current.closeHistory()); // a stray History close leaves Blinds alone
+        expect(shown()).toEqual([false, false, true]);
+        act(() => result.current.closeBlinds()); // the feed was hidden before, so nothing reopens
+        expect(shown()).toEqual([false, false, false]);
+    });
+    it("closing Settings or Blinds never opens History; only a feed that was already showing returns", () => {
+        const { result } = renderHook(() => useTablePanels(true));
+        const shown = () => [result.current.openSidebar, result.current.expandedHistory, result.current.openSettings, result.current.blindsOpen];
+        // Default PC dock showing -> Settings -> close: the small feed comes back, not expanded.
+        act(() => result.current.onToggleSettings());
+        act(() => result.current.onToggleSettings());
+        expect(shown()).toEqual([true, false, false, false]);
+        // Feed hidden -> Settings -> close: History stays closed.
+        act(() => result.current.closeHistory());
+        act(() => result.current.onToggleSettings());
+        act(() => result.current.onToggleSettings());
+        expect(shown()).toEqual([false, false, false, false]);
+        // Feed hidden -> Settings -> Blinds -> close Blinds: still closed.
+        act(() => result.current.onToggleSettings());
+        act(() => result.current.openBlinds());
+        act(() => result.current.closeBlinds());
+        expect(shown()).toEqual([false, false, false, false]);
+        // Expanded History -> Settings -> close: does not re-expand or reopen.
+        act(() => result.current.expandHistory());
+        act(() => result.current.onToggleSettings());
+        act(() => result.current.onToggleSettings());
+        expect(shown()).toEqual([false, false, false, false]);
+    });});

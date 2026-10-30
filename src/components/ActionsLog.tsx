@@ -22,9 +22,11 @@ interface ActionsLogProps {
     expanded?: boolean;
     onExpand?: () => void;
     onClose?: () => void;
+    /** "sidebar" (PC expanded): body only, inside SettingsPanelShell, with Settings typography. */
+    variant?: "default" | "sidebar";
 }
 
-const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = true, onExpand, onClose }) => {
+const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = true, onExpand, onClose, variant = "default" }) => {
     const { id } = useParams<{ id: string }>();
     const { previousActions } = useGameProgress(id);
     const { gameState, gameFormat, gameVariant } = useGameStateContext();
@@ -173,22 +175,26 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
 
     // previousActions deliberately omitted — actionsFingerprint covers it.
      
+    const sidebar = variant === "sidebar";
+    const rowClass = sidebar ? "settings-history-row" : `text-xs py-1 border-b ${styles.actionRow}`;
+    const mainClass = sidebar ? "text-gray-300 text-xs font-semibold leading-tight" : "";
+    const metaClass = sidebar ? "text-gray-400 text-[12px] mt-0.5 leading-snug" : `text-[12px] ${styles.secondaryText}`;
     const actionRows = useMemo(
         () =>
             previousActions.map((action: ActionDTO, index: number) => (
-                <div key={index} className={`text-xs py-1 border-b ${styles.actionRow}`}>
+                <div key={index} className={rowClass}>
                     <div className={styles.rowContent}>
-                        <span className={styles.actionText}>
+                        <span className={sidebar ? mainClass : styles.actionText}>
                             {formatActionName(action.action)}
                             {formatActionAmount(action, isTournamentFormat(gameFormat))}
                         </span>
-                        <span className={`text-[12px] ${styles.secondaryText}`}>
+                        <span className={metaClass}>
                             {formatSeatLabel(action.seat)} · {formatRoundName(action.round)}
                         </span>
                     </div>
                 </div>
             )),
-        [actionsFingerprint, gameFormat]
+        [actionsFingerprint, gameFormat, sidebar]
     );
 
     // winnerInfo now has a stable identity across frames that do not change the
@@ -197,21 +203,21 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
         () =>
             showWinnerSummary
                 ? winnerInfo?.map((w, i) => (
-                      <div key={`winner-${i}`} className={`text-xs py-1 border-b ${styles.actionRow} ${styles.winnerRow}`}>
+                      <div key={`winner-${i}`} className={sidebar ? rowClass : `text-xs py-1 border-b ${styles.actionRow} ${styles.winnerRow}`}>
                           <div className={styles.rowContent}>
-                              <span className={styles.winnerText}>
+                              <span className={sidebar ? `${mainClass} ${styles.winnerText}` : styles.winnerText}>
                                   WINS {w.formattedAmount}
                                   {w.description && ` — ${w.description}`}
                                   {w.description && beatenDescription && ` over ${beatenDescription}`}
                               </span>
-                              <span className={`text-[12px] ${styles.secondaryText}`}>
+                              <span className={metaClass}>
                                   {formatSeatLabel(w.seat)} · {w.winType === "showdown" ? "Showdown" : "Uncontested"}
                               </span>
                           </div>
                       </div>
                   ))
                 : null,
-        [showWinnerSummary, winnerInfo, beatenDescription]
+        [showWinnerSummary, winnerInfo, beatenDescription, sidebar]
     );
 
     if (summary) {
@@ -226,6 +232,63 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                         : "Waiting for the next action"}
                 </span>
             </button>
+        );
+    }
+
+    const toolButtons = (
+        <>
+            <button
+                onClick={handleCopyLog}
+                title="Copy history to clipboard"
+                className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copied ? styles.copyButtonCopied : styles.copyButtonDefault}`}
+            >
+                {copied ? <FaCheck size={12} /> : <FaCopy size={12} />}
+            </button>
+            <button
+                onClick={handleCopyJSON}
+                title="Copy hand history as JSON"
+                className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copiedJSON ? styles.copyButtonCopied : styles.copyButtonDefault}`}
+            >
+                {copiedJSON ? <FaCheck size={12} /> : <FaFileDownload size={12} />}
+            </button>
+            <button
+                onClick={handleShareHand}
+                title="Share hand replay URL"
+                className={`p-1.5 rounded hover:bg-white/10 transition-colors duration-200 ${copiedShare ? styles.copyButtonCopied : styles.copyButtonDefault}`}
+            >
+                {copiedShare ? <FaCheck size={12} /> : <FaShare size={12} />}
+            </button>
+        </>
+    );
+
+    if (sidebar) {
+        return (
+            <>
+                <div className="settings-toggle-row flex-shrink-0">
+                    <span className="text-gray-400 text-[12px] leading-snug">Copy, export or share this hand</span>
+                    <div className="flex gap-1">{toolButtons}</div>
+                </div>
+                <div ref={scrollRef} onScroll={onScroll} className="history-scroll-content min-h-0 flex-1 overflow-y-auto" tabIndex={0} aria-label="History actions">
+                    {showLastHandBlock && lastHandResult && (
+                        <div className="settings-history-row">
+                            <div className={metaClass}>Last hand #{lastHandResult.handNumber}</div>
+                            {lastHandResult.lines.map((line, i) => (
+                                <div key={`last-hand-${i}`} className={`${mainClass} ${styles.winnerText}`}>
+                                    {line}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    {hasElements(previousActions) ? (
+                        <>
+                            {actionRows}
+                            {winnerRows}
+                        </>
+                    ) : (
+                        <p className={`settings-history-row ${metaClass}`}>No actions recorded yet.</p>
+                    )}
+                </div>
+            </>
         );
     }
 

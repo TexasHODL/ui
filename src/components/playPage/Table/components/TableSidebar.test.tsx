@@ -45,7 +45,8 @@ test("a cramped desktop dock shows a summary and closes after expanding", () => 
     expect(screen.getByText("Latest action")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Expand hand history" }));
     expect(screen.getByText("History rows")).toBeInTheDocument();
-    expect(screen.getByRole("region")).toHaveAttribute("data-expanded", "true");
+    // PC expanded History now renders in the Settings-style shell.
+    expect(screen.getByRole("region")).toHaveAttribute("data-sidebar", "true");
     fireEvent.click(screen.getByRole("button", { name: "Close history" }));
     expect(screen.queryByText("History rows")).not.toBeInTheDocument();
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
@@ -65,4 +66,25 @@ test("desktop dock stays visible when clicking the table and expansion resets on
     rerender(<SidebarHarness compact />);
     rerender(<SidebarHarness />);
     expect(screen.getByRole("region")).toHaveAttribute("data-expanded", "false");
+});
+
+test("PC expanded History uses the Settings shell with a History title and close button", () => {
+    const close = jest.fn();
+    render(<TableSidebar isOpen expandedHistory onClose={close} />);
+    const panel = document.getElementById("table-history-panel");
+    expect(panel).toHaveAttribute("data-sidebar", "true");
+    expect(panel).toHaveClass("action-log-overlay", "action-log-open", "settings-panel-width");
+    expect(panel?.querySelector(".table-settings-body .settings-heading")).toHaveTextContent("History");
+    expect(panel?.querySelector(".settings-content")).toHaveTextContent("History rows");
+    const button = screen.getByRole("button", { name: "Close history" });
+    expect(button).toHaveFocus();
+    fireEvent.click(button);
+    expect(close).toHaveBeenCalledTimes(1);
+});
+
+test("PC corner feed keeps its own look (not the shell)", () => {
+    render(<TableSidebar isOpen dockHeight={180} />);
+    const panel = document.getElementById("table-history-panel");
+    expect(panel).not.toHaveAttribute("data-sidebar");
+    expect(panel?.querySelector(".settings-heading")).toBeNull();
 });

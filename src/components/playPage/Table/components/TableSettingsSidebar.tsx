@@ -6,6 +6,7 @@
  */
 
 import React, { useEffect, useState } from "react";
+import { SettingsPanelShell } from "./SettingsPanelShell";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { ThemeToggle } from "../../../ThemeToggle";
@@ -275,43 +276,17 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({
     onOpenBlinds
 }) => {
     return (
-        <div
-            id="table-settings-panel"
-            role={isOpen ? "region" : undefined}
-            aria-label={isOpen ? "Table settings" : undefined}
-            className={`action-log-overlay ${isOpen ? "action-log-open settings-panel-width" : "action-log-closed"}`}
-        >
-            {/* Content is UNMOUNTED while closed. The closed container is width:0 +
-                overflow:hidden, which hid the panel visually but left its five toggle
-                switches in the DOM — focusable, screen-reader reachable, and rendering
-                off-canvas past the viewport's right edge on phones. */}
-            {isOpen && (
-                <div className="table-panel-surface table-settings-body h-full flex flex-col overflow-hidden">
-                    {/* Header */}
-                    <div className="settings-heading">
-                        <span className="text-white font-semibold text-sm">Settings</span>
-                        {onClose && (
-                            <button onClick={onClose} aria-label="Close settings" className="w-9 h-9 rounded-lg text-gray-300 hover:bg-white/10">
-                                ✕
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Toggle list */}
-                    <div className="settings-content">
-                        {onToggleFullScreen && (
-                            <ToggleRow
-                                label="Full screen"
-                                description="Table-only view: hides the banners. Press Esc or Show controls to exit."
-                                checked={fullScreen}
-                                onToggle={onToggleFullScreen}
-                            />
-                        )}
-                        {onOpenBlinds && <BlindsRow onOpen={onOpenBlinds} />}
-                        <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle />
-                    </div>
-                </div>
+        <SettingsPanelShell id="table-settings-panel" isOpen={isOpen} title="Settings" regionLabel="Table settings" closeLabel="Close settings" onClose={onClose}>
+            {onToggleFullScreen && (
+                <ToggleRow
+                    label="Full screen"
+                    description="Table-only view: hides the banners. Press Esc or Show controls to exit."
+                    checked={fullScreen}
+                    onToggle={onToggleFullScreen}
+                />
             )}
-        </div>
+            {onOpenBlinds && <BlindsRow onOpen={onOpenBlinds} />}
+            <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle />
+        </SettingsPanelShell>
     );
 };
