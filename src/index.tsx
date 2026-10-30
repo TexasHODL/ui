@@ -3,6 +3,7 @@ import "./polyfills";
 
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "./styles/typography.css";
 import "./theme/light.css";
 import "./components/common/ModalTheme.css";
 import "react-toastify/dist/ReactToastify.css";

@@ -15,7 +15,7 @@ export const FoldButton: React.FC<FoldButtonProps> = ({
 }) => {
     return (
         <button
-            className={`btn-fold cursor-pointer rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 font-medium transform active:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${
+            className={`btn-fold cursor-pointer rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 type-btn-main transform active:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${
                 className
                     ? className
                     : isMobileLandscape
@@ -28,10 +28,10 @@ export const FoldButton: React.FC<FoldButtonProps> = ({
             {loading ? (
                 <>
                     <LoadingSpinner size="sm" />
-                    FOLDING...
+                    Folding...
                 </>
             ) : (
-                "FOLD"
+                "Fold"
             )}
         </button>
     );

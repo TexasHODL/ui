@@ -154,7 +154,7 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
             </div>
 
             {/* Dollar amount label */}
-            <span className={`text-[#dbd3d3] font-bold whitespace-nowrap ${
+            <span className={`text-[#dbd3d3] type-num-bet whitespace-nowrap ${
                 compactLabel ? "text-2xl" : "text-4xl"
             }`}>
                 {isTournament ? formattedAmount : `$${formattedAmount}`}

@@ -28,7 +28,7 @@
     background-color: color-mix(in srgb, var(--ui-bg-dark, #0b0f14) 70%, transparent);
     color: var(--brand-primary, #3b82f6);
     font-size: 12px;
-    font-weight: 700;
+    font-weight: var(--type-tab-weight, 700);
     cursor: pointer;
     backdrop-filter: blur(4px);
     transition: opacity 0.15s ease, background-color 0.15s ease;
@@ -83,9 +83,9 @@
 }
 
 .heroLevel {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
+    font-size: var(--type-level-size, 10px);
+    font-weight: var(--type-label-weight, 800);
+    letter-spacing: var(--type-label-tracking, 0.08em);
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.7);
 }

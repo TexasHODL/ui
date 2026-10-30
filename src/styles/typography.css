@@ -1,0 +1,125 @@
+/* Table typography tokens (block52/ui#922).
+ *
+ * The shipped defaults for the shared tokens are set on :root below (one system:
+ * uppercase bold tracked buttons, Rubik 700 tabular numbers, 0.08em/700 micro-labels).
+ * Each element still carries its own pre-#922 value as the var() fallback, which is
+ * what applies wherever a token is reset (e.g. inside the Nouns felt). The
+ * /table-preview Typography panel overrides the tokens on <html> for local tuning:
+ *
+ *   --type-num-family    stack pill, bet/pot chip amount, payout lines
+ *   --type-num-weight    (current: stack 600, bet 700, payout 500)
+ *   --type-num-variant   (current: normal; tabular-nums for the "numeric" style)
+ *   --type-label-tracking  POT, LEVEL, payout header, place badge
+ *                        (current: 0.12em, 0.08em, 0.025em, 0.05em)
+ *   --type-label-weight  (current: 600, 800, 700, 800)
+ *   --type-label-size    (current: 11px, 10px, 13px/12px, 1rem)
+ *   --type-btn-transform / --type-btn-weight / --type-btn-tracking
+ *                        action buttons (uppercase, 700, 0.025em)
+ *                        pre-action buttons (none, 600, normal)
+ *                        main betting buttons (uppercase, 500, normal)
+ *                        muck/show (uppercase, inherited weight/tracking)
+ *                        Inside .poker-action-dock the dock's own values win:
+ *                        HODL Action 900, 0.01em (700 / 0 on some mobile layouts)
+ *   --type-btn-family    dock buttons only (current: HODL Action)
+ *   --type-body-weight   hand strength 500, seat-me checkbox 400
+ *
+ * Nouns theme: its Silkscreen pot rules use higher-specificity selectors and win, and the
+ * number family is reset inside .nouns-table-felt so nothing there changes font.
+ */
+:root {
+    /* Shipped defaults (block52/ui#922) */
+    --type-btn-transform: uppercase;
+    --type-btn-weight: 700;
+    --type-btn-tracking: 0.025em;
+    --type-num-family: var(--type-rubik);
+    --type-num-weight: 700;
+    --type-num-variant: tabular-nums;
+    --type-label-tracking: 0.08em;
+    --type-label-weight: 700;
+
+    --type-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --type-rubik: "Rubik", ui-sans-serif, system-ui, sans-serif;
+    /* Element-only sizes; the shared --type-label-size wins when set. */
+    --type-pot-label-size: var(--type-label-size, 11px);
+    --type-level-size: var(--type-label-size, 10px);
+    --type-place-size: var(--type-label-size, 1rem);
+}
+
+/* The Nouns felt keeps its own number fonts (Silkscreen pot, inherited elsewhere). */
+.nouns-table-felt {
+    --type-num-family: initial;
+}
+
+/* Numbers */
+.type-num-bet {
+    font-family: var(--type-num-family, inherit);
+    font-weight: var(--type-num-weight, 700);
+    font-variant-numeric: var(--type-num-variant, normal);
+}
+
+.type-num-payout {
+    font-family: var(--type-num-family, var(--type-mono));
+    font-weight: var(--type-num-weight, 500);
+    font-variant-numeric: var(--type-num-variant, normal);
+}
+
+/* Micro labels */
+.type-payout-header {
+    font-size: var(--type-label-size, 13px);
+    font-weight: var(--type-label-weight, 700);
+    letter-spacing: var(--type-label-tracking, 0.025em);
+}
+
+@media (min-width: 640px) {
+    .type-payout-header {
+        font-size: var(--type-label-size, 0.75rem);
+    }
+}
+
+/* Buttons */
+.type-btn-action {
+    text-transform: var(--type-btn-transform, uppercase);
+    font-weight: var(--type-btn-weight, 700);
+    letter-spacing: var(--type-btn-tracking, 0.025em);
+}
+
+.type-btn-pre {
+    text-transform: var(--type-btn-transform, none);
+    font-weight: var(--type-btn-weight, 600);
+    letter-spacing: var(--type-btn-tracking, normal);
+}
+
+/* Main betting buttons (Fold / Check / Call / Raise to / Bet / All-in). The label
+   text is sentence case; the capitals come from text-transform. */
+.type-btn-main {
+    text-transform: var(--type-btn-transform, uppercase);
+    font-weight: var(--type-btn-weight, 500);
+    letter-spacing: var(--type-btn-tracking, normal);
+}
+
+/* Muck cards / Show cards. */
+.type-btn-showdown {
+    text-transform: var(--type-btn-transform, uppercase);
+    font-weight: var(--type-btn-weight, inherit);
+    letter-spacing: var(--type-btn-tracking, inherit);
+}
+
+/* Inside the action dock, Footer.css / Table.css / mobileBetting.css force the
+   HODL Action 900 face and their own tracking with selectors that beat a single
+   class. Those rules also publish their values as --dock-btn-* (same selectors, so
+   the same cascade picks them); this rule outranks them all and falls back to
+   whichever --dock-btn-* value won, so with no overrides nothing changes. */
+.poker-action-dock.poker-action-dock.poker-action-dock button:is(.type-btn-main, .type-btn-pre, .type-btn-showdown) {
+    font-family: var(--type-btn-family, var(--dock-btn-family));
+    font-weight: var(--type-btn-weight, var(--dock-btn-weight));
+    letter-spacing: var(--type-btn-tracking, var(--dock-btn-tracking));
+}
+
+/* Body / caption */
+.type-body-hand {
+    font-weight: var(--type-body-weight, 500);
+}
+
+.type-body-seat {
+    font-weight: var(--type-body-weight, 400);
+}

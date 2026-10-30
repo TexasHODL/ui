@@ -37,7 +37,7 @@ const LiveHandStrengthDisplay: React.FC = () => {
     return (
         <div style={positionStyle} className="live-hand-strength bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50">
             <div className="flex flex-col items-end">
-                <div className="text-white font-medium text-sm" style={isCompactMobile ? { fontSize: "12px", lineHeight: 1.3 } : undefined}>{handStrength.descr}</div>
+                <div className="text-white type-body-hand text-sm" style={isCompactMobile ? { fontSize: "12px", lineHeight: 1.3 } : undefined}>{handStrength.descr}</div>
             </div>
         </div>
     );

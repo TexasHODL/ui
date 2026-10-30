@@ -51,17 +51,17 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
             onClick={onBetOrRaise}
             // Out-of-range amounts can't be sent, for a BET as well as a RAISE (ui#890).
             disabled={!isNullish(loading) || isRaiseAmountInvalid}
-            className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
+            className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 type-btn-main disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
         >
             {loading === "raise" || loading === "bet" ? (
                 <>
                     <LoadingSpinner size="sm" />
-                    {isAllIn ? "JAMMING..." : canRaise ? "RAISING..." : "BETTING..."}
+                    {isAllIn ? "Jamming..." : canRaise ? "Raising..." : "Betting..."}
                 </>
             ) : (
                 <>
                     {/* At the whole stack the button confirms an all-in (ui#890). */}
-                    {isAllIn ? "ALL-IN" : canRaise ? "RAISE TO" : "BET"}{" "}
+                    {isAllIn ? "All-in" : canRaise ? "Raise to" : "Bet"}{" "}
                     <span className={styles.primaryAmount}>{formatDisplayAmount(raiseToAmount, isTournament)}</span>
                 </>
             )}
@@ -89,17 +89,17 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
             {canCheck && (
                 <button
                     className={`btn-check cursor-pointer rounded-lg w-full shadow-md backdrop-blur-sm
-                    transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
+                    transition-all duration-200 type-btn-main disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
                     onClick={onCheck}
                     disabled={!isNullish(loading)}
                 >
                     {loading === "check" ? (
                         <>
                             <LoadingSpinner size="sm" />
-                            CHECKING...
+                            Checking...
                         </>
                     ) : (
-                        "CHECK"
+                        "Check"
                     )}
                 </button>
             )}
@@ -107,18 +107,18 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
             {canCall && (
                 <button
                     className={`btn-call cursor-pointer rounded-lg w-full border shadow-md backdrop-blur-sm
-                    transition-all duration-200 font-medium transform active:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
+                    transition-all duration-200 type-btn-main transform active:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
                     onClick={onCall}
                     disabled={!isNullish(loading)}
                 >
                     {loading === "call" ? (
                         <>
                             <LoadingSpinner size="sm" />
-                            {callIsAllIn ? "JAMMING..." : "CALLING..."}
+                            {callIsAllIn ? "Jamming..." : "Calling..."}
                         </>
                     ) : (
                         <>
-                            {callIsAllIn ? "CALL (ALL-IN)" : "CALL"} <span className={styles.amountAccent}>{callAmount}</span>
+                            {callIsAllIn ? "Call (all-in)" : "Call"} <span className={styles.amountAccent}>{callAmount}</span>
                         </>
                     )}
                 </button>
@@ -134,16 +134,16 @@ export const MainActionButtons: React.FC<MainActionButtonsProps> = ({
                 <button
                     onClick={onAllIn}
                     disabled={!isNullish(loading)}
-                    className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
+                    className={`cursor-pointer hover:scale-105 btn-raise rounded-lg w-full border shadow-md backdrop-blur-sm transition-all duration-200 type-btn-main disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 ${sizeClass}`}
                 >
                     {loading === "raise" ? (
                         <>
                             <LoadingSpinner size="sm" />
-                            JAMMING...
+                            Jamming...
                         </>
                     ) : (
                         <>
-                            ALL-IN <span className={styles.primaryAmount}>{allInAmount}</span>
+                            All-in <span className={styles.primaryAmount}>{allInAmount}</span>
                         </>
                     )}
                 </button>

@@ -58,7 +58,7 @@
 }
 [data-mobile-readable] .badge-value {
     font-size: calc(15 * var(--mobile-unit));
-    font-weight: 700;
+    font-weight: var(--type-num-weight, 700);
 }
 [data-mobile-readable] .badge-number {
     width: calc(19 * var(--mobile-unit));
