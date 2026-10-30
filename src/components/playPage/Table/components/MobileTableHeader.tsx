@@ -243,7 +243,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
         action();
     };
 
-    /** Right-hand drawer shell shared by the Table menu and Table settings. */
+    /** Right-hand drawer shell shared by the burger menu ("Table settings") and the gear drawer ("Settings"). */
     const renderDrawer = (title: string, closeLabel: string, onClose: () => void, testId: string, children: React.ReactNode) => (
         <>
             <div className="fixed inset-0 z-[1999] bg-black/60" onClick={onClose} />
@@ -320,8 +320,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             setTableSettingsOpen(true);
                         }}
                         className="w-11 h-11 flex items-center justify-center text-white hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-300"
-                        title="Table settings"
-                        aria-label="Open table settings"
+                        title="Settings"
+                        aria-label="Open settings"
                     >
                         <IoSettingsOutline size={18} aria-hidden="true" />
                     </button>
@@ -355,8 +355,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
             {/* Table settings drawer — table info, network, address, sharing, action log */}
             {tableSettingsOpen &&
                 renderDrawer(
-                    "Table settings",
-                    "Close table settings",
+                    "Settings",
+                    "Close settings",
                     () => setTableSettingsOpen(false),
                     "table-settings-drawer",
                     <>
@@ -420,8 +420,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
             {/* Hamburger drawer */}
             {menuOpen &&
                 renderDrawer(
-                    "Table menu",
-                    "Close menu",
+                    "Table settings",
+                    "Close table settings",
                     () => setMenuOpen(false),
                     "table-menu-drawer",
                     <>
