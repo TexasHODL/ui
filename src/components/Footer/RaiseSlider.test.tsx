@@ -14,7 +14,6 @@ const baseProps: RaiseSliderProps = {
     disabled: false,
     isMobileLandscape: false,
     isTournament: false,
-    isAllIn: false,
     onChange: jest.fn(),
     onIncrement: jest.fn(),
     onDecrement: jest.fn()
@@ -77,7 +76,6 @@ const renderSlider = (over: Partial<RaiseSliderProps> = {}) => {
         // Our desktop uses the pill; the native range input is the mobile-landscape layout.
         isMobileLandscape: true,
         isTournament: false,
-        isAllIn: false,
         onChange,
         onIncrement: jest.fn(),
         onDecrement: jest.fn(),
@@ -118,14 +116,12 @@ describe("RaiseSlider (ui#890)", () => {
         expect(onChange).toHaveBeenLastCalledWith(101);
     });
 
-    it("shows the ALL-IN tag only when the amount is the whole stack", () => {
-        renderSlider();
+    it("shows no ALL-IN pill at the max, in either layout", () => {
+        const { unmount } = render(<RaiseSlider {...baseProps} value={baseProps.max} />);
         expect(screen.queryByText("ALL-IN")).not.toBeInTheDocument();
-    });
-
-    it("shows the ALL-IN tag at an all-in max", () => {
-        renderSlider({ value: 1.99, isAllIn: true });
-        expect(screen.getByText("ALL-IN")).toBeInTheDocument();
+        unmount();
+        render(<RaiseSlider {...baseProps} value={baseProps.max} isMobileLandscape />);
+        expect(screen.queryByText("ALL-IN")).not.toBeInTheDocument();
     });
 });
 
@@ -156,8 +152,4 @@ describe("RaiseSlider desktop pill on the 1¢ grid (ui#890)", () => {
         expect(onChange).toHaveBeenLastCalledWith(1.05);
     });
 
-    it("shows the ALL-IN tag at an all-in max", () => {
-        render(<RaiseSlider {...baseProps} value={220} isAllIn />);
-        expect(screen.getByText("ALL-IN")).toBeInTheDocument();
-    });
 });

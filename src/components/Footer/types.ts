@@ -200,8 +200,6 @@ export interface RaiseSliderProps {
     disabled: boolean;
     isMobileLandscape: boolean;
     isTournament: boolean;
-    /** The amount is the whole stack (the slider is at an all-in max): show an ALL-IN tag (ui#890). */
-    isAllIn: boolean;
     onChange: (value: number) => void;
     onIncrement: () => void;
     onDecrement: () => void;
