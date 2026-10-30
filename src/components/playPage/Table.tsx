@@ -1399,7 +1399,6 @@ const Table = React.memo(() => {
                         handleShareHand={handleShareHand}
                     />                ) : (
                     <TableHeader
-                        onToggleFocus={() => setTableOnly(true)}
                         tableId={id || ""}
                         tableName={gameName}
                         handleOpenReplay={isReplayMode ? undefined : handleOpenReplay}
@@ -1435,7 +1434,7 @@ const Table = React.memo(() => {
                 </div>
                 {/* Blinds structure panel (ui#794) — self-gates to SNG/tournament;
                     non-modal floating tab + panel. Hidden in replay mode. */}
-                {!isReplayMode && <BlindsPanel hideTab={isCompactMobile} openSignal={blindsOpenSignal} />}
+                {!isReplayMode && <BlindsPanel hideTab openSignal={blindsOpenSignal} />}
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
                 {isCompactMobile && <LiveHandStrengthDisplay />}
@@ -1610,7 +1609,16 @@ const Table = React.memo(() => {
                 <TableSidebar isOpen={openSidebar} compact={isCompactMobile} expandedHistory={expandedHistory} dockHeight={parseFloat(String((historyDock as Record<string, unknown>)["--history-height"] || 160))} onClose={closeHistory} onOpen={onCloseSideBar} onExpand={expandHistory} />
 
                 {/*//! SETTINGS OVERLAY */}
-                <TableSettingsSidebar isOpen={openSettings} tableStyle={tableStyle} onTableStyleChange={setTableStyle} onClose={onToggleSettings} />
+                <TableSettingsSidebar
+                    isOpen={openSettings}
+                    tableStyle={tableStyle}
+                    onTableStyleChange={setTableStyle}
+                    onClose={onToggleSettings}
+                    // PC only: Full screen and Blinds live in Settings (phones keep them in the burger menu).
+                    fullScreen={isCompactMobile ? undefined : tableOnly}
+                    onToggleFullScreen={isCompactMobile ? undefined : () => setTableOnly(v => !v)}
+                    onOpenBlinds={isCompactMobile || isReplayMode ? undefined : () => setBlindsOpenSignal(n => n + 1)}
+                />
 
                 {/* Layout Debug Panel */}
                 <LayoutDebugInfo viewportMode={viewportMode} startIndex={startIndex} tableSize={tableSize} results={results} setStartIndex={setStartIndex} />
