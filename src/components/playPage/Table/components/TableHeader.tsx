@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaArrowLeft, FaCopy, FaQrcode, FaExpand, FaHistory, FaCog, FaEllipsisH, FaShare, FaRedo } from "react-icons/fa";
+import { FaArrowLeft, FaCopy, FaQrcode, FaHistory, FaCog, FaEllipsisH, FaShare, FaRedo } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
@@ -66,7 +66,6 @@ export interface TableHeaderProps {
     onToggleSettings: () => void;
     handleLeaveTableClick: () => void;
     handleShareHand: () => void;
-    onToggleFocus: () => void;
     /** Opens the latest completed hand's replay in a new tab; absent in replay mode. */
     handleOpenReplay?: () => void;
     /** The hand the replay button opens; null before the first hand completes. */
@@ -101,7 +100,6 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     onToggleSettings,
     handleLeaveTableClick,
     handleShareHand,
-    onToggleFocus,
     handleOpenReplay,
     replayHand = null
 }) => {
@@ -169,9 +167,6 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         </summary>
                         <div className={styles.popover}>
                             <p>TABLE OPTIONS</p>
-                            <button title="Table-only view — hide banners" onClick={onToggleFocus}>
-                                <FaExpand /> Full screen
-                            </button>
                             <button onClick={() => setShowQR(true)}>
                                 <FaQrcode /> Invite by QR code
                             </button>

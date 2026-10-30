@@ -7,6 +7,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
+import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { ThemeToggle } from "../../../ThemeToggle";
 import type { TableStyleOption } from "./MobileTableHeader";
 import {
@@ -81,6 +82,23 @@ const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, checked, onTo
         </button>
     </div>
 );
+
+/** PC Settings row that opens the existing blind-structure panel; only on tables with a blind structure. */
+const BlindsRow: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
+    const blindLevel = useBlindLevel();
+    if (!blindLevel.isActive) return null;
+    return (
+        <button type="button" className="settings-toggle-row w-full text-left" onClick={onOpen} data-testid="settings-open-blinds">
+            <div className="flex-1">
+                <p className="text-white text-xs font-semibold leading-tight">Blinds</p>
+                <p className="text-gray-400 text-[12px] mt-0.5 leading-snug">Show the blind structure and next level.</p>
+            </div>
+            <span className="text-gray-300 text-xs font-semibold" aria-hidden="true">
+                View &rsaquo;
+            </span>
+        </button>
+    );
+};
 
 export interface TableSettingsOptionsProps {
     tableStyle?: TableStyleOption;
@@ -240,9 +258,22 @@ export interface TableSettingsSidebarProps {
     tableStyle?: TableStyleOption;
     onTableStyleChange?: (style: TableStyleOption) => void;
     onClose?: () => void;
+    /** PC only: table-only full screen state and toggle (the header "..." menu no longer has it). */
+    fullScreen?: boolean;
+    onToggleFullScreen?: () => void;
+    /** PC only: opens the blinds panel (shown only on tables with a blind structure). */
+    onOpenBlinds?: () => void;
 }
 
-export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOpen, tableStyle, onTableStyleChange, onClose }) => {
+export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({
+    isOpen,
+    tableStyle,
+    onTableStyleChange,
+    onClose,
+    fullScreen = false,
+    onToggleFullScreen,
+    onOpenBlinds
+}) => {
     return (
         <div
             id="table-settings-panel"
@@ -268,6 +299,15 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
 
                     {/* Toggle list */}
                     <div className="settings-content">
+                        {onToggleFullScreen && (
+                            <ToggleRow
+                                label="Full screen"
+                                description="Table-only view: hides the banners. Press Esc or Show controls to exit."
+                                checked={fullScreen}
+                                onToggle={onToggleFullScreen}
+                            />
+                        )}
+                        {onOpenBlinds && <BlindsRow onOpen={onOpenBlinds} />}
                         <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle />
                     </div>
                 </div>

@@ -36,8 +36,7 @@ const makeProps = (): TableHeaderProps => ({
     onCloseSideBar: jest.fn(),
     onToggleSettings: jest.fn(),
     handleLeaveTableClick: jest.fn(),
-    handleShareHand: jest.fn(),
-    onToggleFocus: jest.fn()
+    handleShareHand: jest.fn()
 });
 
 describe("Focused table header", () => {
@@ -46,11 +45,9 @@ describe("Focused table header", () => {
         expect(screen.getByRole("button", { name: "Light theme" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Dark theme" })).toBeInTheDocument();
     });
-    it("uses the table-only view handler without requiring browser fullscreen support", () => {
-        const props = makeProps();
-        render(<TableHeader {...props} />);
-        fireEvent.click(screen.getByRole("button", { name: "Full screen" }));
-        expect(props.onToggleFocus).toHaveBeenCalledTimes(1);
+    it("no longer offers Full screen in the PC table options menu (it lives in Settings)", () => {
+        render(<TableHeader {...makeProps()} />);
+        expect(screen.queryByRole("button", { name: /full screen/i })).not.toBeInTheDocument();
     });
     it("shows a generated name when the table has no custom name", () => {
         const props = makeProps();

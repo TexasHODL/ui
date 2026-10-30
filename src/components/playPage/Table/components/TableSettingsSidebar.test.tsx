@@ -25,6 +25,9 @@ jest.mock("../../../../context/GameSettingsContext", () => ({
     })
 }));
 
+const mockBlindLevel = { isActive: true };
+jest.mock("../../../../hooks/game/useBlindLevel", () => ({ useBlindLevel: () => mockBlindLevel }));
+
 jest.mock("../../../../config/stageGeometry", () => ({
     getViewportMode: jest.fn(() => "desktop")
 }));
@@ -104,5 +107,42 @@ describe("Table settings", () => {
             expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.dealer)).toBe("D");
             expect(screen.getByRole("combobox", { name: "Dealer button" })).toHaveValue("D");
         });
+    });
+});
+
+describe("PC Settings: Full screen and Blinds", () => {
+    beforeEach(() => {
+        (getViewportMode as jest.Mock).mockReturnValue("desktop");
+        mockBlindLevel.isActive = true;
+    });
+
+    it("shows a Full screen switch that reflects and toggles the table-only view", () => {
+        const onToggleFullScreen = jest.fn();
+        const { rerender } = render(<TableSettingsSidebar isOpen fullScreen={false} onToggleFullScreen={onToggleFullScreen} />);
+        const sw = screen.getByRole("switch", { name: "Full screen" });
+        expect(sw).toHaveAttribute("aria-checked", "false");
+        fireEvent.click(sw);
+        expect(onToggleFullScreen).toHaveBeenCalledTimes(1);
+        rerender(<TableSettingsSidebar isOpen fullScreen onToggleFullScreen={onToggleFullScreen} />);
+        expect(screen.getByRole("switch", { name: "Full screen" })).toHaveAttribute("aria-checked", "true");
+    });
+
+    it("omits Full screen and Blinds when not wired (mobile)", () => {
+        render(<TableSettingsSidebar isOpen />);
+        expect(screen.queryByRole("switch", { name: "Full screen" })).not.toBeInTheDocument();
+        expect(screen.queryByTestId("settings-open-blinds")).not.toBeInTheDocument();
+    });
+
+    it("opens the blinds panel from Settings on tables with a blind structure", () => {
+        const onOpenBlinds = jest.fn();
+        render(<TableSettingsSidebar isOpen onOpenBlinds={onOpenBlinds} />);
+        fireEvent.click(screen.getByTestId("settings-open-blinds"));
+        expect(onOpenBlinds).toHaveBeenCalledTimes(1);
+    });
+
+    it("hides Blinds on cash tables (no blind structure)", () => {
+        mockBlindLevel.isActive = false;
+        render(<TableSettingsSidebar isOpen onOpenBlinds={jest.fn()} />);
+        expect(screen.queryByTestId("settings-open-blinds")).not.toBeInTheDocument();
     });
 });
