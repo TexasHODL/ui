@@ -89,7 +89,7 @@ export interface TableSettingsOptionsProps {
     showTheme?: boolean;
     /** Label for the table appearance dropdown (the mobile menu calls it "Felt"). */
     appearanceLabel?: string;
-    /** Adds the 6 o'clock seat-orientation toggle (mobile menu only). */
+    /** Adds the 6 o'clock seat-orientation toggle (PC sidebar and mobile menu). */
     showSeatToggle?: boolean;
 }
 
@@ -159,12 +159,7 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                     </select>
                 </label>
             )}
-            <StyleSelect
-                label="Cards"
-                value={tableStyles.deck}
-                options={DECK_OPTIONS}
-                onChange={value => isDeckId(value) && setTableStyle("deck", value)}
-            />
+            <StyleSelect label="Cards" value={tableStyles.deck} options={DECK_OPTIONS} onChange={value => isDeckId(value) && setTableStyle("deck", value)} />
             <StyleSelect
                 label="Chips"
                 value={tableStyles.chips}
@@ -215,12 +210,7 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                 checked={showMainPot}
                 onToggle={toggleShowMainPot}
             />
-            <ToggleRow
-                label="Auto Muck"
-                description="Hide losing cards automatically at showdown."
-                checked={autoMuck}
-                onToggle={toggleAutoMuck}
-            />
+            <ToggleRow label="Auto Muck" description="Hide losing cards automatically at showdown." checked={autoMuck} onToggle={toggleAutoMuck} />
             <ToggleRow
                 label="Sit-In Options"
                 description="Choose next hand or next big blind. Off: join next hand."
@@ -278,7 +268,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({ isOp
 
                     {/* Toggle list */}
                     <div className="settings-content">
-                        <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} />
+                        <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle />
                     </div>
                 </div>
             )}

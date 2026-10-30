@@ -91,7 +91,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     // this component used to carry.
     const { gameState, gameFormat } = useGameStateContext();
     const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
-    const { seatAtBottom, toggleSeatAtBottom, sitInOptions } = useGameSettings();
+    const { sitInOptions } = useGameSettings();
     const { submit, loadingAction } = useActionSubmit();
     const sittingIn = loadingAction === "sit-in";
 
@@ -172,24 +172,8 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
             </div>
         ) : null;
 
-    // Seat-orientation toggle (#392): a pure local view preference that rotates
-    // the table so the local player sits at 6 o'clock. It is a persistent view
-    // setting with no settings-sidebar equivalent, so it is rendered ALWAYS while
-    // the local player is seated — above every panel (sit-in, waiting, sit-out) —
-    // via `seatedFrame` below, rather than only in the sit-in states (#392/#2139).
-    const seatAtBottomToggle = (
-        <div className={`backdrop-blur-sm rounded-lg shadow-lg border border-white/20 bg-black/60 ${isCompact ? "p-2" : "p-3"}`}>
-            <label className="flex items-center cursor-pointer">
-                <input
-                    type="checkbox"
-                    checked={seatAtBottom}
-                    onChange={toggleSeatAtBottom}
-                    className="form-checkbox h-4 w-4 text-amber-500 border-gray-500 rounded focus:ring-0"
-                />
-                <span className={`ml-2 type-body-seat ${seatAtBottom ? "text-amber-300" : "text-white"} ${isCompact ? "text-xs" : "text-sm"}`}>Seat me at 6 o'clock</span>
-            </label>
-        </div>
-    );
+    // The 6-o'clock seat-orientation preference (#392) lives in the table
+    // settings (sidebar on PC, hamburger drawer on mobile), not on the table.
 
     // Every seated-state panel shares the same anchored column: the 6-o'clock
     // toggle pinned at the top, the state-specific panel(s) stacked beneath it.
@@ -212,10 +196,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
         ) : (
             <>
                 {buyChipsElement}
-                <div className={`fixed z-30 ${positionClass} flex flex-col gap-2`}>
-                    {seatAtBottomToggle}
-                    {panel}
-                </div>
+                {panel && <div className={`fixed z-30 ${positionClass} flex flex-col gap-2`}>{panel}</div>}
             </>
         );
 
@@ -235,7 +216,13 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                 <div className="fixed z-30 bottom-8 left-1/2 -translate-x-1/2">
                     <div className="table-spectator-hint">
                         <span className="table-spectator-dot" aria-hidden="true" />
-                        <span>{isTableFull ? "You’re watching · All seats are taken" : registrationClosed ? "You’re watching" : "You’re watching · Choose an open seat to play"}</span>
+                        <span>
+                            {isTableFull
+                                ? "You’re watching · All seats are taken"
+                                : registrationClosed
+                                  ? "You’re watching"
+                                  : "You’re watching · Choose an open seat to play"}
+                        </span>
                     </div>
                 </div>
             </>

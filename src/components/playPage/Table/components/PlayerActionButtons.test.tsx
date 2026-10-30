@@ -139,7 +139,7 @@ describe("PlayerActionButtons", () => {
         // The 6-o'clock toggle (#392) is also always shown while seated, so the
         // `none` display renders it too — no other action panels beyond these.
         expect(container.querySelector(".fixed.z-30")).not.toBeNull();
-        expect(screen.getByText("Seat me at 6 o'clock")).toBeInTheDocument();
+        expect(screen.queryByText("Seat me at 6 o'clock")).toBeNull(); // moved to table settings
     });
 
     it("renders waiting for players message for solo player", () => {
