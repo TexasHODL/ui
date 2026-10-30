@@ -851,7 +851,7 @@ const Table = React.memo(() => {
     // the same treatment as portrait: one-row header + hamburger, no persistent
     // banner, no style selector — just with the horizontal stage.
     const isCompactMobile = isMobilePortrait || tableLayout.viewportMode === "mobile-landscape";
-    const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory, expandHistory } = useTablePanels(!isCompactMobile);
+    const { openSidebar, openSettings, blindsOpen, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory, expandHistory, openBlinds, closeBlinds } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
     const chromeObserver = useRef<{ disconnect: () => void } | null>(null);
     // Desktop: publish the bottom banner's height so the hand-strength badge sits 3px above it.
@@ -1311,7 +1311,7 @@ const Table = React.memo(() => {
 
     return (
         <SitOutIntentProvider tableId={id} network={currentNetwork} pendingSitOut={pendingSitOut} legalActions={playerLegalActions}>
-        <div className="table-container" style={historyDock} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings} data-table-only={tableOnly}>
+        <div className="table-container" style={historyDock} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings || blindsOpen} data-table-only={tableOnly}>
                 {/* Connection freshness (ui#613): shown whenever the live socket is not live */}
                 {!isReplayMode && id && (
                     <ConnectionBanner
@@ -1364,7 +1364,7 @@ const Table = React.memo(() => {
                         tableName={gameName}
                         handleOpenReplay={isReplayMode ? undefined : handleOpenReplay}
                         replayHand={replayHand}
-                        onOpenBlinds={isReplayMode ? undefined : () => setBlindsOpenSignal(n => n + 1)}
+                        onOpenBlinds={isReplayMode ? undefined : isCompactMobile ? () => setBlindsOpenSignal(n => n + 1) : openBlinds}
                         currentNetwork={currentNetwork}
                         gameFormat={gameFormat || null}
                         gameVariant={gameVariant}
@@ -1434,7 +1434,12 @@ const Table = React.memo(() => {
                 </div>
                 {/* Blinds structure panel (ui#794) — self-gates to SNG/tournament;
                     non-modal floating tab + panel. Hidden in replay mode. */}
-                {!isReplayMode && <BlindsPanel hideTab openSignal={blindsOpenSignal} />}
+                {!isReplayMode && (isCompactMobile ? (
+                    <BlindsPanel hideTab variant="drawer" openSignal={blindsOpenSignal} />
+                ) : (
+                    // PC: one active side panel (History / Settings / Blinds), owned by useTablePanels.
+                    <BlindsPanel hideTab variant="sidebar" isOpen={blindsOpen} onClose={closeBlinds} />
+                ))}
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
                 {isCompactMobile && <LiveHandStrengthDisplay />}
@@ -1617,7 +1622,7 @@ const Table = React.memo(() => {
                     // PC only: Full screen and Blinds live in Settings (phones keep them in the burger menu).
                     fullScreen={isCompactMobile ? undefined : tableOnly}
                     onToggleFullScreen={isCompactMobile ? undefined : () => setTableOnly(v => !v)}
-                    onOpenBlinds={isCompactMobile || isReplayMode ? undefined : () => setBlindsOpenSignal(n => n + 1)}
+                    onOpenBlinds={isCompactMobile || isReplayMode ? undefined : openBlinds}
                 />
 
                 {/* Layout Debug Panel */}

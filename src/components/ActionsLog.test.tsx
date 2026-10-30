@@ -61,6 +61,18 @@ describe("ActionsLog", () => {
     afterEach(() => jest.clearAllMocks());
 
     describe("rendering", () => {
+        it("sidebar variant (PC): no own header, Settings value/description classes and dividers", () => {
+            withLog([action(1), action(2)]);
+            const { container } = render(<ActionsLog variant="sidebar" />);
+            expect(container.querySelector("h3")).toBeNull();
+            expect(screen.queryByRole("button", { name: "Close history" })).not.toBeInTheDocument();
+            expect(screen.getByTitle("Copy history to clipboard")).toBeInTheDocument();
+            const rows = container.querySelectorAll(".settings-history-row");
+            expect(rows).toHaveLength(2);
+            expect(rows[0].querySelector(".text-gray-300.text-xs.font-semibold")).toBeTruthy();
+            expect(rows[0].querySelector(".text-gray-400.text-\\[12px\\]")).toBeTruthy();
+            expect(screen.getByLabelText("History actions")).toHaveClass("overflow-y-auto");
+        });
         it("puts the close control in the header corner and has no expand link", () => {
             withLog([action(1)]);
             const onClose = jest.fn();

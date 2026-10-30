@@ -606,7 +606,7 @@
 .table-container #table-history-panel { transition: none; z-index: 35; }
 .table-container #table-history-panel .table-panel-surface { border: 0; background: transparent; }
 .table-container #table-history-panel[data-expanded="false"] .text-xs { font-size: 14px; }
-.table-container #table-history-panel .text-\[12px\] { font-size: 13px; }
+.table-container #table-history-panel:not([data-sidebar="true"]) .text-\[12px\] { font-size: 13px; }
 .table-container #table-history-panel[data-expanded="true"] {
     top: var(--history-top, 80px);
     right: 12px;
@@ -656,7 +656,7 @@
     right: auto;
 }
 .table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-history-panel[data-expanded="true"],
-.table-container[data-compact-mobile="true"]:not([data-table-only="true"]) #table-settings-panel.action-log-open {
+.table-container[data-compact-mobile="true"]:not([data-table-only="true"]) :is(#table-settings-panel, #table-blinds-panel).action-log-open {
     top: calc(var(--mobile-chrome-end, 70px) + 8px);
 }
 .table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; right: 12px; left: auto; }
@@ -681,17 +681,39 @@
     margin-top: 0;
     transform: translateX(-50%);
 }
-.table-container #table-settings-panel.action-log-open { width: min(300px, calc(100vw - 32px)); height: auto; background: var(--theme-surface, #100b17f5); border: 1px solid var(--theme-line, #ffffff18); border-radius: 10px; }
+.table-container :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]).action-log-open { width: min(300px, calc(100vw - 32px)); height: auto; background: var(--theme-surface, #100b17f5); border: 1px solid var(--theme-line, #ffffff18); border-radius: 10px; }
 .settings-content { padding: 0 14px 6px; }
 .settings-heading { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; border-bottom: 1px solid var(--theme-line, #ffffff18); }
 .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); }
 .settings-toggle-row:last-child { border: 0; }
+/* Blinds side panel (PC): the level list scrolls inside the Settings-style shell. */
+.settings-blinds-list { display: grid; column-gap: 12px; max-height: min(260px, calc(100dvh - 320px)); overflow-y: auto; padding: 6px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); scrollbar-width: thin; }
+.settings-blinds-list > span { padding: 3px 0; text-align: right; font-variant-numeric: tabular-nums; }
+.settings-blinds-list > span:nth-child(-n+4) { position: sticky; top: 0; background: var(--theme-surface, #100b17f5); }
+/* Mobile drawer: the drawer scrolls, so the list flows at full height. */
+.settings-blinds-list.settings-blinds-list-flow { max-height: none; overflow: visible; }
+.settings-blinds-list.settings-blinds-list-flow > span:nth-child(-n+4) { position: static; background: none; }
+.settings-blinds-note { padding: 9px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); }
+.settings-blinds-note:last-child { border: 0; }
+/* PC Settings/Blinds: never taller than the viewport. The header stays fixed and the
+   content scrolls (History keeps its own fixed height and inner scroller). */
+.table-container[data-compact-mobile="false"] :is(#table-settings-panel, #table-blinds-panel).action-log-open { --side-panel-top: 134px; max-height: calc(100dvh - var(--side-panel-top) - 16px); display: flex; flex-direction: column; }
+.table-container[data-compact-mobile="false"][data-table-only="true"] :is(#table-settings-panel, #table-blinds-panel).action-log-open { --side-panel-top: 54px; }
+.table-container[data-compact-mobile="false"] :is(#table-settings-panel, #table-blinds-panel) > .table-panel-surface { flex: 1 1 auto; min-height: 0; }
+.table-container[data-compact-mobile="false"] :is(#table-settings-panel, #table-blinds-panel) .settings-heading { flex-shrink: 0; }
+.table-container[data-compact-mobile="false"] :is(#table-settings-panel, #table-blinds-panel) .settings-shell-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+/* PC expanded History in the Settings shell: Settings position, a bounded height so the log scrolls. */
+.table-container[data-compact-mobile="false"] #table-history-panel[data-sidebar="true"] { top: 134px; height: min(420px, calc(100dvh - 200px)); max-height: none; }
+.table-container[data-table-only="true"] #table-history-panel[data-sidebar="true"] { top: 54px; }
+.settings-history-content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.settings-history-row { padding: 9px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); }
+.settings-history-row:last-child { border: 0; }
 .settings-appearance { display: block; padding: 10px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); color: var(--theme-ink, #ffffff); font-size: 14px; }
 .settings-theme-row { display: flex; justify-content: flex-end; padding: 10px 0 8px; border-bottom: 1px solid var(--theme-line, #ffffff12); }
 .settings-appearance select { padding: 7px 9px; margin-top: 6px; }
 @media (max-height: 600px) and (min-width: 600px) {
-    .table-container #table-settings-panel.action-log-open { width: min(540px, calc(100vw - 32px)); right: 16px; }
-    .table-container[data-compact-mobile="true"] #table-settings-panel.action-log-open { top: calc(var(--mobile-chrome-end, 70px) + 8px); }
+    .table-container :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]).action-log-open { width: min(540px, calc(100vw - 32px)); right: 16px; }
+    .table-container[data-compact-mobile="true"] :is(#table-settings-panel, #table-blinds-panel).action-log-open { top: calc(var(--mobile-chrome-end, 70px) + 8px); }
     .settings-content { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
     .settings-appearance, .settings-theme-row { grid-column: 1 / -1; }
 }

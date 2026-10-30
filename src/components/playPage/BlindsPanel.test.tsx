@@ -164,3 +164,61 @@ describe("BlindsPanel", () => {
         expect(screen.queryByTestId("blinds-panel-summary")).not.toBeInTheDocument();
     });
 });
+
+describe("BlindsPanel sidebar variant (PC)", () => {
+    beforeEach(() => {
+        try {
+            localStorage.clear();
+        } catch {
+            /* ignore */
+        }
+    });
+
+    it("renders in the Settings side panel shell with a Blinds header and keeps the timer", () => {
+        mockUseBlindLevel.mockReturnValue(activeInfo());
+        render(<BlindsPanel hideTab variant="sidebar" openSignal={1} />);
+        const shell = document.getElementById("table-blinds-panel");
+        expect(shell).toHaveClass("action-log-overlay", "action-log-open", "settings-panel-width");
+        expect(shell?.querySelector(".table-panel-surface.table-settings-body .settings-heading")).toHaveTextContent("Blinds");
+        expect(shell?.querySelector(".settings-content")).toContainElement(screen.getByTestId("blinds-panel"));
+        expect(screen.getByTestId("blinds-panel-countdown")).toHaveTextContent("2:00");
+        expect(screen.getByTestId("blinds-row-current")).toBeInTheDocument();
+        expect(screen.queryByTestId("blinds-panel-tab")).not.toBeInTheDocument();
+    });
+
+    it("drawer (mobile): uses the mobile drawer frame with the PC layout and the timer, closes from the X", () => {
+        mockUseBlindLevel.mockReturnValue(activeInfo());
+        render(<BlindsPanel hideTab variant="drawer" openSignal={1} />);
+        const drawer = screen.getByTestId("blinds-drawer");
+        expect(drawer).toHaveClass("overflow-y-auto", "max-h-[100dvh]");
+        expect(drawer).toHaveTextContent("Blinds");
+        expect(drawer).toContainElement(screen.getByTestId("blinds-panel"));
+        expect(drawer.querySelector(".settings-blinds-list-flow")).not.toBeNull();
+        expect(screen.getByTestId("blinds-panel-countdown")).toHaveTextContent("2:00");
+        expect(document.getElementById("table-blinds-panel")).toBeNull();
+        fireEvent.click(screen.getByRole("button", { name: "Close blinds" }));
+        expect(screen.queryByTestId("blinds-drawer")).not.toBeInTheDocument();
+    });
+
+    it("closes from the header close button", () => {
+        mockUseBlindLevel.mockReturnValue(activeInfo());
+        render(<BlindsPanel hideTab variant="sidebar" openSignal={1} />);
+        fireEvent.click(screen.getByRole("button", { name: "Close blinds" }));
+        expect(screen.queryByTestId("blinds-panel")).not.toBeInTheDocument();
+        expect(document.getElementById("table-blinds-panel")).toHaveClass("action-log-closed");
+    });
+
+    it("controlled (PC): ignores the remembered open state and openSignal, closes via onClose", () => {
+        localStorage.setItem("b52.blindsPanel.open", "true");
+        mockUseBlindLevel.mockReturnValue(activeInfo());
+        const onClose = jest.fn();
+        const { rerender } = render(<BlindsPanel hideTab variant="sidebar" isOpen={false} openSignal={3} onClose={onClose} />);
+        expect(screen.queryByTestId("blinds-panel")).not.toBeInTheDocument();
+        rerender(<BlindsPanel hideTab variant="sidebar" isOpen onClose={onClose} />);
+        fireEvent.mouseDown(document.body); // no click-outside close; the parent owns exclusivity
+        expect(screen.getByTestId("blinds-panel")).toBeInTheDocument();
+        fireEvent.keyDown(window, { key: "Escape" });
+        fireEvent.click(screen.getByRole("button", { name: "Close blinds" }));
+        expect(onClose).toHaveBeenCalledTimes(2);
+        expect(localStorage.getItem("b52.blindsPanel.open")).toBe("true");
+    });});

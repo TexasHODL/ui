@@ -156,7 +156,7 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         renderHeader({ onHistory });
         fireEvent.click(screen.getByLabelText("Open settings"));
         const settings = screen.getByTestId("table-settings-drawer");
-        expect(settings.querySelector("span.font-bold")).toHaveTextContent(/^Settings$/);
+        expect(settings.querySelector(".border-b > span")).toHaveTextContent(/^Settings$/);
         expect(screen.getByLabelText("Close settings")).toBeInTheDocument();
         for (const label of ["Network", "b521...abc", "Copy Table Link", "Share via QR Code", "Share this hand", "Share on X", "Action log"]) {
             expect(settings).toHaveTextContent(label);
@@ -168,7 +168,7 @@ describe("MobileTableHeader drawer (ui#684)", () => {
 
         openMenu();
         const menu = screen.getByTestId("table-menu-drawer");
-        expect(menu.querySelector("span.font-bold")).toHaveTextContent(/^Table settings$/);
+        expect(menu.querySelector(".border-b > span")).toHaveTextContent(/^Table settings$/);
         expect(screen.getByLabelText("Close table settings")).toBeInTheDocument();
         expect(menu).toHaveTextContent("Settings");
         expect(menu).toHaveTextContent("Full screen");

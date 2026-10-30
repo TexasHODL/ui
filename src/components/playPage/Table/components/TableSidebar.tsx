@@ -7,6 +7,7 @@
 
 import React, { useEffect, useRef } from "react";
 import ActionsLog from "../../../ActionsLog";
+import { SettingsPanelShell } from "./SettingsPanelShell";
 
 export interface TableSidebarProps {
     isOpen: boolean;
@@ -47,6 +48,17 @@ export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = fa
             }
         };
     }, [isOpen, detailed, compact, onClose]);
+    // PC expanded History: the same side panel shell as Settings and Blinds.
+    if (!compact && expandedHistory && isOpen) {
+        return (
+            <div ref={panelRef}>
+                <SettingsPanelShell id="table-history-panel" isOpen title="History" regionLabel="Hand history" closeLabel="Close history" onClose={onClose}
+                    panelAttributes={{ "data-sidebar": "true" }} contentClassName="settings-history-content">
+                    <ActionsLog variant="sidebar" />
+                </SettingsPanelShell>
+            </div>
+        );
+    }
     if (compact && !isOpen) {
         return <button className="mobile-history-trigger" aria-label="Open hand history" aria-controls="table-history-panel" aria-expanded={false} onClick={onOpen}>↶ History</button>;
     }

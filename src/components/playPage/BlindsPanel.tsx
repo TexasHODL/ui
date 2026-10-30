@@ -19,6 +19,8 @@ import { buildBlindLadder, formatBlindCountdown } from "../../utils/blindStructu
 import { isNullish } from "../../utils/guards";
 import { formatChipCount } from "../../utils/potDisplayUtils";
 import styles from "./BlindsPanel.module.css";
+import { SettingsPanelShell } from "./Table/components/SettingsPanelShell";
+import { MobileDrawerShell } from "./Table/components/MobileDrawerShell";
 
 const STORAGE_KEY = "b52.blindsPanel.open";
 
@@ -46,25 +48,33 @@ interface BlindsPanelProps {
     hideTab?: boolean;
     /** Bump to open the panel from elsewhere (e.g. the mobile menu's Blinds item). */
     openSignal?: number;
+    /** "sidebar" (PC): render in the Settings side panel shell with Settings typography. */
+    variant?: "floating" | "sidebar" | "drawer";
+    /** Controlled open state (PC side panel). When set, the remembered open state and openSignal are ignored. */
+    isOpen?: boolean;
+    /** Controlled close request (header ✕ or Esc). */
+    onClose?: () => void;
 }
 
-const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal = 0 }) => {
+const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal = 0, variant = "floating", isOpen: controlledOpen, onClose }) => {
     const blindLevel = useBlindLevel();
-    const [isOpen, setIsOpen] = useState<boolean>(readStoredOpen);
+    const controlled = controlledOpen !== undefined;
+    const [localOpen, setIsOpen] = useState<boolean>(() => (controlled ? false : readStoredOpen()));
+    const isOpen = controlled ? controlledOpen : localOpen;
 
     useEffect(() => {
-        if (openSignal > 0) setIsOpen(true);
-    }, [openSignal]);
+        if (!controlled && openSignal > 0) setIsOpen(true);
+    }, [openSignal, controlled]);
     const rootRef = useRef<HTMLDivElement>(null);
     const currentRowRef = useRef<HTMLSpanElement>(null);
 
-    const close = useCallback(() => setIsOpen(false), []);
+    const close = useCallback(() => (controlled ? onClose?.() : setIsOpen(false)), [controlled, onClose]);
     const toggle = useCallback(() => setIsOpen(prev => !prev), []);
 
     // Persist open/closed (default closed) within the session.
     useEffect(() => {
-        writeStoredOpen(isOpen);
-    }, [isOpen]);
+        if (!controlled) writeStoredOpen(localOpen);
+    }, [localOpen, controlled]);
 
     // Dismiss on Esc or a click anywhere outside the tab/panel. The mousedown
     // listener does not preventDefault, so the underlying click still reaches
@@ -76,6 +86,8 @@ const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal =
             if (e.key === "Escape") close();
         };
         const handlePointer = (e: MouseEvent) => {
+            // Controlled (PC side panel): the parent keeps panels exclusive; no click-outside close.
+            if (controlled) return;
             if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
                 close();
             }
@@ -87,7 +99,7 @@ const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal =
             window.removeEventListener("keydown", handleKey);
             document.removeEventListener("mousedown", handlePointer);
         };
-    }, [isOpen, close]);
+    }, [isOpen, close, controlled]);
 
     // Open on the level in play: past levels sit above it in the scrollable list.
     useEffect(() => {
@@ -108,6 +120,83 @@ const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal =
     const columns = ["auto", "1fr", hasAnte ? "auto" : "", showMinColumn ? "auto" : ""].filter(Boolean).join(" ");
     const current = rows.find(row => row.isCurrent);
     const next = rows.find(row => row.isNext);
+
+    if (variant === "sidebar" || variant === "drawer") {
+        const label = "text-white text-xs font-semibold leading-tight";
+        const desc = "text-gray-400 text-[12px] mt-0.5 leading-snug";
+        const sub = [current && current.ante > 0 ? `Ante ${formatChipCount(current.ante)}` : "", next ? `Next ${next.isBreak ? "Break" : spacedBlinds(next.blindsFormatted)}` : ""].filter(Boolean).join(" · ");
+        const body = (
+        <div role="dialog" aria-label="Blind structure" data-testid="blinds-panel">
+            {!isNullish(current) && (
+                <div className="settings-toggle-row">
+                    <div className="min-w-0">
+                        <div className={label}>
+                            {isNullish(current.level) ? "Now" : `Level ${current.level}`}: {spacedBlinds(current.blindsFormatted)}
+                        </div>
+                        {sub && <div className={desc}>{sub}</div>}
+                    </div>
+                    {blindLevel.hasTimer && (
+                        <span
+                            className={`text-xs font-semibold tabular-nums ${blindLevel.secondsRemaining < 0 ? `text-red-400 ${styles.countdownOvertime}` : "text-gray-300"}`}
+                            data-testid="blinds-panel-countdown"
+                        >
+                            {formatBlindCountdown(blindLevel.secondsRemaining)}
+                        </span>
+                    )}
+                </div>
+            )}
+            <div className={variant === "drawer" ? "settings-blinds-list settings-blinds-list-flow" : "settings-blinds-list"} style={{ gridTemplateColumns: columns }}>
+                <span className={desc}>Lvl</span>
+                <span className={desc}>Blinds</span>
+                {hasAnte && <span className={desc}>Ante</span>}
+                {showMinColumn && <span className={desc}>Min</span>}
+                {rows.map((row, index) => {
+                    const cell = `text-xs ${row.isCurrent ? "text-white font-semibold" : row.isPast ? "text-gray-400" : "text-gray-300"}`;
+                    const testId = row.isCurrent ? "blinds-row-current" : row.isNext ? "blinds-row-next" : row.isPast ? "blinds-row-past" : "blinds-row-upcoming";
+                    return (
+                        <React.Fragment key={isNullish(row.level) ? `row-${index}` : row.level}>
+                            <span ref={row.isCurrent ? currentRowRef : undefined} className={cell} data-testid={testId}>
+                                {isNullish(row.level) ? (row.isCurrent ? "Now" : "Next") : row.level}
+                            </span>
+                            <span className={cell}>{row.isBreak ? "Break" : spacedBlinds(row.blindsFormatted)}</span>
+                            {hasAnte && <span className={cell}>{row.ante > 0 && !row.isBreak ? formatChipCount(row.ante) : "—"}</span>}
+                            {showMinColumn && <span className={cell}>{isNullish(row.minutes) ? "—" : row.minutes}</span>}
+                        </React.Fragment>
+                    );
+                })}
+            </div>
+            {!isNullish(uniformMinutes) && (
+                <div className={`settings-blinds-note ${desc}`} data-testid="blinds-panel-level-length">
+                    {uniformMinutes}-minute levels
+                </div>
+            )}
+            {!hasFullSchedule && (
+                <div className={`settings-blinds-note ${desc}`} data-testid="blinds-panel-partial">
+                    Only the current and next levels are known for this table.
+                </div>
+            )}
+        </div>
+        );
+        if (variant === "drawer") {
+            // Mobile: the burger-menu drawer's frame; the whole drawer scrolls.
+            return (
+                <div ref={rootRef} data-testid="blinds-panel-root">
+                    {isOpen && (
+                        <MobileDrawerShell title="Blinds" closeLabel="Close blinds" onClose={close} testId="blinds-drawer">
+                            <div className="px-4">{body}</div>
+                        </MobileDrawerShell>
+                    )}
+                </div>
+            );
+        }
+        return (
+            <div ref={rootRef} data-testid="blinds-panel-root">
+                <SettingsPanelShell id="table-blinds-panel" isOpen={isOpen} title="Blinds" regionLabel="Blinds" closeLabel="Close blinds" onClose={close}>
+                    {body}
+                </SettingsPanelShell>
+            </div>
+        );
+    }
 
     return (
         <div ref={rootRef} className={styles.root} data-testid="blinds-panel-root">

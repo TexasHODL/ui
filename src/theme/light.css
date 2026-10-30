@@ -163,17 +163,17 @@ html[data-theme="light"] .table-settings-body {
     color: #1a0b2e;
 }
 
-html[data-theme="light"] #table-settings-panel .text-white,
-html[data-theme="light"] #table-settings-panel .settings-appearance {
+html[data-theme="light"] :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]) .text-white,
+html[data-theme="light"] :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]) .settings-appearance {
     color: #1a0b2e;
 }
 
-html[data-theme="light"] #table-settings-panel .text-gray-300,
-html[data-theme="light"] #table-settings-panel .text-gray-400 {
+html[data-theme="light"] :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]) .text-gray-300,
+html[data-theme="light"] :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]) .text-gray-400 {
     color: #5c4574;
 }
 
-html[data-theme="light"] #table-settings-panel select {
+html[data-theme="light"] :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]) select {
     background: #fff1f6;
     color: #1a0b2e;
     border-color: #e4c4ea;
