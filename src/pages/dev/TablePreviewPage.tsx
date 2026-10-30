@@ -127,7 +127,7 @@ const TablePreviewPage = () => {
                             pendingAction={null}
                             connection={connection}
                         >
-                            <GameEventsProvider latestItem={null} ackAnimation={ackAnimation}>
+                            <GameEventsProvider latestItem={null} ackAnimation={ackAnimation} isPlayingSuspense={() => false}>
                                 <GameDataProvider gameState={gameState} isOptimistic={false}>
                                     <PreviewSeatActionsContext.Provider value={options.allActions ? PREVIEW_SEAT_ACTIONS : null}>
                                         <ShowAllDealerButtonsProvider enabled={options.allDealers}>

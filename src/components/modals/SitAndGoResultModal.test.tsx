@@ -28,7 +28,7 @@ const USER_ADDRESS = "b521user";
 const dismissalKey = `viewed_sng_result_${TABLE_ID}_${USER_ADDRESS}`;
 const result = (place: number, payout = "400000") => ({ place, payout, isWinner: place === 1 });
 const show = (onClaim = jest.fn().mockResolvedValue(undefined)) =>
-    render(<SitAndGoResultModal tableId={TABLE_ID} onClaim={onClaim} />);
+    render(<SitAndGoResultModal tableId={TABLE_ID} onClaim={onClaim} held={false} />);
 
 beforeEach(() => {
     mockNavigate.mockReset();
@@ -117,7 +117,7 @@ test("retains the receipt when settlement removes the live player result", async
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
     await screen.findByRole("status");
     mockResult = null;
-    rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} />);
+    rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} held={false} />);
     expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
     expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$0.40");
 });
@@ -128,7 +128,7 @@ test("keeps spectating available below second place even when a winner is record
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
     await screen.findByRole("button", { name: "Spectate table" });
     mockResults = [{ place: 1 }];
-    rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} />);
+    rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} held={false} />);
     expect(screen.getByRole("button", { name: "Spectate table" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
 });
@@ -185,5 +185,10 @@ test.each(["unfinished", "cash", "spectator", "dismissed"])("does not open for %
     if (state === "spectator") localStorage.removeItem("user_cosmos_address");
     if (state === "dismissed") localStorage.setItem(dismissalKey, "true");
     show();
+    expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+test("stays hidden while a live tournament finish is still being shown (ui#874)", () => {
+    render(<SitAndGoResultModal tableId={TABLE_ID} onClaim={jest.fn()} held />);
     expect(screen.queryByRole("dialog")).toBeNull();
 });

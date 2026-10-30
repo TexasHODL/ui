@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { GameFormat } from "@block52/poker-vm-sdk";
 import { TableModals, type TableModalsProps } from "./TableModals";
 
+// ui#874: no live tournament finish in these tests, so the result modal is never held.
+jest.mock("../../../../hooks/game/useTournamentFinishMoment", () => ({ useTournamentFinishMoment: () => ({ phase: "done", finish: null }) }));
 jest.mock("../../../modals", () => ({
     SitAndGoAutoJoinModal: ({ onSpectate }: { onSpectate?: () => void }) => <div role="dialog">Buy in<button onClick={onSpectate}>Spectate</button></div>,
     SitAndGoResultModal: () => <div data-testid="result-handler" />,
