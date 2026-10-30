@@ -1311,7 +1311,7 @@ const Table = React.memo(() => {
 
     return (
         <SitOutIntentProvider tableId={id} network={currentNetwork} pendingSitOut={pendingSitOut} legalActions={playerLegalActions}>
-        <div className="table-container" style={historyDock} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings} data-table-only={tableOnly}>
+        <div className="table-container" style={{ ...historyDock, ...cssVars({ "--table-zoom": String(tableLayout.zoom) }) }} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings} data-table-only={tableOnly}>
                 {/* Connection freshness (ui#613): shown whenever the live socket is not live */}
                 {!isReplayMode && id && (
                     <ConnectionBanner

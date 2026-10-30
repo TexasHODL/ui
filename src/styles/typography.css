@@ -123,3 +123,37 @@
 .type-body-seat {
     font-weight: var(--type-body-weight, 400);
 }
+
+/* PC: one number size (ui, uniform-number-sizes). The bet chip amount, the pot and the
+   main action button text match the stack in the player's name label
+   (.badge-value: --seat-amount-size, 1.25rem / 1.125rem from 640px). Size only;
+   weights and families are untouched. Phones keep their own rules in
+   mobileReadability.css / mobileBetting.css ([data-mobile-readable] and the
+   mobile dock are excluded here).
+   The pot amount (text and chip pill) matches too. The bet chip and pot sit inside the zoomed table like the stack, so the same rem
+   value renders the same size. The action bar is outside the zoom, so its
+   buttons scale by --table-zoom (published on .table-container) to match. */
+:root {
+    --pc-stack-size: 1.25rem;
+    /* Pot is a touch larger than the shared number size; tweak the multiplier here. */
+    --pc-pot-scale: 1.2;
+    --pc-pot-size: calc(var(--pc-stack-size) * var(--pc-pot-scale));
+}
+@media (min-width: 640px) {
+    :root {
+        --pc-stack-size: 1.125rem;
+        --pc-pot-size: calc(var(--pc-stack-size) * var(--pc-pot-scale));
+    }
+}
+.zoom-wrapper-desktop:not([data-mobile-readable]) .chip-position .type-num-bet {
+    font-size: var(--pc-stack-size);
+    line-height: 1.25;
+}
+/* Pot text (Total Pot / Pot / Main Pot lines); the small POT caption is unchanged. */
+.zoom-wrapper-desktop:not([data-mobile-readable]) :is(.pot-display, .pot-display-secondary, .pot-pill .type-num-bet) {
+    font-size: var(--pc-pot-size);
+    line-height: 1.25;
+}
+.table-container .table-action-bar .poker-action-dock.poker-action-dock button:is(.btn-fold, .btn-check, .btn-call, .btn-raise) {
+    font-size: calc(var(--pc-stack-size) * var(--table-zoom, 1));
+}
