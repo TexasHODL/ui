@@ -17,7 +17,6 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
     disabled,
     isMobileLandscape,
     isTournament,
-    isAllIn,
     onChange,
     onIncrement,
     onDecrement
@@ -114,7 +113,6 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                         +
                     </button>
                 </div>
-                {isAllIn && <span className={styles.allInTag}>ALL-IN</span>}
                 <input
                     type="text"
                     inputMode={isTournament ? "numeric" : "decimal"}
@@ -202,7 +200,6 @@ export const RaiseSlider: React.FC<RaiseSliderProps> = ({
                 </div>
             )}
 
-            {isMobileLandscape && isAllIn && <span className={styles.allInTag}>ALL-IN</span>}
             {isMobileLandscape && (
                 <input
                     type="text"

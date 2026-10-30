@@ -81,19 +81,6 @@
     margin-top: -8px;
 }
 
-/* The ALL-IN tag next to the amount box when the slider is at the whole stack. */
-.allInTag {
-    border-radius: 9999px;
-    padding: 1px 6px;
-    background: #dc2626;
-    color: #fff;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    line-height: 16px;
-    white-space: nowrap;
-}
-
 @media (prefers-reduced-motion: reduce) {
     .slider::-webkit-slider-thumb {
         transition: none;

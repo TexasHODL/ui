@@ -43,7 +43,6 @@ export const RaiseBetControls: React.FC<RaiseBetControlsProps> = ({
                 disabled={disabled}
                 isMobileLandscape={isMobileLandscape}
                 isTournament={isTournament}
-                isAllIn={maxIsAllIn && amount >= maxAmount}
                 onChange={onAmountChange}
                 onIncrement={onIncrement}
                 onDecrement={onDecrement}
