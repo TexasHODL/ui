@@ -7,6 +7,8 @@
  * - Sit & Go waiting modal
  * - Transaction popup
  * - Leave table modal
+ * - Tournament-winner moment (ui#874), which holds the result modal back until
+ *   the deciding hand and the winner have been shown
  */
 
 import React, { useState } from "react";
@@ -17,6 +19,9 @@ import { SitAndGoAutoJoinModal, SitAndGoResultModal } from "../../../modals";
 import SitAndGoWaitingModal from "../../SitAndGoWaitingModal";
 import TransactionPopup from "../../common/TransactionPopup";
 import { LeaveTableModal } from "../../../modals";
+import TournamentWinnerMoment from "../../Animations/TournamentWinnerMoment";
+import { useTournamentFinishMoment } from "../../../../hooks/game/useTournamentFinishMoment";
+import { holdsResultModals } from "../../../../utils/tournamentFinish";
 
 export interface TableModalsProps {
     /** Watch links never open an unsolicited entry prompt, even after refresh. */
@@ -78,6 +83,11 @@ export const TableModals: React.FC<TableModalsProps> = ({
     // Spectate closes the entry prompt for the rest of this table visit, so a
     // poll or re-render that remounts it does not trap the player again.
     const [spectatingTableId, setSpectatingTableId] = useState<string | undefined>(undefined);
+    // ui#874: a finish happening live holds the results / busted modal until the
+    // deciding hand (and, at the end, the tournament-winner moment) has shown.
+    const finishMoment = useTournamentFinishMoment();
+    const holdResults = holdsResultModals(finishMoment.phase);
+
     return (
         <>
             {/* Game Start Countdown Modal */}
@@ -105,8 +115,12 @@ export const TableModals: React.FC<TableModalsProps> = ({
             {/* Only collection sends a settlement transaction. Spectating and
                 returning to the lobby are viewing/navigation actions. */}
             {gameFormat && isSitAndGoFormat(gameFormat) && (
-                <SitAndGoResultModal key={tableId} tableId={tableId} onClaim={handleClaimWinnings} />
+                <SitAndGoResultModal key={tableId} tableId={tableId} onClaim={handleClaimWinnings} held={holdResults} />
             )}
+
+            {/* Tournament-winner moment (ui#874): winner, prize, winning hand and
+                runner-up, held before the results modal. */}
+            {finishMoment.phase === "winner" && finishMoment.finish && <TournamentWinnerMoment finish={finishMoment.finish} />}
 
             {/* Transaction Popup - Bottom Right */}
             <TransactionPopup txHash={recentTxHash} onClose={handleCloseTransactionPopup} />

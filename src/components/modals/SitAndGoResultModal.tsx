@@ -18,13 +18,15 @@ interface SitAndGoResultModalProps {
     tableId: string | undefined;
     /** Resolves only after the SNG prize settlement succeeds. */
     onClaim: () => Promise<void>;
+    /** True while a live finish is still shown on the table (ui#874); the modal waits. */
+    held: boolean;
 }
 
 /** Opens the finishing hand immediately. Collection and navigation are separate:
  * only Collect sends a transaction; spectating simply dismisses the dialog.
  * Mount with a table-specific key so pending/collected state never crosses tables.
  */
-export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onClaim }) => {
+export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onClaim, held }) => {
     const navigate = useNavigate();
     const collecting = useRef(false);
     const { isSitAndGo, getPlayerResult } = useSitAndGoPlayerResults();
@@ -50,7 +52,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const [prizeClaim, setPrizeClaim] = useState<{ kind: "idle" | "claiming" | "done" | "error"; message?: string }>({ kind: "idle" });
     const payoutStatus = useSngPayoutStatus(tableId, userAddress, isSitAndGo && !!playerResult && playerResult.payout !== "0" && !dismissed);
 
-    if (!isSitAndGo || !playerResult || dismissed || !tableId || !userAddress) return null;
+    if (!isSitAndGo || !playerResult || dismissed || held || !tableId || !userAddress) return null;
 
     const { place, payout, isWinner } = playerResult;
     const isPaid = payout !== "0";
