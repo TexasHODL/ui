@@ -75,6 +75,7 @@ import { useNetwork } from "../../context/NetworkContext";
 import { PlayerDTO, PlayerStatus } from "@block52/poker-vm-sdk";
 import { shouldWarnOnLeave } from "../../utils/playerStatus";
 import LiveHandStrengthDisplay from "./LiveHandStrengthDisplay";
+import { observeDesktopActionBar } from "./desktopActionBar";
 import { useGameStateSounds } from "../../hooks/notifications/useGameStateSounds";
 import NoWalletOverlay from "./NoWalletOverlay";
 import SngPayoutPanel from "./SngPayoutPanel";
@@ -853,6 +854,12 @@ const Table = React.memo(() => {
     const { openSidebar, openSettings, expandedHistory, onCloseSideBar, onToggleSettings, closeHistory, expandHistory } = useTablePanels(!isCompactMobile);
     const [tableOnly, setTableOnly] = useState(false);
     const chromeObserver = useRef<{ disconnect: () => void } | null>(null);
+    // Desktop: publish the bottom banner's height so the hand-strength badge sits 3px above it.
+    const actionBarObserver = useRef<(() => void) | null>(null);
+    const measureDesktopActionBar = useCallback((bar: HTMLDivElement | null) => {
+        actionBarObserver.current?.();
+        actionBarObserver.current = bar ? observeDesktopActionBar(bar) : null;
+    }, []);
     const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
         chromeObserver.current?.disconnect();
         chromeObserver.current = null;
@@ -1587,7 +1594,7 @@ const Table = React.memo(() => {
                 {/* Desktop and tablet keep the fixed footer. SNG payouts stay
                     here, where there is room beside the action bar (ui#693). */}
                 {!isReplayMode && !isCompactMobile && (
-                    <div className="table-action-bar w-full flex justify-center items-end z-[10] fixed bottom-0 left-0 right-0 backdrop-blur-sm pt-[10px] pb-[5px]">
+                    <div ref={measureDesktopActionBar} className="table-action-bar w-full flex justify-center items-end z-[10] fixed bottom-0 left-0 right-0 backdrop-blur-sm pt-[10px] pb-[5px]">
                         <div className="w-full flex justify-center items-end max-w-[700px]">
                             <PokerActionPanel onTransactionSubmitted={handleTransactionSubmitted} />
                         </div>
