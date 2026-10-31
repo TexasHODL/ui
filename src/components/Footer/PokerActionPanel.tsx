@@ -757,7 +757,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
             className={
                 isMobileBetting
                     ? "poker-action-dock mobile-dock-root text-white relative"
-                    : "poker-action-dock fixed left-0 right-0 text-white flex justify-center items-center relative bottom-12 lg:bottom-0 p-2 lg:p-0 pb-4 lg:pb-[6px]"
+                    : "poker-action-dock fixed left-0 right-0 text-white flex justify-center items-center relative bottom-0 p-0 pb-[6px]"
             }
         >
             {isMobileBetting ? (
