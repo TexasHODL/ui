@@ -146,3 +146,8 @@ describe("PC Settings: Full screen and Blinds", () => {
         expect(screen.queryByTestId("settings-open-blinds")).not.toBeInTheDocument();
     });
 });
+
+test("leaves the theme toggle to the header banner", () => {
+    render(<TableSettingsSidebar isOpen />);
+    expect(screen.queryByRole("button", { name: "Light theme" })).not.toBeInTheDocument();
+});

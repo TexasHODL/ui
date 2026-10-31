@@ -45,9 +45,17 @@ describe("getViewportMode", () => {
         expect(getViewportMode()).toBe("mobile-landscape");
     });
 
-    it("returns mobile-landscape for compact touch landscape fold-like viewports", () => {
-        setViewport(1400, 800, true);
+    it("returns mobile-landscape for fold outer screens and large phones in landscape", () => {
+        setViewport(904, 380, true);
         expect(getViewportMode()).toBe("mobile-landscape");
+    });
+
+    it.each([
+        [1024, 640, "tablet"], [640, 1024, "tablet"], [1024, 768, "tablet"], [768, 1024, "tablet"],
+        [1280, 800, "desktop"], [800, 1280, "tablet"], [1400, 800, "desktop"]
+    ])("gives touch tablets (%ix%i) the desktop layout family", (w, h, mode) => {
+        setViewport(w, h, true);
+        expect(getViewportMode()).toBe(mode);
     });
 
     it("keeps desktop for compact landscape viewports on non-touch pointers", () => {
@@ -171,8 +179,8 @@ describe("getViewportMode", () => {
     });
 
     it.each([
-        [390, 780, 72, 160], [360, 640, 72, 202], [966, 1100, 72, 180],
-        [844, 390, 72, 96], [667, 320, 72, 120], [1280, 740, 72, 96]
+        [390, 780, 72, 160], [360, 640, 72, 202], [430, 932, 72, 180],
+        [844, 390, 72, 96], [667, 320, 72, 120], [932, 430, 72, 96]
     ])("fits every seat above the mobile action slot at %dx%d", (width, height, header, dock) => {
         setViewport(width, height, true);
         const stageHeight = height - header - dock;

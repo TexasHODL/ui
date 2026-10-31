@@ -975,6 +975,9 @@ function readCoarsePointer(): boolean {
     return coarsePointerList?.matches ?? false;
 }
 
+/** Shortest viewport side (CSS px) from which a device counts as a tablet. */
+export const TABLET_MIN_SHORT_SIDE = 600;
+
 export function getViewportMode(): ViewportMode {
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -988,6 +991,11 @@ export function getViewportMode(): ViewportMode {
     // automation without touch emulation) take the SAME code path as a real
     // phone instead of falling through to "tablet" and rendering the squashed
     // landscape stage.
+    // Tablets (iPad, Galaxy Tab, foldable inner screens): shortest side >= 600 CSS px.
+    // Every phone is well under that (largest ~440px), so tablets get the PC/laptop
+    // layout, auto-fit to the screen, instead of the cramped phone docks.
+    if (Math.min(width, height) >= TABLET_MIN_SHORT_SIDE) return width <= 1024 ? "tablet" : "desktop";
+
     if (!isLandscape && (isCoarsePointer || width < 768)) return "mobile-portrait";
 
     // Landscape: coarse pointer up to 1700×900 CSS px — covers regular phones,

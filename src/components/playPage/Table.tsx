@@ -897,7 +897,8 @@ const Table = React.memo(() => {
     }, [openSidebar, isCompactMobile, tableOnly, tableLayout.containerWidth, tableLayout.containerHeight]);
     // Table-only view: fit seats, badges and chips beside the dock and clear of the overlays.
     const zoomWrapperRef = useRef<HTMLDivElement>(null);
-    const tableOnlyFit = useTableOnlyFit(tableOnly, tableContainerRef, zoomWrapperRef, tableDivRef, tableLayout.tableTransform, tableLayout.zoom);
+    // Desktop/tablet: the same measured fit maximises the table between the header and the action bar, centred.
+    const tableOnlyFit = useTableOnlyFit(tableOnly || !tableLayout.viewportMode.startsWith("mobile"), tableContainerRef, zoomWrapperRef, tableDivRef, tableLayout.tableTransform, tableLayout.zoom);
     const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom * tableOnlyFit.scale, tableOnly, isCompactMobile);
     useEffect(() => {
         if (!tableOnly) return;

@@ -188,7 +188,11 @@ export function useTableOnlyFit(
             if (root instanceof HTMLElement) root.style.setProperty("--table-only-stage-inset-right", `${Math.max(0, Math.round(window.innerWidth - stage.right))}px`);
             if (root instanceof HTMLElement) anchorShowControls(root);
             const overlays: Box[] = [];
+            // Desktop/tablet (not table-only): the History/Settings/Blinds panels float
+            // over the table, so opening one must never move or rescale it.
+            const tableOnlyView = root?.getAttribute("data-table-only") === "true";
             root?.querySelectorAll(FIT_OVERLAYS).forEach(el => {
+                if (!tableOnlyView && el.matches(".action-log-overlay")) return;
                 const rect = el.getBoundingClientRect();
                 if (!visible(rect)) return;
                 // The desktop History feed sizes its height around the seats

@@ -194,7 +194,7 @@ describe("landscape mobile readability", () => {
         };
         check(844, 390, false);
         check(915, 412, false);
-        check(1024, 650, true);
+        check(932, 430, true);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
@@ -210,7 +210,7 @@ describe("landscape mobile readability", () => {
     test.each([
         ["844x390", 844, 390, false],
         ["915x412", 915, 412, false],
-        ["1024x650", 1024, 650, true]
+        ["932x430", 932, 430, true]
     ])("keeps the lowest action box inside the stage at %s", (_label, width, height, coarse) => {
         window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
@@ -405,7 +405,7 @@ describe("landscape mobile readability", () => {
         };
         assertCentred(844, 390);
         assertCentred(915, 412);
-        assertCentred(1024, 650);
+        assertCentred(932, 430);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
@@ -496,7 +496,7 @@ describe("landscape mobile readability", () => {
             expect(topChipY - pillHalf).toBeGreaterThan(bannerBottom + 4);
         };
         check(844, 390);
-        check(1024, 650);
+        check(932, 430);
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
@@ -522,7 +522,7 @@ describe("landscape mobile readability", () => {
         window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         const overlaps: string[] = [];
         for (const size of [2, 4, 6, 9] as TableSize[]) {
-            for (const [width, height] of [[844, 390], [915, 412], [1024, 650]] as const) {
+            for (const [width, height] of [[844, 390], [915, 412], [932, 430]] as const) {
                 Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
                 Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
                 const contentWidth = width - 124;
@@ -573,7 +573,7 @@ describe("landscape mobile readability", () => {
             const placed = placeMobileRailMarkers(getAllPositions(2), zoom, 0, screenUnit, 2);
             return { placed, zoom, unit: screenUnit / zoom };
         };
-        for (const [width, height] of [[844, 390], [1024, 650]] as const) {
+        for (const [width, height] of [[844, 390], [932, 430]] as const) {
             const { placed, zoom, unit } = place(width, height);
             const seat = placed.players[1];
             const chip = placed.chips[1];
@@ -812,7 +812,7 @@ describe("landscape mobile readability", () => {
     test("keeps mobile-landscape chips off every action banner", () => {
         window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         const problems: string[] = [];
-        for (const [width, height] of [[844, 390], [1024, 650]] as const) {
+        for (const [width, height] of [[844, 390], [932, 430]] as const) {
             Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
             Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
             for (const size of [2, 4, 6, 9] as TableSize[]) {
