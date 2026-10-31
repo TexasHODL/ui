@@ -89,6 +89,7 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
+import { fitTransform, useTableOnlyFit } from "../../hooks/game/useTableOnlyFit";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { getViewportMode, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
@@ -894,7 +895,10 @@ const Table = React.memo(() => {
         const root = tableContainerRef.current?.closest(".table-container");
         if (root instanceof HTMLElement) placeMobileHistory(root);
     }, [openSidebar, isCompactMobile, tableOnly, tableLayout.containerWidth, tableLayout.containerHeight]);
-    const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom, tableOnly, isCompactMobile);
+    // Table-only view: fit seats, badges and chips beside the dock and clear of the overlays.
+    const zoomWrapperRef = useRef<HTMLDivElement>(null);
+    const tableOnlyFit = useTableOnlyFit(tableOnly, tableContainerRef, zoomWrapperRef, tableDivRef, tableLayout.tableTransform, tableLayout.zoom);
+    const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom * tableOnlyFit.scale, tableOnly, isCompactMobile);
     useEffect(() => {
         if (!tableOnly) return;
         const restore = (event: KeyboardEvent) => { if (event.key === "Escape") setTableOnly(false); };
@@ -1458,7 +1462,7 @@ const Table = React.memo(() => {
                     )}
 
                     {/*//! TABLE — zoom-wrapper applies calculated transform */}
-                    <div className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: tableLayout.tableTransform, ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom) }) }}>
+                    <div ref={zoomWrapperRef} className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-table-fit={tableOnly ? tableOnlyFit.scale.toFixed(3) : undefined} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: fitTransform(tableOnlyFit, tableLayout.tableTransform), ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom) }) }}>
                         {/*//! Table coordinate space — the felt div at its stage origin.
                         Desktop landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH
@@ -1468,6 +1472,7 @@ const Table = React.memo(() => {
                         Also the root for the card-animation durations (src/bus/timing.ts → CSS custom properties). */}
                         <div
                             ref={tableDivRef}
+                            data-table-felt=""
                             className="absolute"
                             style={{
                                 width: `${stageDims.tableWidth}px`,

@@ -97,7 +97,8 @@ const Badge: React.FC<BadgeProps> = React.memo(({
             if (getViewportMode() !== "mobile-portrait") return;
             const rect = shell.getBoundingClientRect();
             if (rect.width < 1) return;
-            const zoom = parseFloat(getComputedStyle(shell).getPropertyValue("--table-zoom")) || 1;
+            // Rendered scale, including the full screen fit on top of --table-zoom.
+            const zoom = shell.offsetWidth > 0 ? rect.width / shell.offsetWidth : parseFloat(getComputedStyle(shell).getPropertyValue("--table-zoom")) || 1;
             const overflowLeft = Math.max(0, 4 - rect.left);
             const overflowRight = Math.max(0, rect.right - (window.innerWidth - 4));
             const shift = (overflowLeft - overflowRight) / Math.max(zoom, 0.01);
@@ -108,9 +109,13 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         const stage = shell.closest(".table-stage");
         const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(place);
         if (observer && stage) observer.observe(stage);
+        // The full screen fit rescales the table without resizing the stage.
+        const refit = typeof MutationObserver === "undefined" || !stage ? null : new MutationObserver(place);
+        refit?.observe(stage as HTMLElement, { attributes: true, subtree: true, attributeFilter: ["data-table-fit"] });
         window.addEventListener("resize", place);
         return () => {
             observer?.disconnect();
+            refit?.disconnect();
             window.removeEventListener("resize", place);
         };
     }, [bannerMode, isBannerVisible, actionDisplay.action, actionDisplay.amount]);
