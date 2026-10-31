@@ -286,7 +286,8 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({
                 />
             )}
             {onOpenBlinds && <BlindsRow onOpen={onOpenBlinds} />}
-            <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle />
+            {/* The theme toggle lives in the table header banner, always visible. */}
+            <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle showTheme={false} />
         </SettingsPanelShell>
     );
 };
