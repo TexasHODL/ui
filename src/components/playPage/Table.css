@@ -1062,3 +1062,9 @@
 /* Desktop bottom banner: buttons, slider row, presets and Muck/Show all at
    85%, so the hero seat stays clear of it. Mobile docks are unaffected. */
 .table-action-bar .table-action-bar-inner { zoom: 0.85; }
+
+/* Short desktop-layout screens (tablets in landscape, ~1024x640 / 1280x800):
+   shrink the bottom banner a little more so it stays clear of the hero seat. */
+@media (max-height: 820px) {
+    .table-action-bar .table-action-bar-inner { zoom: 0.75; }
+}
