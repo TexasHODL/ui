@@ -5,7 +5,11 @@ import { useTablePanels } from "../../../../hooks/game/useTablePanels";
 
 const SidebarHarness = ({ compact = false, dockHeight = 180 }) => {
     const panels = useTablePanels(!compact);
-    return <TableSidebar isOpen={panels.openSidebar} expandedHistory={panels.expandedHistory} compact={compact} dockHeight={dockHeight} onOpen={panels.onCloseSideBar} onExpand={panels.expandHistory} onClose={panels.closeHistory} />;
+    return <>
+        <button aria-controls="table-history-panel" onClick={panels.onCloseSideBar}>History</button>
+        <div data-testid="felt" />
+        <TableSidebar isOpen={panels.openSidebar} expandedHistory={panels.expandedHistory} compact={compact} dockHeight={dockHeight} onOpen={panels.onCloseSideBar} onExpand={panels.expandHistory} onClose={panels.closeHistory} />
+    </>;
 };
 
 jest.mock("../../../ActionsLog", () => ({
@@ -40,32 +44,38 @@ test("mobile dismisses with Escape or a tap outside, but not an inside tap", () 
     expect(close).toHaveBeenCalledTimes(2);
 });
 
-test("a cramped desktop dock shows a summary and closes after expanding", () => {
+test("PC History starts closed, opens from its button in the Settings shell, and the X leaves nothing open", () => {
     render(<SidebarHarness dockHeight={48} />);
-    expect(screen.getByText("Latest action")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Expand hand history" }));
+    expect(screen.queryByText("History rows")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    expect(screen.queryByText("Latest action")).not.toBeInTheDocument();
     expect(screen.getByText("History rows")).toBeInTheDocument();
-    // PC expanded History now renders in the Settings-style shell.
     expect(screen.getByRole("region")).toHaveAttribute("data-sidebar", "true");
     fireEvent.click(screen.getByRole("button", { name: "Close history" }));
     expect(screen.queryByText("History rows")).not.toBeInTheDocument();
     expect(screen.queryByRole("region")).not.toBeInTheDocument();
 });
 
-test("the desktop dock header closes the panel", () => {
-    render(<SidebarHarness dockHeight={180} />);
-    fireEvent.click(screen.getByRole("button", { name: "Close history" }));
+test("PC History closes on a click outside, stays open for clicks inside and on its own button", () => {
+    render(<SidebarHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    fireEvent.pointerDown(screen.getByText("History rows"));
+    expect(screen.getByText("History rows")).toBeInTheDocument();
+    fireEvent.pointerDown(screen.getByTestId("felt"));
     expect(screen.queryByText("History rows")).not.toBeInTheDocument();
+    // Re-pressing the button opens it again (its own press is not an outside click).
+    fireEvent.pointerDown(screen.getByRole("button", { name: "History" }));
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
+    expect(screen.getByText("History rows")).toBeInTheDocument();
 });
 
-test("desktop dock stays visible when clicking the table and expansion resets on rotation", () => {
+test("expansion resets on rotation", () => {
     const { rerender } = render(<SidebarHarness />);
-    fireEvent.pointerDown(document.body);
-    expect(screen.getByText("History rows")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "History" }));
     fireEvent.click(screen.getByRole("button", { name: "Expand hand history" }));
     rerender(<SidebarHarness compact />);
     rerender(<SidebarHarness />);
-    expect(screen.getByRole("region")).toHaveAttribute("data-expanded", "false");
+    expect(screen.queryByRole("region")).not.toBeInTheDocument();
 });
 
 test("PC expanded History uses the Settings shell with a History title and close button", () => {
@@ -82,9 +92,10 @@ test("PC expanded History uses the Settings shell with a History title and close
     expect(close).toHaveBeenCalledTimes(1);
 });
 
-test("PC corner feed keeps its own look (not the shell)", () => {
+test("PC History opens as the Settings-style modal, not the old corner feed", () => {
     render(<TableSidebar isOpen dockHeight={180} />);
     const panel = document.getElementById("table-history-panel");
-    expect(panel).not.toHaveAttribute("data-sidebar");
-    expect(panel?.querySelector(".settings-heading")).toBeNull();
+    expect(panel).toHaveAttribute("data-sidebar", "true");
+    expect(panel).toHaveClass("action-log-overlay", "action-log-open", "settings-panel-width");
+    expect(panel?.querySelector(".table-settings-body .settings-heading")).toHaveTextContent("History");
 });

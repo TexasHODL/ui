@@ -69,7 +69,8 @@ describe("ActionsLog", () => {
             expect(screen.getByTitle("Copy history to clipboard")).toBeInTheDocument();
             const rows = container.querySelectorAll(".settings-history-row");
             expect(rows).toHaveLength(2);
-            expect(rows[0].querySelector(".text-gray-300.text-xs.font-semibold")).toBeTruthy();
+            expect(rows[0].querySelector(".text-white.text-xs.font-semibold")).toBeTruthy();
+            expect(rows[0].querySelector(".type-num-bet")).toBeTruthy();
             expect(rows[0].querySelector(".text-gray-400.text-\\[12px\\]")).toBeTruthy();
             expect(screen.getByLabelText("History actions")).toHaveClass("overflow-y-auto");
         });

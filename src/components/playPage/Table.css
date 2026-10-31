@@ -714,6 +714,9 @@
 .settings-history-content { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .settings-history-row { padding: 9px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); }
 .settings-history-row:last-child { border: 0; }
+/* History rows read like Settings rows: label left, detail right, one line each. */
+.settings-history-row > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.settings-history-row > div > span:first-child { white-space: nowrap; }
 .settings-appearance { display: block; padding: 10px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); color: var(--theme-ink, #ffffff); font-size: 14px; }
 .settings-theme-row { display: flex; justify-content: flex-end; padding: 10px 0 8px; border-bottom: 1px solid var(--theme-line, #ffffff12); }
 .settings-appearance select { padding: 7px 9px; margin-top: 6px; }
