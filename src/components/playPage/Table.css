@@ -1049,3 +1049,7 @@
         animation: none;
     }
 }
+
+/* Desktop bottom banner: buttons, slider row, presets and Muck/Show all at
+   85%, so the hero seat stays clear of it. Mobile docks are unaffected. */
+.table-action-bar .table-action-bar-inner { zoom: 0.85; }
