@@ -1,7 +1,24 @@
+const plugin = require("tailwindcss/plugin");
+// Typography tokens (block52/ui#922): one source of truth, shared with the CSS variables.
+const { fontStacks, typography, typographyCssVariables } = require("./src/utils/typography.ts");
 module.exports = {
     content: ["./src/**/*.{js,ts,jsx,tsx}"], // Adjust based on your project
     theme: {
         extend: {
+            fontFamily: {
+                num: [...fontStacks.rubik],
+                action: [...fontStacks.action],
+                "mono-num": [...fontStacks.mono]
+            },
+            fontWeight: {
+                btn: typography.button.fontWeight,
+                num: typography.numeric.fontWeight,
+                label: typography.label.fontWeight
+            },
+            letterSpacing: {
+                btn: typography.button.letterSpacing,
+                label: typography.label.letterSpacing
+            },
             // Small UI copy is two pixels larger; body and heading sizes stay unchanged.
             fontSize: {
                 xs: ["0.875rem", { lineHeight: "1.125rem" }],
@@ -91,5 +108,14 @@ module.exports = {
             }
         }
     },
-    plugins: []
+    plugins: [
+        plugin(({ addBase, addComponents }) => {
+            addBase({ ":root": typographyCssVariables });
+            addComponents({
+                ".type-btn": { ...typography.button },
+                ".type-num": { fontFamily: "var(--type-num-family)", ...typography.numeric },
+                ".type-label": { ...typography.label }
+            });
+        })
+    ]
 };
