@@ -1,6 +1,6 @@
 /* Table typography tokens (block52/ui#922).
  *
- * The shipped defaults for the shared tokens are set on :root below (one system:
+ * The shipped defaults for the shared tokens come from src/utils/typography.ts via the Tailwind plugin (one system:
  * uppercase bold tracked buttons, Rubik 700 tabular numbers, 0.08em/700 micro-labels).
  * Each element still carries its own pre-#922 value as the var() fallback, which is
  * what applies wherever a token is reset (e.g. inside the Nouns felt). The
@@ -27,18 +27,8 @@
  * number family is reset inside .nouns-table-felt so nothing there changes font.
  */
 :root {
-    /* Shipped defaults (block52/ui#922) */
-    --type-btn-transform: uppercase;
-    --type-btn-weight: 700;
-    --type-btn-tracking: 0.025em;
-    --type-num-family: var(--type-rubik);
-    --type-num-weight: 700;
-    --type-num-variant: tabular-nums;
-    --type-label-tracking: 0.08em;
-    --type-label-weight: 700;
-
-    --type-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    --type-rubik: "Rubik", ui-sans-serif, system-ui, sans-serif;
+    /* The shipped --type-* defaults (button, number, label, font stacks) come from
+       src/utils/typography.ts, emitted on :root by the Tailwind plugin in tailwind.config.js. */
     /* Element-only sizes; the shared --type-label-size wins when set. */
     --type-pot-label-size: var(--type-label-size, 11px);
     --type-level-size: var(--type-label-size, 10px);
