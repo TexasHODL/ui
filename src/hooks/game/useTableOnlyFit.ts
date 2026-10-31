@@ -12,6 +12,11 @@ const FEED_HEADER = 40;
 /** Everything a seat draws: seat, cards, badge, action banner and its chip stack. */
 export const FIT_CONTENT = ".player-seat, .vacant-seat, .player-cards, .hole-card-fan-slot, .chip-position, .seat-banner-shell, .player-badge-position";
 /** Overlays that float over the stage in table-only view and must not cover a seat. */
+/** Desktop/tablet (not table-only): only the static seat layout counts, so bets,
+ *  cards, banners, badges and hand labels can never rescale or move the table. */
+export const FIT_STATIC = ".player-seat, .vacant-seat, .player-badge-position";
+/** The action bar grows a few px on the hero's turn; reserve it up front so the fixed fit never overlaps it. */
+const BAR_TURN_GROWTH = 10;
 export const FIT_OVERLAYS = ".restore-table-banner, .mobile-history-trigger, .live-hand-strength, .action-log-overlay.action-log-open";
 
 /** Overlap with a small gap, so a seat never touches a pill. */
@@ -137,7 +142,9 @@ export function useTableOnlyFit(
     wrapperRef: RefObject<HTMLDivElement | null>,
     feltRef: RefObject<HTMLDivElement | null>,
     baseTransform: string,
-    zoom: number
+    zoom: number,
+    /** Fit to the fixed seat layout and the viewport/banners only; ignore gameplay content. */
+    fixedGeometry = false
 ): TableOnlyFit {
     const [fit, setFit] = useState<TableOnlyFit>(IDENTITY_FIT);
     useLayoutEffect(() => {
@@ -165,7 +172,7 @@ export function useTableOnlyFit(
             });
             const content: Box[] = [];
             const banners: Box[] = [];
-            wrapper.querySelectorAll(FIT_CONTENT).forEach(el => {
+            wrapper.querySelectorAll(fixedGeometry ? FIT_STATIC : FIT_CONTENT).forEach(el => {
                 const rect = el.getBoundingClientRect();
                 if (!visible(rect)) return;
                 if (el.matches(".seat-banner-shell")) banners.push(unfit(rect));
@@ -191,7 +198,7 @@ export function useTableOnlyFit(
             // Desktop/tablet (not table-only): the History/Settings/Blinds panels float
             // over the table, so opening one must never move or rescale it.
             const tableOnlyView = root?.getAttribute("data-table-only") === "true";
-            root?.querySelectorAll(FIT_OVERLAYS).forEach(el => {
+            if (!fixedGeometry) root?.querySelectorAll(FIT_OVERLAYS).forEach(el => {
                 if (!tableOnlyView && el.matches(".action-log-overlay")) return;
                 const rect = el.getBoundingClientRect();
                 if (!visible(rect)) return;
@@ -206,6 +213,7 @@ export function useTableOnlyFit(
             let bottom = Math.min(stage.bottom, window.innerHeight);
             const bar = root?.querySelector(".table-action-bar")?.getBoundingClientRect();
             if (bar && visible(bar) && bar.top < bottom) bottom = bar.top;
+            if (fixedGeometry) bottom -= BAR_TURN_GROWTH;
             // Portrait phones are width-bound: hug the side edges more tightly.
             const side = window.innerHeight > window.innerWidth && root?.getAttribute("data-compact-mobile") === "true" ? 2 : FIT_MARGIN;
             const target: Box = {
@@ -233,14 +241,26 @@ export function useTableOnlyFit(
             cancelAnimationFrame(frame);
             frame = requestAnimationFrame(measure);
         };
+        // Fixed geometry: re-fit on mutations only when the seat layout itself changes.
+        let layoutKey = "";
+        const seatKey = () => String(wrapperRef.current?.querySelectorAll(FIT_STATIC).length ?? 0);
+        const scheduleOnLayoutChange = () => {
+            const key = seatKey();
+            if (key === layoutKey) return;
+            layoutKey = key;
+            schedule();
+        };
+        layoutKey = seatKey();
         measure();
         const stageEl = stageRef.current;
         const root = stageEl?.closest(".table-container");
         const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
         if (stageEl) resize?.observe(stageEl);
-        root?.querySelectorAll(FIT_OVERLAYS + ", .table-action-bar").forEach(el => resize?.observe(el));
+        // Fixed geometry: only the stage (header/banners) and window size re-fit;
+        // the action bar grows on the hero's turn, so it is read but not observed.
+        if (!fixedGeometry) root?.querySelectorAll(FIT_OVERLAYS + ", .table-action-bar").forEach(el => resize?.observe(el));
         // Seats, banners and the bar mount/unmount with the hand.
-        const mutation = typeof MutationObserver === "undefined" || !root ? null : new MutationObserver(schedule);
+        const mutation = typeof MutationObserver === "undefined" || !root ? null : new MutationObserver(fixedGeometry ? scheduleOnLayoutChange : schedule);
         mutation?.observe(root as HTMLElement, { childList: true, subtree: true });
         window.addEventListener("resize", schedule);
         return () => {
@@ -249,6 +269,6 @@ export function useTableOnlyFit(
             mutation?.disconnect();
             window.removeEventListener("resize", schedule);
         };
-    }, [active, stageRef, wrapperRef, feltRef, baseTransform, zoom]);
+    }, [active, stageRef, wrapperRef, feltRef, baseTransform, zoom, fixedGeometry]);
     return active ? fit : IDENTITY_FIT;
 }
