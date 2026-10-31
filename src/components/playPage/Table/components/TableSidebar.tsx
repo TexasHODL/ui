@@ -48,12 +48,13 @@ export const TableSidebar: React.FC<TableSidebarProps> = ({ isOpen, compact = fa
             }
         };
     }, [isOpen, detailed, compact, onClose]);
-    // PC expanded History: the same side panel shell as Settings and Blinds.
-    if (!compact && expandedHistory && isOpen) {
+    // PC History (dock or expanded): the same side panel shell as Settings and Blinds,
+    // so it opens and closes like a Settings modal with identical chrome and typography.
+    if (!compact && isOpen) {
         return (
             <div ref={panelRef}>
                 <SettingsPanelShell id="table-history-panel" isOpen title="History" regionLabel="Hand history" closeLabel="Close history" onClose={onClose}
-                    panelAttributes={{ "data-sidebar": "true" }} contentClassName="settings-history-content">
+                    panelAttributes={{ "data-sidebar": "true", "data-expanded": String(expandedHistory) }} contentClassName="settings-history-content">
                     <ActionsLog variant="sidebar" />
                 </SettingsPanelShell>
             </div>

@@ -177,7 +177,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
      
     const sidebar = variant === "sidebar";
     const rowClass = sidebar ? "settings-history-row" : `text-xs py-1 border-b ${styles.actionRow}`;
-    const mainClass = sidebar ? "text-gray-300 text-xs font-semibold leading-tight" : "";
+    const mainClass = sidebar ? "text-white text-xs font-semibold leading-tight" : "";
     const metaClass = sidebar ? "text-gray-400 text-[12px] mt-0.5 leading-snug" : `text-[12px] ${styles.secondaryText}`;
     const actionRows = useMemo(
         () =>
@@ -186,7 +186,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                     <div className={styles.rowContent}>
                         <span className={sidebar ? mainClass : styles.actionText}>
                             {formatActionName(action.action)}
-                            {formatActionAmount(action, isTournamentFormat(gameFormat))}
+                            {sidebar ? <span className="type-num-bet">{formatActionAmount(action, isTournamentFormat(gameFormat))}</span> : formatActionAmount(action, isTournamentFormat(gameFormat))}
                         </span>
                         <span className={metaClass}>
                             {formatSeatLabel(action.seat)} · {formatRoundName(action.round)}
@@ -206,7 +206,7 @@ const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = tru
                       <div key={`winner-${i}`} className={sidebar ? rowClass : `text-xs py-1 border-b ${styles.actionRow} ${styles.winnerRow}`}>
                           <div className={styles.rowContent}>
                               <span className={sidebar ? `${mainClass} ${styles.winnerText}` : styles.winnerText}>
-                                  WINS {w.formattedAmount}
+                                  WINS {sidebar ? <span className="type-num-bet">{w.formattedAmount}</span> : w.formattedAmount}
                                   {w.description && ` — ${w.description}`}
                                   {w.description && beatenDescription && ` over ${beatenDescription}`}
                               </span>
