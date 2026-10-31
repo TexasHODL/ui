@@ -593,13 +593,16 @@
 .history-scroll-content:focus-visible { outline: 1px solid var(--theme-muted, #b995cf); outline-offset: -1px; }
 .table-container[data-table-only="true"] .table-banner-wrap { display: none; }
 .table-container[data-table-only="true"] .action-log-overlay { top: 54px; }
-.restore-table-banner { position: fixed; top: 12px; left: 16px; z-index: 110; padding: 7px 10px; border: 1px solid var(--theme-wash, #b995cf55); border-radius: 8px; background: var(--theme-surface, #0c081180); color: var(--theme-ink, #c9b2d9); font-size: 13px; }
+/* Bottom-left corner, clear of the hand strength (top left) and History (top right). */
+.restore-table-banner { position: fixed; bottom: 12px; left: 16px; z-index: 110; padding: 6px 8.5px; border: 1px solid var(--theme-wash, #b995cf55); border-radius: 7px; background: var(--theme-surface, #0c081180); color: var(--theme-ink, #c9b2d9); font-size: 11px; line-height: 1.2; }
+.restore-table-banner svg { width: 0.85em; height: 0.85em; }
+.table-container[data-compact-mobile="true"][data-show-above-fold="true"] .restore-table-banner { bottom: var(--table-only-show-bottom); left: var(--table-only-show-left); }
 .restore-table-banner:focus-visible { outline: 2px solid var(--theme-accent, #d5a4ff); outline-offset: 3px; }
 .table-container[data-compact-mobile="true"] .restore-table-banner {
-    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
     left: calc(env(safe-area-inset-left, 0px) + 12px);
-    min-height: 44px;
-    min-width: 44px;
+    min-height: 37px;
+    min-width: 37px;
 }
 /* A small live feed on desktop; a deliberately opened, bounded reader on phones.
    Neither mode participates in stage layout or moves the table. */
@@ -659,7 +662,10 @@
 .table-container[data-compact-mobile="true"]:not([data-table-only="true"]) :is(#table-settings-panel, #table-blinds-panel).action-log-open {
     top: calc(var(--mobile-chrome-end, 70px) + 8px);
 }
-.table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; right: 12px; left: auto; }
+/* Table-only: History sits in the stage's top-right corner, beside the landscape
+   action column (never over its slider); the table fit moves the seats below it. */
+.table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; right: calc(var(--table-only-stage-inset-right, 0px) + 12px); left: auto; padding: 7.5px 11px; font-size: 12px; border-radius: 15px; min-height: 0; }
+.table-container[data-table-only="true"] .mobile-history-trigger svg { width: 0.85em; height: 0.85em; }
 .history-panel-control:focus-visible, .history-summary:focus-visible, .mobile-history-trigger:focus-visible { outline: 2px solid var(--theme-accent, #d5a4ff); outline-offset: -2px; }
 /* Four-seat portrait rings put both side players at the felt's midpoint.
    Keep the readable five-card row in the empty upper felt, clear of their
