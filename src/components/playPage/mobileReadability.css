@@ -56,8 +56,9 @@
     min-height: calc(25 * var(--mobile-unit));
     padding: calc(2 * var(--mobile-unit)) calc(3 * var(--mobile-unit));
 }
+[data-mobile-readable] { --stack-amount-size: calc(15 * var(--mobile-unit)); }
 [data-mobile-readable] .badge-value {
-    font-size: calc(15 * var(--mobile-unit));
+    font-size: var(--stack-amount-size);
     font-weight: var(--type-num-weight, 700);
 }
 [data-mobile-readable] .badge-number {
@@ -81,8 +82,9 @@
     gap: calc(5 * var(--mobile-unit));
 }
 [data-mobile-readable] [data-banner-mode="timer"] .animate-progress span {
-    font-size: calc(12 * var(--mobile-unit));
-    width: calc(15 * var(--mobile-unit));
+    font-size: var(--stack-amount-size);
+    width: auto;
+    flex-shrink: 0;
     margin-left: 0;
 }
 [data-mobile-readable] .community-card-row { gap: calc(3 * var(--mobile-unit)); }
@@ -154,7 +156,7 @@
     padding-right: calc(7px / var(--table-zoom));
 }
 [data-mobile-readable="landscape"] .chip-position span {
-    font-size: calc(17px / var(--table-zoom));
+    font-size: var(--stack-amount-size);
     line-height: calc(22.67px / var(--table-zoom));
 }
 
@@ -166,7 +168,7 @@
     padding-right: 12px;
 }
 [data-mobile-readable="portrait"] .chip-position span {
-    font-size: 36px;
+    font-size: var(--stack-amount-size);
     line-height: 40px;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;

@@ -682,6 +682,10 @@ html.table-page-lock .app-shell {
 /* Table-only: History sits in the stage's top-right corner, beside the landscape
    action column (never over its slider); the table fit moves the seats below it. */
 .table-container[data-table-only="true"] .mobile-history-trigger { top: 12px; right: calc(var(--table-only-stage-inset-right, 0px) + 12px); left: auto; padding: 7.5px 11px; font-size: 12px; border-radius: 15px; min-height: 0; }
+/* Portrait phone full screen: mirror Show controls (8px from the top and the right edge). */
+@media (orientation: portrait) {
+    .table-container[data-compact-mobile="true"][data-table-only="true"] .mobile-history-trigger { top: calc(env(safe-area-inset-top, 0px) + 8px); right: calc(var(--table-only-stage-inset-right, 0px) + env(safe-area-inset-right, 0px) + 8px); }
+}
 .table-container[data-table-only="true"] .mobile-history-trigger svg { width: 0.85em; height: 0.85em; }
 .history-panel-control:focus-visible, .history-summary:focus-visible, .mobile-history-trigger:focus-visible { outline: 2px solid var(--theme-accent, #d5a4ff); outline-offset: -2px; }
 /* Four-seat portrait rings put both side players at the felt's midpoint.

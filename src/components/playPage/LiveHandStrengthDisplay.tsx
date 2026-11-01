@@ -19,6 +19,15 @@ export function portraitHandStrengthAnchor(doc: Document = document): { bottom: 
     return { bottom: Math.round(window.innerHeight - rect.top + HAND_STRENGTH_DOCK_GAP), left: fold ? Math.round(rect.left) : 8 };
 }
 
+/** The rendered (post-zoom) size of a seat's stack amount, so the chip matches it. */
+export function renderedStackAmountSize(doc: Document = document): number | null {
+    const el = Array.from(doc.querySelectorAll<HTMLElement>(".badge-value")).find(e => e.offsetHeight > 0);
+    if (!el) return null;
+    const scale = el.getBoundingClientRect().height / el.offsetHeight;
+    const size = parseFloat(getComputedStyle(el).fontSize) * scale;
+    return Number.isFinite(size) && size > 0 ? Math.round(size * 10) / 10 : null;
+}
+
 const LiveHandStrengthDisplay: React.FC = () => {
     const { currentUserSeat } = usePlayerSeatInfo();
     const handStrength = useCardsForHandStrength(currentUserSeat);
@@ -37,6 +46,24 @@ const LiveHandStrengthDisplay: React.FC = () => {
     const isPortraitMode = viewportMode === "mobile-portrait";
 
     const [anchor, setAnchor] = useState<{ bottom: number; left: number } | null>(null);
+    const [stackSize, setStackSize] = useState<number | null>(null);
+    useLayoutEffect(() => {
+        if (!handStrength) return;
+        let frame = 0;
+        const update = () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => setStackSize(renderedStackAmountSize()));
+        };
+        update();
+        const observer = new MutationObserver(update);
+        observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
+        window.addEventListener("resize", update);
+        return () => {
+            cancelAnimationFrame(frame);
+            observer.disconnect();
+            window.removeEventListener("resize", update);
+        };
+    }, [handStrength]);
 
     useLayoutEffect(() => {
 
@@ -97,7 +124,7 @@ const LiveHandStrengthDisplay: React.FC = () => {
     return (
         <div style={positionStyle} className="live-hand-strength bg-black/80 backdrop-blur-sm p-3 rounded-lg border border-blue-500/20 shadow-lg z-50 m-0">
             <div className="flex flex-col items-end">
-                <div className="text-white type-body-hand text-sm" style={isCompactMobile ? { fontSize: "12px", lineHeight: 1.3 } : undefined}>{handStrength.descr}</div>
+                <div className="text-white type-body-hand text-sm" style={{ ...(isCompactMobile ? { fontSize: "12px", lineHeight: 1.3 } : {}), ...(stackSize ? { fontSize: `${stackSize}px`, lineHeight: 1.3 } : {}) }}>{handStrength.descr}</div>
             </div>
         </div>
     );

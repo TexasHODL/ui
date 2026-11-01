@@ -9,7 +9,7 @@
   box-shadow: 1px 2px 6px 3px color-mix(in srgb, #000000 30%, transparent);
   /* Stack amount, action-banner line, and the countdown number share this
      size. Mobile readability replaces each one on its own. */
-  --seat-amount-size: 1.25rem;
+  --seat-amount-size: var(--stack-amount-size, 1.25rem);
 }
 
 .equity-chip {
@@ -63,11 +63,6 @@
   margin-right: auto;
 }
 
-@media (min-width: 640px) {
-  .badge-container {
-    --seat-amount-size: 1.125rem;
-  }
-}
 
 /* Action Display Styles */
 .action-display-container {
@@ -272,8 +267,8 @@
 /* PR #35 sized the line for the phone banner. Leave that size on mobile. */
 [data-mobile-readable] .action-display-text,
 [data-mobile-readable] .action-display-amount {
-  font-size: 30px;
-  line-height: 30px;
+  font-size: var(--stack-amount-size);
+  line-height: var(--stack-amount-size);
 }
 
 /* Performance optimized animations */
