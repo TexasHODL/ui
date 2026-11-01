@@ -16,6 +16,7 @@ import { ETH_CHAIN_ID } from "../config/constants";
 import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
+import { hasValue, isNullish, hasContent, hasElements } from "../utils/guards";
 import { readUsdcBalance } from "../utils/usdcBalance";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
 import { usdcToMicroBigInt, microToUsdc } from "../constants/currency";
@@ -392,8 +393,8 @@ const Dashboard: React.FC = () => {
             ),
         [modalGameFormat, modalSmallBlind, modalBigBlind, isModalTournament, modalSitAndGoBuyIn, calculatedMinBuyIn, modalStartingStack]
     );
-    const creationTotalMicro = creationFeeMicro === null ? null : creationFeeMicro + computeGameNameFee(normalizedTableName);
-    const insufficientForCreation = creationTotalMicro === null || creationTotalMicro > usdcToMicroBigInt(numericUsdcBalance);
+    const creationTotalMicro = isNullish(creationFeeMicro) ? null : creationFeeMicro + computeGameNameFee(normalizedTableName);
+    const insufficientForCreation = isNullish(creationTotalMicro) || creationTotalMicro > usdcToMicroBigInt(numericUsdcBalance);
     const extraOptionsInvalid = isModalTournament
         ? !Number.isInteger(modalStartingStack) || modalStartingStack <= 0 || !Number.isFinite(entryFee) || entryFee < 0
         : enableRake && (![rakeThreshold, rakeCap, rakePercentage].every(Number.isFinite) || rakeThreshold < 0 || rakeCap < 0 || rakePercentage < 1 || rakePercentage > 10);
@@ -712,7 +713,7 @@ const Dashboard: React.FC = () => {
                                         />
                                         {tableNameError ? (
                                             <p className="text-xs text-red-400 mt-1">{tableNameError}</p>
-                                        ) : normalizedTableName.length > 0 ? (
+                                        ) : hasContent(normalizedTableName) ? (
                                             <p className="text-xs text-gray-400 mt-1">
                                                 {tableNameCharCount(normalizedTableName)} characters × $0.10 ={" "}
                                                 <span className="text-white font-semibold">${formatUsd(tableNameFeeUsd)}</span>
@@ -1028,7 +1029,7 @@ const Dashboard: React.FC = () => {
                                                     )}
                                                 </div>
                                             )}
-                                            {blindPreviewRows.length > 0 && (
+                                            {hasElements(blindPreviewRows) && (
                                                 <div className="creation-span mt-3 max-h-40 overflow-y-auto rounded border border-gray-700" data-testid="blind-preview">
                                                     <table className="w-full text-xs text-gray-300">
                                                         <thead className="text-gray-400 sticky top-0 bg-gray-800">
@@ -1172,13 +1173,13 @@ const Dashboard: React.FC = () => {
                                     <div className="creation-fee creation-span">
                                         <span className="text-gray-400">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds)</span>
                                         <span className="text-white font-mono">
-                                            {creationFeeMicro === null ? "—" : `$${formatMicroUsd(creationFeeMicro.toString())}`}
+                                            {isNullish(creationFeeMicro) ? "—" : `$${formatMicroUsd(creationFeeMicro.toString())}`}
                                         </span>
                                     </div>
-                                    {insufficientForCreation && creationTotalMicro !== null && (
+                                    {insufficientForCreation && hasValue(creationTotalMicro) && (
                                         <p className="creation-notice creation-span">
                                             You need ${formatMicroUsd(creationTotalMicro.toString())} to create this table (fee
-                                            {normalizedTableName.length > 0 ? " + name" : ""}); your balance is ${formatUsd(numericUsdcBalance)}.
+                                            {hasContent(normalizedTableName) ? " + name" : ""}); your balance is ${formatUsd(numericUsdcBalance)}.
                                         </p>
                                     )}
 
