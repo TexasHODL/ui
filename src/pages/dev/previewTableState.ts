@@ -52,6 +52,10 @@ export interface PreviewOptions {
     format: PreviewFormat;
     /** Seat 1 wins the pot: plays the win celebration (floating win chips). */
     win: boolean;
+    /** win=<seat>: which seat wins (default 1). Lets a top seat play the celebration. */
+    winSeat?: number;
+    /** win=all: every seat wins at once (split pot), each with its hand tabled. */
+    winAll?: boolean;
     /** bet=none: no bets out this round, so the hero can check (free-check pre-actions). */
     noBets?: boolean;
 }
@@ -70,7 +74,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * format=cash|tournament|sng (default cash) picks the table format and chip amounts,
  * buttons=none|actions|preaction|muck picks the hero controls (turn=1 is an alias for actions),
  * bet=none for a round with no bets out (seat 1 can check: Check/Fold, Check, Call Any pre-actions),
- * win=1 to make seat 1 the winner so the win celebration plays.
+ * win=1 to make seat 1 the winner so the win celebration plays (win=<seat> picks another winner, win=all makes every seat win).
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
  */
@@ -96,9 +100,12 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
         : params.get("turn") === "1" ? "actions" : "none";
     const formatParam = params.get("format");
     const format: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
-    const win = params.get("win") === "1";
+    const winAll = params.get("win") === "all";
+    const winParam = Number(params.get("win"));
+    const win = winAll || (Number.isInteger(winParam) && winParam >= 1 && winParam <= seats);
+    const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(noBets ? { noBets } : {}) };
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -110,7 +117,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.allActions) params.set("actions", "all");
     if (options.buttons !== "none") params.set("buttons", options.buttons);
     if (options.format !== "cash") params.set("format", options.format);
-    if (options.win) params.set("win", "1");
+    if (options.win) params.set("win", options.winAll ? "all" : String(options.winSeat ?? 1));
     if (options.noBets) params.set("bet", "none");
     return params;
 };
@@ -208,8 +215,18 @@ export const previewIsHeroTurn = (options: Pick<PreviewOptions, "buttons">): boo
  * With buttons=actions|muck, seat 1 is next and holds the matching legal actions.
  * buttons=muck moves the hand to SHOWDOWN so the Show / Muck bar applies.
  */
+/** Face-up cards for a non-hero winner (win=<seat>), so its cards can lift. */
+const PREVIEW_WIN_CARDS = ["QH", "JD"];
+const PREVIEW_WIN_CARDS_4 = ["QH", "JD", "9C", "8S"];
+/** The winner's hole cards: the ones that get the win lift. */
+const previewWinnerCards = (options: PreviewOptions, seat: number): string[] => {
+    if (seat === 1) return ["AS", "KD"];
+    return options.holeCount === 4 ? PREVIEW_WIN_CARDS_4.slice(0, 2) : PREVIEW_WIN_CARDS;
+};
+
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
-    const round = options.buttons === "muck" ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
+    // win=<seat> (not the hero) tables the winner's hand, which needs showdown.
+    const round = options.buttons === "muck" || ((options.winSeat || options.winAll) && options.holeCards) ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
     const heroTurn = previewIsHeroTurn(options);
     const players: PlayerDTO[] = [];
     const previousActions: ActionDTO[] = [];
@@ -241,9 +258,12 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             holeCards: options.holeCards
                 ? (seat === 1
                     ? (options.holeCount === 4 ? ["AS", "KD", "QC", "JH"] : ["AS", "KD"])
-                    : (options.holeCount === 4 ? ["??", "??", "??", "??"] : ["??", "??"]))
+                    : seat === options.winSeat || options.winAll
+                      ? (options.holeCount === 4 ? PREVIEW_WIN_CARDS_4 : PREVIEW_WIN_CARDS)
+                      : (options.holeCount === 4 ? ["??", "??", "??", "??"] : ["??", "??"]))
                 : undefined,
             status: PlayerStatus.ACTIVE,
+            ...((seat === options.winSeat || (options.winAll && seat !== 1)) && options.holeCards ? { cardsShown: true } : {}),
             lastAction: options.noBets && seat === 1 ? undefined : action,
             legalActions: heroTurn && seat === 1
                 ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1, !!options.noBets))
@@ -285,9 +305,16 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         actionCount: options.seats,
         handNumber: 1,
         round,
-        winners: options.win
-            ? [{ address: previewSeatAddress(1, heroAddress), seat: 1, amount: totalPot.toString(), cards: undefined, name: undefined, description: undefined }]
-            : [],
+        winners: !options.win
+            ? []
+            : (options.winAll ? Array.from({ length: options.seats }, (_, i) => i + 1) : [options.winSeat ?? 1]).map(seat => ({
+                address: previewSeatAddress(seat, heroAddress),
+                seat,
+                amount: (options.winAll ? totalPot / BigInt(options.seats) : totalPot).toString(),
+                cards: options.holeCards ? previewWinnerCards(options, seat) : undefined,
+                name: undefined,
+                description: undefined
+            })),
         results: [],
         legalActions: [],
         availableSeats: [],

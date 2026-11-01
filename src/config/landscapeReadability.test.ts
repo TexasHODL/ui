@@ -121,8 +121,8 @@ describe("landscape mobile readability", () => {
         const widgetHalf = Math.max((96 * unit) / 2, MOBILE_LANDSCAPE_BANNER_HALF);
         const seatLeft = tx + (Math.min(...lefts) - widgetHalf) * zoom;
         const seatRight = contentWidth - (tx + (Math.max(...lefts) + widgetHalf) * zoom);
-        expect(cardTop).toBeGreaterThanOrEqual(3.5);
-        expect(cardTop).toBeLessThanOrEqual(7);
+        expect(cardTop).toBeGreaterThanOrEqual(12.5);
+        expect(cardTop).toBeLessThanOrEqual(17);
         expect(heroBottom).toBeLessThanOrEqual(contentHeight - 4);
         expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
         expect(actionBottom).toBeGreaterThanOrEqual(contentHeight - 10);
@@ -229,8 +229,8 @@ describe("landscape mobile readability", () => {
             const tops = seats.map(seat => dims.originY + parseFloat(seat.top));
             const cardTop = ty + (Math.min(...tops) - half) * zoom;
             const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
-            expect(cardTop).toBeGreaterThanOrEqual(3.5);
-            expect(cardTop).toBeLessThanOrEqual(7);
+            expect(cardTop).toBeGreaterThanOrEqual(12.5);
+            expect(cardTop).toBeLessThanOrEqual(17);
             expect(actionBottom).toBeLessThanOrEqual(contentHeight - 4);
             expect(actionBottom).toBeGreaterThanOrEqual(contentHeight - 22);
             if (size === 9) {
@@ -615,7 +615,7 @@ describe("landscape mobile readability", () => {
             expect(mobileFeltContains(chipX, chipY, 1, 0)).toBe(true);
         }
         const portrait = place(390, 844);
-        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "1015px", bottom: "0px" });
+        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "992px", bottom: "0px" });
         expect(parseFloat(portrait.placed.chips[1].left)).toBe(250);
     });
 
@@ -670,7 +670,7 @@ describe("landscape mobile readability", () => {
             });
         }
         const portrait = place(390, 844);
-        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "1014px", bottom: "0px" });
+        expect(portrait.placed.chips[0]).toEqual({ left: "250px", top: "991px", bottom: "0px" });
     });
 
     test("places 6-seat portrait bets under the upper banners and above the lower cards", () => {

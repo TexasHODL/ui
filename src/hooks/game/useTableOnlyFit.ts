@@ -17,6 +17,11 @@ export const FIT_CONTENT = ".player-seat, .vacant-seat, .player-cards, .hole-car
 export const FIT_STATIC = ".player-seat, .vacant-seat, .player-badge-position";
 /** The action bar grows a few px on the hero's turn; reserve it up front so the fixed fit never overlaps it. */
 const BAR_TURN_GROWTH = 10;
+/** The win celebration (Table.css `card-lift`) raises a winner's hole cards
+ *  14px, scales them 1.05 (from the centre of an 80px card: +2px) and adds an
+ *  8px glow, in the seat's CSS px. Seats reserve this above them so a top seat's
+ *  lifted cards never cross the header, and the table never rescales for a win. */
+export const WIN_LIFT_HEADROOM = 14 + 80 * 0.025 + 8;
 export const FIT_OVERLAYS = ".restore-table-banner, .mobile-history-trigger, .live-hand-strength, .action-log-overlay.action-log-open";
 
 /** Overlap with a small gap, so a seat never touches a pill. */
@@ -185,8 +190,13 @@ export function useTableOnlyFit(
             wrapper.querySelectorAll(fixedGeometry ? FIT_STATIC : FIT_CONTENT).forEach(el => {
                 const rect = el.getBoundingClientRect();
                 if (!visible(rect)) return;
-                if (el.matches(".seat-banner-shell")) banners.push(unfit(rect));
-                else content.push(unfit(rect));
+                if (el.matches(".seat-banner-shell")) { banners.push(unfit(rect)); return; }
+                const box = unfit(rect);
+                // CSS px -> unfit px for this seat (zoom x seat scale), measured on
+                // the untransformed seat so a lift in progress doesn't change it.
+                const css = (el as HTMLElement).offsetHeight;
+                if (el.matches(".player-seat") && css > 0) box.top -= WIN_LIFT_HEADROOM * (rect.height / css) / applied.scale;
+                content.push(box);
             });
             // Portrait banners slide themselves inward to stay on screen (Badge),
             // so only their height counts; their width is clipped to the seats.
