@@ -92,9 +92,9 @@ const MOBILE_PORTRAIT_DOCK = 86;
 const MOBILE_PORTRAIT_ZOOM_RESERVE = 34;
 
 /** Screen pixels between the stage top and the top hole cards.
- *  The painted card sits about 3px above this model, so 7 lands the art ~4px
- *  under the header. */
-const MOBILE_PORTRAIT_TOP_GAP = 7;
+ *  The painted card sits about 3px above this model. 19 leaves room for the win
+ *  celebration (card-lift: ~11px lift + glow) under the header. */
+const MOBILE_PORTRAIT_TOP_GAP = 19;
 
 /** Screen pixels between the hero action banner and the bottom of the stage.
  *  The painted box sits about 2px below this model, so 6 lands the art ~4px
@@ -116,9 +116,9 @@ export function notePortraitSize(size: TableSize): void {
 }
 
 /** Screen pixels between the stage top and the top hole cards.
- *  The painted card sits about 2px above this model, so 6 lands the art ~4px
- *  under the header. */
-const MOBILE_LANDSCAPE_TOP_GAP = 6;
+ *  The painted card sits about 2px above this model. 16 leaves room for the win
+ *  celebration (card-lift: ~9px lift + glow) under the header. */
+const MOBILE_LANDSCAPE_TOP_GAP = 16;
 
 /** Screen pixels between the lowest action box and the stage bottom. */
 const MOBILE_LANDSCAPE_BOTTOM_GAP = 6;

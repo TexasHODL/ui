@@ -130,6 +130,10 @@
     /* Pot is a touch larger than the shared number size; tweak the multiplier here. */
     --pc-pot-scale: 1.2;
     --pc-pot-size: calc(var(--pc-stack-size) * var(--pc-pot-scale));
+    /* One stack-amount size: the seat stack, the seat action banner (and timer),
+       the bet chip amounts and the hand-strength label all use it. Phones
+       override it on [data-mobile-readable] (mobileReadability.css). */
+    --stack-amount-size: var(--pc-stack-size);
 }
 @media (min-width: 640px) {
     :root {
@@ -138,7 +142,7 @@
     }
 }
 .zoom-wrapper-desktop:not([data-mobile-readable]) .chip-position .type-num-bet {
-    font-size: var(--pc-stack-size);
+    font-size: var(--stack-amount-size);
     line-height: 1.25;
 }
 /* Pot text (Total Pot / Pot / Main Pot lines); the small POT caption is unchanged. */

@@ -197,11 +197,11 @@ const Badge: React.FC<BadgeProps> = React.memo(({
             case "winner":
                 return (
                     <div className="seat-banner-text flex flex-col items-center justify-center w-full mt-[14px] gap-0.5">
-                        <span className="font-bold text-base leading-tight">
+                        <span className="seat-banner-win-title font-bold">
                             WINS
                         </span>
                         {winnerHandDescription && (
-                            <span className="font-semibold text-[0.775rem] uppercase tracking-wider leading-tight opacity-95">
+                            <span className="seat-banner-win-hand font-semibold uppercase tracking-wider opacity-95">
                                 {winnerHandDescription}
                             </span>
                         )}

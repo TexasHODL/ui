@@ -160,8 +160,8 @@ describe("getViewportMode", () => {
             const tops = getSeatPositions(size).map(seat => dims.originY + parseFloat(seat.top));
             const cardTop = ty + (Math.min(...tops) - half) * zoom;
             const actionBottom = ty + (Math.max(...tops) + half + 33) * zoom;
-            expect(cardTop).toBeGreaterThanOrEqual(3.5);
-            expect(cardTop).toBeLessThanOrEqual(8);
+            expect(cardTop).toBeGreaterThanOrEqual(15.5);
+            expect(cardTop).toBeLessThanOrEqual(20);
             const bannerGap = stageH - actionBottom;
             expect(bannerGap).toBeGreaterThanOrEqual(2);
             expect(bannerGap).toBeLessThanOrEqual(8);
