@@ -10,6 +10,7 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo } from "react";
 import { getAutoDealEnabled, getAutoPostBlindsEnabled, getAutoNewHandEnabled, getAutoFoldEnabled, getCallClockEnabled } from "../utils/urlParams";
+import { isNullish } from "../utils/guards";
 
 const LS_KEY_AUTO_DEAL = "setting_autodeal";
 const LS_KEY_AUTO_POST_BLINDS = "setting_autoblinds";
@@ -35,7 +36,7 @@ const LS_KEY_SHOW_MAIN_POT = "setting_showmainpot";
 
 function readBoolSetting(key: string, fallback: boolean): boolean {
     const stored = localStorage.getItem(key);
-    if (stored === null) return fallback;
+    if (isNullish(stored)) return fallback;
     return stored === "true";
 }
 

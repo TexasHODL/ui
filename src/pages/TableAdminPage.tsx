@@ -8,7 +8,7 @@ import { BettingLimit, GameFormat, GameVariant, CosmosClient, getDefaultCosmosCo
 import { Link, useNavigate } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { isValidPlayerAddress } from "../utils/addressUtils";
-import { isEmpty } from "../utils/guards";
+import { isEmpty, hasValue, isNullish, hasContent, hasElements } from "../utils/guards";
 import { useNewTable } from "../hooks/game/useNewTable";
 import { useFindGames } from "../hooks/game/useFindGames";
 import { toast } from "react-toastify";
@@ -191,12 +191,12 @@ export default function TableAdminPage() {
             ),
         [gameFormat, smallBlind, bigBlind, tournamentBuyIn, calculatedMinBuyIn, startingStack]
     );
-    const creationFeeFormatted = creationFeeMicro === null ? "—" : formatMicroUsd(creationFeeMicro.toString());
-    const totalCostMicro = creationFeeMicro === null ? null : creationFeeMicro + computeGameNameFee(normalizedTableName);
-    const totalCostFormatted = totalCostMicro === null ? "—" : formatMicroUsd(totalCostMicro.toString());
+    const creationFeeFormatted = isNullish(creationFeeMicro) ? "—" : formatMicroUsd(creationFeeMicro.toString());
+    const totalCostMicro = isNullish(creationFeeMicro) ? null : creationFeeMicro + computeGameNameFee(normalizedTableName);
+    const totalCostFormatted = isNullish(totalCostMicro) ? "—" : formatMicroUsd(totalCostMicro.toString());
     // Enough for the creation fee AND any name fee — the chain debits both.
-    const hasEnoughUsdc = totalCostMicro !== null && BigInt(usdcBalance) >= totalCostMicro;
-    const insufficientForName = totalCostMicro !== null && normalizedTableName.length > 0 && BigInt(usdcBalance) < totalCostMicro;
+    const hasEnoughUsdc = hasValue(totalCostMicro) && BigInt(usdcBalance) >= totalCostMicro;
+    const insufficientForName = hasValue(totalCostMicro) && hasContent(normalizedTableName) && BigInt(usdcBalance) < totalCostMicro;
 
     // Transform fetched games to TableData format - memoized to prevent infinite loops
     const tables: TableData[] = useMemo(() => {
@@ -348,7 +348,7 @@ export default function TableAdminPage() {
                         const gameState = JSON.parse(gameStateResponse.game_state);
                         // Count players with valid addresses (seated players)
                         // Filter out empty seats using the utility function
-                        const seatedPlayers = gameState.players?.filter((p: PlayerDTO | null) => p !== null && isValidPlayerAddress(p.address)).length || 0;
+                        const seatedPlayers = gameState.players?.filter((p: PlayerDTO | null) => hasValue(p) && isValidPlayerAddress(p.address)).length || 0;
                         counts[table.gameId] = seatedPlayers;
                     }
                 } catch (err) {
@@ -415,7 +415,7 @@ export default function TableAdminPage() {
                                 />
                                 {tableNameError ? (
                                     <p className="text-xs text-red-400 mt-1">{tableNameError}</p>
-                                ) : normalizedTableName.length > 0 ? (
+                                ) : hasContent(normalizedTableName) ? (
                                     <p className="text-xs text-gray-400 mt-1">
                                         {tableNameCharCount(normalizedTableName)} characters × $0.10 ={" "}
                                         <span className="text-white font-semibold">${formatUsd(tableNameFeeUsd)}</span>
@@ -910,7 +910,7 @@ export default function TableAdminPage() {
 
                                     {showStructure && (
                                         <div className="bg-[#0c0911] rounded-lg p-4 border border-white/10">
-                                            {blindPreviewRows.length > 0 ? (
+                                            {hasElements(blindPreviewRows) ? (
                                                 <BlindPreviewTable rows={blindPreviewRows} choice={blindStructureChoice} className="rounded border border-white/10" />
                                             ) : (
                                                 <p className="text-red-400 text-xs">Fix the custom structure to see its levels.</p>
@@ -1042,7 +1042,7 @@ export default function TableAdminPage() {
                                             <p className="text-red-300 font-semibold mb-1">Add funds to create this table</p>
                                             <p className="text-red-400/80 text-sm mb-3">
                                                 You need {totalCostFormatted} USDC to create this table ({CREATION_FEE_BIG_BLINDS.toString()} big blinds
-                                                {normalizedTableName.length > 0 ? " plus the name fee" : ""}). Your current balance is ${usdcBalanceFormatted}{" "}
+                                                {hasContent(normalizedTableName) ? " plus the name fee" : ""}). Your current balance is ${usdcBalanceFormatted}{" "}
                                                 USDC.
                                             </p>
                                             <Link
