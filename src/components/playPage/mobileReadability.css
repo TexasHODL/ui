@@ -41,8 +41,19 @@
     margin-top: 0 !important;
     margin-bottom: 0 !important;
 }
-[data-mobile-readable] .hole-card-row[data-count="4"] img + img {
+[data-mobile-readable] .hole-card-row[data-count="4"] .hole-card-row-slot + .hole-card-row-slot {
     margin-left: calc(-9 * var(--mobile-unit)) !important;
+}
+/* The hero's Omaha fan: larger cards, a little more overlap. */
+[data-mobile-readable] .hole-card-row[data-count="4"][data-hero="true"] {
+    width: calc(96 * var(--mobile-unit));
+}
+[data-mobile-readable] .hole-card-row[data-count="4"][data-hero="true"] img {
+    width: calc(34 * var(--mobile-unit)) !important;
+    height: calc(45 * var(--mobile-unit)) !important;
+}
+[data-mobile-readable] .hole-card-row[data-count="4"][data-hero="true"] .hole-card-row-slot + .hole-card-row-slot {
+    margin-left: calc(-13 * var(--mobile-unit)) !important;
 }
 [data-mobile-readable] .player-details {
     width: calc(88 * var(--mobile-unit));
@@ -185,6 +196,10 @@
 [data-mobile-readable="landscape"] .hole-card-row[data-count="4"] img {
     width: calc(29 * var(--mobile-unit)) !important;
     height: calc(39 * var(--mobile-unit)) !important;
+}
+[data-mobile-readable="landscape"] .hole-card-row[data-count="4"][data-hero="true"] img {
+    width: calc(35 * var(--mobile-unit)) !important;
+    height: calc(47 * var(--mobile-unit)) !important;
 }
 [data-mobile-readable="landscape"] .community-card-row > div,
 [data-mobile-readable="landscape"] .community-card-row .card {

@@ -75,7 +75,9 @@ export const evaluateHandOrThrow = (
     variant: GameVariant | string | undefined
 ): EvaluatedHand | null => {
     if (!holeCards || holeCards.length < 2) return null;
-    if (variant === GameVariant.OMAHA && holeCards.length === 4) {
+    // Four hole cards only happen in Omaha. The variant can be missing or
+    // spelled differently, and the Hold'em path throws on 9 cards.
+    if (variant === GameVariant.OMAHA || holeCards.length === 4) {
         return evaluateOmaha(holeCards, board);
     }
     const allCards = [...holeCards, ...board];

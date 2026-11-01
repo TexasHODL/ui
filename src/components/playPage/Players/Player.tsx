@@ -110,6 +110,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
 
             return (
                 <HoleCardRow
+                    hero
                     cards={holeCards.map((card, i) => ({
                         key: `${i}-${card}`,
                         src: getCardImageUrl(card),
