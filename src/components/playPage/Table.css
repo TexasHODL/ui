@@ -1077,8 +1077,14 @@ html.table-page-lock .app-shell {
    85%, so the hero seat stays clear of it. Mobile docks are unaffected. */
 .table-action-bar .table-action-bar-inner { zoom: 0.85; }
 
+/* The banner is a constant height, sized for its tallest state (buttons +
+   slider + pot presets), so its top edge never moves between None / Pre-action /
+   Actions / Muck-Show and the table fit never changes. Content sits at the bottom. */
+.table-action-bar { box-sizing: border-box; height: var(--table-action-bar-fixed-h, 160px); }
+
 /* Short desktop-layout screens (tablets in landscape, ~1024x640 / 1280x800):
    shrink the bottom banner a little more so it stays clear of the hero seat. */
 @media (max-height: 820px) {
     .table-action-bar .table-action-bar-inner { zoom: 0.75; }
+    .table-action-bar { --table-action-bar-fixed-h: 143px; }
 }

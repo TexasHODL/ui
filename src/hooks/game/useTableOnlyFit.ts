@@ -166,11 +166,7 @@ export function useTableOnlyFit(
         }
         let frame = 0;
         let applied = IDENTITY_FIT;
-        // Fixed geometry: the tallest action bar seen so far. The bar can mount
-        // empty and grow later (pre-actions, the action row, Muck/Show); the table
-        // is fitted above the tallest one so it never slides under the bar, and a
-        // shorter bar never grows the table back (no rescale during play).
-        let barReserve = 0;
+
         const measure = () => {
             const stageEl = stageRef.current;
             const wrapper = wrapperRef.current;
@@ -227,10 +223,10 @@ export function useTableOnlyFit(
             const viewportBottom = visibleViewportHeight();
             let bottom = Math.min(stage.bottom, viewportBottom);
             const bar = root?.querySelector(".table-action-bar")?.getBoundingClientRect();
-            if (fixedGeometry) {
-                if (bar && visible(bar)) barReserve = Math.max(barReserve, viewportBottom - bar.top);
-                bottom = Math.min(bottom, viewportBottom - barReserve) - BAR_TURN_GROWTH;
-            } else if (bar && visible(bar) && bar.top < bottom) bottom = bar.top;
+            // The desktop/tablet bar has a constant height (Table.css), so its top
+            // is stable across button states and the fit never rescales.
+            if (bar && visible(bar) && bar.top < bottom) bottom = bar.top;
+            if (fixedGeometry) bottom -= BAR_TURN_GROWTH;
             // Portrait phones are width-bound: hug the side edges more tightly.
             const side = window.innerHeight > window.innerWidth && root?.getAttribute("data-compact-mobile") === "true" ? 2 : FIT_MARGIN;
             const target: Box = {
@@ -276,16 +272,6 @@ export function useTableOnlyFit(
         // Fixed geometry: only the stage (header/banners) and window size re-fit;
         // the action bar grows on the hero's turn, so it is read but not observed.
         if (!fixedGeometry) root?.querySelectorAll(FIT_OVERLAYS + ", .table-action-bar").forEach(el => resize?.observe(el));
-        // Fixed geometry still watches the bar, but only re-fits when it grows past
-        // the reserve (e.g. it mounted empty before the first pre-action row).
-        const barWatch = !fixedGeometry || typeof ResizeObserver === "undefined" ? null : new ResizeObserver(entries => {
-            const bar = entries[entries.length - 1]?.target as HTMLElement | undefined;
-            if (!bar) return;
-            const height = visibleViewportHeight() - bar.getBoundingClientRect().top;
-            if (height > barReserve + 1) schedule();
-        });
-        const barEl = root?.querySelector(".table-action-bar");
-        if (barEl) barWatch?.observe(barEl);
         const viewport = typeof window !== "undefined" ? window.visualViewport : null;
         viewport?.addEventListener("resize", schedule);
         // Seats, banners and the bar mount/unmount with the hand.
@@ -296,7 +282,6 @@ export function useTableOnlyFit(
             cancelAnimationFrame(frame);
             resize?.disconnect();
             mutation?.disconnect();
-            barWatch?.disconnect();
             viewport?.removeEventListener("resize", schedule);
             window.removeEventListener("resize", schedule);
         };
