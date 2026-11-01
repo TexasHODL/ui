@@ -70,7 +70,7 @@ import { PreActionControls } from "./PreActionControls";
 import { DESKTOP_ACTION_HEIGHT, DESKTOP_SLOT_ROW } from "./desktopActionSlot";
 import { allowsBlindMultiples } from "../../utils/preflopPresets";
 import { isCheckFreeForPlayer, hasVoluntarilyCommittedThisRound, amountToCallMicroForPlayer } from "../../utils/chipUtils";
-import { shouldShowPreActions, shouldClearPreAction, isPreActionStale, resolvePreAction, preActionButtons, PreAction } from "../../utils/preActions";
+import { shouldShowPreActions, shouldClearPreAction, isPreActionStale, resolvePreAction, preActionButtons, PreAction, ResolvedPreAction } from "../../utils/preActions";
 
 import type { PokerActionPanelProps } from "./types";
 import { hasFoldedOrMucked } from "../../utils/playerStatus";
@@ -380,6 +380,16 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         setPreAction(null);
         setArmedCallMicro(null);
     }, []);
+    // A fired pre-action holds the controls pending like a clicked button does,
+    // until the move lands or fails — otherwise clearing the armed intent while
+    // it confirms flashes the whole betting bar for that moment.
+    const markPreActionPending = useCallback(
+        (actionName: ResolvedPreAction) => {
+            setOptimisticActionName(actionName);
+            setOptimisticActionTurnIndex(actionTurnIndex);
+        },
+        [actionTurnIndex]
+    );
     usePreAction(
         tableId,
         network,
@@ -391,7 +401,8 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
         isSubmitBusy,
         onTransactionSubmitted,
         clearPreAction,
-        preActionCallGuard
+        preActionCallGuard,
+        markPreActionPending
     );
 
     // All-in as a FE label (poker-vm#2351/#2353). The engine never advertises an
