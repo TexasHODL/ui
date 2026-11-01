@@ -3,6 +3,13 @@ import { evaluateHand } from "./handEvaluation";
 
 describe("evaluateHand (ui#768)", () => {
     describe("Omaha uses exactly two hole cards and three board cards", () => {
+        it.each([[[]], [["2H", "7H", "9H"]], [["2H", "7H", "9H", "8D", "4S"]]])("four hole cards with no variant still get a hand (board %j)", board => {
+            // The table preview and some feeds leave the variant unset; four hole cards are Omaha.
+            const hand = evaluateHand(["AH", "KH", "2C", "3D"], board as string[], undefined);
+            expect(hand?.description).toBeTruthy();
+            if (board.length === 5) expect(hand?.description).toMatch(/flush/i);
+        });
+
         it("four suited hole cards and two of the suit on the board are not a flush", () => {
             // Hold'em would see seven hearts' worth of flush; Omaha needs three on the board.
             const hand = evaluateHand(["AH", "KH", "QH", "JH"], ["2H", "3H", "9C", "8D", "4S"], GameVariant.OMAHA);
