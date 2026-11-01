@@ -208,7 +208,18 @@ export const STAGE_DIMS: Record<StageOrientation, StageDims> = {
 
 export function getStageOrientation(): StageOrientation {
     const mode = getViewportMode();
-    return mode === "mobile-portrait" ? "portrait" : mode === "mobile-landscape" ? "mobile-landscape" : "landscape";
+    if (mode === "mobile-portrait" || isTabletPortrait(mode)) return "portrait";
+    return mode === "mobile-landscape" ? "mobile-landscape" : "landscape";
+}
+
+/**
+ * Tablet (or any large screen) held upright: it keeps the tablet/PC chrome
+ * (header, fixed action bar) but lays the table out on the vertical portrait
+ * stage, like a phone in portrait. Landscape tablets and desktop are unchanged.
+ */
+export function isTabletPortrait(mode: ViewportMode | string = getViewportMode()): boolean {
+    if (mode !== "tablet" && mode !== "desktop") return false;
+    return typeof window !== "undefined" && window.innerHeight > window.innerWidth;
 }
 
 /** Spread used by the width cap. Inlined so the cap does not call getStageDims. */
@@ -1214,7 +1225,7 @@ export function mobileLandscapeHeightStretch(): number {
 export function mobilePortraitHeightStretch(): number {
     const requested = Math.max(1, MOBILE_PORTRAIT_HEIGHT_STRETCH);
     if (requested === 1 || typeof window === "undefined") return 1;
-    if (getStageOrientation() !== "portrait") return 1;
+    if (getViewportMode() !== "mobile-portrait") return 1;
     const stageH = window.innerHeight - MOBILE_PORTRAIT_HEADER - MOBILE_PORTRAIT_DOCK;
     const containerW = window.innerWidth;
     if (stageH <= 0 || containerW <= 0) return 1;
