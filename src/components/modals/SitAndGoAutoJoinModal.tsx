@@ -22,6 +22,7 @@ import { microToUsdc } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
+import { sitAndGoJoinTitle } from "../../utils/createGameType";
 import { isEmpty, hasValue } from "../../utils/guards";
 import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
 import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
@@ -280,11 +281,12 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     }
 
     const playerCountLabel = getGameTypeMnemonic(gameOptions?.maxPlayers);
+    const joinTitle = sitAndGoJoinTitle(gameOptions?.scheduledStartTime);
 
     return (
         <Modal isOpen={true} onClose={handleSpectate} closeOnEscape={true} closeOnBackdropClick={false} isProcessing={isJoining}
-            widthClass="w-full max-w-[420px]" className="tournament-entry" ariaLabel="Sit & Go Tournament" customHeader>
-            <ModalHeader kicker="Take your seat" title="Sit & Go Tournament" subtitle={`${formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)} · ${playerCountLabel}`} />
+            widthClass="w-full max-w-[420px]" className="tournament-entry" ariaLabel={joinTitle} customHeader>
+            <ModalHeader kicker="Take your seat" title={joinTitle} subtitle={`${formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)} · ${playerCountLabel}`} />
 
             <dl className="tournament-facts">
                 <div><dt>Buy-in</dt><dd>${formatMicroUsd(gameOptions?.maxBuyIn ?? 0)}</dd></div>
