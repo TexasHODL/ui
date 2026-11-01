@@ -377,6 +377,14 @@
   }
 }
 
+/* Winner banner: WINS and the hand use the shared stack-amount size. */
+.seat-banner-win-title,
+.seat-banner-win-hand {
+  font-size: var(--stack-amount-size);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 /* Tournament Results Styles */
 .badge-tournament-results {
   position: absolute;
@@ -401,7 +409,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
   font-weight: var(--type-label-weight, 800);
-  font-size: var(--type-place-size, 1rem);
+  font-size: var(--stack-amount-size, var(--type-place-size, 1rem));
   box-shadow: 0 4px 12px color-mix(in srgb, #000000 30%, transparent);
   white-space: nowrap;
   text-transform: uppercase;
@@ -433,7 +441,7 @@
   background-color: color-mix(in srgb, #000000 80%, transparent);
   border-radius: 0.375rem;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--stack-amount-size, 0.875rem);
   white-space: nowrap;
   box-shadow: 0 2px 8px color-mix(in srgb, #000000 40%, transparent);
 }
