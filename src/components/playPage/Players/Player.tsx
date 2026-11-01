@@ -2,6 +2,7 @@ import * as React from "react";
 import { memo, useMemo, useCallback } from "react";
 import Badge from "../common/Badge";
 import { HoleCardFan } from "../Card/HoleCardFan";
+import { TimeBankClock } from "../common/TimeBankClock";
 import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
@@ -29,6 +30,9 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         const { winnerInfo, winnerBySeat } = useWinnerInfo();
         const winnerCards = useWinnerCards();
         const { isActive: isTurnTimerActive } = usePlayerTimer(id, index);
+
+        // The time bank alarm clock sits on our own pill, opposite the seat number (ui#19).
+        const timeBankClock = useMemo(() => <TimeBankClock tableId={id} seat={index} />, [id, index]);
 
         const { equities, shouldShow: shouldShowEquity } = useAllInEquity();
         const { getAvatarForAddress } = useProfileAvatar();
@@ -182,6 +186,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
                             onSitIn={isSittingOut ? handleSitInFromBadge : undefined}
+                            trailing={timeBankClock}
                         />
                     </div>
                 </div>
