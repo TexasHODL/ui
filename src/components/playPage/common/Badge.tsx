@@ -8,7 +8,8 @@ import { usePreviewSeatAction } from "../../../context/PreviewSeatActionsContext
 import { useSeatJoinNotification } from "../../../hooks/notifications/useSeatJoinNotification";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { isTournamentFormat } from "../../../utils/gameFormatUtils";
-import { formatForSitAndGo, formatForCashGame } from "../../../utils/numberUtils";
+import { bigBlindInStackUnits, formatSeatStack } from "../../../utils/numberUtils";
+import { useStacksInBigBlinds } from "../../../context/GameSettingsContext";
 import ProgressBar from "./ProgressBar";
 import { colors } from "../../../utils/colorConfig";
 import "./Badge.css";
@@ -47,13 +48,14 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     const prevBannerModeRef = React.useRef<string>("hidden");
 
     // Get game format to determine if it's a tournament-style game
-    const { gameFormat } = useGameStateContext();
+    const { gameFormat, gameState } = useGameStateContext();
     const isTournament = isTournamentFormat(gameFormat);
 
-    // Format the value based on game format using clean utility functions
-    const formattedValue = isTournament
-        ? formatForSitAndGo(value)  // Returns "10,000" format (tournament chips)
-        : formatForCashGame(value);  // Returns "$100.00" format (cash game)
+    // "45.5 BB" if the player turned on stacks in big blinds for this format
+    // (ui#895), else "$100.00" (cash) or "10,000" (tournament chips).
+    const showInBigBlinds = useStacksInBigBlinds(isTournament);
+    const bigBlind = showInBigBlinds ? bigBlindInStackUnits(gameState?.gameOptions?.bigBlind, isTournament) : null;
+    const formattedValue = formatSeatStack(value, isTournament, bigBlind);
 
     // Live tables show only the newest action. The table preview can pin a
     // label on every seat; that context is null everywhere else.
