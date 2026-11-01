@@ -130,6 +130,8 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
         winCelebration,
         potAsChips,
         showMainPot,
+        stacksInBBCash,
+        stacksInBBTournament,
         toggleTurnNotificationSound,
         togglePlayerActionSounds,
         toggleAutoMuck,
@@ -139,6 +141,8 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
         toggleWinCelebration,
         togglePotAsChips,
         toggleShowMainPot,
+        toggleStacksInBBCash,
+        toggleStacksInBBTournament,
         seatAtBottom,
         toggleSeatAtBottom
     } = useGameSettings();
@@ -228,6 +232,18 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                 description="Show the main pot next to the total pot once there are side pots or bets in the round. Off by default: only the total pot is shown."
                 checked={showMainPot}
                 onToggle={toggleShowMainPot}
+            />
+            <ToggleRow
+                label="Cash Stacks in Big Blinds"
+                description="Show stacks in big blinds (e.g. 45.5 BB) instead of dollars at cash tables."
+                checked={stacksInBBCash}
+                onToggle={toggleStacksInBBCash}
+            />
+            <ToggleRow
+                label="Tournament Stacks in Big Blinds"
+                description="Show stacks in big blinds (e.g. 30 BB) instead of chips in Sit & Gos and tournaments. Uses the current level's big blind."
+                checked={stacksInBBTournament}
+                onToggle={toggleStacksInBBTournament}
             />
             <ToggleRow label="Auto Muck" description="Hide losing cards automatically at showdown." checked={autoMuck} onToggle={toggleAutoMuck} />
             <ToggleRow
