@@ -102,6 +102,15 @@ const CENTRED_MIN_RATIO = 0.9;
 export const fitTransform = (fit: TableOnlyFit, base: string) =>
     fit.scale === 1 && fit.dx === 0 && fit.dy === 0 ? base : `translate(${fit.dx.toFixed(1)}px, ${fit.dy.toFixed(1)}px) scale(${fit.scale.toFixed(4)}) ${base}`;
 
+/** Height of the part of the page the user can actually see. On Android the
+ *  browser toolbar and split-screen shrink the visual viewport; innerHeight can
+ *  lag behind it, so the smaller of the two wins. */
+export const visibleViewportHeight = (): number => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    const visible = vv && vv.height > 0 ? vv.height + vv.offsetTop : Infinity;
+    return Math.min(window.innerHeight, visible);
+};
+
 const toBox = (rect: DOMRect): Box => ({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
 const visible = (rect: DOMRect) => rect.width > 1 && rect.height > 1;
 
@@ -157,6 +166,11 @@ export function useTableOnlyFit(
         }
         let frame = 0;
         let applied = IDENTITY_FIT;
+        // Fixed geometry: the tallest action bar seen so far. The bar can mount
+        // empty and grow later (pre-actions, the action row, Muck/Show); the table
+        // is fitted above the tallest one so it never slides under the bar, and a
+        // shorter bar never grows the table back (no rescale during play).
+        let barReserve = 0;
         const measure = () => {
             const stageEl = stageRef.current;
             const wrapper = wrapperRef.current;
@@ -210,10 +224,13 @@ export function useTableOnlyFit(
                 overlays.push(box);
             });
             // The desktop action bar is fixed over the stage bottom.
-            let bottom = Math.min(stage.bottom, window.innerHeight);
+            const viewportBottom = visibleViewportHeight();
+            let bottom = Math.min(stage.bottom, viewportBottom);
             const bar = root?.querySelector(".table-action-bar")?.getBoundingClientRect();
-            if (bar && visible(bar) && bar.top < bottom) bottom = bar.top;
-            if (fixedGeometry) bottom -= BAR_TURN_GROWTH;
+            if (fixedGeometry) {
+                if (bar && visible(bar)) barReserve = Math.max(barReserve, viewportBottom - bar.top);
+                bottom = Math.min(bottom, viewportBottom - barReserve) - BAR_TURN_GROWTH;
+            } else if (bar && visible(bar) && bar.top < bottom) bottom = bar.top;
             // Portrait phones are width-bound: hug the side edges more tightly.
             const side = window.innerHeight > window.innerWidth && root?.getAttribute("data-compact-mobile") === "true" ? 2 : FIT_MARGIN;
             const target: Box = {
@@ -259,6 +276,18 @@ export function useTableOnlyFit(
         // Fixed geometry: only the stage (header/banners) and window size re-fit;
         // the action bar grows on the hero's turn, so it is read but not observed.
         if (!fixedGeometry) root?.querySelectorAll(FIT_OVERLAYS + ", .table-action-bar").forEach(el => resize?.observe(el));
+        // Fixed geometry still watches the bar, but only re-fits when it grows past
+        // the reserve (e.g. it mounted empty before the first pre-action row).
+        const barWatch = !fixedGeometry || typeof ResizeObserver === "undefined" ? null : new ResizeObserver(entries => {
+            const bar = entries[entries.length - 1]?.target as HTMLElement | undefined;
+            if (!bar) return;
+            const height = visibleViewportHeight() - bar.getBoundingClientRect().top;
+            if (height > barReserve + 1) schedule();
+        });
+        const barEl = root?.querySelector(".table-action-bar");
+        if (barEl) barWatch?.observe(barEl);
+        const viewport = typeof window !== "undefined" ? window.visualViewport : null;
+        viewport?.addEventListener("resize", schedule);
         // Seats, banners and the bar mount/unmount with the hand.
         const mutation = typeof MutationObserver === "undefined" || !root ? null : new MutationObserver(fixedGeometry ? scheduleOnLayoutChange : schedule);
         mutation?.observe(root as HTMLElement, { childList: true, subtree: true });
@@ -267,6 +296,8 @@ export function useTableOnlyFit(
             cancelAnimationFrame(frame);
             resize?.disconnect();
             mutation?.disconnect();
+            barWatch?.disconnect();
+            viewport?.removeEventListener("resize", schedule);
             window.removeEventListener("resize", schedule);
         };
     }, [active, stageRef, wrapperRef, feltRef, baseTransform, zoom, fixedGeometry]);

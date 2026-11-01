@@ -90,8 +90,9 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { fitTransform, useTableOnlyFit } from "../../hooks/game/useTableOnlyFit";
+import { useTablePageViewportLock } from "../../hooks/useTablePageViewportLock";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { getViewportMode, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
+import { getViewportMode, isTabletPortrait, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 
@@ -898,6 +899,7 @@ const Table = React.memo(() => {
     // Table-only view: fit seats, badges and chips beside the dock and clear of the overlays.
     const zoomWrapperRef = useRef<HTMLDivElement>(null);
     // Desktop/tablet: the same measured fit maximises the table between the header and the action bar, centred.
+    useTablePageViewportLock();
     const tableOnlyFit = useTableOnlyFit(tableOnly || !tableLayout.viewportMode.startsWith("mobile"), tableContainerRef, zoomWrapperRef, tableDivRef, tableLayout.tableTransform, tableLayout.zoom, !tableOnly);
     const historyDock = useHistoryDock(tableContainerRef, tableDivRef, tableLayout.containerWidth, tableLayout.containerHeight, tableLayout.zoom * tableOnlyFit.scale, tableOnly, isCompactMobile);
     useEffect(() => {
@@ -908,7 +910,8 @@ const Table = React.memo(() => {
     }, [tableOnly]);
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
-    const stageDims = stageDimsFor(isMobilePortrait ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape");
+    const isPortraitStage = isMobilePortrait || isTabletPortrait(tableLayout.viewportMode);
+    const stageDims = stageDimsFor(isPortraitStage ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape");
 
     // Add the useGameProgress hook
     const { isGameInProgress, handNumber, actionCount, nextToAct } = useGameProgress(id);
@@ -1533,7 +1536,7 @@ const Table = React.memo(() => {
                                     isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
                                     cardBackStyle={cardBackStyle}
                                     tableTheme={tableStyle}
-                                    isPortrait={isMobilePortrait}
+                                    isPortrait={isPortraitStage}
                                     tableSize={tableSize}
                                     winnerCards={winnerCards}
                                 />

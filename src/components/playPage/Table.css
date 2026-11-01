@@ -258,8 +258,22 @@
 }
 
 /* New classes for extracted inline styles */
+/* Table page: exactly the visible viewport, never scrollable (useTablePageViewportLock).
+   --table-vh is the measured visual viewport; 100dvh / 100vh are fallbacks. */
+html.table-page-lock,
+html.table-page-lock body,
+html.table-page-lock #app,
+html.table-page-lock .app-shell {
+    height: 100vh;
+    height: var(--table-vh, 100dvh);
+    min-height: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+}
+
 .table-container {
-    height: 100dvh;
+    height: 100vh;
+    height: var(--table-vh, 100dvh);
     width: 100%;
     overflow: visible;
     display: flex;
