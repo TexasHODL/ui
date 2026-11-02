@@ -207,7 +207,7 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
                 const componentToRender = getComponentToRender(position, positionIndex);
 
                 return (
-                    <div key={positionIndex} className="z-[10]">
+                    <div key={positionIndex} className="z-[10]" data-ui-pos={positionIndex}>
                         {/* Turn indicator — offset down to center on badge */}
                         {!hasWinner && !isSitAndGoWaitingForPlayers && (
                             <MemoizedTurnAnimation

@@ -123,11 +123,15 @@
     top: 20%;
     transform: translateX(-50%);
 }
+/* Mobile readable layout positions the pots itself, so the desktop pot slot (ui#918) stands down. */
+[data-mobile-readable] .pot-slot { position: static; width: auto; height: auto; }
+[data-mobile-readable] .pot-stack { position: static; left: auto; bottom: auto; transform: none; width: auto; max-width: none; }
 [data-mobile-readable] .community-board[data-portrait-seats="6"] {
     top: calc(50% - 12 * var(--mobile-unit));
 }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] {
-    top: calc(50% - 38 * var(--mobile-unit));
+    /* Dropped 19px (clears the TOTAL POT label) so the board sits nearer the centre (ui#918). */
+    top: calc(50% - 38 * var(--mobile-unit) + 19px);
 }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-pots {
@@ -237,4 +241,52 @@
         line-height: 1.1;
         padding: var(--mobile-unit) calc(6 * var(--mobile-unit));
     }
+}
+
+/* Phone portrait pots (ui#918): centre the group on the table axis and keep Main +
+   Side pots in one row, at full size. */
+[data-mobile-readable="portrait"] .community-board .pot-stack.community-pots { left: 50%; transform: translateX(-50%); width: max-content; }
+[data-mobile-readable="portrait"] .pot-stack .side-pots-row { flex-wrap: nowrap; gap: 0 16px; }
+[data-mobile-readable="portrait"] .pot-stack .pot-pill-label { font-size: 14px; }
+/* Main + Side pots on phone portrait (ui#918): no row scaling, amounts use the bet amount size, chips 10% larger. Total Pot unchanged. */
+[data-mobile-readable="portrait"] .pot-stack .side-pots-row { zoom: 1 !important; }
+[data-mobile-readable="portrait"] .pot-stack .side-pots-row .type-num-bet { font-size: var(--stack-amount-size); }
+[data-mobile-readable="portrait"] .pot-stack .side-pots-row .pot-pill .absolute:not(.chip-caption) { zoom: 1.1; }
+/* Total Pot stays put while the board + Main/Side pots drop (ui#918): undo the board drop for it. */
+[data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] .pot-stack > .pot-chips,
+[data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] .pot-stack > .pot-display { position: relative; top: calc(-1 * var(--pot-drop, 19px)); }
+/* Phone landscape (ui#918): pots above the cards (Total Pot, then Main + Side pots in one row), board lower. */
+[data-mobile-readable="landscape"] .community-board .pot-stack.community-pots { top: auto; bottom: calc(100% + 2 * var(--mobile-unit)); left: 50%; transform: translateX(-50%); flex-direction: column !important; align-items: center !important; gap: 0 !important; }
+[data-mobile-readable="landscape"] .pot-stack .side-pots-row { flex-wrap: nowrap; gap: 0 12px; margin-top: 0 !important; padding-top: 30px; zoom: 1 !important; }
+[data-mobile-readable="landscape"] .community-board { top: calc(50% + var(--landscape-board-drop, 2px) + var(--landscape-board-shift, 8px) / var(--table-zoom, 1)) !important; }
+/* 17px here paints the same on screen as portrait's 14px (the landscape table is drawn smaller). */
+[data-mobile-readable="landscape"] .pot-stack .pot-pill-label { font-size: 17px; }
+/* Landscape: Total Pot visibly larger than the Main/Side pots (ui#918). */
+[data-mobile-readable="landscape"] .community-board .pot-stack > .pot-chips { zoom: 1.25; }
+/* Landscape: cards stay mid-table; Total Pot above them, Main/Side row centred below them. */
+[data-mobile-readable="landscape"] .community-board .pot-stack.community-pots { position: static !important; transform: none !important; }
+[data-mobile-readable="landscape"] .community-board .pot-stack > .pot-chips { position: absolute; bottom: calc(100% + 2 * var(--mobile-unit) + var(--landscape-board-shift, 8px) / var(--table-zoom, 1) / 1.25); left: 50%; transform: translateX(-50%); }
+[data-mobile-readable="landscape"] .community-board .pot-stack .side-pots-row { position: absolute; top: calc(100% + 14px); left: 50%; transform: translateX(-50%); padding-top: 0 !important; gap: 0 24px !important; }
+/* Phone portrait: Total Pot visibly larger than the Main/Side pots, like landscape (ui#918). */
+[data-mobile-readable="portrait"] .community-board .pot-stack > .pot-chips { zoom: 1.25; }
+
+/* ui#918 unified amounts: phones drive pot amounts from the same var as bets/stacks. */
+[data-mobile-readable] .pot-stack { --bet-amount-size: var(--stack-amount-size); }
+[data-mobile-readable] .pot-stack .side-pots-row { --side-row-zoom: 1 !important; }
+/* Phones: Total Pot only drops 2px on screen; cards and side row stay put. */
+[data-mobile-readable] .community-board .pot-stack > .pot-chips { translate: 0 calc(var(--total-pot-drop, 2px) / var(--table-zoom, 1) / 1.25); }
+/* Keep the Total Pot block zoom (label + chips unchanged); amount alone = 1.2x bet. */
+[data-mobile-readable] .community-board .pot-stack > .pot-chips .type-num-bet > span:not(.pot-pill-label) { font-size: calc(var(--bet-amount-size) * var(--total-pot-ratio) / 1.25); }
+/* iPhone 12-16 portrait (380-399px wide, e.g. 390x844 / 393x852): drop board (cards + Total Pot + side row)
+   and the middle-row seats (ui slots 2 and 7: plates, cards, bets) 5px on screen. Stacks with the 2px Total Pot drop. */
+@media (min-width: 380px) and (max-width: 399px) and (orientation: portrait) {
+  [data-mobile-readable="portrait"] .community-board { translate: 0 calc(5px / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"] [data-ui-pos="2"], [data-mobile-readable="portrait"] [data-ui-pos="7"] { translate: 0 calc(5px / var(--table-zoom, 1)); }
+}
+/* Same 380-399px portrait scope: every bet group 2px (screen) toward its own seat centre. Measured direction
+   (bet centre -> seat centre) is straight down for slots 0,1,2,7,8 and straight up for 3-6. Slots 2/7 keep their 5px row drop. */
+@media (min-width: 380px) and (max-width: 399px) and (orientation: portrait) {
+  [data-mobile-readable="portrait"] .chip-position[data-ui-pos] { --bet-nudge: 2px; --row-drop: 0px; translate: 0 calc((var(--bet-nudge) + var(--row-drop)) / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"] .chip-position:is([data-ui-pos="3"],[data-ui-pos="4"],[data-ui-pos="5"],[data-ui-pos="6"]) { --bet-nudge: -2px; }
+  [data-mobile-readable="portrait"] .chip-position:is([data-ui-pos="2"],[data-ui-pos="7"]) { --row-drop: 5px; }
 }

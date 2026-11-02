@@ -3,7 +3,7 @@
  *
  * Displays the central playing surface including:
  * - Club logo
- * - Pot displays (total pot and main pot)
+ * - Pot displays (total pot, main pot, and each side pot when a player is all-in)
  * - Community cards
  * - Sit & Go waiting state
  */
@@ -128,14 +128,17 @@ export const TableBoard: React.FC<TableBoardProps> = ({
             {/* Central Display Area */}
             <div className="community-board relative z-[1] flex flex-col items-center justify-center -mt-8" data-portrait-four={isPortrait && tableSize === 4} data-portrait-seats={isPortrait ? tableSize : undefined}>
                 {/* Hide pot display when sit-and-go is waiting for players */}
+                {/* Fixed-height pot slot (ui#918): the pots grow upward from its bottom edge, so the
+                    community cards never move with the pot count, pot-as-chips or street. */}
+                <div className="pot-slot" data-testid="pot-slot">
                 {!isSitAndGoWaitingForPlayers && (
-                    <div className="community-pots flex flex-col items-center lg:flex-row lg:items-end lg:gap-6">
+                    <div className="pot-stack community-pots flex flex-col items-center lg:flex-row lg:items-end lg:gap-6">
                         {potDisplayValues.showTotalPot && (
                             <TotalPotDisplay
                                 amount={potDisplayValues.totalPot}
                                 rawAmount={potDisplayValues.totalPotRaw}
                                 isTournamentStyle={potDisplayValues.isTournamentStyle}
-                                hasMainPot={showMainPot}
+                                hasMainPot={showMainPot || potDisplayValues.showSidePots}
                                 asChips={potAsChips}
                             />
                         )}
@@ -148,8 +151,24 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                                 asChips={potAsChips}
                             />
                         )}
+                        {/* Side pots (ui#918): one pill per pot, main pot first */}
+                        {potDisplayValues.showSidePots && (
+                            <div className="side-pots-row" data-count={potDisplayValues.pots.length} data-testid="side-pots">
+                                {potDisplayValues.pots.map(pot => (
+                                    <MainPotDisplay
+                                        key={pot.label}
+                                        label={pot.label}
+                                        amount={pot.amount}
+                                        rawAmount={pot.raw}
+                                        isTournamentStyle={potDisplayValues.isTournamentStyle}
+                                        asChips={potAsChips}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
+                </div>
 
                 {/* Community Cards */}
                 <div className="community-card-row flex gap-2 mt-8">{communityCardsElements}</div>

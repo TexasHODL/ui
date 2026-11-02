@@ -1171,8 +1171,8 @@ const Table = React.memo(() => {
 
     const potDisplayValues = useMemo(() => {
         const pots = Array.isArray(gameState?.pots) ? (gameState?.pots as string[]) : [];
-        return formatPotDisplay(pots, gameState?.totalPot, gameFormat, gameState?.round);
-    }, [gameState?.pots, gameState?.totalPot, gameFormat, gameState?.round]);
+        return formatPotDisplay(pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails);
+    }, [gameState?.pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails]);
 
     const copyToClipboard = useCallback((text: string) => {
         navigator.clipboard.writeText(text);
@@ -1549,6 +1549,7 @@ const Table = React.memo(() => {
                                             <PlayerChipDisplay
                                                 key={`chip-${positionIndex}`}
                                                 seatIndex={seatNumber}
+                                                uiPos={positionIndex}
                                                 left={position.left}
                                                 bottom={position.bottom}
                                                 top={position.top}
