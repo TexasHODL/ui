@@ -1068,7 +1068,7 @@ export default function TableAdminPage() {
                                 >
                                     {isCreating ? "Creating..." : !hasEnoughUsdc ? "Insufficient USDC" : tableNameError ? (tableNameError.includes("already taken") ? "Name taken" : "Invalid table name") : "Create Table"}
                                 </button>
-                                <button onClick={refetch} disabled={isLoading} className="creation-secondary" title="Refresh tables">
+                                <button onClick={() => void refetch()} disabled={isLoading} className="creation-secondary" title="Refresh tables">
                                     <svg className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path
                                             strokeLinecap="round"
