@@ -49,7 +49,7 @@ test("opens the centred finishing-hand review immediately without review or NFT 
     expect(screen.queryByRole("button", { name: /Review/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /NFT/ })).toBeNull();
     expect(screen.getByRole("button", { name: "Collect $0.40" })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: /Spectate|Return to lobby/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /View table|Back to lobby/ })).toBeNull();
 });
 
 test.each([1, 2, 3, 4])("all paid positions offer Collect, including place %i", place => {
@@ -69,33 +69,58 @@ test("collects once, waits for success, then offers navigation without auto-redi
     expect(busy).toBeDisabled();
     fireEvent.click(busy);
     await waitFor(() => expect(claim).toHaveBeenCalledTimes(1));
-    expect(screen.queryByRole("button", { name: /Spectate|Return to lobby/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /View table|Back to lobby/ })).toBeNull();
     expect(mockNavigate).not.toHaveBeenCalled();
     await act(async () => { complete(); });
     expect(screen.getByRole("status")).toHaveTextContent("Your winnings have been collected.");
     expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
-    expect(screen.getByRole("button", { name: "Spectate table" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "View table" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Back to lobby" })).toBeEnabled();
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(localStorage.getItem(dismissalKey)).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Spectate table" }));
+    fireEvent.click(screen.getByRole("button", { name: "View table" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(claim).toHaveBeenCalledTimes(1);
     expect(mockNavigate).not.toHaveBeenCalled();
     expect(localStorage.getItem(dismissalKey)).toBe("true");
 });
 
-test.each([1, 2])("place %i only offers Return to lobby after collection", async place => {
+test.each([1, 2])("place %i (incl. the winner) gets View table and Back to lobby after collection", async place => {
     mockResult = result(place);
     const claim = jest.fn().mockResolvedValue(undefined);
     show(claim);
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
-    await screen.findByRole("button", { name: "Return to lobby" });
-    expect(screen.queryByRole("button", { name: "Spectate table" })).toBeNull();
+    await screen.findByRole("button", { name: "Back to lobby" });
+    const actions = screen.getByTestId("sng-result-actions");
+    expect(actions).toContainElement(screen.getByRole("button", { name: "View table" }));
+    expect(actions).toContainElement(screen.getByRole("button", { name: "Back to lobby" }));
     expect(mockNavigate).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Return to lobby" }));
+    fireEvent.click(screen.getByRole("button", { name: "Back to lobby" }));
     expect(mockNavigate).toHaveBeenCalledWith("/");
     expect(claim).toHaveBeenCalledTimes(1);
+});
+
+test("winner's View table closes the modal, stays on the table and it does not reappear for that claim", async () => {
+    mockResult = result(1);
+    const claim = jest.fn().mockResolvedValue(undefined);
+    const { unmount } = show(claim);
+    fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
+    fireEvent.click(await screen.findByRole("button", { name: "View table" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(mockNavigate).not.toHaveBeenCalled();
+    unmount();
+    mockPayoutStatus = "claimed";
+    show(claim);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(claim).toHaveBeenCalledTimes(1);
+});
+
+test("Collect sits in the sticky actions footer before claiming, with no navigation yet", () => {
+    mockResult = result(1);
+    show();
+    const actions = screen.getByTestId("sng-result-actions");
+    expect(actions).toContainElement(screen.getByRole("button", { name: "Collect $0.40" }));
+    expect(screen.queryByRole("button", { name: /View table|Back to lobby/ })).toBeNull();
 });
 
 test("collection errors retain the review and allow retry, without exposing navigation", async () => {
@@ -103,11 +128,11 @@ test("collection errors retain the review and allow retry, without exposing navi
     show(claim);
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Collection failed");
-    expect(screen.queryByRole("button", { name: /Spectate|Return to lobby/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /View table|Back to lobby/ })).toBeNull();
     expect(localStorage.getItem(dismissalKey)).toBeNull();
     expect(mockNavigate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
-    await screen.findByRole("button", { name: "Return to lobby" });
+    await screen.findByRole("button", { name: "Back to lobby" });
     expect(claim).toHaveBeenCalledTimes(2);
 });
 
@@ -118,7 +143,7 @@ test("retains the receipt when settlement removes the live player result", async
     await screen.findByRole("status");
     mockResult = null;
     rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} held={false} />);
-    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to lobby" })).toBeInTheDocument();
     expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$0.40");
 });
 
@@ -126,11 +151,11 @@ test("keeps spectating available below second place even when a winner is record
     const claim = jest.fn().mockResolvedValue(undefined);
     const { rerender } = show(claim);
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
-    await screen.findByRole("button", { name: "Spectate table" });
+    await screen.findByRole("button", { name: "View table" });
     mockResults = [{ place: 1 }];
     rerender(<SitAndGoResultModal tableId={TABLE_ID} onClaim={claim} held={false} />);
-    expect(screen.getByRole("button", { name: "Spectate table" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View table" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to lobby" })).toBeInTheDocument();
 });
 
 test("a previously collected prize skips Collect and offers navigation", () => {
@@ -138,8 +163,8 @@ test("a previously collected prize skips Collect and offers navigation", () => {
     const claim = jest.fn();
     show(claim);
     expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
-    expect(screen.getByRole("button", { name: "Spectate table" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Return to lobby" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "View table" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to lobby" })).toBeInTheDocument();
     expect(claim).not.toHaveBeenCalled();
 });
 
@@ -154,19 +179,19 @@ test("a claim from another tab found at preflight never submits again", async ()
     const claim = jest.fn();
     show(claim);
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
-    await screen.findByRole("button", { name: "Return to lobby" });
+    await screen.findByRole("button", { name: "Back to lobby" });
     expect(claim).not.toHaveBeenCalled();
 });
 
 test("the chain's precise already-claimed error becomes a collected receipt", async () => {
     show(jest.fn().mockRejectedValue(new Error("transaction failed: sit-and-go payout already claimed")));
     fireEvent.click(screen.getByRole("button", { name: "Collect $0.40" }));
-    await screen.findByRole("button", { name: "Return to lobby" });
+    await screen.findByRole("button", { name: "Back to lobby" });
     expect(screen.queryByRole("alert")).toBeNull();
     expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
 });
 
-test.each(["Spectate table", "Return to lobby"])("unpaid finishers can choose %s without any transaction", action => {
+test.each(["View table", "Back to lobby"])("unpaid finishers can choose %s without any transaction", action => {
     mockResult = result(3, "0");
     const claim = jest.fn();
     show(claim);
@@ -175,7 +200,7 @@ test.each(["Spectate table", "Return to lobby"])("unpaid finishers can choose %s
     fireEvent.click(screen.getByRole("button", { name: action }));
     expect(claim).not.toHaveBeenCalled();
     expect(screen.queryByRole("dialog")).toBeNull();
-    if (action === "Return to lobby") expect(mockNavigate).toHaveBeenCalledWith("/");
+    if (action === "Back to lobby") expect(mockNavigate).toHaveBeenCalledWith("/");
     else expect(mockNavigate).not.toHaveBeenCalled();
 });
 
