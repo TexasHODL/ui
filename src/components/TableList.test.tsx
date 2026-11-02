@@ -23,7 +23,8 @@ const mockGames = [
     { ...base, gameId: "other", name: "Another table", creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 0 },
     { ...base, gameId: UNNAMED_ID, creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 1 }
 ];
-jest.mock("../hooks/game/useFindGames", () => ({ useFindGames: () => ({ games: mockGames, isLoading: false, error: null, refetch: mockRefresh }), treasuryAddress: "" }));
+const mockLookupGame = jest.fn().mockResolvedValue(null);
+jest.mock("../hooks/game/useFindGames", () => ({ useFindGames: () => ({ games: mockGames, isLoading: false, error: null, refetch: mockRefresh, lookupGame: mockLookupGame }), treasuryAddress: "" }));
 jest.mock("../hooks/wallet/useCosmosWallet", () => ({ __esModule: true, default: () => ({ address: mockAddress }) }));
 jest.mock("../hooks/game/useDeleteGame", () => ({ useDeleteGame: () => ({ deleteGame: mockDelete, isDeleting: false }) }));
 jest.mock("../hooks/game/useForceCloseGame", () => ({ useForceCloseGame: () => ({ forceCloseGame: mockForceClose, isClosing: false }) }));

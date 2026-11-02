@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { scheduledLobbyLabel, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
 import { useFindGames, GameWithFormat, treasuryAddress } from "../hooks/game/useFindGames";
+import { isFullGameId, useLobbyAutoRefresh, useSearchMissRecovery } from "../hooks/game/useLobbyAutoRefresh";
 import { useDeleteGame } from "../hooks/game/useDeleteGame";
 import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
@@ -56,7 +57,7 @@ const scheduledLabel = (game: GameWithFormat, mark: LobbyTournamentMark | undefi
     });
 
 const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, refreshKey = 0 }) => {
-    const { games: rawGames, isLoading, error, refetch } = useFindGames();
+    const { games: rawGames, isLoading, error, refetch, lookupGame } = useFindGames();
     const { deleteGame, isDeleting } = useDeleteGame();
     const { forceCloseGame, isClosing } = useForceCloseGame();
     const { address } = useCosmosWallet();
@@ -70,11 +71,14 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const [sort, setSort] = useState<LobbySort>("activity");
     const [page, setPage] = useState(1);
     useEffect(() => { if (refreshKey) void refetch(); }, [refreshKey, refetch]);
+    // Keep the list live while the lobby is open (silent: no flicker, filters/scroll kept).
+    useLobbyAutoRefresh(refetch);
+    const searchIsId = isFullGameId(search);
 
     const clubGames = useMemo(
         () => ownedOnly ? rawGames.filter(game => !!address && game.creator?.toLowerCase() === address.toLowerCase()) :
-            (treasuryOnly && treasuryAddress ? rawGames.filter(game => game.creator === treasuryAddress) : rawGames),
-        [rawGames, treasuryOnly, ownedOnly, address]
+            (treasuryOnly && treasuryAddress && !searchIsId ? rawGames.filter(game => game.creator === treasuryAddress) : rawGames),
+        [rawGames, treasuryOnly, ownedOnly, address, searchIsId]
     );
     // All sit-and-go / tournament tables in the club list — needed before paging so
     // Finished/Cancelled rows older than 24h can be filtered out of the lobby.
@@ -91,6 +95,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
         // Non-empty search skips 24h aging so users can find old finished tables by id.
         return applyEndedLobbyRetention(filtered, startedTables, Date.now(), search);
     }, [clubGames, format, search, openOnly, sort, startedTables]);
+    // A search miss refreshes once; a full table id is also looked up directly.
+    useSearchMissRecovery(search, games.length > 0, isLoading, refetch, lookupGame);
     const currentPage = Math.min(page, Math.max(1, Math.ceil(games.length / PAGE_SIZE)));
     const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
@@ -133,7 +139,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                 <span>
                     <strong>{isLoading ? "—" : availableSeats}</strong> open seats
                 </span>
-                <button onClick={refetch} disabled={isLoading} aria-label="Refresh tables" title="Refresh tables">
+                <button onClick={() => void refetch()} disabled={isLoading} aria-label="Refresh tables" title="Refresh tables">
                     <FaRedo className={isLoading ? "animate-spin" : ""} />
                 </button>
             </div>
@@ -216,7 +222,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                 <div className={styles.empty} role="alert">
                     <h2>Tables couldn’t load</h2>
                     <p>{error.message}</p>
-                    <button className={styles.secondaryButton} onClick={refetch}>
+                    <button className={styles.secondaryButton} onClick={() => void refetch()}>
                         Try again
                     </button>
                 </div>
