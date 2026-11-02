@@ -14,6 +14,8 @@ const STACK_OFFSET_Y = 4;
 type ChipProps = {
     amount: string | bigint;
     isTournament?: boolean;
+    /** Caption centred under the amount (pot pills, ui#918), so the chip cluster can't cover it. */
+    caption?: string;
 };
 
 /**
@@ -79,7 +81,7 @@ function getClusterBounds(count: number, chipSize: number, maxVisibleCount: numb
     };
 }
 
-const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
+const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament, caption }) => {
     // Chip art from Settings > Chips (Current = the live CDN chips).
     // Tournament / Sit & Go tables never draw the $ (Current) chips.
     const chipUrl = useChipImageUrl(isTournament);
@@ -154,10 +156,11 @@ const Chip: React.FC<ChipProps> = React.memo(({ amount, isTournament }) => {
             </div>
 
             {/* Dollar amount label */}
-            <span className={`text-[#dbd3d3] type-num-bet whitespace-nowrap ${
+            <span className={`relative text-[#dbd3d3] type-num-bet whitespace-nowrap ${
                 compactLabel ? "text-2xl" : "text-4xl"
             }`}>
-                {isTournament ? formattedAmount : `$${formattedAmount}`}
+                <span>{isTournament ? formattedAmount : `$${formattedAmount}`}</span>
+                {caption && <span className="pot-pill-label chip-caption">{caption}</span>}
             </span>
         </div>
     );
