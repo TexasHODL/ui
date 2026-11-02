@@ -59,7 +59,6 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const isBusy = prizeClaim.kind === "claiming";
     const collected = prizeClaim.kind === "done" || payoutStatus.status === "claimed";
     const canNavigate = !isPaid || collected;
-    const canSpectate = place > 2;
 
     const handleDismiss = () => {
         localStorage.setItem(dismissKey(tableId, userAddress), "true");
@@ -90,7 +89,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
 
     return createPortal(
         <div className="sng-result-notice sng-result-expanded" data-testid="sng-result-modal" role="dialog" aria-label="Tournament result">
-            <div className="hodl-modal sng-result-panel is-expanded">
+            <div className="hodl-modal sng-result-panel is-expanded" data-min-fit-zoom="0.91">
                 <ModalHeader kicker="Tournament" title={<span data-testid="sng-result-heading">{heading}</span>}
                     subtitle={isPaid ? undefined : "Thanks for playing."}
                     onClose={canNavigate ? handleDismiss : undefined} closeLabel="Close tournament result" />
@@ -106,21 +105,26 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                     <p role="alert" className="finish-recap-note">Couldn’t verify past payouts. Please retry before collecting.</p>
                     <button className="hodl-secondary finish-toggle" onClick={payoutStatus.retry}>Retry payout check</button>
                 </div>}
-                {isPaid && !collected && payoutStatus.status === "unclaimed" && (
-                    <button onClick={handleCollect} disabled={isBusy} data-testid="sng-result-claim-winnings-btn"
-                        className="hodl-primary w-full py-3 px-4 mb-3 rounded-lg text-sm font-semibold disabled:cursor-not-allowed">
-                        {isBusy ? "Collecting…" : `Collect $${formatMicroUsd(payout)}`}
-                    </button>
-                )}
                 {prizeClaim.kind === "error" && (
                     <p role="alert" className="text-xs text-red-400 text-center mb-3" data-testid="sng-result-prize-claim-error">{prizeClaim.message}</p>
                 )}
                 {collected && <p role="status" className="finish-recap-note">Your winnings have been collected.</p>}
-                {canNavigate && <>
-                    {canSpectate && <button onClick={handleDismiss} className="hodl-secondary w-full py-3 px-4 mb-3 rounded-lg text-sm font-semibold">Spectate table</button>}
-                    <button onClick={handleReturnToLobby} className="hodl-primary w-full py-3 px-4 rounded-lg text-sm font-semibold">Return to lobby</button>
-                </>}
                 <div className="text-center mt-4"><span className="text-xs text-gray-400">Powered by Block52</span></div>
+                {/* Sticky footer: next steps stay visible even when the finishing-hand recap scrolls. */}
+                {((isPaid && !collected && payoutStatus.status === "unclaimed") || canNavigate) && (
+                <div className="sng-result-actions" data-testid="sng-result-actions">
+                    {isPaid && !collected && payoutStatus.status === "unclaimed" && (
+                        <button onClick={handleCollect} disabled={isBusy} data-testid="sng-result-claim-winnings-btn"
+                            className="hodl-primary w-full py-3 px-4 rounded-lg text-sm font-semibold disabled:cursor-not-allowed">
+                            {isBusy ? "Collecting…" : `Collect $${formatMicroUsd(payout)}`}
+                        </button>
+                    )}
+                    {canNavigate && <>
+                        <button onClick={handleDismiss} data-testid="sng-result-view-table-btn" className="hodl-secondary rounded-lg text-sm font-semibold">View table</button>
+                        <button onClick={handleReturnToLobby} data-testid="sng-result-lobby-btn" className="hodl-primary rounded-lg text-sm font-semibold">Back to lobby</button>
+                    </>}
+                </div>
+                )}
             </div>
         </div>, document.body
     );

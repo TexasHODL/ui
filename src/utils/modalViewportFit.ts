@@ -14,13 +14,20 @@ export function installModalViewportFit(): () => void {
             if (!media.matches) {
                 modal.removeAttribute("data-viewport-fit");
                 modal.style.removeProperty("zoom");
+                modal.style.removeProperty("--viewport-fit-max-height");
                 return;
             }
             modal.setAttribute("data-viewport-fit", "true");
             const viewport = window.visualViewport;
             const available = Math.max(1, (viewport?.height ?? window.innerHeight) - 40);
             const naturalHeight = modal.scrollHeight + 2;
-            const scale = Math.min(1, available / naturalHeight);
+            // A modal may set data-min-fit-zoom to stay legible; below that it scrolls instead of shrinking.
+            const minZoom = Math.min(1, Number(modal.dataset.minFitZoom) || 0);
+            const scale = Math.max(minZoom, Math.min(1, available / naturalHeight));
+            if (scale > available / naturalHeight) {
+                modal.setAttribute("data-viewport-fit", "scroll");
+                modal.style.setProperty("--viewport-fit-max-height", `${Math.floor(available / scale)}px`);
+            } else modal.style.removeProperty("--viewport-fit-max-height");
             const next = String(Math.floor(scale * 1000) / 1000);
             if (modal.style.getPropertyValue("zoom") !== next) modal.style.setProperty("zoom", next);
         });
