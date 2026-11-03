@@ -377,17 +377,9 @@
   }
 }
 
-/* Winner banner is taller so the hand line clears its bottom edge. */
-.seat-banner-shell[data-banner-mode="winner"],
-.seat-banner-shell[data-banner-mode="winner"] .seat-banner-box {
-  height: auto;
-  min-height: 55px;
-  padding-bottom: 0.3rem;
-}
-
-/* Winner banner: WINS and the hand use the shared stack-amount size. */
-.seat-banner-win-title,
-.seat-banner-win-hand {
+/* Winner banner: WINS and the hand share one line at the stack-amount size;
+   FitText scales the whole line. */
+.seat-banner-win-line {
   font-size: var(--stack-amount-size);
   line-height: 1.1;
   white-space: nowrap;

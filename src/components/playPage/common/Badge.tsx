@@ -197,15 +197,15 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         switch (bannerMode) {
             case "winner":
                 return (
-                    <div className="seat-banner-text flex flex-col items-center justify-center w-full min-w-0 px-1.5 mt-[14px] gap-0.5">
-                        <span className="seat-banner-win-title font-bold">
-                            WINS
-                        </span>
-                        {winnerHandDescription && (
-                            <FitText className="seat-banner-win-hand font-semibold uppercase tracking-wider opacity-95">
-                                {winnerHandDescription}
-                            </FitText>
-                        )}
+                    <div className="seat-banner-text flex items-center justify-center w-full min-w-0 px-1.5 mt-[14px]">
+                        <FitText className="seat-banner-win-line">
+                            <span className="seat-banner-win-title font-bold">WINS</span>
+                            {winnerHandDescription && (
+                                <span className="seat-banner-win-hand font-semibold uppercase tracking-wider opacity-95">
+                                    {" "}{winnerHandDescription}
+                                </span>
+                            )}
+                        </FitText>
                     </div>
                 );
 
