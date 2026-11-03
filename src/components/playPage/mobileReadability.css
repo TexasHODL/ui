@@ -246,6 +246,10 @@
 /* Phone portrait pots (ui#918): centre the group on the table axis and keep Main +
    Side pots in one row, at full size. */
 [data-mobile-readable="portrait"] .community-board .pot-stack.community-pots { left: 50%; transform: translateX(-50%); width: max-content; }
+/* 2/4/6 seats keep the stack in flow (static ignores left: 50%, so the translate alone pushed it half its width left). Offset it relatively so it centres on the cards. */
+[data-mobile-readable="portrait"] .community-board:not([data-portrait-seats="9"]) .pot-stack.community-pots { position: relative; }
+/* 2/4/6 seats: drop the Main/Side row 10px (visual only; Total Pot and cards stay put). */
+[data-mobile-readable="portrait"] .community-board:not([data-portrait-seats="9"]) .pot-stack .side-pots-row { translate: 0 10px; }
 [data-mobile-readable="portrait"] .pot-stack .side-pots-row { flex-wrap: nowrap; gap: 0 16px; }
 [data-mobile-readable="portrait"] .pot-stack .pot-pill-label { font-size: 14px; }
 /* Main + Side pots on phone portrait (ui#918): no row scaling, amounts use the bet amount size, chips 10% larger. Total Pot unchanged. */
