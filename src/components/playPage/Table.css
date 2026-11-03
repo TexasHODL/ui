@@ -225,27 +225,15 @@
     z-index: 20;
 }
 
-/* Board cards sit just under the pot labels, so they do not lift at all (hole cards still do):
-   the glow and brightening carry the highlight, so the card never reaches the
-   pot amounts or labels above it. */
-@keyframes community-card-lift {
-    0% {
-        transform: none;
-        filter: brightness(1);
-    }
-    100% {
-        transform: none;
-        filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 215, 0, 0.85));
-    }
-}
-
+/* Board cards sit just under the pot labels. They keep the full win lift, but
+   scale from the bottom edge and the row sits a little lower, so the raised card
+   never reaches the pot amounts or labels above it. */
 .community-card-row .animate-win-card {
-    animation-name: community-card-lift;
+    transform-origin: center bottom;
 }
 
-/* Small breathing room so even a resting board card never touches the pot labels. */
 .community-board .community-card-row {
-    margin-top: calc(2rem + 4px);
+    margin-top: calc(2rem + 14px);
 }
 /* Belt and braces: the pot row paints above the board cards. */
 .community-board .pot-slot {

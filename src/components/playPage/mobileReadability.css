@@ -133,7 +133,8 @@
     /* Dropped 19px (clears the TOTAL POT label) so the board sits nearer the centre (ui#918). */
     top: calc(50% - 38 * var(--mobile-unit) + 19px);
 }
-[data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
+/* 18px clears the lifted win card under the 9-seat pot row (pots stay put). */
+[data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 18px; }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-pots {
     position: absolute;
     /* About 4px above the card tops. 12 units left roughly a 12px gap. */
@@ -212,7 +213,8 @@
 }
 
 /* Centre the five-card row itself, irrespective of one or two pot labels. */
-[data-mobile-readable="landscape"] .community-card-row { margin-top: 0; }
+/* 12px clears the lifted win card under TOTAL POT (side pots below still clear). */
+[data-mobile-readable="landscape"] .community-card-row { margin-top: 12px; }
 [data-mobile-readable="landscape"] .community-pots {
     position: absolute;
     top: calc(100% + 6 * var(--mobile-unit));
