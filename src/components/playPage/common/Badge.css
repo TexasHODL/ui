@@ -377,6 +377,24 @@
   }
 }
 
+/* Winner text sits in the middle of the visible green area: the top ~20px
+   of the banner is hidden behind the stack pill. */
+.seat-banner-box {
+  position: relative;
+}
+.seat-banner-win-area {
+  position: absolute;
+  top: 20px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
 /* Winner banner: WINS and the hand share one line at the stack-amount size;
    FitText scales the whole line. */
 .seat-banner-win-line {
