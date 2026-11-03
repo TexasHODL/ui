@@ -489,6 +489,17 @@ html.table-page-lock .app-shell {
     transform: translate(-50%, -50%) scale(1.5);
 }
 
+.table-logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* Centre the artwork, not its box: the logo's ink sits 3.4% above and 0.55% right of its viewBox centre, and the
+   44%-wide modern logo box is wider than the img's 440px cap on phone landscape. */
+.table-logo img {
+    translate: -0.55% 3.4%;
+}
+
 .table-logo img {
     width: 300px;
     opacity: 0.4;
