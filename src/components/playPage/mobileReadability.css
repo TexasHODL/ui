@@ -231,7 +231,7 @@
 }
 /* Portrait's 44% mark reaches the side bets. 26% of the table clears them
    and still sits in the middle of the felt. */
-.table-container[data-table-theme="modern"] [data-mobile-readable="portrait"] .table-logo {
+.table-container[data-table-theme="modern"] [data-mobile-readable="portrait"] .table-logo:not([data-portrait="true"]) {
     width: 26%;
 }
 @media (max-height: 350px) {

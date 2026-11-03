@@ -1213,3 +1213,16 @@ html.table-page-lock .app-shell {
    zoom wrapper is its own stacking context, so order the pill (1) under the wrapper (2) but above the stage background. */
 .zoom-wrapper-mobile, .zoom-wrapper-desktop { z-index: 2; }
 .live-hand-strength { z-index: 1 !important; }
+
+/* Portrait (vertical) tables: narrower stacked logo at ~50% of the felt width.
+   Its artwork is already centred in its viewBox, so no centring offset. */
+.table-container .table-logo.table-logo[data-portrait="true"] {
+    width: 50%;
+    transform: translate(-50%, -50%);
+}
+.table-container .table-logo.table-logo[data-portrait="true"] img {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    translate: none;
+}
