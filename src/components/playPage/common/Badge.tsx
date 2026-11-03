@@ -11,6 +11,7 @@ import { isTournamentFormat } from "../../../utils/gameFormatUtils";
 import { bigBlindInStackUnits, formatSeatStack } from "../../../utils/numberUtils";
 import { useStacksInBigBlinds } from "../../../context/GameSettingsContext";
 import ProgressBar from "./ProgressBar";
+import { FitText } from "./FitText";
 import { colors } from "../../../utils/colorConfig";
 import "./Badge.css";
 
@@ -196,15 +197,15 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         switch (bannerMode) {
             case "winner":
                 return (
-                    <div className="seat-banner-text flex flex-col items-center justify-center w-full mt-[14px] gap-0.5">
-                        <span className="seat-banner-win-title font-bold">
-                            WINS
-                        </span>
-                        {winnerHandDescription && (
-                            <span className="seat-banner-win-hand font-semibold uppercase tracking-wider opacity-95">
-                                {winnerHandDescription}
-                            </span>
-                        )}
+                    <div className="seat-banner-text seat-banner-win-area">
+                        <FitText className="seat-banner-win-line">
+                            <span className="seat-banner-win-title font-bold">WINS</span>
+                            {winnerHandDescription && (
+                                <span className="seat-banner-win-hand font-semibold uppercase tracking-wider opacity-95">
+                                    {" "}{winnerHandDescription}
+                                </span>
+                            )}
+                        </FitText>
                     </div>
                 );
 

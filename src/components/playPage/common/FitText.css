@@ -1,0 +1,39 @@
+/* One-line label that shrinks to fit, then scrolls within its box. */
+.fit-text {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.fit-text-inner {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fit-text-marquee {
+  text-align: left;
+}
+
+.fit-text-marquee .fit-text-inner {
+  animation: fitTextScroll var(--fit-duration, 4s) ease-in-out infinite alternate;
+}
+
+@keyframes fitTextScroll {
+  0%, 15% {
+    transform: translateX(0);
+  }
+  85%, 100% {
+    transform: translateX(var(--fit-scroll, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fit-text-marquee .fit-text-inner {
+    animation: none;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
