@@ -133,7 +133,13 @@
     /* Dropped 19px (clears the TOTAL POT label) so the board sits nearer the centre (ui#918). */
     top: calc(50% - 38 * var(--mobile-unit) + 19px);
 }
-[data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 0; }
+/* 14px (with the 10px lift below) clears the lifted win card under the 9-seat pot row (pots stay put). */
+[data-mobile-readable] .community-board[data-portrait-seats="9"] .community-card-row { margin-top: 14px; }
+/* 9-seat phone portrait: drop the whole pot stack + board together so the side pot row clears the seat 4/7 bets. */
+[data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] { translate: 0 calc((var(--p9-drop, 10px) + var(--p9-base, 0px)) / var(--table-zoom, 1)); }
+/* 9-seat phone portrait has the least room between the 4/7 and 3/8 bets: the board win lift is 10px here (still clearly lifted). */
+@keyframes community-card-lift-p9 { 0% { transform: translateY(0) scale(1); filter: brightness(1); } 100% { transform: translateY(-10px) scale(1.05); filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 215, 0, 0.85)); } }
+[data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] .community-card-row .animate-win-card { animation-name: community-card-lift-p9; }
 [data-mobile-readable] .community-board[data-portrait-seats="9"] .community-pots {
     position: absolute;
     /* About 4px above the card tops. 12 units left roughly a 12px gap. */
@@ -212,7 +218,8 @@
 }
 
 /* Centre the five-card row itself, irrespective of one or two pot labels. */
-[data-mobile-readable="landscape"] .community-card-row { margin-top: 0; }
+/* 12px clears the lifted win card under TOTAL POT (side pots below still clear). */
+[data-mobile-readable="landscape"] .community-card-row { margin-top: 14px; }
 [data-mobile-readable="landscape"] .community-pots {
     position: absolute;
     top: calc(100% + 6 * var(--mobile-unit));
@@ -285,6 +292,7 @@
    and the middle-row seats (ui slots 2 and 7: plates, cards, bets) 5px on screen. Stacks with the 2px Total Pot drop. */
 @media (min-width: 380px) and (max-width: 399px) and (orientation: portrait) {
   [data-mobile-readable="portrait"] .community-board { translate: 0 calc(5px / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] { --p9-base: 5px; }
   [data-mobile-readable="portrait"] [data-ui-pos="2"], [data-mobile-readable="portrait"] [data-ui-pos="7"] { translate: 0 calc(5px / var(--table-zoom, 1)); }
 }
 /* Same 380-399px portrait scope: every bet group 2px (screen) toward its own seat centre. Measured direction

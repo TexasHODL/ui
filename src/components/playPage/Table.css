@@ -225,6 +225,21 @@
     z-index: 20;
 }
 
+/* Board cards sit just under the pot labels. They keep the full win lift, but
+   scale from the bottom edge and the row sits a little lower, so the raised card
+   never reaches the pot amounts or labels above it. */
+.community-card-row .animate-win-card {
+    transform-origin: center bottom;
+}
+
+.community-board .community-card-row {
+    margin-top: calc(2rem + 14px);
+}
+/* Belt and braces: the pot row paints above the board cards. */
+.community-board .pot-slot {
+    position: relative;
+    z-index: 21;
+}
 /* Animation classes */
 /*
  * The shimmer host. The gradient and the motion live on ::before, which is 4x
