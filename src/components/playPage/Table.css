@@ -1178,6 +1178,25 @@ html.table-page-lock .app-shell {
 @media (min-width: 768px) and (pointer: coarse) and (orientation: portrait) { .community-board:not([data-mobile-readable] .community-board) { top: -44px; } }
 /* Tablet landscape (e.g. iPad Mini 1024x768): drop the board + all pots together 5px on screen (ui#918). */
 @media (min-width: 768px) and (pointer: coarse) and (orientation: landscape) { .community-board:not([data-mobile-readable] .community-board) { translate: 0 calc(5px / var(--table-zoom, 1)); } }
+/* Portrait tablets & foldables (shortest side >= 600, portrait - the tablet-portrait stage, incl. iPad Pro 13 1032x1376 and
+   Surface 912/960 wide): lift the pots off the cards, bring the 4-seat board down from the top seat (centred between its bet
+   and the side seats' hole cards), and drop the 6-seat board so the Main/Side row clears the upper side seats' bets. Drops are
+   in stage px, so they scale with the table. Near-square foldables (aspect >= 4:5) have a shorter stage and get their own values. */
+@media (min-width: 600px) and (min-height: 600px) and (orientation: portrait) {
+    .community-board:not([data-mobile-readable] .community-board) .pot-stack { bottom: var(--tp-stack-bottom, -16px); }
+    .community-board[data-portrait-seats="4"]:not([data-mobile-readable] .community-board) { translate: 0 var(--tp-four-drop, 160px); }
+    .community-board[data-portrait-seats="6"]:not([data-mobile-readable] .community-board) { translate: 0 var(--tp-six-drop, 60px); }
+    /* Below 768 wide the board isn't lifted by the coarse-pointer top:-44px rule above, so it needs far less drop. */
+    @media (max-width: 767px) {
+        .community-board:not([data-mobile-readable] .community-board) { --tp-four-drop: 55px; --tp-six-drop: 10px; }
+    }
+    @media (max-width: 1023px) and (min-aspect-ratio: 4/5) {
+        .community-board:not([data-mobile-readable] .community-board) { --tp-stack-bottom: -8px; }
+        @media (min-width: 768px) {
+            .community-board:not([data-mobile-readable] .community-board) { --tp-four-drop: 190px; --tp-six-drop: 56px; }
+        }
+    }
+}
 
 /* Hand-strength pill sits behind every seat's nameplate/action banner (all layouts): the table
    zoom wrapper is its own stacking context, so order the pill (1) under the wrapper (2) but above the stage background. */
