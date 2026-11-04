@@ -187,7 +187,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             isSittingOut={isSittingOut}
                             playerEquity={playerEquity}
                             onSitIn={isSittingOut ? handleSitInFromBadge : undefined}
-                            trailing={timeBankClock}
+                            leading={timeBankClock}
                         />
                     </div>
                 </div>
