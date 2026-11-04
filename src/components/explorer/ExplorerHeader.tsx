@@ -9,7 +9,8 @@ const sections = [
     { href: "/explorer", label: "Latest blocks", description: "Explore recent activity on the poker network." },
     { href: "/explorer/accounts", label: "Accounts", description: "Browse network accounts and balances." },
     { href: "/explorer/address", label: "Address lookup", description: "Find an address and inspect its activity." },
-    { href: "/explorer/distribution", label: "Hand distribution", description: "Explore recorded card frequencies and distribution statistics." }
+    { href: "/explorer/distribution", label: "Hand distribution", description: "Explore recorded card frequencies and distribution statistics." },
+    { href: "/awards", label: "Awards", description: "The biggest nit, the maniac and the calling station." }
 ];
 
 export const ExplorerHeader = ({ title = "Block explorer" }: ExplorerHeaderProps) => {
