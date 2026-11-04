@@ -36,6 +36,7 @@ import { TableSettingsOptions } from "./TableSettingsSidebar";
 import { ThemeToggle } from "../../../ThemeToggle";
 import SngPayoutPanel from "../../SngPayoutPanel";
 import { MobileDrawerShell } from "./MobileDrawerShell";
+import { hasValue } from "../../../../utils/guards";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -150,7 +151,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     const [showTopUp, setShowTopUp] = useState(false);
     const tableUrl = `${window.location.origin}/table/${tableId}`;
 
-    const isSNG = gameFormat !== null && isSitAndGoFormat(gameFormat);
+    const isSNG = hasValue(gameFormat) && isSitAndGoFormat(gameFormat);
     const canTopUp = legalActions.some(a => a.action === NonPlayerActionType.TOP_UP);
     const showTopUpEntry = isCurrentUserSeated && !isSNG;
     const { topUp } = useTableTopUp(tableId, currentNetwork);
@@ -212,7 +213,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 <span className={textClass}>
                     {blindLevel.isActive ? (
                         <>
-                            {blindLevel.level !== undefined && `L${blindLevel.level + 1} `}
+                            {hasValue(blindLevel.level) && `L${blindLevel.level + 1} `}
                             {blindLevel.currentBlindsFormatted}
                             {blindLevel.hasTimer && (
                                 <>

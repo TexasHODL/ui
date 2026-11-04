@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from "react";
 import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import { hasContent, hasElements, isNullish } from "../../utils/guards";
+import { hasContent, hasElements, hasValue, isNullish } from "../../utils/guards";
 import { parseMicroToBigInt, microBigIntToUsdc, usdcToMicroBigInt } from "../../constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
@@ -159,7 +159,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     }, [legalActions, optimisticActionName]);
 
     useEffect(() => {
-        if (optimisticActionName && optimisticActionTurnIndex !== null && actionTurnIndex !== optimisticActionTurnIndex) {
+        if (optimisticActionName && hasValue(optimisticActionTurnIndex) && actionTurnIndex !== optimisticActionTurnIndex) {
             setOptimisticActionName(null);
             setOptimisticActionTurnIndex(null);
         }
@@ -300,7 +300,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     const { isDealingNewHand } = useAutoNewHand(tableId, network, submit, submitLastError, onTransactionSubmitted, autoNewHandEnabled);
 
     // Show deal button if player has the deal action
-    const controlsPending = optimisticActionName !== null;
+    const controlsPending = hasValue(optimisticActionName);
     const shouldShowDealButton = hasDealAction && isUsersTurn && !controlsPending;
     const hideOtherButtons = shouldShowDealButton;
 
@@ -358,7 +358,7 @@ export const PokerActionPanel: React.FC<PokerActionPanelProps> = ({ tableId, net
     // Clear when leaving the hand, or when the armed selection no longer fits the current
     // button set (the situation changed), or when a "Call {amount}" pick's size changed.
     useEffect(() => {
-        if (preAction == null) return;
+        if (isNullish(preAction)) return;
         const left = shouldClearPreAction({ action: preAction, isUsersTurn, playerStatus });
         const amountChanged = preAction === "call-exact" && preActionCallMicro !== armedCallMicro;
         const stale = !isUsersTurn && isPreActionStale(preAction, preActionBtns, amountChanged);

@@ -7,6 +7,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { Modal, LoadingSpinner } from "../common";
 import styles from "./TopUpModal.module.css";
 import type { TopUpModalProps } from "./types";
+import { hasValue } from "../../utils/guards";
 
 const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyIn, walletBalance, onClose, onTopUp }) => {
     const [topUpError, setTopUpError] = useState("");
@@ -18,7 +19,7 @@ const TopUpModal: React.FC<TopUpModalProps> = ({ currentStack, minBuyIn, maxBuyI
     // to the player so they don't expect chips to land mid-hand.
     const { gameState } = useGameStateContext();
     const handInProgress =
-        gameState?.round !== undefined &&
+        hasValue(gameState?.round) &&
         gameState.round !== TexasHoldemRound.ANTE &&
         gameState.round !== TexasHoldemRound.END;
 

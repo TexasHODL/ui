@@ -26,7 +26,7 @@ import { useGameOptions } from "../../../hooks/game/useGameOptions";
 import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../../utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
-import { hasElements } from "../../../utils/guards";
+import { hasElements, isNullish } from "../../../utils/guards";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { hasTournamentStarted, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
@@ -100,7 +100,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                 `[VacantPlayer] seat ${index} click ignored:`,
                 isUserAlreadyPlaying
                     ? "this wallet is already seated at the table"
-                    : gameOptions?.maxPlayers === undefined
+                    : isNullish(gameOptions?.maxPlayers)
                       ? "game state not loaded yet (no gameOptions — stale/pre-fix table or WS not connected)"
                       : "seat not joinable (taken or not in availableSeats)"
             );
