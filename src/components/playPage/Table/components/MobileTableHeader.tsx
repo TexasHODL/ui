@@ -37,6 +37,7 @@ import { ThemeToggle } from "../../../ThemeToggle";
 import SngPayoutPanel from "../../SngPayoutPanel";
 import { MobileDrawerShell } from "./MobileDrawerShell";
 import { hasValue } from "../../../../utils/guards";
+import { rakeDisplay } from "../../../../utils/rakeDisplay";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -159,6 +160,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     // Same gating as TableHeader: no Leave for SNG (roster frozen once play
     // starts, poker-vm#2343; SNG leave/claim lives in the SNG modals, ui#465).
     const showLeaveTable = !!currentPlayerData && !isSNG;
+    const rake = rakeDisplay(gameOptions?.rake, gameFormat);
     // Sit-out lives here on phones rather than pinned over the felt (#684).
     const { nextHandChecked, toggleNextHand, nextBbQueued, toggleNextBb, canSitOut } = useSitOutIntent();
     const isTableFull = !!gameOptions?.maxPlayers && tableActivePlayers.length >= gameOptions.maxPlayers;
@@ -203,7 +205,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
         blindLevel.level,
         blindLevel.currentBlindsFormatted,
         blindLevel.secondsRemaining,
-        blindLevel.hasTimer
+        blindLevel.hasTimer,
+        rake?.short
     ]);
 
     const renderStatus = (compactText: boolean) => {
@@ -230,6 +233,11 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     )}
                 </span>
                 <span className={textClass}>Hand #{handNumber}</span>
+                {rake && (
+                    <span className={textClass} title={rake.title} aria-label={rake.title} data-testid="header-rake">
+                        {rake.short}
+                    </span>
+                )}
                 {!showLeaveTable && <span className={textClass}>Next: Seat {nextToAct}</span>}
                 {showLeaveTable && (
                     <button type="button" className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>

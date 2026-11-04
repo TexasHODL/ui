@@ -18,8 +18,8 @@ const base = { minBuyIn: "200000", maxBuyIn: "1000000", minPlayers: 2, maxPlayer
 const UNNAMED_ID = "0x031d57314cc4ba07a0ae7edaa0c8c9ff3507dc81b8af99ac8cfe5ba9f5f9aea9";
 const mockGames = [
     { ...base, gameId: "mine", name: "My empty table", creator: "OWNER", gameFormat: GameFormat.CASH, currentPlayers: 0 },
-    { ...base, gameId: "occupied", name: "My occupied table", creator: "owner", gameFormat: GameFormat.CASH, currentPlayers: 2 },
-    { ...base, gameId: "tournament", name: "My tournament", creator: "owner", gameFormat: GameFormat.SIT_AND_GO, currentPlayers: 2 },
+    { ...base, gameId: "occupied", name: "My occupied table", creator: "owner", gameFormat: GameFormat.CASH, currentPlayers: 2, rake: { rakeFreeThreshold: "0", rakePercentage: 5, rakeCap: "100000", owner: "owner" } },
+    { ...base, gameId: "tournament", name: "My tournament", creator: "owner", gameFormat: GameFormat.SIT_AND_GO, currentPlayers: 2, rake: { rakeFreeThreshold: "0", rakePercentage: 5, rakeCap: "100000", owner: "owner" } },
     { ...base, gameId: "other", name: "Another table", creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 0 },
     { ...base, gameId: UNNAMED_ID, creator: "someone-else", gameFormat: GameFormat.CASH, currentPlayers: 1 }
 ];
@@ -396,4 +396,14 @@ test("share buttons copy a direct table link without an options menu", () => {
     expect(screen.queryByText("Copy table ID")).not.toBeInTheDocument();
     expect(mockDelete).not.toHaveBeenCalled();
     expect(mockForceClose).not.toHaveBeenCalled();
+});
+
+test("cash rows with rake show the rate and cap; no-rake and sit-and-go rows show nothing", () => {
+    render(<TableList />);
+    const rakeCells = screen.getAllByTestId("lobby-rake");
+    expect(rakeCells).toHaveLength(1);
+    expect(rakeCells[0]).toHaveTextContent("Rake 5% \u00b7 cap $0.10");
+    expect(rakeCells[0]).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
+    expect(rakeCells[0].closest("tr")).toHaveTextContent("My occupied table");
+    expect(screen.getAllByTestId("lobby-rake-mobile").map(el => el.textContent)).toEqual(["Rake 5%"]);
 });

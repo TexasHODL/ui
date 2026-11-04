@@ -12,6 +12,7 @@ import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/pok
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { formatBlindCountdown } from "../../../../utils/blindStructure";
 import styles from "./TableHeader.module.css";
+import { rakeDisplay } from "../../../../utils/rakeDisplay";
 import { ThemeToggle } from "../../../ThemeToggle";
 
 // Re-exported for existing importers (e.g. MobileTableHeader); the formatter
@@ -109,6 +110,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     const tableUrl = window.location.origin + "/table/" + tableId;
     const title = displayTableName(tableName, tableId);
     const showLeave = currentPlayerData && !(gameFormat && isSitAndGoFormat(gameFormat));
+    const rake = rakeDisplay(gameOptions?.rake, gameFormat);
 
     return (
         <header className={styles.roomHeader}>
@@ -219,6 +221,11 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     )}
                     <span className={styles.handNumber}>Hand #{handNumber}</span>
                     <span className={styles.nextToAct}>Next: Seat {nextToAct}</span>
+                    {rake && (
+                        <span className={styles.rake} title={rake.title} aria-label={rake.title} data-testid="header-rake">
+                            {rake.withCap}
+                        </span>
+                    )}
                 </div>
                 <div className={styles.panelTabs} role="group" aria-label="Table panels">
                     <button
