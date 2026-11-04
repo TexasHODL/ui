@@ -7,8 +7,8 @@
  * the felt side is asserted by PlayerActionButtons' own tests.
  */
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { NonPlayerActionType, type LegalActionDTO } from "@block52/poker-vm-sdk";
+import { render, screen, fireEvent, within } from "@testing-library/react";
+import { GameFormat, NonPlayerActionType, type LegalActionDTO } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../../../../utils/generatedTableName";
 import { MobileTableHeader } from "./MobileTableHeader";
 import { SitOutIntentProvider } from "../../../../context/SitOutIntentContext";
@@ -48,7 +48,7 @@ jest.mock("../../SngPayoutPanel", () => ({ __esModule: true, default: () => <div
 
 const sitOutLegal: LegalActionDTO[] = [{ action: NonPlayerActionType.SIT_OUT, min: "0", max: "0", index: 1 } as LegalActionDTO];
 
-function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[]; tableName?: string; openSidebar?: boolean; onHistory?: () => void } = {}) {
+function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[]; tableName?: string; openSidebar?: boolean; onHistory?: () => void; gameOptions?: unknown; gameFormat?: GameFormat | null } = {}) {
     const legalActions = over.legalActions ?? [];
     return render(
         <SitOutIntentProvider tableId="0xtable" network={{} as never} pendingSitOut={null} legalActions={legalActions}>
@@ -57,8 +57,8 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[];
                 tableId="0xtable"
                 tableName={over.tableName}
                 currentNetwork={{} as never}
-                gameFormat={null}
-                gameOptions={null}
+                gameFormat={over.gameFormat ?? null}
+                gameOptions={(over.gameOptions ?? null) as never}
                 tableActivePlayers={[]}
                 publicKey="b521abc"
                 formattedAddress="b521...abc"
@@ -232,5 +232,16 @@ describe("MobileTableHeader drawer (ui#684)", () => {
             expect(screen.getByRole("switch", { name: /Next big blind/ })).toHaveAttribute("aria-checked", "true");
             expect(mockSubmit).not.toHaveBeenCalled();
         });
+    });
+    it("shows a compact rake label in the status strip, and none without rake", () => {
+        const rake = { rakeFreeThreshold: "0", rakePercentage: 5, rakeCap: "100000", owner: "b521owner" };
+        const { unmount } = renderHeader({ gameOptions: { rake }, gameFormat: GameFormat.CASH });
+        const fallback = document.querySelector(".mobile-status-fallback") as HTMLElement;
+        const label = within(fallback).getByTestId("header-rake");
+        expect(label).toHaveTextContent(/^Rake 5%$/);
+        expect(label).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
+        unmount();
+        renderHeader();
+        expect(screen.queryAllByTestId("header-rake")).toHaveLength(0);
     });
 });

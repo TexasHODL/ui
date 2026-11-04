@@ -97,4 +97,24 @@ describe("Focused table header", () => {
         expect(screen.getByLabelText("Wallet options").closest("details")).not.toHaveAttribute("open");
         expect(screen.queryByRole("button", { name: "Leave table" })).not.toBeInTheDocument();
     });
+    it("shows the rake rate and cap next to blinds / hand / next", () => {
+        const props = makeProps();
+        props.gameOptions = { rake: { rakeFreeThreshold: "0", rakePercentage: 5, rakeCap: "100000", owner: "b521owner" } } as never;
+        render(<TableHeader {...props} />);
+        const rake = screen.getByTestId("header-rake");
+        expect(rake).toHaveTextContent("Rake 5% \u00b7 cap $0.10");
+        expect(rake).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
+        expect(rake.parentElement).toHaveTextContent("Hand #12");
+    });
+
+    it("hides rake when the table takes none, and on sit-and-go tables", () => {
+        const { unmount } = render(<TableHeader {...makeProps()} />);
+        expect(screen.queryByTestId("header-rake")).toBeNull();
+        unmount();
+        const props = makeProps();
+        props.gameFormat = GameFormat.SIT_AND_GO;
+        props.gameOptions = { rake: { rakeFreeThreshold: "0", rakePercentage: 5, rakeCap: "100000", owner: "x" } } as never;
+        render(<TableHeader {...props} />);
+        expect(screen.queryByTestId("header-rake")).toBeNull();
+    });
 });

@@ -1,4 +1,4 @@
-import { BettingLimit, GameListItem, GameFormat, GameVariant } from "@block52/poker-vm-sdk";
+import { BettingLimit, GameListItem, GameFormat, GameVariant, RakeConfigDTO } from "@block52/poker-vm-sdk";
 import { getGameFormat, getGameVariant } from "./gameFormatUtils";
 
 /**
@@ -33,6 +33,8 @@ export interface GameWithFormat {
     scheduledStartTime?: number;
     /** Late registration, in blind levels after the start (poker-vm#2731); absent = none. */
     lateRegistrationLevels?: number;
+    /** Cash-table rake config from the chain (micro-USDC strings); absent = no rake. */
+    rake?: RakeConfigDTO;
 }
 
 /** Epoch ms for lobby math; string SST would concat with grace and break 24h hide. */
@@ -77,7 +79,8 @@ export const convertGameListItemToGameWithFormat = (game: GameListItem): GameWit
         scheduledStartTime: coerceScheduledStartTimeMs(opts.scheduledStartTime),
         lateRegistrationLevels: opts.lateRegistrationLevels,
         entryFee: opts.entryFee,
-        protocolFeeBps: opts.protocolFeeBps
+        protocolFeeBps: opts.protocolFeeBps,
+        rake: opts.rake
     };
 };
 

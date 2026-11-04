@@ -1,4 +1,5 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
+import { rakeDisplay } from "../utils/rakeDisplay";
 import React, { useEffect, useMemo, useState } from "react";
 import { FaSearch, FaRedo, FaPlus, FaArrowRight, FaEye, FaShareAlt, FaTrashAlt } from "react-icons/fa";
 import { scheduledLobbyLabel, scheduledSngPhase, type ScheduledSngPhase } from "../utils/scheduledSng";
@@ -285,6 +286,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const stakes = tournament
                                     ? "Tournament"
                                     : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
+                                const rake = tournament ? null : rakeDisplay(game.rake, game.gameFormat);
                                 return (
                                     <tr key={game.gameId} className={seated ? styles.seatedRow : undefined}>
                                         <td>
@@ -309,6 +311,14 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                                     )}
                                                     <span className={styles.mobileFacts}>
                                                         {stakes} · {formatBuyIn(game)} buy-in
+                                                        {rake && (
+                                                            <>
+                                                                {" \u00b7 "}
+                                                                <span title={rake.title} data-testid="lobby-rake-mobile">
+                                                                    {rake.short}
+                                                                </span>
+                                                            </>
+                                                        )}
                                                     </span>
                                                 </div>
                                             </div>
@@ -316,6 +326,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                         <td className={styles.stakesColumn}>
                                             <strong>{stakes}</strong>
                                             <span className={styles.detail}>{tournament ? "Fixed entry" : "Small / big blind"}</span>
+                                            {rake && (
+                                                <span className={styles.detail} title={rake.title} data-testid="lobby-rake">
+                                                    {rake.withCap}
+                                                </span>
+                                            )}
                                         </td>
                                         <td>
                                             <div className={styles.seatCount}>
