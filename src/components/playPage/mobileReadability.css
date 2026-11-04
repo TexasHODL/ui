@@ -302,3 +302,11 @@
   [data-mobile-readable="portrait"] .chip-position:is([data-ui-pos="3"],[data-ui-pos="4"],[data-ui-pos="5"],[data-ui-pos="6"]) { --bet-nudge: -2px; }
   [data-mobile-readable="portrait"] .chip-position:is([data-ui-pos="2"],[data-ui-pos="7"]) { --row-drop: 5px; }
 }
+
+/* 9-seat phone portrait (<=412px, e.g. Galaxy S21 360x780): the 4-5 card board reaches the slot 2/7 (mid-row) bet groups.
+   Push those two bet groups 10px (screen) outward and 9px down so the cards never cover a bet. Other slots and layouts untouched. */
+@media (max-width: 412px) and (orientation: portrait) {
+  [data-mobile-readable="portrait"]:has(.community-board[data-portrait-seats="9"]) .chip-position:is([data-ui-pos="2"],[data-ui-pos="7"]) { translate: 0 calc((var(--bet-nudge, 0px) + var(--row-drop, 0px) + 9px) / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"]:has(.community-board[data-portrait-seats="9"]) .chip-position[data-ui-pos="2"] { margin-left: calc(-10px / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"]:has(.community-board[data-portrait-seats="9"]) .chip-position[data-ui-pos="7"] { margin-left: calc(10px / var(--table-zoom, 1)); }
+}
