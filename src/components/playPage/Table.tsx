@@ -57,6 +57,7 @@ import { claimWinnings } from "../../hooks/playerActions/claimWinnings";
 
 // 5. Winner Info
 import { useWinnerInfo } from "../../hooks/game/useWinnerInfo"; // Provides winner information for animations
+import { emptyTableBoard, isTableEmpty } from "../../utils/emptyTable";
 import { useWinnerCards } from "../../hooks/game/useWinnerCards"; // Winning card codes for card-lift animation
 import { useGameResults } from "../../hooks/game/useGameResults"; // Game results display
 
@@ -1171,10 +1172,23 @@ const Table = React.memo(() => {
     // Memoize formatted balance - Cosmos returns microunits (6 decimals)
     const balanceFormatted = useMemo(() => (accountBalance ? formatMicroUsd(accountBalance ?? 0) : "0.00"), [accountBalance]);
 
-    const potDisplayValues = useMemo(() => {
+    const rawPotDisplayValues = useMemo(() => {
         const pots = Array.isArray(gameState?.pots) ? (gameState?.pots as string[]) : [];
         return formatPotDisplay(pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails);
     }, [gameState?.pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails]);
+
+    // Nobody seated: the chain still holds the last hand's pots/board/dealer/winners
+    // (round "end"); an empty table shows none of it.
+    const tableIsEmpty = isTableEmpty(tableActivePlayers.length);
+    const board = useMemo(
+        () =>
+            emptyTableBoard(
+                { potDisplayValues: rawPotDisplayValues, communityCards: tableDataValues.tableDataCommunityCards || [], winnerCards, dealerSeat: dealerSeat ?? -1 },
+                tableIsEmpty
+            ),
+        [rawPotDisplayValues, tableDataValues.tableDataCommunityCards, winnerCards, dealerSeat, tableIsEmpty]
+    );
+    const potDisplayValues = board.potDisplayValues;
 
     const copyToClipboard = useCallback((text: string) => {
         navigator.clipboard.writeText(text);
@@ -1534,13 +1548,13 @@ const Table = React.memo(() => {
                                 <TableBoard
                                     clubLogo={clubLogo}
                                     potDisplayValues={potDisplayValues}
-                                    communityCards={tableDataValues.tableDataCommunityCards || []}
+                                    communityCards={board.communityCards}
                                     isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
                                     cardBackStyle={cardBackStyle}
                                     tableTheme={tableStyle}
                                     isPortrait={isPortraitStage}
                                     tableSize={tableSize}
-                                    winnerCards={winnerCards}
+                                    winnerCards={board.winnerCards}
                                 />
 
                                 {/* Bets — per-seat memoized leaf (#424). The dealer button sits beside its seat's bet, even with no bet. */}
@@ -1557,7 +1571,7 @@ const Table = React.memo(() => {
                                                 top={position.top}
                                                 side={position.side}
                                                 isTournament={isTournamentFormat(gameFormat)}
-                                                isDealer={showAllDealerButtons || dealerSeat === seatNumber}
+                                                isDealer={showAllDealerButtons || board.dealerSeat === seatNumber}
                                             />
                                         );
                                     })}
@@ -1580,7 +1594,7 @@ const Table = React.memo(() => {
                             />
 
                             {/* Last-pot winner banner (ui#848) — portal to body, above the table */}
-                            <WinnerBanner />
+                            {!tableIsEmpty && <WinnerBanner />}
 
                             {/* DEBUG overlays */}
                             <PositionDebugMarkers positions={tableLayout.positions} />
