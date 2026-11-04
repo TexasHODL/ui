@@ -21,6 +21,7 @@ import { SIT_IN_METHOD_POST_NOW, sitIn } from "../../../hooks/playerActions";
 import { hasElements } from "../../../utils/guards";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
+import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
 
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
@@ -135,6 +136,10 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
             return getAvatarForAddress(playerData?.address, playerData?.avatar);
         }, [getAvatarForAddress, playerData?.address, playerData?.avatar]);
 
+        const seatRef = React.useRef<HTMLDivElement>(null);
+        // Nudge edge seats inward when their NFT chip would be clipped.
+        const avatarInset = useAvatarEdgeInset(seatRef, `.${styles.avatarChip}`, [left, top, selectedAvatarUrl, playerData ? 1 : 0]);
+
         if (!playerData) {
             return <></>;
         }
@@ -142,8 +147,9 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         return (
             <div
                 key={index}
+                ref={seatRef}
                 className={`player-seat ${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer ${styles.secondaryText} ${styles.positionTransition}`}
-                style={containerStyle}
+                style={avatarInset ? { ...containerStyle, marginLeft: -avatarInset } : containerStyle}
             >
                 {/* Development Mode Debug Info */}
                 {import.meta.env.VITE_NODE_ENV === "development" && (

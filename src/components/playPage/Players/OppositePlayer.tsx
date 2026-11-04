@@ -30,6 +30,7 @@ import { winnerCardHighlight } from "../../../utils/holeCardLayout";
 import { HoleCardRow } from "./HoleCardRow";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
+import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
 
 type OppositePlayerProps = {
@@ -97,6 +98,10 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
         return getAvatarForAddress(playerData?.address, playerData?.avatar);
     }, [getAvatarForAddress, playerData?.address, playerData?.avatar]);
 
+    const seatRef = React.useRef<HTMLDivElement>(null);
+    // Nudge edge seats inward when their NFT chip would be clipped.
+    const avatarInset = useAvatarEdgeInset(seatRef, `.${styles.avatarChip}`, [left, top, selectedAvatarUrl, playerData ? 1 : 0]);
+
     if (!playerData) {
         return <></>;
     }
@@ -106,10 +111,12 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
             {/* Main player display */}
             <div
                 key={index}
+                ref={seatRef}
                 className={`player-seat ${opacityClass} absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer z-[10] ${styles.secondaryText} ${styles.positionTransition}`}
                 style={{
                     left: left,
-                    top: top
+                    top: top,
+                    ...(avatarInset ? { marginLeft: -avatarInset } : {})
                 }}
             >
                 {/* Development Mode Debug Info */}
