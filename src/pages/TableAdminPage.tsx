@@ -21,8 +21,8 @@ import TableList from "../components/TableList";
 import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
-import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
-import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
+import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
+import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import { SNG_PREVIEW_LEVEL_COUNT, TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
 import {
@@ -69,9 +69,9 @@ export default function TableAdminPage() {
     const [bettingLimit, setBettingLimit] = useState<BettingLimit>(defaultBettingLimitFor(GameVariant.TEXAS_HOLDEM));
     const [minPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(9);
-    // Sit & Go scheduled start (poker-vm#2680): off = starts only when full.
-    // On = starts when full or at the start time with at least sngMinPlayers.
-    // A Tournament always has a start time and never starts earlier (poker-vm#2776).
+    // Sit & Go scheduled start (poker-vm#2680, #2776). Off = sit-and-go, starts
+    // when full. On = created as a tournament that starts at the start time,
+    // never earlier. A Tournament always has a start time.
     const [scheduled, setScheduled] = useState(false);
     const [scheduledStart, setScheduledStart] = useState(""); // datetime-local value
     const [sngMinPlayers, setSngMinPlayers] = useState(2);
@@ -242,8 +242,11 @@ export default function TableAdminPage() {
         const finalMinBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMinBuyIn;
         const finalMaxBuyIn = isTournament ? parseFloat(tournamentBuyIn) : calculatedMaxBuyIn;
 
-        const isScheduled = isScheduledCreateType(gameType) || (isSitAndGoFormat(gameFormat) && scheduled);
+        // A start time is sent as format tournament (SDK 1.24 refuses it on a sit-and-go).
+        const sitAndGoScheduleOn = gameType === "sit-and-go" && scheduled;
+        const isScheduled = isScheduledCreateType(gameType) || sitAndGoScheduleOn;
         const startTime = isScheduled ? localDateTimeToUnixSeconds(scheduledStart) : undefined;
+        const created = createdTableFormat(gameType, sitAndGoScheduleOn, startTime);
         if (isScheduled && startTime !== undefined) {
             const rejection = scheduledStartRejection(startTime, sngMinPlayers, maxPlayers);
             if (rejection) {
@@ -265,8 +268,8 @@ export default function TableAdminPage() {
                   startingStack,
                   ...sngBlindFields(blindPlan, blindLevelDuration),
                   entryFee: parseFloat(entryFee) || 0,
-                  ...(isScheduled && { startTime }),
-                  ...(isScheduled && lateRegLevels > 0 && { lateRegistrationLevels: lateRegLevels })
+                  ...(isScheduled && { startTime: created.startTime }),
+                  ...(isScheduledCreateType(gameType) && lateRegLevels > 0 && { lateRegistrationLevels: lateRegLevels })
               }
             : undefined;
 
@@ -274,12 +277,12 @@ export default function TableAdminPage() {
         setTableCountBeforeCreation(tables.length);
 
         try {
-            // A sit-and-go's field is fixed (min == max) unless it is scheduled,
-            // when it may start with fewer (poker-vm#2680).
+            // An unscheduled sit-and-go's field is fixed (min == max). A scheduled
+            // table is a tournament and may start short (poker-vm#2680, #2776).
             const finalMinPlayers = isTournament ? (isScheduled ? Math.min(maxPlayers, Math.max(2, sngMinPlayers)) : maxPlayers) : minPlayers;
 
             const result = await createTable({
-                format: gameFormat,
+                format: created.format,
                 variant: gameVariant,
                 bettingLimit,
                 minBuyIn: finalMinBuyIn,
@@ -527,7 +530,7 @@ export default function TableAdminPage() {
                                                 </select>
                                             </div>
                                             <p className="sm:col-span-2 text-gray-500 text-xs">
-                                                Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                {SCHEDULED_SIT_AND_GO_NOTE}
                                             </p>
                                         </div>
                                     </ScheduledStartCard>

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
+import { SCHEDULED_SIT_AND_GO_NOTE, SIT_AND_GO_SCHEDULE_DESCRIPTION } from "../../utils/createGameType";
 import { ScheduledStartCard } from "./ScheduledStartCard";
 
 function Harness({ initial = false }: { initial?: boolean }) {
@@ -22,7 +23,9 @@ describe("ScheduledStartCard", () => {
         render(<Harness />);
         const toggle = screen.getByRole("switch", { name: /Scheduled start/ });
         expect(toggle).toHaveAttribute("aria-checked", "false");
-        expect(screen.getByText("Start at a set time — with whoever has registered, or earlier when full")).toBeInTheDocument();
+        expect(screen.getByText(SIT_AND_GO_SCHEDULE_DESCRIPTION)).toBeInTheDocument();
+        expect(SCHEDULED_SIT_AND_GO_NOTE).toContain("Created as a tournament");
+        expect(SCHEDULED_SIT_AND_GO_NOTE).toContain("never earlier");
         expect(screen.queryByLabelText("Scheduled start time")).not.toBeInTheDocument();
 
         fireEvent.click(toggle);

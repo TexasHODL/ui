@@ -39,8 +39,8 @@ import type { CreateTableOptions } from "../hooks/game/useNewTable";
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
-import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isSitAndGoFormat, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
-import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
+import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
+import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import {
     BLIND_STRUCTURE_CHOICES,
@@ -132,9 +132,9 @@ const Dashboard: React.FC = () => {
     // "sit-and-go games require an sngConfig"). Same presets as /admin/tables.
     const [modalStartingStack, setModalStartingStack] = useState(1500);
     const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
-    // Start time (poker-vm#2680, #2776). A Tournament always has one and never
-    // starts earlier. A Sit & Go uses these fields only when its card is on, and
-    // that table can still start when it fills.
+    // Start time (poker-vm#2680, #2776). A Tournament always has one. A Sit & Go
+    // uses these fields only when its card is on, and that table is created as a
+    // tournament: it starts at the time, never earlier. Off, it starts when full.
     const [modalScheduled, setModalScheduled] = useState(false);
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
@@ -241,8 +241,11 @@ const Dashboard: React.FC = () => {
             const isTournament = isTournamentFormat(modalGameFormat);
 
             // Sit & Go: only when the player turns the card on. Tournament: always.
-            const scheduled = isScheduledCreateType(modalGameType) || (isSitAndGoFormat(modalGameFormat) && modalScheduled);
+            // A start time is sent as format tournament (SDK 1.24 refuses it on a sit-and-go).
+            const sitAndGoScheduleOn = modalGameType === "sit-and-go" && modalScheduled;
+            const scheduled = isScheduledCreateType(modalGameType) || sitAndGoScheduleOn;
             const startTime = scheduled ? localDateTimeToUnixSeconds(modalScheduledStart) : undefined;
+            const created = createdTableFormat(modalGameType, sitAndGoScheduleOn, startTime);
             if (scheduled && startTime !== undefined) {
                 const rejection = scheduledStartRejection(startTime, modalSngMinPlayers, modalPlayerCount);
                 if (rejection) {
@@ -258,13 +261,13 @@ const Dashboard: React.FC = () => {
             }
 
             const gameOptions: CreateTableOptions = {
-                format: modalGameFormat,
+                format: created.format,
                 variant: modalGameVariant,
                 bettingLimit: modalBettingLimit,
                 minBuyIn: isTournament ? modalSitAndGoBuyIn : calculatedMinBuyIn,
                 maxBuyIn: isTournament ? modalSitAndGoBuyIn : calculatedMaxBuyIn,
-                // Cash tables can start heads-up. A scheduled sit-and-go may start
-                // short; an unscheduled one still requires every seat.
+                // Cash tables can start heads-up. A scheduled table is a tournament and
+                // may start short; an unscheduled sit-and-go still requires every seat.
                 minPlayers: modalGameFormat === GameFormat.CASH ? 2 : scheduled ? Math.min(modalPlayerCount, Math.max(2, modalSngMinPlayers)) : modalPlayerCount,
                 maxPlayers: modalGameFormat === GameFormat.CASH ? modalMaxPlayers : modalPlayerCount,
                 smallBlind: modalSmallBlind,
@@ -276,8 +279,8 @@ const Dashboard: React.FC = () => {
                         // A structure carries its own level times; the opening level's is sent for the lobby.
                         ...sngBlindFields(blindPlan, modalBlindLevelDuration),
                         entryFee,
-                        ...(scheduled && { startTime }),
-                        ...(scheduled && modalLateRegLevels > 0 && { lateRegistrationLevels: modalLateRegLevels })
+                        ...(scheduled && { startTime: created.startTime }),
+                        ...(isScheduledCreateType(modalGameType) && modalLateRegLevels > 0 && { lateRegistrationLevels: modalLateRegLevels })
                     }
                 }),
                 ...(modalGameFormat === GameFormat.CASH && enableRake && { rake: {
@@ -838,7 +841,7 @@ const Dashboard: React.FC = () => {
                                                     </select>
                                                 </div>
                                                 <p className="sm:col-span-2 text-gray-400 text-xs">
-                                                    Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                    {SCHEDULED_SIT_AND_GO_NOTE}
                                                 </p>
                                             </div>
                                         </ScheduledStartCard>
