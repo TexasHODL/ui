@@ -132,8 +132,9 @@ const Dashboard: React.FC = () => {
     // "sit-and-go games require an sngConfig"). Same presets as /admin/tables.
     const [modalStartingStack, setModalStartingStack] = useState(1500);
     const [modalBlindLevelDuration, setModalBlindLevelDuration] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
-    // Tournament start (poker-vm#2680): starts at the start time with at least
-    // modalSngMinPlayers registered, or earlier when full.
+    // Start time (poker-vm#2680, #2776). A Tournament always has one and never
+    // starts earlier. A Sit & Go uses these fields only when its card is on, and
+    // that table can still start when it fills.
     const [modalScheduled, setModalScheduled] = useState(false);
     const [modalScheduledStart, setModalScheduledStart] = useState(""); // datetime-local value
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
@@ -890,7 +891,7 @@ const Dashboard: React.FC = () => {
                                                         </select>
                                                     </div>
                                                     <p className="sm:col-span-2 text-gray-400 text-xs">
-                                                        Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                        Starts at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
                                                         {modalLateRegLevels > 0 && " Late entrants take an empty seat with a full starting stack until the window closes or someone finishes in the money."}
                                                     </p>
                                                 </div>
