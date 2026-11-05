@@ -5,7 +5,7 @@ import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { displayTableName } from "../../../../utils/generatedTableName";
-import { formatGameFormatDisplay, formatTableGameDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { formatGameFormatDisplay, formatTableGameDisplay, isTournamentFormat } from "../../../../utils/gameFormatUtils";
 import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/poker-vm-sdk";
@@ -109,7 +109,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     if (isMobileLandscape) return null;
     const tableUrl = window.location.origin + "/table/" + tableId;
     const title = displayTableName(tableName, tableId);
-    const showLeave = currentPlayerData && !(gameFormat && isSitAndGoFormat(gameFormat));
+    const showLeave = currentPlayerData && !(gameFormat && isTournamentFormat(gameFormat));
     const rake = rakeDisplay(gameOptions?.rake, gameFormat);
 
     return (

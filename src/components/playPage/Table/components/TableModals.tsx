@@ -12,7 +12,7 @@
  */
 
 import React, { useState } from "react";
-import { isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { isTournamentFormat } from "../../../../utils/gameFormatUtils";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
 import GameStartCountdown from "../../common/GameStartCountdown";
 import { SitAndGoAutoJoinModal, SitAndGoResultModal } from "../../../modals";
@@ -99,7 +99,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
                 Also protect direct links to full tables from an unusable prompt.
                 Once the tournament has started, entry stays open only while
                 late registration is open (poker-vm#2731). */}
-            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isSitAndGoFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && spectatingTableId !== tableId && (
+            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isTournamentFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && spectatingTableId !== tableId && (
                 <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} onSpectate={() => setSpectatingTableId(tableId)} />
             )}
 
@@ -114,7 +114,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
 
             {/* Only collection sends a settlement transaction. Spectating and
                 returning to the lobby are viewing/navigation actions. */}
-            {gameFormat && isSitAndGoFormat(gameFormat) && (
+            {gameFormat && isTournamentFormat(gameFormat) && (
                 <SitAndGoResultModal key={tableId} tableId={tableId} onClaim={handleClaimWinnings} held={holdResults} />
             )}
 
@@ -133,7 +133,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
                 re-trigger the waiting modal for everyone (block52/ui#465). SNG
                 leave/terminal flows are handled by SitAndGoWaitingModal
                 (pre-start un-join) and SitAndGoResultModal (post-finish claim). */}
-            {!(gameFormat && isSitAndGoFormat(gameFormat)) && (
+            {!(gameFormat && isTournamentFormat(gameFormat)) && (
                 <LeaveTableModal
                     isOpen={isLeaveModalOpen}
                     onClose={handleLeaveModalClose}

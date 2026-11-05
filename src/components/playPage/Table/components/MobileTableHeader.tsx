@@ -20,7 +20,7 @@ import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { TopUpModal } from "../../../modals";
 import { displayTableName } from "../../../../utils/generatedTableName";
-import { formatGameFormatDisplay, formatTableGameDisplay, isSitAndGoFormat } from "../../../../utils/gameFormatUtils";
+import { formatGameFormatDisplay, formatTableGameDisplay, isTournamentFormat } from "../../../../utils/gameFormatUtils";
 import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
@@ -152,7 +152,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     const [showTopUp, setShowTopUp] = useState(false);
     const tableUrl = `${window.location.origin}/table/${tableId}`;
 
-    const isSNG = hasValue(gameFormat) && isSitAndGoFormat(gameFormat);
+    const isSNG = hasValue(gameFormat) && isTournamentFormat(gameFormat);
     const canTopUp = legalActions.some(a => a.action === NonPlayerActionType.TOP_UP);
     const showTopUpEntry = isCurrentUserSeated && !isSNG;
     const { topUp } = useTableTopUp(tableId, currentNetwork);
