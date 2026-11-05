@@ -12,6 +12,8 @@ export interface ScheduledStartCountdownProps {
     nowMs?: number;
     className?: string;
     testId?: string;
+    /** A table that holds for its start time never deals early, however full it is. */
+    waitsForStartTime: boolean;
 }
 
 /**
@@ -24,7 +26,8 @@ export function ScheduledStartCountdown({
     maxPlayers,
     nowMs: nowMsProp,
     className = "mb-4 bg-gray-700/80 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30 text-center",
-    testId = "scheduled-start-panel"
+    testId = "scheduled-start-panel",
+    waitsForStartTime
 }: ScheduledStartCountdownProps) {
     const [internalNowMs, setInternalNowMs] = useState(() => Date.now());
     const tickingInternally = nowMsProp === undefined;
@@ -42,7 +45,7 @@ export function ScheduledStartCountdown({
             <div className="text-xs text-blue-300 font-semibold">STARTS IN</div>
             <div className="text-2xl text-white font-mono font-bold">{formatCountdown(scheduledStartTime, nowMs)}</div>
             <div className="text-xs text-gray-400">
-                {formatStartsAt(scheduledStartTime, nowMs)} · needs {minPlayers} of {maxPlayers}, or starts early when full
+                {formatStartsAt(scheduledStartTime, nowMs)} · needs {minPlayers} of {maxPlayers}{waitsForStartTime ? "" : ", or starts early when full"}
             </div>
         </div>
     );

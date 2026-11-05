@@ -24,7 +24,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { sitAndGoJoinTitle } from "../../utils/createGameType";
 import { isEmpty, hasValue } from "../../utils/guards";
-import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed, tournamentStartRule, waitsForStartTime } from "../../utils/scheduledSng";
 import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";
@@ -55,6 +55,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
     // Scheduled start (poker-vm#2680): live countdown before Take My Seat, and
     // refuse a seat at a cancelled table (the chain refuses the join too).
     const scheduled = isScheduledSng(gameOptions);
+    const waits = waitsForStartTime(gameOptions);
     const [nowMs, setNowMs] = useState(() => Date.now());
     useEffect(() => {
         if (!scheduled) return;
@@ -330,6 +331,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                     maxPlayers={gameOptions.maxPlayers ?? 0}
                     nowMs={nowMs}
                     testId="scheduled-start-info"
+                    waitsForStartTime={waits}
                 />
             )}
             {buyInError && <p className="tournament-error" role="alert">{buyInError}</p>}
@@ -348,9 +350,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 </button>
             </div>
             <p className="tournament-note">
-                {scheduledPhase === "unscheduled"
-                    ? "Tournament starts when all players are seated."
-                    : "Starts when the table is full, or at the start time with at least the minimum."}
+                {tournamentStartRule(gameOptions)}
                 <small>Powered by Block52</small>
             </p>
         </Modal>
