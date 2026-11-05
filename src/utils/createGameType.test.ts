@@ -1,5 +1,5 @@
 import { GameFormat, formatGameFormatDisplay } from "@block52/poker-vm-sdk";
-import { CREATE_GAME_TYPES, createGameTypeFormat, createGameTypeLabel, displayGameFormat, isScheduledCreateType, sitAndGoJoinTitle, sitAndGoTypeLabel, toCreateGameType } from "./createGameType";
+import { CREATE_GAME_TYPES, createdTableFormat, createGameTypeFormat, createGameTypeLabel, displayGameFormat, isScheduledCreateType, sitAndGoJoinTitle, sitAndGoTypeLabel, toCreateGameType } from "./createGameType";
 
 describe("createGameType (ui#823)", () => {
     it("offers the three types a player can create", () => {
@@ -25,6 +25,27 @@ describe("createGameType (ui#823)", () => {
         expect(isScheduledCreateType("tournament")).toBe(true);
         expect(isScheduledCreateType("sit-and-go")).toBe(false);
         expect(isScheduledCreateType("cash")).toBe(false);
+    });
+
+    describe("createdTableFormat (SDK 1.24)", () => {
+        const start = 1_700_000_000;
+
+        it("keeps a plain Sit & Go as sit-and-go with no start time", () => {
+            expect(createdTableFormat("sit-and-go", false, start)).toEqual({ format: GameFormat.SIT_AND_GO, startTime: undefined });
+            expect(createdTableFormat("sit-and-go", false, undefined)).toEqual({ format: GameFormat.SIT_AND_GO, startTime: undefined });
+        });
+
+        it("creates a scheduled Sit & Go as a tournament that holds for its start time", () => {
+            expect(createdTableFormat("sit-and-go", true, start)).toEqual({ format: GameFormat.TOURNAMENT, startTime: start });
+        });
+
+        it("creates a Tournament as a tournament with its start time", () => {
+            expect(createdTableFormat("tournament", false, start)).toEqual({ format: GameFormat.TOURNAMENT, startTime: start });
+        });
+
+        it("leaves a cash game as cash, even if a start time was typed", () => {
+            expect(createdTableFormat("cash", true, start)).toEqual({ format: GameFormat.CASH, startTime: undefined });
+        });
     });
 
     describe("displayGameFormat", () => {

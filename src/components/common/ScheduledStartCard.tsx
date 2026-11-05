@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FaClock } from "react-icons/fa";
+import { SIT_AND_GO_SCHEDULE_DESCRIPTION } from "../../utils/createGameType";
 
 interface ScheduledStartCardProps {
     checked: boolean;
@@ -14,7 +15,8 @@ interface ScheduledStartCardProps {
 /**
  * Sit & Go scheduled start. The pages still decide when it is shown and still
  * own the time and minimum-player fields passed as children. A locked card is
- * the Tournament start: the same layout, with the time always visible.
+ * the Tournament start: the same layout, with the time always visible. Turning
+ * the switch on creates a tournament (SDK 1.24 refuses a start time on a sit-and-go).
  */
 export function ScheduledStartCard({ checked, onChange, children, locked = false, testId, description }: ScheduledStartCardProps) {
     const on = locked || checked;
@@ -43,7 +45,7 @@ export function ScheduledStartCard({ checked, onChange, children, locked = false
                     </span>
                     <span className="scheduled-start-copy">
                         <strong>Scheduled start</strong>
-                        <span>{description ?? "Start at a set time — with whoever has registered, or earlier when full"}</span>
+                        <span>{description ?? SIT_AND_GO_SCHEDULE_DESCRIPTION}</span>
                     </span>
                     <span className="scheduled-start-track" aria-hidden="true">
                         <span />
