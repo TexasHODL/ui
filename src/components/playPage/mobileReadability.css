@@ -302,3 +302,14 @@
   [data-mobile-readable="portrait"] .chip-position:is([data-ui-pos="3"],[data-ui-pos="4"],[data-ui-pos="5"],[data-ui-pos="6"]) { --bet-nudge: -2px; }
   [data-mobile-readable="portrait"] .chip-position:is([data-ui-pos="2"],[data-ui-pos="7"]) { --row-drop: 5px; }
 }
+
+/* 9-seat phone portrait (<=412px, e.g. Galaxy S21 360x780): the board reached the slot 2/7 (seat 3/8) bet groups.
+   Lift the whole board (cards + Total Pot + side pots, one translate) 10px (screen) so the cards clear those bets.
+   With side pots the Main/Side row is scaled 0.72, tightened and dropped 5px so it clears the seat 4/7 bets, and the
+   win lift is softened so the lifted cards stay under those labels. Bets, card size and every other layout are untouched. */
+@keyframes community-card-lift-p9-tight { 0% { transform: translateY(0) scale(1); filter: brightness(1); } 100% { transform: translateY(-2px) scale(1.03); filter: brightness(1.25) drop-shadow(0 0 8px rgba(255, 215, 0, 0.85)); } }
+@media (max-width: 412px) and (orientation: portrait) {
+  [data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] { --p9-lift: 10px; translate: 0 calc((var(--p9-drop, 10px) + var(--p9-base, 0px) - var(--p9-lift)) / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"] .side-pots-row { scale: 0.72; column-gap: calc(4px / var(--table-zoom, 1)); transform-origin: center bottom; translate: 0 calc(5px / var(--table-zoom, 1)); }
+  [data-mobile-readable="portrait"] .community-board[data-portrait-seats="9"]:has(.side-pots-row) .community-card-row .animate-win-card { animation-name: community-card-lift-p9-tight; }
+}
