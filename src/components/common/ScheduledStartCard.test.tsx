@@ -43,6 +43,6 @@ describe("ScheduledStartCard", () => {
         expect(screen.queryByRole("switch")).not.toBeInTheDocument();
         expect(screen.getByTestId("tournament-start")).toBeInTheDocument();
         expect(screen.getByLabelText("Scheduled start time")).toBeInTheDocument();
-        expect(screen.getByText("A tournament starts at this time with whoever has registered, or earlier when full")).toBeInTheDocument();
+        expect(screen.getByText("A tournament starts at this time with at least the minimum registered, never earlier")).toBeInTheDocument();
     });
 });

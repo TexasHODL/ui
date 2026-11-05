@@ -27,7 +27,7 @@ export function ScheduledStartCard({ checked, onChange, children, locked = false
                     </span>
                     <span className="scheduled-start-copy">
                         <strong>Scheduled start</strong>
-                        <span>{description ?? "A tournament starts at this time with whoever has registered, or earlier when full"}</span>
+                        <span>{description ?? "A tournament starts at this time with at least the minimum registered, never earlier"}</span>
                     </span>
                 </div>
             ) : (

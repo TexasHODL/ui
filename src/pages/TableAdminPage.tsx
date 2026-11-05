@@ -69,9 +69,9 @@ export default function TableAdminPage() {
     const [bettingLimit, setBettingLimit] = useState<BettingLimit>(defaultBettingLimitFor(GameVariant.TEXAS_HOLDEM));
     const [minPlayers] = useState(2);
     const [maxPlayers, setMaxPlayers] = useState(9);
-    // Scheduled start (poker-vm#2680): the sit-and-go starts when full OR at
-    // the start time with at least sngMinPlayers registered. Off = starts only
-    // when full, as before.
+    // Sit & Go scheduled start (poker-vm#2680): off = starts only when full.
+    // On = starts when full or at the start time with at least sngMinPlayers.
+    // A Tournament always has a start time and never starts earlier (poker-vm#2776).
     const [scheduled, setScheduled] = useState(false);
     const [scheduledStart, setScheduledStart] = useState(""); // datetime-local value
     const [sngMinPlayers, setSngMinPlayers] = useState(2);
@@ -580,7 +580,7 @@ export default function TableAdminPage() {
                                                 </select>
                                             </div>
                                             <p className="sm:col-span-2 text-gray-500 text-xs">
-                                                Starts when the table fills, or at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
+                                                Starts at the start time with at least the minimum. Cancelled with refunds if fewer have registered 15 minutes after the start time.
                                                 {lateRegLevels > 0 && " Late entrants take an empty seat with a full starting stack until the window closes or someone finishes in the money."}
                                             </p>
                                         </div>
