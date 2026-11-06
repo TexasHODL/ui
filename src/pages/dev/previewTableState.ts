@@ -63,6 +63,11 @@ export interface PreviewOptions {
      * followed. With win= set, the award plays and then clears (ui#195).
      */
     ended?: boolean;
+    /**
+     * prizes=bubble: fixture only. A 4-player $0.01 tournament after a 10% protocol
+     * fee, chain payouts 25200 and 10800 micro-USDC. Not a live table.
+     */
+    bubblePrizes?: boolean;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -81,6 +86,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * bet=none for a round with no bets out (seat 1 can check: Check/Fold, Check, Call Any pre-actions),
  * win=1 to make seat 1 the winner so the win celebration plays (win=<seat> picks another winner, win=all makes every seat win).
  * ended=1 leaves the hand on round=end so a finished award can clear without a next hand.
+ * prizes=bubble installs the Bitcoin Bubble prize fixture (25200 / 10800 micro-USDC).
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
  */
@@ -112,7 +118,8 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
     const ended = params.get("ended") === "1";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(ended ? { ended } : {}) };
+    const bubblePrizes = params.get("prizes") === "bubble";
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(ended ? { ended } : {}), ...(bubblePrizes ? { bubblePrizes } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -127,6 +134,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.win) params.set("win", options.winAll ? "all" : String(options.winSeat ?? 1));
     if (options.noBets) params.set("bet", "none");
     if (options.ended) params.set("ended", "1");
+    if (options.bubblePrizes) params.set("prizes", "bubble");
     return params;
 };
 
@@ -325,7 +333,13 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
                 name: undefined,
                 description: undefined
             })),
-        results: [],
+        results: options.bubblePrizes
+            ? [
+                { place: 1, playerId: previewSeatAddress(Math.min(2, options.seats), heroAddress), payout: "25200" },
+                { place: 2, playerId: previewSeatAddress(1, heroAddress), payout: "10800" }
+            ]
+            : [],
+        ...(options.bubblePrizes ? { payouts: [{ place: 1, amount: "25200" }, { place: 2, amount: "10800" }] } : {}),
         legalActions: [],
         availableSeats: [],
         signature: ""

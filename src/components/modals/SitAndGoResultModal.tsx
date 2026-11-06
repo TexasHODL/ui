@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { ModalHeader } from "../common/ModalHeader";
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatExactPrizeDollars, formatFlooredPrizeDollars, parsePrizeMicro, prizeMicroIsPositive } from "../../utils/prizeDisplay";
+import { PrizeAmount } from "../playPage/PrizeAmount";
+import { hasValue } from "../../utils/guards";
 import { getFinishingHand, subscribeFinishingHand } from "../../utils/finishingHand";
 import { FinishingHandRecap } from "./FinishingHandRecap";
 import { useSitAndGoPlayerResults, type PlayerResultData } from "../../hooks/game/useSitAndGoPlayerResults";
@@ -50,12 +52,15 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const [dismissed, setDismissed] = useState(() =>
         !!tableId && !!userAddress && localStorage.getItem(dismissKey(tableId, userAddress)) === "true");
     const [prizeClaim, setPrizeClaim] = useState<{ kind: "idle" | "claiming" | "done" | "error"; message?: string }>({ kind: "idle" });
-    const payoutStatus = useSngPayoutStatus(tableId, userAddress, isSitAndGo && !!playerResult && playerResult.payout !== "0" && !dismissed);
+    const payoutStatus = useSngPayoutStatus(tableId, userAddress, isSitAndGo && !!playerResult && prizeMicroIsPositive(playerResult.payout) && !dismissed);
 
     if (!isSitAndGo || !playerResult || dismissed || held || !tableId || !userAddress) return null;
 
     const { place, payout, isWinner } = playerResult;
-    const isPaid = payout !== "0";
+    const isPaid = prizeMicroIsPositive(payout);
+    const prizeMicro = parsePrizeMicro(payout);
+    const flooredPrize = hasValue(prizeMicro) ? formatFlooredPrizeDollars(prizeMicro) : null;
+    const exactPrize = hasValue(prizeMicro) ? formatExactPrizeDollars(prizeMicro) : null;
     const isBusy = prizeClaim.kind === "claiming";
     const collected = prizeClaim.kind === "done" || payoutStatus.status === "claimed";
     const canNavigate = !isPaid || collected;
@@ -97,7 +102,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                 {isPaid && (
                     <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6 text-center">
                         <div className="text-xs text-green-300 font-semibold mb-1">{collected ? "WINNINGS COLLECTED" : "YOUR PAYOUT"}</div>
-                        <div className="text-3xl text-white font-bold" data-testid="sng-result-payout">${formatMicroUsd(payout)}</div>
+                        <div className="text-3xl text-white font-bold" data-testid="sng-result-payout"><PrizeAmount micro={payout} /></div>
                     </div>
                 )}
                 {isPaid && !collected && payoutStatus.status === "checking" && <p role="status" className="finish-recap-note">Checking past payouts…</p>}
@@ -115,8 +120,10 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                 <div className="sng-result-actions" data-testid="sng-result-actions">
                     {isPaid && !collected && payoutStatus.status === "unclaimed" && (
                         <button onClick={handleCollect} disabled={isBusy} data-testid="sng-result-claim-winnings-btn"
-                            className="hodl-primary w-full py-3 px-4 rounded-lg text-sm font-semibold disabled:cursor-not-allowed">
-                            {isBusy ? "Collecting…" : `Collect $${formatMicroUsd(payout)}`}
+                            className="hodl-primary w-full py-3 px-4 rounded-lg text-sm font-semibold disabled:cursor-not-allowed"
+                            title={exactPrize ? `Exact prize $${exactPrize}` : undefined}
+                            aria-label={isBusy ? "Collecting…" : flooredPrize ? `Collect $${flooredPrize}` : "Collect prize"}>
+                            {isBusy ? "Collecting…" : flooredPrize ? `Collect $${flooredPrize}` : "Collect prize"}
                         </button>
                     )}
                     {canNavigate && <>

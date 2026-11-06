@@ -1,4 +1,5 @@
-import { formatMicroUsd } from "../../../utils/moneyDisplay";
+import { prizeMicroIsPositive } from "../../../utils/prizeDisplay";
+import { PrizeAmount } from "../PrizeAmount";
 import React, { useLayoutEffect, useRef } from "react";
 import { hasValue } from "../../../utils/guards";
 import { getViewportMode } from "../../../config/stageGeometry";
@@ -300,9 +301,9 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                     <div className={`tournament-place ${getTournamentPlaceClass(tournamentPlace)}`}>
                         {getPlaceSuffix(tournamentPlace)} Place
                     </div>
-                    {tournamentPayout && tournamentPayout !== "0" && (
+                    {prizeMicroIsPositive(tournamentPayout) && (
                         <div className="tournament-payout tournament-payout-win">
-                            Won: ${formatMicroUsd(tournamentPayout ?? 0)}
+                            Won: <PrizeAmount micro={tournamentPayout} />
                         </div>
                     )}
                 </div>
