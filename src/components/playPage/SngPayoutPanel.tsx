@@ -1,7 +1,7 @@
 import React from "react";
 import { useSitAndGoPayouts } from "../../hooks/game/useSitAndGoPayouts";
-import { convertUSDCToNumber, formatForCashGame } from "../../utils/numberUtils";
 import { hasContent, isEmpty } from "../../utils/guards";
+import { PrizeAmount } from "./PrizeAmount";
 
 const PLACE_LABELS = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
 
@@ -27,17 +27,23 @@ const SngPayoutPanel: React.FC = () => {
             <div className="type-payout-header uppercase text-yellow-300 mb-1">
                 Payout Structure
             </div>
+            <div className="text-[12px] sm:text-xs text-white type-num-payout mb-1" data-testid="sng-payout-pool">
+                Prize pool <PrizeAmount micro={prizePool} />
+            </div>
             <ul className="space-y-1">
                 {places.map(({ place, payout }) => (
                     <li
                         key={place}
-                        className="text-[12px] sm:text-xs text-white type-num-payout whitespace-nowrap"
+                        className="text-[12px] sm:text-xs text-white type-num-payout"
                         data-testid={`sng-payout-place-${place}`}
                     >
-                        {ordinal(place)} {calcPercent(payout, prizePool)}%: {formatForCashGame(convertUSDCToNumber(payout))}
+                        {ordinal(place)} {calcPercent(payout, prizePool)}%: <PrizeAmount micro={payout} />
                     </li>
                 ))}
             </ul>
+            <p className="mt-1 max-w-[16rem] text-[11px] leading-snug text-white/70">
+                Cents are rounded down. Hover, focus, or tap an amount for the exact prize.
+            </p>
         </div>
     );
 };

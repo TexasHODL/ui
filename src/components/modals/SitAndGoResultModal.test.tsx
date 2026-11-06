@@ -191,6 +191,27 @@ test("the chain's precise already-claimed error becomes a collected receipt", as
     expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
 });
 
+test("floors a sub-cent-heavy prize and still offers collect, with the exact amount", () => {
+    mockResult = result(2, "10800");
+    show();
+    expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$0.01");
+    expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("Exact prize $0.0108");
+    const collect = screen.getByRole("button", { name: "Collect $0.01" });
+    expect(collect).toBeEnabled();
+    expect(collect).toHaveAttribute("title", "Exact prize $0.0108");
+    fireEvent.click(screen.getByTestId("prize-amount"));
+    expect(screen.getByTestId("prize-amount")).toHaveAttribute("aria-expanded", "true");
+});
+
+test("a prize under one cent stays collectable instead of looking unpaid", () => {
+    mockResult = result(4, "1");
+    show();
+    expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("$0.00");
+    expect(screen.getByTestId("sng-result-payout")).toHaveTextContent("Under 1¢");
+    expect(screen.getByRole("button", { name: "Collect $0.00" })).toBeEnabled();
+    expect(screen.queryByText("Thanks for playing.")).toBeNull();
+});
+
 test.each(["View table", "Back to lobby"])("unpaid finishers can choose %s without any transaction", action => {
     mockResult = result(3, "0");
     const claim = jest.fn();

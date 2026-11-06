@@ -36,6 +36,18 @@ describe("parsePreviewSearch", () => {
         expect(BigInt(state.totalPot) > 0n).toBe(true);
     });
 
+    it("prizes=bubble is a display fixture for the 25200 and 10800 prizes", () => {
+        const options = parsePreviewSearch(new URLSearchParams("seats=4&format=sng&prizes=bubble"));
+        expect(options.bubblePrizes).toBe(true);
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.payouts).toEqual([
+            { place: 1, amount: "25200" },
+            { place: 2, amount: "10800" }
+        ]);
+        expect(state.results.map(result => result.payout)).toEqual(["25200", "10800"]);
+    });
+
     it("win=1 makes seat 1 the winner of the whole pot", () => {
         const options = parsePreviewSearch(new URLSearchParams("format=sng&win=1"));
         expect(options.win).toBe(true);
