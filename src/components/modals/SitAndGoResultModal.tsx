@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } fro
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { ModalHeader } from "../common/ModalHeader";
-import { formatExactPrizeDollars, formatFlooredPrizeDollars, parsePrizeMicro, prizeMicroIsPositive } from "../../utils/prizeDisplay";
+import { formatFlooredPrizeDollars, parsePrizeMicro, prizeMicroIsPositive } from "../../utils/prizeDisplay";
 import { PrizeAmount } from "../playPage/PrizeAmount";
 import { hasValue } from "../../utils/guards";
 import { getFinishingHand, subscribeFinishingHand } from "../../utils/finishingHand";
@@ -60,7 +60,6 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const isPaid = prizeMicroIsPositive(payout);
     const prizeMicro = parsePrizeMicro(payout);
     const flooredPrize = hasValue(prizeMicro) ? formatFlooredPrizeDollars(prizeMicro) : null;
-    const exactPrize = hasValue(prizeMicro) ? formatExactPrizeDollars(prizeMicro) : null;
     const isBusy = prizeClaim.kind === "claiming";
     const collected = prizeClaim.kind === "done" || payoutStatus.status === "claimed";
     const canNavigate = !isPaid || collected;
@@ -121,7 +120,6 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                     {isPaid && !collected && payoutStatus.status === "unclaimed" && (
                         <button onClick={handleCollect} disabled={isBusy} data-testid="sng-result-claim-winnings-btn"
                             className="hodl-primary w-full py-3 px-4 rounded-lg text-sm font-semibold disabled:cursor-not-allowed"
-                            title={exactPrize ? `Exact prize $${exactPrize}` : undefined}
                             aria-label={isBusy ? "Collecting…" : flooredPrize ? `Collect $${flooredPrize}` : "Collect prize"}>
                             {isBusy ? "Collecting…" : flooredPrize ? `Collect $${flooredPrize}` : "Collect prize"}
                         </button>

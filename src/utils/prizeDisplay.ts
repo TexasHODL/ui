@@ -2,13 +2,11 @@
  * Display-only labels for a tournament or sit-and-go prize.
  *
  * The chain amount stays in micro-USDC. Labels round DOWN to whole cents so a
- * list of prizes cannot add up to more than the floored pool. The exact figure
- * is a separate string, built from the integer micro-units, for hover and tap.
- * Nothing here changes a payout, a fee, or a claim.
+ * list of prizes cannot add up to more than the floored pool. Nothing here
+ * changes a payout, a fee, or a claim.
  */
 import { hasContent, hasValue } from "./guards";
 
-const MICRO_PER_DOLLAR = 1_000_000n;
 const MICRO_PER_CENT = 10_000n;
 
 /** Authoritative micro-USDC, or null when the wire value is not a whole amount. */
@@ -45,36 +43,6 @@ export function formatFlooredPrizeDollars(micro: bigint): string {
     const whole = cents / 100n;
     const fraction = (cents % 100n).toString().padStart(2, "0");
     return `${groupDigits(whole)}.${fraction}`;
-}
-
-/**
- * Exact dollars from the micro-units. Trailing zeros after the cents are dropped,
- * and at least two decimals stay. 25200 → "0.0252", 400000 → "0.40".
- */
-export function formatExactPrizeDollars(micro: bigint): string {
-    const whole = micro / MICRO_PER_DOLLAR;
-    const fraction = (micro % MICRO_PER_DOLLAR).toString().padStart(6, "0").replace(/0+$/, "");
-    const decimals = fraction.length < 2 ? fraction.padEnd(2, "0") : fraction;
-    return `${groupDigits(whole)}.${decimals}`;
-}
-
-export interface PrizeLabel {
-    floored: string;
-    exact: string;
-    /** Floored cents hide a positive remainder (including a prize under one cent). */
-    hidesRemainder: boolean;
-}
-
-export function prizeLabel(value: string | null | undefined): PrizeLabel | null {
-    const micro = parsePrizeMicro(value);
-    if (!hasValue(micro)) return null;
-    const floored = formatFlooredPrizeDollars(micro);
-    const exact = formatExactPrizeDollars(micro);
-    return {
-        floored,
-        exact,
-        hidesRemainder: micro > 0n && floorPrizeCents(micro) * MICRO_PER_CENT !== micro
-    };
 }
 
 /** Sum of per-place floored cents is never above the floored sum. Gaps may remain. */

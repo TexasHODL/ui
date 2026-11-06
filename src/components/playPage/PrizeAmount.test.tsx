@@ -1,40 +1,36 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { PrizeAmount } from "./PrizeAmount";
 
 describe("PrizeAmount", () => {
-    it("shows the floored cents and the exact Bubble prize", () => {
+    it("shows a plain floored label for the Bubble prize", () => {
         render(<PrizeAmount micro="25200" />);
         const prize = screen.getByTestId("prize-amount");
+        expect(prize.tagName).toBe("SPAN");
         expect(prize).toHaveTextContent("$0.02");
-        expect(prize).toHaveAttribute("data-prize-exact", "0.0252");
-        expect(prize).toHaveAttribute("title", "Exact prize $0.0252. Shown cents are rounded down.");
-        expect(screen.getByRole("tooltip")).toHaveTextContent("Exact prize $0.0252");
+        expect(prize).not.toHaveAttribute("title");
+        expect(screen.queryByRole("tooltip")).toBeNull();
+        expect(screen.queryByRole("button")).toBeNull();
     });
 
-    it("opens the exact amount on tap and closes from the keyboard", () => {
+    it("floors the second Bubble place to one cent", () => {
         render(<PrizeAmount micro="10800" />);
-        const prize = screen.getByTestId("prize-amount");
-        expect(prize).toHaveAttribute("aria-expanded", "false");
-        fireEvent.click(prize);
-        expect(prize).toHaveAttribute("aria-expanded", "true");
-        fireEvent.keyDown(prize, { key: "Escape" });
-        expect(prize).toHaveAttribute("aria-expanded", "false");
+        expect(screen.getByTestId("prize-amount")).toHaveTextContent("$0.01");
     });
 
-    it("keeps a sub-cent prize looking payable", () => {
+    it("shows a positive sub-cent prize as a plain $0.00", () => {
         render(<PrizeAmount micro="1" />);
         const prize = screen.getByTestId("prize-amount");
         expect(prize).toHaveTextContent("$0.00");
-        expect(prize).toHaveTextContent("Under 1¢");
-        expect(prize).toHaveAttribute("data-prize-exact", "0.000001");
-        expect(prize).toBeEnabled();
+        expect(screen.queryByText("Under 1¢")).toBeNull();
     });
 
-    it("shows an exact cent with no rounding note", () => {
+    it("shows an exact cent with two decimals", () => {
         render(<PrizeAmount micro="400000" />);
-        expect(screen.getByTestId("prize-amount")).toHaveAttribute(
-            "title",
-            "Exact prize $0.40."
-        );
+        expect(screen.getByTestId("prize-amount")).toHaveTextContent("$0.40");
+    });
+
+    it("shows a dash when the amount is not a whole micro-USDC value", () => {
+        render(<PrizeAmount micro="0.0252" />);
+        expect(screen.getByTestId("prize-amount")).toHaveTextContent("—");
     });
 });

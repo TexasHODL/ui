@@ -41,9 +41,6 @@ const SngPayoutPanel: React.FC = () => {
                     </li>
                 ))}
             </ul>
-            <p className="mt-1 max-w-[16rem] text-[11px] leading-snug text-white/70">
-                Cents are rounded down. Hover, focus, or tap an amount for the exact prize.
-            </p>
         </div>
     );
 };
