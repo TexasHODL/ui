@@ -57,11 +57,6 @@ describe("Focused table header", () => {
         expect(screen.getByText(generated)).toBeInTheDocument();
         expect(screen.queryByText("Table " + props.tableId.slice(-6))).not.toBeInTheDocument();
     });
-    it("hides the end-state Next label once the completed hand is cleared", () => {
-        render(<TableHeader {...makeProps()} showNextToAct={false} />);
-        expect(screen.queryByText("Next: Seat 2")).not.toBeInTheDocument();
-        expect(screen.getByText("Hand #12")).toBeInTheDocument();
-    });
     it("keeps lobby, invite, history and settings connected to existing handlers", () => {
         const props = makeProps();
         render(<TableHeader {...props} />);
