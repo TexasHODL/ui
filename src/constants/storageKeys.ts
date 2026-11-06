@@ -25,5 +25,11 @@ export const STORAGE_KEYS = {
     /** Bearer token injected by HTTPClient on secure requests. */
     authToken: "token",
     /** Whether the viewer has dismissed the upcoming Sit & Go welcome modal. */
-    seenUpcomingSngModal: "seen_upcoming_sng_modal"
+    seenUpcomingSngModal: "seen_upcoming_sng_modal",
+    /**
+     * Win-celebration clock for one table (sessionStorage). Remembers when the
+     * award started and which winners have already left, so a refresh does not
+     * replay a celebration that already finished. Suffix the table id.
+     */
+    winCelebration: "b52_win_celebration"
 } as const;

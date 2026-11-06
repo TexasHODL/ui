@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
 import { useReplay } from "../../context/gameState/ReplayContext";
-import { NonPlayerActionType, PlayerStatus, PlayerDTO } from "@block52/poker-vm-sdk";
+import { NonPlayerActionType, PlayerStatus, PlayerDTO, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { PlayerTimerReturn } from "../../types/index";
 import { useGameOptions } from "../game/useGameOptions";
 import { usePlayersBySeat } from "../game/usePlayersBySeat";
@@ -80,9 +80,12 @@ export const usePlayerTimer = (_tableId?: string, playerSeat?: number): PlayerTi
     // no live turn, so no seat is ever "to act" — this keeps the countdown timer and
     // its per-second re-render off during replay (ui#721).
     const isNextToAct = useMemo((): boolean => {
-        if (isReplayMode) return false;
+        // A finished hand keeps nextToAct in the snapshot. That is not a live
+        // turn, so the countdown must not sit on the seat until the next hand
+        // (ui#195). A replay is frozen the same way (ui#721).
+        if (isReplayMode || gameState?.round === TexasHoldemRound.END) return false;
         return gameState?.nextToAct === playerSeat;
-    }, [isReplayMode, gameState?.nextToAct, playerSeat]);
+    }, [isReplayMode, gameState?.round, gameState?.nextToAct, playerSeat]);
 
     // Count active players 
     const activePlayerCount = useMemo((): number => {

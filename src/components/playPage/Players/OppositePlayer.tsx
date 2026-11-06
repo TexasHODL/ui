@@ -15,7 +15,7 @@ import * as React from "react";
 import { useParams } from "react-router-dom";
 import Badge from "../common/Badge";
 import { HoleCardFan } from "../Card/HoleCardFan";
-import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
+import { useVisibleWinnerInfo } from "../../../hooks/game/useCompletedHandCelebration";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { useShowingCardsByAddress } from "../../../hooks/player/useShowingCardsByAddress";
@@ -47,7 +47,7 @@ type OppositePlayerProps = {
 const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle }) => {
     const { id } = useParams<{ id: string }>();
     const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
-    const { winnerInfo, winnerBySeat } = useWinnerInfo();
+    const { winnerInfo, winnerBySeat } = useVisibleWinnerInfo();
     const winnerCards = useWinnerCards();
     const { isActive: isTurnTimerActive } = usePlayerTimer(id, index);
     const { equities, shouldShow: shouldShowEquity } = useAllInEquity();

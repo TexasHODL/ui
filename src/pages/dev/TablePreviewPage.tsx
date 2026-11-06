@@ -243,6 +243,17 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
                     {PREVIEW_BUTTON_LABELS[state]}
                 </button>
             ))}
+            <button
+                type="button"
+                aria-pressed={options.ended === true}
+                onClick={() => onChange({
+                    ended: options.ended !== true,
+                    ...(options.ended === true ? {} : { win: true, winSeat: Math.min(3, options.seats) })
+                })}
+                style={buttonStyle(options.ended === true)}
+            >
+                Ended
+            </button>
             <span style={labelStyle}>Board</span>
             {PREVIEW_BOARD_COUNTS.map(count => (
                 <button

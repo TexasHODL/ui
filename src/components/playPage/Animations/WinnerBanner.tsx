@@ -1,6 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
+import { useVisibleWinnerInfo } from "../../../hooks/game/useCompletedHandCelebration";
 import { winnerBannerRollDistance, winnerBannerText, winnerBannerTop } from "../../../utils/winnerBanner";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
@@ -17,7 +17,7 @@ const BANNER_MS = 15000;
  * calmer alternative to the gold celebration (ui#847) that still tells you who won. Handles split pots.
  */
 const WinnerBanner: React.FC = () => {
-    const { winnerInfo } = useWinnerInfo();
+    const { winnerInfo } = useVisibleWinnerInfo();
     const { getAvatarForAddress } = useProfileAvatar();
     const [text, setText] = useState<string | null>(null);
     // The sole winner's address, for their avatar/NFT; null for a split pot.
@@ -32,7 +32,15 @@ const WinnerBanner: React.FC = () => {
 
     useEffect(() => {
         const next = winnerBannerText(winnerInfo);
-        if (!next) return; // no winners this frame — leave the current banner to time out
+        // No visible winners: the award is over (or nobody won). Clear immediately.
+        // Leaving the previous banner up used to keep a finished pot on screen
+        // until its 15s roll ended, and a repeated end snapshot restarted that roll.
+        if (!next) {
+            setText(null);
+            setWinnerAddress(null);
+            setWinnerAvatar(null);
+            return;
+        }
         setText(next);
         setTop(winnerBannerTop(document.querySelector(".sub-header")?.getBoundingClientRect().bottom ?? null));
         const sole = hasElements(winnerInfo) && winnerInfo.length === 1 ? winnerInfo[0] : null;

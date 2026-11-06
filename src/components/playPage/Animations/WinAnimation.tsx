@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
+import { useVisibleWinnerInfo } from "../../../hooks/game/useCompletedHandCelebration";
 import { WinAnimationProps } from "../../../types/index";
 import { useChipImageUrl } from "../../../theme/useTableStyles";
 import { getChipImageUrl } from "../../../utils/cardImages";
@@ -28,7 +28,7 @@ export function pickCashPulseChips(count = WIN_PULSE_CHIP_FILES.length, random: 
 }
 
 const WinAnimation: React.FC<WinAnimationProps & { position?: { left: string; top: string } }> = React.memo(({ index, position }) => {
-    const { winnerBySeat } = useWinnerInfo();
+    const { winnerBySeat } = useVisibleWinnerInfo();
     const { gameFormat } = useGameStateContext();
     // Tournaments and Sit & Gos keep the fixed chip mix; cash tables get a random
     // mix of $/c chips, picked once per pulse so the particles don't flicker.

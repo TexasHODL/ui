@@ -3,7 +3,7 @@ import { memo, useMemo, useCallback } from "react";
 import Badge from "../common/Badge";
 import { HoleCardFan } from "../Card/HoleCardFan";
 import { TimeBankClock } from "../common/TimeBankClock";
-import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
+import { useVisibleWinnerInfo } from "../../../hooks/game/useCompletedHandCelebration";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
@@ -28,7 +28,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
     ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
         const { id } = useParams<{ id: string }>();
         const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
-        const { winnerInfo, winnerBySeat } = useWinnerInfo();
+        const { winnerInfo, winnerBySeat } = useVisibleWinnerInfo();
         const winnerCards = useWinnerCards();
         const { isActive: isTurnTimerActive } = usePlayerTimer(id, index);
 
