@@ -4,6 +4,7 @@ import { dealerSideFor, type BetSide } from "../../../../config/stageGeometry";
 import Chip from "../../common/Chip";
 import DealerButtonDisplay from "./DealerButtonDisplay";
 import { hasValue } from "../../../../utils/guards";
+import { useCompletedHandView } from "../../../../context/CompletedHandContext";
 
 interface PlayerChipDisplayProps {
     seatIndex: number;
@@ -26,7 +27,9 @@ interface PlayerChipDisplayProps {
  */
 const PlayerChipDisplay: React.FC<PlayerChipDisplayProps> = React.memo(({ seatIndex, left, bottom, top, side, isTournament, isDealer = false, uiPos }) => {
     const { chipAmount } = usePlayerChipData(seatIndex);
-    const hasBet = !!chipAmount && chipAmount !== "0";
+    // A finished hand's award has cleared: seat bets belong to that hand (ui#195).
+    const hideCompletedBets = useCompletedHandView()?.hideCompletedHand === true;
+    const hasBet = !hideCompletedBets && !!chipAmount && chipAmount !== "0";
     if (!hasBet && !isDealer) return null;
     const centered = top !== undefined;
     return (
