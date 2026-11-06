@@ -49,10 +49,10 @@ describe("SngPayoutPanel", () => {
         expect(screen.getByTestId("sng-payout-pool")).toHaveTextContent("$0.03");
         expect(screen.getByTestId("sng-payout-place-1")).toHaveTextContent("1st 70%:");
         expect(screen.getByTestId("sng-payout-place-1")).toHaveTextContent("$0.02");
-        expect(screen.getByTestId("sng-payout-place-1")).toHaveTextContent("Exact prize $0.0252");
         expect(screen.getByTestId("sng-payout-place-2")).toHaveTextContent("$0.01");
-        expect(screen.getByTestId("sng-payout-place-2")).toHaveTextContent("Exact prize $0.0108");
-        expect(screen.getByText("Cents are rounded down. Hover, focus, or tap an amount for the exact prize.")).toBeInTheDocument();
+        expect(screen.queryByText(/rounded down/i)).toBeNull();
+        expect(screen.queryByText(/Exact prize/)).toBeNull();
+        expect(screen.queryByRole("button")).toBeNull();
     });
 
     it("renders nothing when not sit and go", () => {
