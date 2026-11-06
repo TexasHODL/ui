@@ -59,11 +59,6 @@ export interface PreviewOptions {
     /** bet=none: no bets out this round, so the hero can check (free-check pre-actions). */
     noBets?: boolean;
     /**
-     * ended=1: the snapshot is a finished hand (`round=end`) that nobody has
-     * followed. With win= set, the award plays and then clears (ui#195).
-     */
-    ended?: boolean;
-    /**
      * prizes=bubble: fixture only. A 4-player $0.01 tournament after a 10% protocol
      * fee, chain payouts 25200 and 10800 micro-USDC. Not a live table.
      */
@@ -85,7 +80,6 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * buttons=none|actions|preaction|muck picks the hero controls (turn=1 is an alias for actions),
  * bet=none for a round with no bets out (seat 1 can check: Check/Fold, Check, Call Any pre-actions),
  * win=1 to make seat 1 the winner so the win celebration plays (win=<seat> picks another winner, win=all makes every seat win).
- * ended=1 leaves the hand on round=end so a finished award can clear without a next hand.
  * prizes=bubble installs the Bitcoin Bubble prize fixture (25200 / 10800 micro-USDC).
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
@@ -117,9 +111,8 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const win = winAll || (Number.isInteger(winParam) && winParam >= 1 && winParam <= seats);
     const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
-    const ended = params.get("ended") === "1";
     const bubblePrizes = params.get("prizes") === "bubble";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(ended ? { ended } : {}), ...(bubblePrizes ? { bubblePrizes } : {}) };
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -133,7 +126,6 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.format !== "cash") params.set("format", options.format);
     if (options.win) params.set("win", options.winAll ? "all" : String(options.winSeat ?? 1));
     if (options.noBets) params.set("bet", "none");
-    if (options.ended) params.set("ended", "1");
     if (options.bubblePrizes) params.set("prizes", "bubble");
     return params;
 };
@@ -242,9 +234,7 @@ const previewWinnerCards = (options: PreviewOptions, seat: number): string[] => 
 
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
     // win=<seat> (not the hero) tables the winner's hand, which needs showdown.
-    const round = options.ended
-        ? TexasHoldemRound.END
-        : options.buttons === "muck" || ((options.winSeat || options.winAll) && options.holeCards) ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
+    const round = options.buttons === "muck" || ((options.winSeat || options.winAll) && options.holeCards) ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
     const heroTurn = previewIsHeroTurn(options);
     const players: PlayerDTO[] = [];
     const previousActions: ActionDTO[] = [];

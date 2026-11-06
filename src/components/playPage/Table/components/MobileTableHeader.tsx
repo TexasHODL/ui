@@ -66,8 +66,6 @@ export interface MobileTableHeaderProps {
     };
     handNumber: number;
     nextToAct: number;
-    /** False after a completed hand's award has cleared: the end-state Next label is not a live turn. */
-    showNextToAct?: boolean;
 
     // Current user state
     currentPlayerData: PlayerDTO | null;
@@ -124,7 +122,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     formattedValues,
     handNumber,
     nextToAct,
-    showNextToAct = true,
     currentPlayerData,
     isCurrentUserSeated,
     legalActions,
@@ -201,7 +198,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     }, [
         handNumber,
         nextToAct,
-        showNextToAct,
         showLeaveTable,
         formattedValues.smallBlindFormatted,
         formattedValues.bigBlindFormatted,
@@ -242,7 +238,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         {rake.short}
                     </span>
                 )}
-                {showNextToAct && !showLeaveTable && <span className={textClass}>Next: Seat {nextToAct}</span>}
+                {!showLeaveTable && <span className={textClass}>Next: Seat {nextToAct}</span>}
                 {showLeaveTable && (
                     <button type="button" className={styles.visibleLeaveButton} onClick={handleLeaveTableClick}>
                         <RxExit aria-hidden="true" /> Leave table

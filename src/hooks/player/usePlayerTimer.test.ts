@@ -74,18 +74,6 @@ describe("usePlayerTimer", () => {
     });
     afterEach(() => localStorage.clear());
 
-    it("does not count down on a finished hand, and does on the next hand", () => {
-        setState({ ...state(), round: TexasHoldemRound.END });
-        const ended = renderHook(() => usePlayerTimer(TABLE, 1));
-        expect(ended.result.current.isActive).toBe(false);
-        expect(ended.result.current.isCurrentUserTurn).toBe(false);
-
-        setState({ ...state(), round: TexasHoldemRound.PREFLOP });
-        const live = renderHook(() => usePlayerTimer(TABLE, 1));
-        expect(live.result.current.isActive).toBe(true);
-        expect(live.result.current.isCurrentUserTurn).toBe(true);
-    });
-
     describe("public surface (ui#644 — deletion must not change it)", () => {
         it("returns every field its four callers read", () => {
             const { result } = renderHook(() => usePlayerTimer(TABLE, 1));

@@ -42,8 +42,6 @@ export interface PlayerSeatingProps {
 
     // Animation states
     hasWinner: boolean;
-    /** False while the rendered hand is over (`round=end`): nextToAct is leftover, not a live turn. */
-    showLiveTurn: boolean;
     isSitAndGoWaitingForPlayers: boolean;
     winnerInfo: Array<{ seat: number; address?: string }> | null;
 
@@ -63,7 +61,6 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
     userWalletAddress,
     currentIndex,
     hasWinner,
-    showLiveTurn,
     isSitAndGoWaitingForPlayers,
     winnerInfo,
     cardBackStyle,
@@ -212,7 +209,7 @@ export const PlayerSeating: React.FC<PlayerSeatingProps> = ({
                 return (
                     <div key={positionIndex} className="z-[10]" data-ui-pos={positionIndex}>
                         {/* Turn indicator — offset down to center on badge */}
-                        {showLiveTurn && !hasWinner && !isSitAndGoWaitingForPlayers && (
+                        {!hasWinner && !isSitAndGoWaitingForPlayers && (
                             <MemoizedTurnAnimation
                                 index={seatNum - 1}
                                 position={tableLayout.positions.turnAnimations[positionIndex]}

@@ -47,8 +47,6 @@ export interface TableHeaderProps {
     handNumber: number;
     actionCount: number;
     nextToAct: number;
-    /** False after a completed hand's award has cleared: the end-state Next label is not a live turn. */
-    showNextToAct?: boolean;
 
     // Current user state
     currentPlayerData: PlayerDTO | null;
@@ -91,7 +89,6 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     handNumber,
     actionCount,
     nextToAct,
-    showNextToAct = true,
     currentPlayerData,
     openSidebar,
     openSettings,
@@ -188,7 +185,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             <span className={styles.diagnostics}>
                                 Hand #{handNumber} · {actionCount} actions
                                 <br />
-                                {showNextToAct && nextToAct > 0 ? "Next: seat " + nextToAct : "Waiting for the next action"}
+                                {nextToAct > 0 ? "Next: seat " + nextToAct : "Waiting for the next action"}
                             </span>
                             <div className={styles.networkSection}>
                                 <p>NETWORK</p>
@@ -223,7 +220,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         </small>
                     )}
                     <span className={styles.handNumber}>Hand #{handNumber}</span>
-                    {showNextToAct && <span className={styles.nextToAct}>Next: Seat {nextToAct}</span>}
+                    <span className={styles.nextToAct}>Next: Seat {nextToAct}</span>
                     {rake && (
                         <span className={styles.rake} title={rake.title} aria-label={rake.title} data-testid="header-rake">
                             {rake.withCap}

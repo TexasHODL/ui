@@ -57,10 +57,7 @@ import { claimWinnings } from "../../hooks/playerActions/claimWinnings";
 
 // 5. Winner Info
 import { useWinnerInfo } from "../../hooks/game/useWinnerInfo"; // Provides winner information for animations
-import { CompletedHandProvider, useCompletedHandCelebration } from "../../hooks/game/useCompletedHandCelebration";
 import { emptyTableBoard, isTableEmpty } from "../../utils/emptyTable";
-import { filterCelebratingWinners } from "../../utils/completedHandCelebration";
-import { TexasHoldemRound } from "@block52/poker-vm-sdk";
 import { useWinnerCards } from "../../hooks/game/useWinnerCards"; // Winning card codes for card-lift animation
 import { useGameResults } from "../../hooks/game/useGameResults"; // Game results display
 
@@ -739,13 +736,6 @@ const Table = React.memo(() => {
     // invoke hook for seat loop
     const { winnerInfo } = useWinnerInfo();
     const winnerCards = useWinnerCards();
-    // Award clock (ui#195). History keeps the raw winnerInfo above; the felt
-    // paints only the winners this clock still considers active.
-    const celebration = useCompletedHandCelebration(id, isReplayMode);
-    const visibleWinnerInfo = useMemo(
-        () => filterCelebratingWinners(winnerInfo, celebration.activeWinnerAddresses),
-        [winnerInfo, celebration]
-    );
 
     // Zoom is now handled by the table layout configuration
     // const calculateZoom = useCallback(() => { ... }, []);
@@ -1112,9 +1102,7 @@ const Table = React.memo(() => {
     }, [currentUserSeat, tableSize, seatAtBottom]);
 
     // Winner animations
-    const hasWinner = hasElements(visibleWinnerInfo);
-    // round=end still carries nextToAct from the hand that finished. That is not a live turn.
-    const showLiveTurn = gameState?.round !== TexasHoldemRound.END;
+    const hasWinner = hasElements(winnerInfo);
 
     // Restore the useEffect for the timer
     useEffect(() => {
@@ -1185,17 +1173,16 @@ const Table = React.memo(() => {
         return formatPotDisplay(pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails);
     }, [gameState?.pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails]);
 
-    // Nobody seated, or a completed hand whose award has finished: the chain still
-    // holds the last hand's pots/board/dealer/winners (round "end"). Show none of it.
+    // Nobody seated: the chain still holds the last hand's pots/board/dealer/winners
+    // (round "end"); an empty table shows none of it.
     const tableIsEmpty = isTableEmpty(tableActivePlayers.length);
-    const hideStaleTable = tableIsEmpty || celebration.hideCompletedHand;
     const board = useMemo(
         () =>
             emptyTableBoard(
                 { potDisplayValues: rawPotDisplayValues, communityCards: tableDataValues.tableDataCommunityCards || [], winnerCards, dealerSeat: dealerSeat ?? -1 },
-                hideStaleTable
+                tableIsEmpty
             ),
-        [rawPotDisplayValues, tableDataValues.tableDataCommunityCards, winnerCards, dealerSeat, hideStaleTable]
+        [rawPotDisplayValues, tableDataValues.tableDataCommunityCards, winnerCards, dealerSeat, tableIsEmpty]
     );
     const potDisplayValues = board.potDisplayValues;
 
@@ -1343,9 +1330,8 @@ const Table = React.memo(() => {
     }
 
     return (
-        <CompletedHandProvider value={celebration}>
         <SitOutIntentProvider tableId={id} network={currentNetwork} pendingSitOut={pendingSitOut} legalActions={playerLegalActions}>
-        <div className="table-container" style={historyDock} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings || blindsOpen} data-table-only={tableOnly} data-win-celebration={hasValue(celebration.celebrateUntil) ? "playing" : celebration.hideCompletedHand ? "cleared" : "off"}>
+        <div className="table-container" style={historyDock} data-connection={connection.status} data-table-theme={tableStyle} data-compact-mobile={isCompactMobile} data-panel-open={openSidebar || openSettings || blindsOpen} data-table-only={tableOnly}>
                 {/* Connection freshness (ui#613): shown whenever the live socket is not live */}
                 {!isReplayMode && id && (
                     <ConnectionBanner
@@ -1411,7 +1397,6 @@ const Table = React.memo(() => {
                         formattedValues={formattedValues}
                         handNumber={handNumber}
                         nextToAct={nextToAct}
-                        showNextToAct={!celebration.hideCompletedHand}
                         currentPlayerData={currentPlayerData || null}
                         isCurrentUserSeated={isCurrentUserSeated}
                         legalActions={playerLegalActions}
@@ -1451,7 +1436,6 @@ const Table = React.memo(() => {
                         handNumber={handNumber}
                         actionCount={actionCount}
                         nextToAct={nextToAct}
-                        showNextToAct={!celebration.hideCompletedHand}
                         currentPlayerData={currentPlayerData || null}
                         openSidebar={openSidebar}
                         openSettings={openSettings}
@@ -1599,9 +1583,8 @@ const Table = React.memo(() => {
                                 userWalletAddress={userWalletAddress}
                                 currentIndex={currentIndex}
                                 hasWinner={hasWinner}
-                                showLiveTurn={showLiveTurn}
                                 isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
-                                winnerInfo={visibleWinnerInfo}
+                                winnerInfo={winnerInfo}
                                 cardBackStyle={cardBackStyle}
                                 updateBalanceOnPlayerJoin={updateBalanceOnPlayerJoin}
                             />
@@ -1725,7 +1708,6 @@ const Table = React.memo(() => {
                 {!hasWallet && !isReplayMode && <NoWalletOverlay onWalletReady={handleWalletReady} />}
             </div>
         </SitOutIntentProvider>
-        </CompletedHandProvider>
     );
 });
 

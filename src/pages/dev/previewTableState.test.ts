@@ -25,17 +25,6 @@ describe("parsePreviewSearch", () => {
         });
     });
 
-    it("ended=1 keeps a winning hand on round end", () => {
-        const options = parsePreviewSearch(new URLSearchParams("seats=9&win=3&ended=1"));
-        expect(options.ended).toBe(true);
-        expect(options.winSeat).toBe(3);
-        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
-        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
-        expect(state.round).toBe(TexasHoldemRound.END);
-        expect(state.winners.map(winner => winner.seat)).toEqual([3]);
-        expect(BigInt(state.totalPot) > 0n).toBe(true);
-    });
-
     it("prizes=bubble is a display fixture for the 25200 and 10800 prizes", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=4&format=sng&prizes=bubble"));
         expect(options.bubblePrizes).toBe(true);
