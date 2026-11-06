@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useWinnerInfo } from "./useWinnerInfo";
+import { useVisibleWinnerInfo } from "./useCompletedHandCelebration";
 
 /**
  * Returns a Set of card codes (e.g. "AS", "KH") that form the winning hand(s).
@@ -7,7 +7,7 @@ import { useWinnerInfo } from "./useWinnerInfo";
  * Returns an empty Set when there is no winner or the backend hasn't sent cards yet.
  */
 export const useWinnerCards = (): Set<string> => {
-    const { winnerInfo } = useWinnerInfo();
+    const { winnerInfo } = useVisibleWinnerInfo();
 
     return useMemo(() => {
         const cards = winnerInfo?.flatMap(w => w.cards ?? []) ?? [];

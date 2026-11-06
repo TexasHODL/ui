@@ -8,6 +8,7 @@ import { usePlayersBySeat } from "../game/usePlayersBySeat";
 import { convertUSDCToNumber } from "../../utils/numberUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { hasFoldedOrMucked } from "../../utils/playerStatus";
+import { useCompletedHandView } from "../../context/CompletedHandContext";
 
 /**
  * Custom hook to fetch player data for a specific seat
@@ -25,6 +26,8 @@ export const usePlayerData = (seatIndex?: number): PlayerDataReturn => {
   const { gameFormat } = useGameMeta();
   const { isLoading, error } = useGameUI();
   const playersBySeat = usePlayersBySeat();
+  const completedHand = useCompletedHandView();
+  const hideStaleHoleCards = completedHand?.hideCompletedHand === true;
 
   // Get player data from the table state via the shared seat index (#2455).
   const playerData = React.useMemo((): PlayerDTO | null => {
@@ -91,11 +94,11 @@ export const usePlayerData = (seatIndex?: number): PlayerDataReturn => {
     // still present in state. Card visibility elsewhere keys on holeCards.length,
     // so zero it here at the source. (See useHoleCardWatchdog: WAITING_FOR_BIG_BLIND
     // is deliberately excluded from STATUSES_WITH_HOLE_CARDS.)
-    if (playerData?.status === PlayerStatus.WAITING_FOR_BIG_BLIND) {
+    if (hideStaleHoleCards || playerData?.status === PlayerStatus.WAITING_FOR_BIG_BLIND) {
       return [];
     }
     return playerData?.holeCards || [];
-  }, [playerData]);
+  }, [playerData, hideStaleHoleCards]);
   
   const round = React.useMemo(() => {
     return gameState?.round || null;

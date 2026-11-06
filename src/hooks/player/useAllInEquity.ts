@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useShowingCardsByAddress } from "./useShowingCardsByAddress";
 import { hasValue, isNullish } from "../../utils/guards";
+import { useCompletedHandView } from "../../context/CompletedHandContext";
 import {
     PlayerStatus,
     PlayerDTO,
@@ -183,7 +184,11 @@ export function useAllInEquity(): AllInEquityResult {
                gameState?.round === TexasHoldemRound.END;
     }, [gameState?.round]);
 
+    const awardCleared = useCompletedHandView()?.hideCompletedHand === true;
+
     const shouldShow = useMemo(() => {
+        // The finished hand's cards are gone; the equity readout is part of that hand (ui#195).
+        if (awardCleared) return false;
         if (playersWithVisibleCards.length < 2) return false;
 
         // Scenario A: all active players all-in with all hole cards visible.
@@ -198,7 +203,7 @@ export function useAllInEquity(): AllInEquityResult {
         if (isShowdown) return true;
 
         return false;
-    }, [allPlayersAllIn, activePlayers, visibleSeats, isShowdown, playersWithVisibleCards.length]);
+    }, [awardCleared, allPlayersAllIn, activePlayers, visibleSeats, isShowdown, playersWithVisibleCards.length]);
 
     /**
      * Get community cards from game state
