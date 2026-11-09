@@ -50,9 +50,33 @@ test("names the viewer's row Your Cards and leaves the other seats numbered", ()
     expect(yours).not.toBeNull();
     expect(yours).toHaveTextContent("Your Cards");
     expect(yours).toHaveTextContent("Seat 4");
-    expect(screen.getByText("Seat 1")).toBeInTheDocument();
+    expect(screen.getByText("Beaten by Seat 1")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /Jack of hearts/ })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /Ace of hearts/ })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Ace of spades" })).toBeInTheDocument();
     expect(screen.queryByText("Seat 4")).not.toBeNull();
     expect(yours?.querySelector("strong")).toHaveTextContent("Your Cards");
+});
+
+test("a podium finisher still shows their cards and the showdown they won", () => {
+    render(<FinishingHandRecap
+        viewerAddress="winner"
+        hand={{
+            handNumber: 3,
+            board: ["AS", "KD", "AD", "TH", "6D"],
+            players: [
+                { seat: 1, address: "winner", cards: ["JH", "AH"], description: "Pair of aces", won: "9000" },
+                { seat: 4, address: "busted", cards: ["7H", "2S"], description: "Ace high", won: null }
+            ]
+        }}
+    />);
+    expect(screen.getByText("Your Cards")).toBeInTheDocument();
+    expect(screen.queryByText(/Beaten by/)).toBeNull();
+    expect(screen.getByRole("img", { name: /Jack of hearts/ })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /Ace of hearts/ })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "2 of spades" })).toBeInTheDocument();
 });
 
 test("missing snapshots and undealt boards do not invent any cards", () => {

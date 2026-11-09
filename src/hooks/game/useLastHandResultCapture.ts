@@ -11,7 +11,8 @@
 
 import { useEffect, useRef } from "react";
 import { TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
-import { captureFinishingHand, createHandRevealLedger, FinishingHand, HandRevealLedger, observeRevealedCards, saveFinishingHand } from "../../utils/finishingHand";
+import { useRecoverMissingFinishingHand } from "./useRecoverMissingFinishingHand";
+import { captureFinishingHand, createHandRevealLedger, endHandFinisherIds, FinishingHand, HandRevealLedger, observeRevealedCards, saveFinishingHand } from "../../utils/finishingHand";
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useWinnerInfo } from "./useWinnerInfo";
 import { shouldShowWinnerSummary } from "../../components/ActionsLog.utils";
@@ -30,10 +31,11 @@ export const useLastHandResultCapture = (tableId: string | undefined): void => {
         if (!tableId || !gameState) return;
         const results = gameState.results ?? [];
         if (tracking.current.table !== tableId) {
-            // Existing placements on arrival cannot safely be linked to the current hand.
+            // Placements already on the table belong to this snapshot only when
+            // this is the end of the hand they played. Earlier busts are recovered
+            // from that hand's own history, not painted onto a later deal.
             tracking.current = { table: tableId, seen: new Set(results.map(r => r.playerId.toLowerCase())), latest: null, pending: new Map(), ledger: createHandRevealLedger(), previous: null };
-            // A completed tournament's winner necessarily finished in the final hand.
-            if (gameState.round === TexasHoldemRound.END) results.filter(r => r.place === 1).forEach(r => tracking.current.pending.set(r.playerId.toLowerCase(), gameState.handNumber));
+            for (const id of endHandFinisherIds(gameState)) tracking.current.pending.set(id, gameState.handNumber);
         }
         const tracker = tracking.current;
         for (const result of results) {
@@ -73,4 +75,6 @@ export const useLastHandResultCapture = (tableId: string | undefined): void => {
             setLastHandResult({ tableId, handNumber: gameState.handNumber, lines });
         }
     }, [tableId, gameState, winnerInfo, gameVariant]);
+
+    useRecoverMissingFinishingHand(tableId);
 };

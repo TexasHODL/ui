@@ -1,5 +1,6 @@
-import { Deck, GameVariant, PlayerActionType, PlayerDTO, PlayerStatus, PokerSolver, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
+import { Deck, GameVariant, PlayerActionType, PlayerDTO, PlayerStatus, PokerSolver, TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { isMaskedHand, isRevealedHand } from "../bus/deriveEvents";
+import { hasElements, hasValue } from "./guards";
 import { describeShownHand } from "./showdownSummary";
 
 export interface FinishingSeat {
@@ -167,6 +168,59 @@ function seatSnapshot(
  * left out. `context.shown` is what earlier frames of this same hand revealed,
  * so a final frame that relabels those seats cannot drop them.
  */
+/**
+ * This end snapshot is the hand the finisher actually played: they won the pot,
+ * they acted in it, or their hole cards are face up on this frame. A result
+ * left over from an earlier bust is not this hand.
+ */
+export function playerInEndHand(state: TexasHoldemStateDTO, playerId: string): boolean {
+    if (state.round !== TexasHoldemRound.END || !playerId) return false;
+    const address = playerId.toLowerCase();
+    if ((state.winners ?? []).some(winner => winner.address?.toLowerCase() === address)) return true;
+    if (playedThisHand(state, address)) return true;
+    const player = (state.players ?? []).find(seat => seat.address?.toLowerCase() === address);
+    return hasValue(player) && hasElements(holeCardsIfShown(player.holeCards));
+}
+
+/** Every finisher the current end snapshot can show without borrowing another hand. */
+export function endHandFinisherIds(state: TexasHoldemStateDTO): string[] {
+    if (state.round !== TexasHoldemRound.END || !hasElements(state.winners)) return [];
+    const ids: string[] = [];
+    for (const result of state.results ?? []) {
+        if (!result.playerId || !playerInEndHand(state, result.playerId)) continue;
+        const address = result.playerId.toLowerCase();
+        if (!ids.includes(address)) ids.push(address);
+    }
+    return ids;
+}
+
+/** Viewer cards plus at least one pot winner's cards. Anything less is not the showdown. */
+export function finishingHandReady(hand: FinishingHand | null | undefined): boolean {
+    if (!hand) return false;
+    const shown = hand.players.filter(player => player.cards.length >= 2);
+    return hasElements(hand.board) && shown.some(player => hasValue(player.won)) && shown.length >= 2;
+}
+
+/**
+ * Label for one seat in the result modal. The viewer's row is always "Your Cards".
+ * A pot winner who beat the viewer is named; everyone else stays a seat number.
+ */
+export function finishingSeatHeading(player: FinishingSeat, viewerAddress: string | null, viewerWon: boolean): string {
+    const yours = !!viewerAddress && player.address?.toLowerCase() === viewerAddress.toLowerCase();
+    if (yours) return "Your Cards";
+    if (!viewerWon && hasValue(player.won)) return `Beaten by Seat ${player.seat}`;
+    return `Seat ${player.seat}`;
+}
+
+/**
+ * The showdown in `state` for `viewer`, or null when their cards or the pot
+ * winner's cards are not actually in that snapshot.
+ */
+export function showdownForViewer(state: TexasHoldemStateDTO, viewer: string): FinishingHand | null {
+    const hand = captureFinishingHand(state, { viewer });
+    return finishingHandReady(hand) ? hand : null;
+}
+
 export function captureFinishingHand(state: TexasHoldemStateDTO, context: CaptureContext = {}): FinishingHand {
     const board = validCards(state.communityCards);
     const viewer = context.viewer?.toLowerCase() ?? null;
@@ -206,9 +260,16 @@ function snapshotWeight(hand: FinishingHand): number {
 export function saveFinishingHand(table: string, player: string, hand: FinishingHand) {
     const id = key(table, player);
     const previous = snapshots.get(id);
-    // Later hands must never replace a busted player's own finishing hand.
-    // A thinner frame of the SAME hand must not wipe cards the showdown had.
-    if (previous && (previous.handNumber !== hand.handNumber || snapshotWeight(hand) < snapshotWeight(previous) || JSON.stringify(previous) === JSON.stringify(hand))) return;
+    // A complete showdown stays. A thinner frame of the same hand must not wipe it.
+    // A different hand replaces the stored one only when the stored one never had
+    // both the viewer's cards and the pot winner's cards.
+    if (previous) {
+        if (previous.handNumber === hand.handNumber) {
+            if (snapshotWeight(hand) < snapshotWeight(previous) || JSON.stringify(previous) === JSON.stringify(hand)) return;
+        } else if (finishingHandReady(previous) || !finishingHandReady(hand)) {
+            return;
+        }
+    }
     snapshots.set(id, hand);
     if (snapshots.size > 90) snapshots.delete(snapshots.keys().next().value!);
     listeners.forEach(listener => listener());
