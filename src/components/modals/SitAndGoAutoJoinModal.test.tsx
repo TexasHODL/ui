@@ -85,7 +85,7 @@ it("retains join errors without dismissing the dialog or retrying automatically"
         fireEvent.click(await screen.findByRole("button", { name: "Take My Seat" }));
         expect(await screen.findByRole("alert")).toHaveTextContent("Fixture: join unavailable");
         expect(mockJoin).toHaveBeenCalledTimes(1);
-        expect(mockJoin).toHaveBeenCalledWith("fixture-table", { amount: "1", seatNumber: 0 }, { name: "fixture" });
+        expect(mockJoin).toHaveBeenCalledWith("fixture-table", { amount: "1", format: undefined }, { name: "fixture" });
         expect(screen.getByRole("dialog")).toBeInTheDocument();
     } finally { log.mockRestore(); }
 });
@@ -207,4 +207,19 @@ describe("leaving the entry prompt without joining", () => {
         expect(screen.getByRole("button", { name: "Return to Lobby" })).toBeDisabled();
         expect(onSpectate).not.toHaveBeenCalled();
     });
+});
+
+it("takes a drawn seat: joins without naming one and says the seat is random (ui#969)", async () => {
+    mockContext.gameFormat = "sit-and-go";
+    mockBalance.mockResolvedValue("50000000");
+    mockJoin.mockReturnValue(new Promise(() => {}));
+    render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(await screen.findByTestId("seat-draw-note")).toHaveTextContent("Your seat is drawn at random");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Take My Seat" })).toBeEnabled());
+    fireEvent.click(screen.getByRole("button", { name: "Take My Seat" }));
+    await waitFor(() => expect(mockJoin).toHaveBeenCalledTimes(1));
+    const [tableId, options] = mockJoin.mock.calls[0];
+    expect(tableId).toBe("fixture-table");
+    expect(options).toEqual({ amount: "1", format: "sit-and-go" });
+    expect(options).not.toHaveProperty("seatNumber");
 });

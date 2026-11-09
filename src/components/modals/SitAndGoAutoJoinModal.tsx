@@ -24,6 +24,7 @@ import { useGameStateContext } from "../../context/GameStateContext";
 import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
 import { sitAndGoJoinTitle } from "../../utils/createGameType";
 import { isEmpty, hasValue } from "../../utils/guards";
+import { SEAT_DRAW_NOTE } from "../../utils/vacantSeatText";
 import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed, tournamentStartRule, waitsForStartTime } from "../../utils/scheduledSng";
 import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
@@ -219,16 +220,14 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
             // string — joinTable converts back to microunits internally.
             const buyInAmountInDollars = microToUsdc(gameOptions.maxBuyIn);
 
-            // Route the join through joinTable so it uses the active transport
-            // (gateway by default, ui#440). The previous path
-            // (useSitAndGoPlayerJoinRandomSeat) submitted chain-direct with
-            // seat 0 — invisible to the gateway the UI reads from, and
-            // mis-seated by the SNG engine. Claim a concrete empty seat.
+            // Route the join through joinTable, which draws the seat at random
+            // from the empty seats (ui#969) and redraws if another join takes
+            // it first. Never seat 0: the SNG engine mis-seats it (ui#440).
             await joinTable(
                 tableId,
                 {
                     amount: String(buyInAmountInDollars),
-                    seatNumber: emptySeatIndexes[0]
+                    format: gameFormat
                 },
                 currentNetwork
             );
@@ -262,7 +261,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         } finally {
             setIsJoining(false);
         }
-    }, [registrationClosed, publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess]);
+    }, [registrationClosed, publicKey, tableId, isUserAlreadyPlaying, hasJoined, emptySeatIndexes, maxBuyInFormatted, balanceFormatted, gameOptions, currentNetwork, subscribeToTable, onJoinSuccess, gameFormat]);
 
     const handleSpectate = useCallback(() => {
         if (isJoining) return;
@@ -341,6 +340,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
                 {isCancelled ? "Cancelled" : isRegistrationClosed ? "Registration Closed" : isJoining ? "Joining…" : isBalanceLoading ? "Loading…" : balanceFormatted < parseFloat(maxBuyInFormatted)
                     ? "Insufficient Balance" : isEmpty(emptySeatIndexes) ? "Table Full" : "Take My Seat"}
             </button>
+            <p className="tournament-note" data-testid="seat-draw-note">{SEAT_DRAW_NOTE}</p>
             <div className="tournament-secondary-actions">
                 <button type="button" onClick={handleSpectate} disabled={isJoining} className="hodl-secondary sng-spectate-btn" data-testid="sng-spectate">
                     Spectate
