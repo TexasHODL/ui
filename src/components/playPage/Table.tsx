@@ -103,7 +103,8 @@ import { mobileCardUnit } from "../../config/mobileCardSizing";
 import { useTurnNotification } from "../../hooks/notifications/useTurnNotification";
 import ConnectionBanner from "./ConnectionBanner";
 
-import { hasElements, hasValue, isNullish } from "../../utils/guards";
+import { hasContent, hasElements, hasValue, isNullish } from "../../utils/guards";
+import { clearTableBannerEnd, publishTableBannerEnd, tableBannerEndPx } from "../../utils/tableModalClearance";
 
 //* Here's the typical sequence of a poker hand:
 //* ANTE - Initial forced bets
@@ -864,13 +865,23 @@ const Table = React.memo(() => {
     const measureMobileChrome = useCallback((banner: HTMLDivElement | null) => {
         chromeObserver.current?.disconnect();
         chromeObserver.current = null;
-        const root = banner?.closest(".table-container") as HTMLElement | null;
-        if (!banner || !root) return;
+        // No banner (table unmounted, or the loading shell): dialogs use the full viewport.
+        if (!banner) {
+            clearTableBannerEnd();
+            return;
+        }
+        const root = banner.closest(".table-container");
         const apply = () => {
-            root.style.setProperty("--mobile-chrome-end", `${Math.ceil(banner.getBoundingClientRect().bottom)}px`);
+            // Same edge History already uses. Also on <html>, so a dialog portaled
+            // to document.body starts below the last top banner at any width.
+            const end = tableBannerEndPx(banner.getBoundingClientRect().bottom);
+            publishTableBannerEnd(end);
+            if (!(root instanceof HTMLElement)) return;
+            root.style.setProperty("--mobile-chrome-end", end);
             placeMobileHistory(root);
         };
         apply();
+        if (!(root instanceof HTMLElement)) return;
         const observer = new ResizeObserver(apply);
         observer.observe(banner);
         const stage = root.querySelector(".table-stage");
@@ -1692,7 +1703,7 @@ const Table = React.memo(() => {
                         gameState={gameState}
                         gameFormat={gameFormat}
                         isUserAlreadyPlaying={isUserAlreadyPlaying}
-                        tableId={id}
+                        tableId={hasContent(id) ? id : searchParams.get("modal") === "entry" ? "preview" : undefined}
                         onAutoJoinSuccess={() => window.location.reload()}
                         isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
                         handleLeaveTableClick={handleLeaveTableClick}
