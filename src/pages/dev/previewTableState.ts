@@ -36,6 +36,10 @@ export type PreviewDialog = (typeof PREVIEW_DIALOGS)[number];
 export const PREVIEW_BUTTON_STATES = ["none", "actions", "preaction", "muck"] as const;
 export type PreviewButtonState = (typeof PREVIEW_BUTTON_STATES)[number];
 
+/** Dev-only all-in runout beats, for the win% chip (ui#210). */
+export const PREVIEW_RUNOUTS = ["reveal", "flop", "turn", "river"] as const;
+export type PreviewRunout = (typeof PREVIEW_RUNOUTS)[number];
+
 const COMMUNITY = ["AH", "KD", "QC", "JH", "TS"];
 
 export interface PreviewOptions {
@@ -72,6 +76,12 @@ export interface PreviewOptions {
      * modal=waiting seats the hero at a tournament that has not started.
      */
     dialog?: PreviewDialog;
+    /**
+     * All-in runout beat. Betting is closed, the last caller is still ACTIVE,
+     * and the other live seats are all-in with cards face up. `river` is the
+     * decided board (winner 100%).
+     */
+    runout?: PreviewRunout;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -91,6 +101,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * win=1 to make seat 1 the winner so the win celebration plays (win=<seat> picks another winner, win=all makes every seat win).
  * prizes=bubble installs the Bitcoin Bubble prize fixture (25200 / 10800 micro-USDC).
  * modal=entry|waiting shows the tournament take-your-seat or waiting dialog.
+ * runout=reveal|flop|turn|river paints a tournament all-in runout (ui#210).
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
  */
@@ -120,14 +131,18 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const dialog: PreviewDialog | undefined = (PREVIEW_DIALOGS as readonly string[]).includes(dialogParam ?? "")
         ? (dialogParam as PreviewDialog)
         : undefined;
-    const format: PreviewFormat = dialog && requestedFormat === "cash" ? "tournament" : requestedFormat;
+    const runoutParam = params.get("runout");
+    const runout: PreviewRunout | undefined = (PREVIEW_RUNOUTS as readonly string[]).includes(runoutParam ?? "")
+        ? (runoutParam as PreviewRunout)
+        : undefined;
+    const format: PreviewFormat = (dialog || runout) && requestedFormat === "cash" ? "tournament" : requestedFormat;
     const winAll = params.get("win") === "all";
     const winParam = Number(params.get("win"));
     const win = winAll || (Number.isInteger(winParam) && winParam >= 1 && winParam <= seats);
     const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
     const bubblePrizes = params.get("prizes") === "bubble";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(dialog ? { dialog } : {}) };
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -143,6 +158,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.noBets) params.set("bet", "none");
     if (options.bubblePrizes) params.set("prizes", "bubble");
     if (options.dialog) params.set("modal", options.dialog);
+    if (options.runout) params.set("runout", options.runout);
     return params;
 };
 
@@ -320,8 +336,86 @@ const buildPreviewDialogState = (options: PreviewOptions, heroAddress: string): 
     };
 };
 
+const RUNOUT_BOARD = ["2C", "9D", "4S", "8H", "3C"];
+
+const RUNOUT_BEAT: Record<PreviewRunout, { round: TexasHoldemRound; cards: number }> = {
+    reveal: { round: TexasHoldemRound.PREFLOP, cards: 0 },
+    flop: { round: TexasHoldemRound.FLOP, cards: 3 },
+    turn: { round: TexasHoldemRound.TURN, cards: 4 },
+    river: { round: TexasHoldemRound.RIVER, cards: 5 }
+};
+
+/**
+ * Tournament all-in runout as the street frames paint it (ui#210).
+ * The last caller is still ACTIVE, the other live seats are all-in with the
+ * hand tabled, betting is closed, and a folded seat stays out.
+ */
+const buildPreviewRunoutState = (beat: PreviewRunout, heroAddress: string): TexasHoldemStateDTO => {
+    const street = RUNOUT_BEAT[beat];
+    const hands: Record<number, { cards: string[]; status: PlayerStatus; stack: string; cardsShown?: boolean }> = {
+        1: { cards: ["AH", "AD"], status: PlayerStatus.ACTIVE, stack: "12000" },
+        2: { cards: ["KS", "KC"], status: PlayerStatus.ALL_IN, stack: "0", cardsShown: true },
+        3: { cards: ["QS", "QC"], status: PlayerStatus.ALL_IN, stack: "0", cardsShown: true },
+        4: { cards: ["7H", "2D"], status: PlayerStatus.FOLDED, stack: "8000" }
+    };
+    const players: PlayerDTO[] = [1, 2, 3, 4].map(seat => {
+        const hand = hands[seat];
+        return {
+            address: previewSeatAddress(seat, heroAddress),
+            seat,
+            stack: hand.stack,
+            isSmallBlind: seat === 1,
+            isBigBlind: seat === 2,
+            isDealer: seat === 4,
+            holeCards: hand.cards,
+            status: hand.status,
+            ...(hand.cardsShown ? { cardsShown: true } : {}),
+            lastAction: undefined,
+            legalActions: [],
+            sumOfBets: "0",
+            timeout: 30,
+            signature: ""
+        };
+    });
+    return {
+        gameOptions: {
+            minBuyIn: "5000",
+            maxBuyIn: "5000",
+            minPlayers: 2,
+            maxPlayers: 4,
+            smallBlind: "100",
+            bigBlind: "200",
+            timeout: 30,
+            blindLevel: 3,
+            nextSmallBlind: "150",
+            nextBigBlind: "300",
+            blindLevelDuration: 10,
+            levelStartTime: Date.now()
+        },
+        smallBlindPosition: 1,
+        bigBlindPosition: 2,
+        dealer: 4,
+        players,
+        communityCards: RUNOUT_BOARD.slice(0, street.cards),
+        deck: "",
+        pots: ["9000"],
+        totalPot: "9000",
+        nextToAct: -1,
+        previousActions: [],
+        actionCount: 8,
+        handNumber: 12,
+        round: street.round,
+        winners: [],
+        results: [],
+        legalActions: [],
+        availableSeats: [],
+        signature: ""
+    };
+};
+
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
     if (options.dialog) return buildPreviewDialogState(options, heroAddress);
+    if (options.runout) return buildPreviewRunoutState(options.runout, heroAddress);
     // win=<seat> (not the hero) tables the winner's hand, which needs showdown.
     const round = options.buttons === "muck" || ((options.winSeat || options.winAll) && options.holeCards) ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
     const heroTurn = previewIsHeroTurn(options);

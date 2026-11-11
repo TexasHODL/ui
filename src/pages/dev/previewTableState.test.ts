@@ -273,4 +273,23 @@ describe("modal preview fixtures", () => {
     it("keeps an explicit sit-and-go format on a dialog fixture", () => {
         expect(parsePreviewSearch(new URLSearchParams("modal=waiting&format=sng")).format).toBe("sng");
     });
+
+    it("runout= paints a closed all-in with the last caller still active (ui#210)", () => {
+        const reveal = parsePreviewSearch(new URLSearchParams("runout=reveal"));
+        expect(reveal.runout).toBe("reveal");
+        expect(reveal.format).toBe("tournament");
+        expect(parsePreviewSearch(previewSearchParams(reveal))).toEqual(reveal);
+
+        const flop = buildPreviewState(parsePreviewSearch(new URLSearchParams("runout=flop")), PREVIEW_HERO_ADDRESS);
+        expect(flop.round).toBe(TexasHoldemRound.FLOP);
+        expect(flop.communityCards).toHaveLength(3);
+        expect(flop.nextToAct).toBe(-1);
+        expect(flop.players.map(player => player.status)).toEqual(["active", "all-in", "all-in", "folded"]);
+        expect(flop.players[1]?.cardsShown).toBe(true);
+
+        const river = buildPreviewState(parsePreviewSearch(new URLSearchParams("runout=river")), PREVIEW_HERO_ADDRESS);
+        expect(river.round).toBe(TexasHoldemRound.RIVER);
+        expect(river.communityCards).toHaveLength(5);
+        expect(river.winners).toEqual([]);
+    });
 });
