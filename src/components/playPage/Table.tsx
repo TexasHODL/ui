@@ -95,8 +95,7 @@ import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { fitTransform, useTableOnlyFit } from "../../hooks/game/useTableOnlyFit";
 import { useTablePageViewportLock } from "../../hooks/useTablePageViewportLock";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { portraitBoardCardScale } from "../../config/boardCardScale";
-import { getViewportMode, isTabletPortrait, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
+import { getViewportMode, isTabletPortrait, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize, feltEndRadius } from "../../config/stageGeometry";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 
@@ -911,10 +910,8 @@ const Table = React.memo(() => {
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
     const isPortraitStage = isMobilePortrait || isTabletPortrait(tableLayout.viewportMode);
-    // 4- and 9-seat portrait desktops shrink the board row so it clears the rail
-    // hole cards. Phones, landscape, and the 2- and 6-seat boards stay at 1.
-    const boardCardScale = portraitBoardCardScale(tableSize, isPortraitStage && !isCompactMobile);
     const stageDims = stageDimsFor(isPortraitStage ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape");
+    const feltRadius = feltEndRadius(stageDims.tableWidth, stageDims.tableHeight);
 
     // Add the useGameProgress hook
     const { isGameInProgress, handNumber, actionCount, nextToAct } = useGameProgress(id);
@@ -1486,13 +1483,15 @@ const Table = React.memo(() => {
                     )}
 
                     {/*//! TABLE — zoom-wrapper applies calculated transform */}
-                    <div ref={zoomWrapperRef} className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-table-fit={tableOnly ? tableOnlyFit.scale.toFixed(3) : undefined} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: fitTransform(tableOnlyFit, tableLayout.tableTransform), ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom), "--board-card-scale": String(boardCardScale) }) }}>
+                    <div ref={zoomWrapperRef} className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-table-fit={tableOnly ? tableOnlyFit.scale.toFixed(3) : undefined} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: fitTransform(tableOnlyFit, tableLayout.tableTransform), ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom) }) }}>
                         {/*//! Table coordinate space — the felt div at its stage origin.
                         Desktop landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH
                         and heightened by MOBILE_LANDSCAPE_HEIGHT_STRETCH.
                         Portrait: 500×1000 at (175,300) on the 850×1600 stage,
-                        heightened by MOBILE_PORTRAIT_HEIGHT_STRETCH. Width stays 500.
+                        heightened by MOBILE_PORTRAIT_HEIGHT_STRETCH. Desktop and
+                        tablet 4- and 9-seat rings widen the felt so the rail
+                        seats clear the full-size board. Phones stay 500 wide.
                         Also the root for the card-animation durations (src/bus/timing.ts → CSS custom properties). */}
                         <div
                             ref={tableDivRef}
@@ -1519,6 +1518,7 @@ const Table = React.memo(() => {
                                         height: `${stageDims.tableHeight + 60}px`,
                                         left: "-30px",
                                         top: "-30px",
+                                        borderRadius: `${feltRadius + 40}px`,
                                         borderStyle: "solid",
                                         borderColor: tableStyle === "nouns" ? "rgba(26, 26, 46, 0.8)" : "rgba(177, 76, 255, 0.34)",
                                         borderWidth: 10,
@@ -1539,6 +1539,7 @@ const Table = React.memo(() => {
                                 style={{
                                     width: `${stageDims.tableWidth}px`,
                                     height: `${stageDims.tableHeight}px`,
+                                    borderRadius: `${feltRadius}px`,
                                     borderColor:
                                         tableStyle === "nouns"
                                             ? "rgba(214, 60, 94, 0.4)"

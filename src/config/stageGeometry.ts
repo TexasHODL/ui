@@ -304,14 +304,57 @@ export function mobileLandscapeWidthStretch(): number {
     return Math.min(requested, Math.max(1, fill));
 }
 
-/** Felt dimensions for one orientation. Desktop is the only unstretched stage. */
+/** Desktop community row: five 85×127 cards and four 8px gaps. */
+export const COMMUNITY_ROW_WIDTH = 5 * 85 + 4 * 8;
+
+/** Portrait rail, stage X. Side seats of the 4- and 9-seat rings sit here. */
+const PORTRAIT_RAIL_X = 175;
+
+/** Rotated hole-card fan, inward from the seat centre. Matches HoleCardFan.css. */
+export function holeCardInwardReach(): number {
+    const rad = (8 * Math.PI) / 180;
+    return 23 + (60 / 2) * Math.cos(rad) + (80 / 2) * Math.sin(rad);
+}
+
+/** Table pixels between the community row and the nearest hole-card corner.
+ *  The fan's drop shadow is 7px, so the rest is open felt. The centred pot is
+ *  narrower than the row, so the same gap clears it. */
+export const PORTRAIT_BOARD_AIR = 32;
+
+/**
+ * How far 4- and 9-seat players move out from the portrait centre on a
+ * desktop or tablet held upright. The full-size board row is 457px on the
+ * 500px felt, and the rail seats' hole cards run into it. The felt widens by
+ * the same amount so those seats stay on the rail. Phones, landscape, and
+ * the 2- and 6-seat rings stay on the 500px felt.
+ */
+export function desktopPortraitRailOutset(tableSize: number): number {
+    if (tableSize !== 4 && tableSize !== 9) return 0;
+    if (!isTabletPortrait()) return 0;
+    const needed = COMMUNITY_ROW_WIDTH / 2 + holeCardInwardReach() + PORTRAIT_BOARD_AIR;
+    const rail = STAGE_DIMS.portrait.centerX - PORTRAIT_RAIL_X;
+    return Math.max(0, Math.ceil(needed - rail));
+}
+
+/** Stadium end radius. 250 is the historical oval. A wider desktop portrait
+ *  felt uses half its width so the ends stay round. */
+export function feltEndRadius(tableWidth: number, tableHeight: number): number {
+    if (tableHeight > tableWidth && tableWidth > STAGE_DIMS.portrait.tableWidth) return tableWidth / 2;
+    return 250;
+}
+
+/** Felt dimensions for one orientation. Desktop landscape is the unstretched stage. */
 export function stageDimsFor(orientation: StageOrientation): StageDims {
     const base = STAGE_DIMS[orientation];
     if (orientation === "portrait") {
         const tableHeight = base.tableHeight * mobilePortraitHeightStretch();
+        const outset = desktopPortraitRailOutset(activePortraitSize ?? 0);
+        const tableWidth = base.tableWidth + outset * 2;
         return {
             ...base,
+            tableWidth,
             tableHeight,
+            originX: base.centerX - tableWidth / 2,
             originY: base.centerY - tableHeight / 2
         };
     }
@@ -464,10 +507,15 @@ const PORTRAIT_SEAT_COORDS: Record<number, [number, number][]> = {
 
 /** Seat coordinates for the current orientation's stage.
  *  Mobile landscape uses the desktop ring (these numbers do not change).
- *  stageToTable spreads that ring horizontally with the widened felt. */
+ *  stageToTable spreads that ring horizontally with the widened felt.
+ *  Desktop/tablet portrait moves the 4- and 9-seat ring out with the wider felt. */
 export function getSeatCoords(tableSize: TableSize): [number, number][] {
-    if (getStageOrientation() === "portrait") return PORTRAIT_SEAT_COORDS[tableSize];
-    return SEAT_COORDS[tableSize];
+    const portrait = getStageOrientation() === "portrait";
+    const coords = portrait ? PORTRAIT_SEAT_COORDS[tableSize] : SEAT_COORDS[tableSize];
+    const outset = portrait ? desktopPortraitRailOutset(tableSize) : 0;
+    if (outset === 0) return coords;
+    const center = STAGE_DIMS.portrait.centerX;
+    return coords.map(([x, y]) => (x === center ? [x, y] : [x < center ? x - outset : x + outset, y]));
 }
 
 
@@ -476,8 +524,8 @@ export function getSeatCoords(tableSize: TableSize): [number, number][] {
 /** Convert stage coordinates to table-div-relative pixel values.
  *  Mobile landscape scales X and Y about the table centre by the felt
  *  stretches, so seats, chips and dealer buttons spread with the stadium.
- *  Portrait scales Y only, about the same centre, so the ring grows taller
- *  without changing the felt's width. */
+ *  Portrait scales Y only, about the same centre, so the ring grows taller.
+ *  Desktop 4- and 9-seat rings already include their outward shift in stage X. */
 function stageToTable(stageX: number, stageY: number): [number, number] {
     const dims = getStageDims();
     let x = stageX;
