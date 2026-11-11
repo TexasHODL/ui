@@ -7,6 +7,7 @@ import { buildHandShareUrl } from "../../utils/handReplay";
 import { useEffect, useLayoutEffect, useState, useMemo, useCallback, memo, useRef } from "react";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
 import { formatPotDisplay, formatChipCount } from "../../utils/potDisplayUtils";
+import { useClosingBetPresentation } from "../../hooks/player/useClosingBetPresentation";
 import PokerActionPanel from "../Footer";
 import WinnerBanner from "./Animations/WinnerBanner";
 import { MobileActionDock } from "./Table/components/MobileActionDock";
@@ -1168,10 +1169,13 @@ const Table = React.memo(() => {
     // Memoize formatted balance - Cosmos returns microunits (6 decimals)
     const balanceFormatted = useMemo(() => (accountBalance ? formatMicroUsd(accountBalance ?? 0) : "0.00"), [accountBalance]);
 
+    const closingBets = useClosingBetPresentation();
     const rawPotDisplayValues = useMemo(() => {
         const pots = Array.isArray(gameState?.pots) ? (gameState?.pots as string[]) : [];
-        return formatPotDisplay(pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails);
-    }, [gameState?.pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails]);
+        const shownPots = closingBets.phase === "off" ? pots : closingBets.pots;
+        const shownTotal = closingBets.phase === "off" ? gameState?.totalPot : closingBets.totalPot;
+        return formatPotDisplay(shownPots, shownTotal, gameFormat, gameState?.round, gameState?.potDetails);
+    }, [gameState?.pots, gameState?.totalPot, gameFormat, gameState?.round, gameState?.potDetails, closingBets]);
 
     // Nobody seated: the chain still holds the last hand's pots/board/dealer/winners
     // (round "end"); an empty table shows none of it.
