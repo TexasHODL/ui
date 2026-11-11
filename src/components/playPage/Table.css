@@ -1210,8 +1210,18 @@ html.table-page-lock .app-shell {
    in stage px, so they scale with the table. Near-square foldables (aspect >= 4:5) have a shorter stage and get their own values. */
 @media (min-width: 600px) and (min-height: 600px) and (orientation: portrait) {
     .community-board:not([data-mobile-readable] .community-board) .pot-stack { bottom: var(--tp-stack-bottom, -16px); }
-    .community-board[data-portrait-seats="4"]:not([data-mobile-readable] .community-board) { translate: 0 var(--tp-four-drop, 160px); }
+    /* 4-seat: the old 160/190px drop put the full-size row through the rail hole
+       cards (tops at table y 506). 131px leaves the row bottom at y 491, 15px
+       above those cards. The pot moves with the board. Under 768 the board is
+       already clear, so that drop stays 55px. top: auto keeps a coarse-pointer
+       top offset from stacking on this drop. */
+    .community-board[data-portrait-seats="4"]:not([data-mobile-readable] .community-board) { top: auto; translate: 0 var(--tp-four-drop, 131px); }
     .community-board[data-portrait-seats="6"]:not([data-mobile-readable] .community-board) { translate: 0 var(--tp-six-drop, 60px); }
+    /* 9-seat: the centred row bottom is table y 591 and the lower rail hole
+       cards start at 558. 48px up puts the row bottom at 543, 15px above them.
+       The upper side bets end near y 317, so the pot (which moves with the
+       board) still clears them. */
+    .community-board[data-portrait-seats="9"]:not([data-mobile-readable] .community-board) { top: auto; translate: 0 -48px; }
     /* Below 768 wide the board isn't lifted by the coarse-pointer top:-44px rule above, so it needs far less drop. */
     @media (max-width: 767px) {
         .community-board:not([data-mobile-readable] .community-board) { --tp-four-drop: 55px; --tp-six-drop: 10px; }
@@ -1219,7 +1229,7 @@ html.table-page-lock .app-shell {
     @media (max-width: 1023px) and (min-aspect-ratio: 4/5) {
         .community-board:not([data-mobile-readable] .community-board) { --tp-stack-bottom: -8px; }
         @media (min-width: 768px) {
-            .community-board:not([data-mobile-readable] .community-board) { --tp-four-drop: 190px; --tp-six-drop: 56px; }
+            .community-board:not([data-mobile-readable] .community-board) { --tp-six-drop: 56px; }
         }
     }
 }
@@ -1229,12 +1239,10 @@ html.table-page-lock .app-shell {
 .zoom-wrapper-mobile, .zoom-wrapper-desktop { z-index: 2; }
 .live-hand-strength { z-index: 1 !important; }
 
-/* Portrait (vertical) tables: narrower stacked logo at ~50% of the 500px felt.
-   Cap it there, so the wider 4- and 9-seat desktop felt does not enlarge the
-   watermark. Its artwork is already centred in its viewBox, so no centring offset. */
+/* Portrait (vertical) tables: narrower stacked logo at ~50% of the felt width.
+   Its artwork is already centred in its viewBox, so no centring offset. */
 .table-container .table-logo.table-logo[data-portrait="true"] {
     width: 50%;
-    max-width: 250px;
     transform: translate(-50%, -50%);
 }
 .table-container .table-logo.table-logo[data-portrait="true"] img {
