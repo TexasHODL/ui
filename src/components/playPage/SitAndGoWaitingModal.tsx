@@ -37,9 +37,9 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
     // Once the start time has passed with the minimum registered ("ready"), this
     // page sends START by itself and retries until it lands (poker-vm#2776): the
     // chain has no timer, and the legal actions it stores date from the last
-    // transaction, so they don't carry START while everyone waits. "Start now" is
-    // there as well, and shows why if the chain refuses. The chain checks the
-    // block time and the field when the action lands.
+    // transaction, so they don't carry START while everyone waits. The chain
+    // checks the block time and the field when the action lands. The modal does
+    // not offer a manual start; it only says the tournament is starting.
     const scheduled = isScheduledSng(gameOptions);
     const [nowMs, setNowMs] = useState(() => Date.now());
     useEffect(() => {
@@ -55,20 +55,6 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
         nowMs
     });
     const startOffered = legalActions.some(a => a.action === NonPlayerActionType.START);
-    const [isStarting, setIsStarting] = useState(false);
-    const [startError, setStartError] = useState<string | null>(null);
-    const sendStart = useCallback(async () => {
-        if (!tableId) return;
-        setIsStarting(true);
-        setStartError(null);
-        try {
-            await startTournament(tableId, currentNetwork);
-        } catch (err) {
-            console.error("Error starting the tournament:", err);
-            setStartError(err instanceof Error ? err.message : "Failed to start. Please try again.");
-            setIsStarting(false);
-        }
-    }, [tableId, currentNetwork]);
     const autoStart = shouldAutoStart(phase, startOffered);
     useEffect(() => {
         if (!autoStart || !tableId) return;
@@ -141,15 +127,17 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
                             phase === "cancelled"
                                 ? "Not enough players registered by the start time. Leave to get your buy-in back."
                                 : phase === "ready"
-                                  ? "The start time has arrived."
+                                  ? "The tournament is starting automatically."
                                   : waits && isFull
                                     ? "Every seat is taken."
                                     : `${playerCountLabel} tournament is filling up...`
                         }
                     />
 
-                    {/* Scheduled start (poker-vm#2680) */}
-                    {scheduled && hasValue(gameOptions?.scheduledStartTime) && phase !== "cancelled" && (
+                    {/* Scheduled start (poker-vm#2680). The countdown, then the short-field
+                        notice. Once ready, START goes out on its own and the heading says
+                        the tournament is starting — there is no manual start box. */}
+                    {scheduled && hasValue(gameOptions?.scheduledStartTime) && phase !== "cancelled" && phase !== "ready" && (
                         phase === "registering" ? (
                             <ScheduledStartCountdown
                                 scheduledStartTime={gameOptions.scheduledStartTime}
@@ -160,31 +148,13 @@ const SitAndGoWaitingModal: React.FC<SitAndGoWaitingModalProps> = ({ tableId, on
                             />
                         ) : (
                         <div className="mb-4 bg-gray-700/80 backdrop-blur-sm rounded-lg p-3 border border-blue-500/30 text-center" data-testid="scheduled-start-panel">
-                            {phase === "short" ? (
-                                <>
-                                    <div className="text-xs text-yellow-300 font-semibold">START TIME PASSED</div>
-                                    <div className="text-sm text-gray-200">
-                                        Waiting for {Math.max(0, (gameOptions.minPlayers ?? 2) - registered)} more to reach the minimum of {gameOptions.minPlayers}
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                        Cancelled with refunds at {formatStartsAt(gameOptions.scheduledStartTime + 15 * 60 * 1000, nowMs)} if still short
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="text-xs text-green-300 font-semibold">READY TO START</div>
-                                    <button
-                                        type="button"
-                                        onClick={() => void sendStart()}
-                                        disabled={isStarting}
-                                        className="mt-2 w-full py-2 px-4 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white text-sm font-semibold hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-not-allowed"
-                                        data-testid="start-tournament-button"
-                                    >
-                                        {isStarting ? "Starting…" : "Start now"}
-                                    </button>
-                                    {startError && <div className="text-xs text-red-300 mt-2">{startError}</div>}
-                                </>
-                            )}
+                            <div className="text-xs text-yellow-300 font-semibold">START TIME PASSED</div>
+                            <div className="text-sm text-gray-200">
+                                Waiting for {Math.max(0, (gameOptions.minPlayers ?? 2) - registered)} more to reach the minimum of {gameOptions.minPlayers}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                                Cancelled with refunds at {formatStartsAt(gameOptions.scheduledStartTime + 15 * 60 * 1000, nowMs)} if still short
+                            </div>
                         </div>
                         )
                     )}
