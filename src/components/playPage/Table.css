@@ -1210,8 +1210,18 @@ html.table-page-lock .app-shell {
    in stage px, so they scale with the table. Near-square foldables (aspect >= 4:5) have a shorter stage and get their own values. */
 @media (min-width: 600px) and (min-height: 600px) and (orientation: portrait) {
     .community-board:not([data-mobile-readable] .community-board) .pot-stack { bottom: var(--tp-stack-bottom, -16px); }
-    .community-board[data-portrait-seats="4"]:not([data-mobile-readable] .community-board) { translate: 0 var(--tp-four-drop, 160px); }
+    /* 4-seat: rail hole-card tops are at table y 506. A 111px drop puts the
+       row bottom at y 471, 35px above those cards. The pot moves with the
+       board. Under 768 the board is already clear, so that drop stays 55px.
+       top: auto keeps a coarse-pointer top offset from stacking on this drop. */
+    .community-board[data-portrait-seats="4"]:not([data-mobile-readable] .community-board) { top: auto; translate: 0 var(--tp-four-drop, 111px); }
     .community-board[data-portrait-seats="6"]:not([data-mobile-readable] .community-board) { translate: 0 var(--tp-six-drop, 60px); }
+    /* 9-seat: the pot is already ~10px under the upper side bets (they end
+       near y 317), so the board's 48px lift stays. The row alone moves another
+       12px up, which leaves the POT label ~20px above the cards and the row
+       bottom ~27px above the lower rail hole cards (tops at 558). */
+    .community-board[data-portrait-seats="9"]:not([data-mobile-readable] .community-board) { top: auto; translate: 0 -48px; }
+    .community-board[data-portrait-seats="9"]:not([data-mobile-readable] .community-board) .community-card-row { translate: 0 -12px; }
     /* Below 768 wide the board isn't lifted by the coarse-pointer top:-44px rule above, so it needs far less drop. */
     @media (max-width: 767px) {
         .community-board:not([data-mobile-readable] .community-board) { --tp-four-drop: 55px; --tp-six-drop: 10px; }
@@ -1219,7 +1229,7 @@ html.table-page-lock .app-shell {
     @media (max-width: 1023px) and (min-aspect-ratio: 4/5) {
         .community-board:not([data-mobile-readable] .community-board) { --tp-stack-bottom: -8px; }
         @media (min-width: 768px) {
-            .community-board:not([data-mobile-readable] .community-board) { --tp-four-drop: 190px; --tp-six-drop: 56px; }
+            .community-board:not([data-mobile-readable] .community-board) { --tp-six-drop: 56px; }
         }
     }
 }
