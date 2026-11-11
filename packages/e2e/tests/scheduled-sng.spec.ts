@@ -120,19 +120,20 @@ test("table: register → countdown → ready → auto START → cancelled", asy
   const botSeat = ((base.players as Json[]).find((p) => p.address !== TEST_ADDRESS)?.seat as number) ?? 3;
   const mySeat = ((base.players as Json[]).find((p) => p.address === TEST_ADDRESS)?.seat as number) ?? 1;
 
-  await test.step("ready, with the chain unreachable: Start now is there as a fallback", async () => {
+  await test.step("ready, with the chain unreachable: no manual start", async () => {
     const unblock = await blockBroadcasts(page);
     await inject({
       ...base,
       gameOptions: { ...options, scheduledStartTime: Date.now() - 5_000 },
       players: [player("b521stubbot00000000000000000000000000000bot", botSeat), player(TEST_ADDRESS, mySeat)],
     });
-    const panel = page.getByTestId("scheduled-start-panel");
-    await expect(panel).toContainText("READY TO START", { timeout: 10_000 });
-    // Enabled on the start time + minimum alone (ui#830): the stored legal
-    // actions date from the last transaction and never carry START while
-    // everyone waits, so the button must not depend on them.
-    await expect(page.getByTestId("start-tournament-button")).toBeEnabled();
+    // The stored legal actions date from the last transaction and never carry
+    // START while everyone waits (ui#830). The page sends START itself; the
+    // modal only says so.
+    await expect(page.getByRole("heading", { name: "Starting" })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("The tournament is starting automatically.")).toBeVisible();
+    await expect(page.getByText("READY TO START", { exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("start-tournament-button")).toHaveCount(0);
     await page.screenshot({ path: `${SHOTS}scheduled-sng-ready.png` });
     await unblock();
   });
@@ -140,7 +141,7 @@ test("table: register → countdown → ready → auto START → cancelled", asy
   await test.step("the page sends START by itself and the field starts (poker-vm#2776)", async () => {
     await expect.poll(startRecorded, { timeout: 20_000 }).toBe(true);
     // The waiting modal leaves once the stub records START and deals everyone in.
-    await expect(page.getByTestId("scheduled-start-panel")).toBeHidden({ timeout: 20_000 });
+    await expect(page.getByRole("heading", { name: "Starting" })).toBeHidden({ timeout: 20_000 });
     const after = (await stubState()).gameState as Json;
     expect((after.previousActions as Json[]).some((a) => a.action === "start")).toBe(true);
     expect((after.players as Json[]).every((p) => p.status === "active")).toBe(true);

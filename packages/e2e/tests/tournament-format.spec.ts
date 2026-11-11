@@ -106,12 +106,13 @@ test("a full tournament keeps its waiting modal until START, then starts", async
     await page.screenshot({ path: `${SHOTS}tournament-under-minimum.png` });
   });
 
-  await test.step("the start time arrives, with the chain unreachable: Start now is there as a fallback", async () => {
+  await test.step("the start time arrives, with the chain unreachable: no manual start", async () => {
     const unblock = await blockBroadcasts(page);
     await inject("tournament", { ...base, gameOptions: { ...options, scheduledStartTime: Date.now() - 5_000 }, players: fullTable(mySeat) });
-    await expect(panel).toContainText("READY TO START", { timeout: 10_000 });
-    await expect(page.getByTestId("start-tournament-button")).toBeEnabled();
-    await expect(page.getByText("The start time has arrived.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Starting" })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("The tournament is starting automatically.")).toBeVisible();
+    await expect(page.getByText("READY TO START", { exact: true })).toHaveCount(0);
+    await expect(page.getByTestId("start-tournament-button")).toHaveCount(0);
     await expect(page.getByText("Minimum reached, ready to start")).toBeVisible();
     await page.waitForTimeout(BAR_SETTLE_MS);
     await page.screenshot({ path: `${SHOTS}tournament-full-ready.png` });
@@ -121,7 +122,7 @@ test("a full tournament keeps its waiting modal until START, then starts", async
 
   await test.step("the page sends START by itself, with nobody pressing anything, and the modal leaves", async () => {
     await expect.poll(startRecorded, { timeout: 20_000 }).toBe(true);
-    await expect(panel).toBeHidden({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "Starting" })).toBeHidden({ timeout: 10_000 });
   });
 });
 
