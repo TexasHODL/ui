@@ -95,6 +95,7 @@ import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { fitTransform, useTableOnlyFit } from "../../hooks/game/useTableOnlyFit";
 import { useTablePageViewportLock } from "../../hooks/useTablePageViewportLock";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
+import { portraitBoardCardScale } from "../../config/boardCardScale";
 import { getViewportMode, isTabletPortrait, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
@@ -910,6 +911,9 @@ const Table = React.memo(() => {
     // Felt/rail dimensions follow the SAME mode as the layout hook, so the
     // markup and the seat positions can never disagree mid-rotation.
     const isPortraitStage = isMobilePortrait || isTabletPortrait(tableLayout.viewportMode);
+    // 4- and 9-seat portrait desktops shrink the board row so it clears the rail
+    // hole cards. Phones, landscape, and the 2- and 6-seat boards stay at 1.
+    const boardCardScale = portraitBoardCardScale(tableSize, isPortraitStage && !isCompactMobile);
     const stageDims = stageDimsFor(isPortraitStage ? "portrait" : tableLayout.viewportMode === "mobile-landscape" ? "mobile-landscape" : "landscape");
 
     // Add the useGameProgress hook
@@ -1482,7 +1486,7 @@ const Table = React.memo(() => {
                     )}
 
                     {/*//! TABLE — zoom-wrapper applies calculated transform */}
-                    <div ref={zoomWrapperRef} className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-table-fit={tableOnly ? tableOnlyFit.scale.toFixed(3) : undefined} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: fitTransform(tableOnlyFit, tableLayout.tableTransform), ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom) }) }}>
+                    <div ref={zoomWrapperRef} className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-table-fit={tableOnly ? tableOnlyFit.scale.toFixed(3) : undefined} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: fitTransform(tableOnlyFit, tableLayout.tableTransform), ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom), "--board-card-scale": String(boardCardScale) }) }}>
                         {/*//! Table coordinate space — the felt div at its stage origin.
                         Desktop landscape: 1000×500 at (300,285) on the 1600×850 stage.
                         Mobile landscape: the same stadium, widened by MOBILE_LANDSCAPE_WIDTH_STRETCH

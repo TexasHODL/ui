@@ -769,6 +769,23 @@ html.table-page-lock .app-shell {
     margin-top: 0;
     transform: translateX(-50%);
 }
+/* Portrait desktop/tablet felt is 500px wide. The full 85px row (457px) runs
+   into the 4- and 9-seat rail hole cards. --board-card-scale (boardCardScale.ts)
+   shrinks that row, gaps included, so the cards clear the hole cards. 2- and
+   6-seat boards already clear, and phones size cards with --mobile-unit. */
+.zoom-wrapper-desktop:not([data-mobile-readable]) .community-board[data-portrait-seats="4"] .community-card-row,
+.zoom-wrapper-desktop:not([data-mobile-readable]) .community-board[data-portrait-seats="9"] .community-card-row {
+    gap: calc(8px * var(--board-card-scale, 1));
+}
+.zoom-wrapper-desktop:not([data-mobile-readable]) .community-board[data-portrait-seats="4"] .community-card-row .card,
+.zoom-wrapper-desktop:not([data-mobile-readable]) .community-board[data-portrait-seats="9"] .community-card-row .card,
+.zoom-wrapper-desktop:not([data-mobile-readable]) .community-board[data-portrait-seats="4"] .community-card-row > .community-card-slot,
+.zoom-wrapper-desktop:not([data-mobile-readable]) .community-board[data-portrait-seats="9"] .community-card-row > .community-card-slot {
+    width: calc(85px * var(--board-card-scale, 1));
+    height: calc(127px * var(--board-card-scale, 1));
+    aspect-ratio: auto;
+    flex-shrink: 0;
+}
 .table-container :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]).action-log-open { width: min(300px, calc(100vw - 32px)); height: auto; background: var(--theme-surface, #100b17f5); border: 1px solid var(--theme-line, #ffffff18); border-radius: 10px; }
 .settings-content { padding: 0 14px 6px; }
 .settings-heading { display: flex; align-items: center; justify-content: space-between; padding: 6px 14px; border-bottom: 1px solid var(--theme-line, #ffffff18); }
