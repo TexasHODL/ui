@@ -142,7 +142,7 @@ const TablePreviewPage = () => {
                     </ReplayProvider>
                 </GameMetaProvider>
             </GameActionsProvider>
-            <PreviewPanel options={options} onChange={update} />
+            <PreviewPanelGate options={options} onChange={update} />
         </>
     );
 };
@@ -257,6 +257,12 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
             ))}
         </div>
     );
+};
+
+const PreviewPanelGate = ({ options, onChange }: PreviewPanelProps) => {
+    // The fixture is the dialog. The dev panel is fixed over the banner the dialog must clear.
+    if (options.dialog) return null;
+    return <PreviewPanel options={options} onChange={onChange} />;
 };
 
 const PREVIEW_BUTTON_LABELS: Record<(typeof PREVIEW_BUTTON_STATES)[number], string> = {

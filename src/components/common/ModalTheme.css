@@ -15,7 +15,7 @@
     .finish-board-cards { max-width: 240px; margin: 8px 0; }
 }
 .sng-result-notice { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1000; width: min(380px, calc(100vw - 24px)); }
-.hodl-modal.sng-result-panel { padding: 16px; max-height: calc(100dvh - 24px - env(safe-area-inset-top)); }
+.hodl-modal.sng-result-panel { padding: 16px; max-height: calc(var(--table-vh, 100dvh) - var(--table-banner-end, 0px) - 24px - env(safe-area-inset-bottom, 0px)); }
 .sng-result-panel .hodl-modal-header { margin-bottom: 12px; }
 .sng-result-panel .hodl-modal-title { font-size: 18px; }
 .sng-result-panel:not(.is-expanded) .hodl-modal-logo { width: 56px; height: auto; }
@@ -46,6 +46,8 @@
 }
 .sng-result-notice.sng-result-expanded {
     inset: 0;
+    /* --table-banner-end is 0 off the table. On a table it is the banners' bottom edge. */
+    top: var(--table-banner-end, 0px);
     transform: none;
     width: auto;
     display: flex;
@@ -58,7 +60,7 @@
 .sng-result-expanded .hodl-modal.sng-result-panel.is-expanded {
     width: 340px; /* same compact width the panel already uses on phones */
     max-width: 100%;
-    max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(var(--table-vh, 100dvh) - var(--table-banner-end, 0px) - 24px - env(safe-area-inset-bottom, 0px));
     padding: 18px;
 }
 .hodl-modal.hodl-modal {
@@ -235,3 +237,25 @@
 /* Result headings (trophy + title, and the subtitle) are centred in every state. */
 .sng-result-panel .hodl-modal-header .hodl-modal-title,
 .sng-result-panel .hodl-modal-header .hodl-modal-subtitle { text-align: center; overflow-wrap: break-word; }
+
+/*
+ * Table page (ui#201): every dialog sits in the space under the top banners.
+ * Table.tsx measures .table-banner-wrap (header row plus the status bar, or the
+ * phone row plus its slim status line) into --table-banner-end on <html>. The
+ * overlay starts at that edge, so the banners stay visible. A dialog taller
+ * than what is left scrolls inside itself. 24px is TABLE_MODAL_GAP_PX * 2.
+ * Off the table the variable is unset and these rules do not apply.
+ */
+html.table-page-lock :is(.fixed.inset-0, .sng-result-notice.sng-result-expanded):has(.hodl-modal) {
+    top: var(--table-banner-end, 0px);
+    align-items: center;
+    align-items: safe center;
+    overflow: hidden;
+}
+html.table-page-lock .hodl-modal.hodl-modal {
+    min-height: 0;
+    max-height: min(
+        var(--hodl-modal-max-h, 100dvh),
+        calc(var(--table-vh, 100dvh) - var(--table-banner-end, 0px) - 24px - env(safe-area-inset-bottom, 0px))
+    );
+}

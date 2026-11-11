@@ -23,6 +23,10 @@ export type PreviewBoardCount = (typeof PREVIEW_BOARD_COUNTS)[number];
 export const PREVIEW_FORMATS = ["cash", "tournament", "sng"] as const;
 export type PreviewFormat = (typeof PREVIEW_FORMATS)[number];
 
+/** Dev-only dialog fixtures. entry = take-your-seat, waiting = filling up. */
+export const PREVIEW_DIALOGS = ["entry", "waiting"] as const;
+export type PreviewDialog = (typeof PREVIEW_DIALOGS)[number];
+
 /**
  * Which hero (bottom) controls the preview shows:
  * none, actions (fold/check/call/raise + sizing, seat 1's turn),
@@ -63,6 +67,11 @@ export interface PreviewOptions {
      * fee, chain payouts 25200 and 10800 micro-USDC. Not a live table.
      */
     bubblePrizes?: boolean;
+    /**
+     * modal=entry leaves seat 1 empty so the take-your-seat dialog opens.
+     * modal=waiting seats the hero at a tournament that has not started.
+     */
+    dialog?: PreviewDialog;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -81,6 +90,7 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * bet=none for a round with no bets out (seat 1 can check: Check/Fold, Check, Call Any pre-actions),
  * win=1 to make seat 1 the winner so the win celebration plays (win=<seat> picks another winner, win=all makes every seat win).
  * prizes=bubble installs the Bitcoin Bubble prize fixture (25200 / 10800 micro-USDC).
+ * modal=entry|waiting shows the tournament take-your-seat or waiting dialog.
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
  */
@@ -105,14 +115,19 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
         ? (buttonsParam as PreviewButtonState)
         : params.get("turn") === "1" ? "actions" : "none";
     const formatParam = params.get("format");
-    const format: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
+    const requestedFormat: PreviewFormat = formatParam === "tournament" || formatParam === "sng" ? formatParam : "cash";
+    const dialogParam = params.get("modal");
+    const dialog: PreviewDialog | undefined = (PREVIEW_DIALOGS as readonly string[]).includes(dialogParam ?? "")
+        ? (dialogParam as PreviewDialog)
+        : undefined;
+    const format: PreviewFormat = dialog && requestedFormat === "cash" ? "tournament" : requestedFormat;
     const winAll = params.get("win") === "all";
     const winParam = Number(params.get("win"));
     const win = winAll || (Number.isInteger(winParam) && winParam >= 1 && winParam <= seats);
     const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
     const bubblePrizes = params.get("prizes") === "bubble";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}) };
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(dialog ? { dialog } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -127,6 +142,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.win) params.set("win", options.winAll ? "all" : String(options.winSeat ?? 1));
     if (options.noBets) params.set("bet", "none");
     if (options.bubblePrizes) params.set("prizes", "bubble");
+    if (options.dialog) params.set("modal", options.dialog);
     return params;
 };
 
@@ -232,7 +248,80 @@ const previewWinnerCards = (options: PreviewOptions, seat: number): string[] => 
     return options.holeCount === 4 ? PREVIEW_WIN_CARDS_4.slice(0, 2) : PREVIEW_WIN_CARDS;
 };
 
+/** Seats drawn for a dialog fixture. Entry keeps the hero's seat empty. */
+const dialogSeatNumbers = (options: PreviewOptions): number[] => {
+    if (options.dialog === "waiting") {
+        const seated = options.seats >= 3 ? [1, 2] : [1];
+        return seated.filter(seat => seat <= options.seats);
+    }
+    const seated: number[] = [];
+    for (let seat = 2; seat <= options.seats && seated.length < 6; seat++) seated.push(seat);
+    return seated;
+};
+
+/**
+ * A tournament that has not started, so the real take-your-seat or waiting
+ * dialog opens on /table-preview. Amounts match a $2 full-ring entry.
+ */
+const buildPreviewDialogState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
+    const seats = dialogSeatNumbers(options);
+    const dealer = seats.includes(options.dealer) ? options.dealer : seats[0];
+    const players: PlayerDTO[] = seats.map(seat => ({
+        address: previewSeatAddress(seat, heroAddress),
+        seat,
+        stack: "5000",
+        isSmallBlind: seat === 1,
+        isBigBlind: seat === 2,
+        isDealer: seat === dealer,
+        holeCards: undefined,
+        status: PlayerStatus.ACTIVE,
+        lastAction: undefined,
+        legalActions: [],
+        sumOfBets: "0",
+        timeout: 30,
+        signature: ""
+    }));
+    const scheduledStartTime = Date.now() + (options.dialog === "waiting" ? 49_000 : 47 * 60_000);
+    return {
+        gameOptions: {
+            minBuyIn: "2000000",
+            maxBuyIn: "2000000",
+            minPlayers: options.dialog === "entry" ? Math.min(5, options.seats) : Math.min(2, options.seats),
+            maxPlayers: options.seats,
+            smallBlind: "10",
+            bigBlind: "20",
+            nextSmallBlind: "15",
+            nextBigBlind: "30",
+            timeout: 30,
+            startingStack: "5000",
+            entryFee: "200000",
+            protocolFeeBps: 1000,
+            scheduledStartTime,
+            waitForStartTime: true
+        },
+        smallBlindPosition: 1,
+        bigBlindPosition: Math.min(2, options.seats),
+        dealer,
+        players,
+        communityCards: [],
+        deck: "",
+        pots: ["0"],
+        totalPot: "0",
+        nextToAct: 1,
+        previousActions: [],
+        actionCount: 0,
+        handNumber: 1,
+        round: TexasHoldemRound.ANTE,
+        winners: [],
+        results: [],
+        legalActions: [],
+        availableSeats: [],
+        signature: ""
+    };
+};
+
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
+    if (options.dialog) return buildPreviewDialogState(options, heroAddress);
     // win=<seat> (not the hero) tables the winner's hand, which needs showdown.
     const round = options.buttons === "muck" || ((options.winSeat || options.winAll) && options.holeCards) ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
     const heroTurn = previewIsHeroTurn(options);

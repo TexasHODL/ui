@@ -71,3 +71,12 @@
         animation: none;
     }
 }
+
+/* Same banner clearance as the table dialogs (ui#201). */
+html.table-page-lock .b52-tournament-winner {
+    top: var(--table-banner-end, 0px);
+}
+html.table-page-lock .b52-tournament-winner__card {
+    max-height: calc(var(--table-vh, 100dvh) - var(--table-banner-end, 0px) - 32px);
+    overflow-y: auto;
+}

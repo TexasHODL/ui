@@ -1,3 +1,5 @@
+import { modalAvailableHeight, readTableBannerEndPx } from "./tableModalClearance";
+
 /** Fit app-owned dialogs on phones without enlarging desktop dialogs. */
 export function installModalViewportFit(): () => void {
     const media = window.matchMedia("(max-width: 700px), (max-height: 500px) and (pointer: coarse)");
@@ -19,7 +21,12 @@ export function installModalViewportFit(): () => void {
             }
             modal.setAttribute("data-viewport-fit", "true");
             const viewport = window.visualViewport;
-            const available = Math.max(1, (viewport?.height ?? window.innerHeight) - 40);
+            // On a table, the banners already occupy the top. Shrink against the
+            // space under them (published as --table-banner-end) so the zoomed
+            // dialog does not still slide underneath.
+            const viewportHeight = viewport?.height ?? window.innerHeight;
+            const bannerEnd = readTableBannerEndPx(getComputedStyle(document.documentElement).getPropertyValue("--table-banner-end"));
+            const available = modalAvailableHeight(viewportHeight, bannerEnd);
             const naturalHeight = modal.scrollHeight + 2;
             // A modal may set data-min-fit-zoom to stay legible; below that it scrolls instead of shrinking.
             const minZoom = Math.min(1, Number(modal.dataset.minFitZoom) || 0);
@@ -37,6 +44,9 @@ export function installModalViewportFit(): () => void {
     }
     const mutations = new MutationObserver(schedule);
     mutations.observe(document.body, { childList: true, subtree: true, characterData: true });
+    // The banner end is an inline custom property on <html>. Refit when it moves.
+    const bannerEnd = new MutationObserver(schedule);
+    bannerEnd.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
     window.addEventListener("resize", schedule);
     window.visualViewport?.addEventListener("resize", schedule);
     media.addEventListener("change", schedule);
@@ -44,6 +54,7 @@ export function installModalViewportFit(): () => void {
     return () => {
         cancelAnimationFrame(frame);
         mutations.disconnect();
+        bannerEnd.disconnect();
         resize.disconnect();
         window.removeEventListener("resize", schedule);
         window.visualViewport?.removeEventListener("resize", schedule);

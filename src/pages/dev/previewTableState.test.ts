@@ -240,3 +240,37 @@ describe("bet=none preview", () => {
         expect(state.players[0].legalActions.map(a => a.action)).toEqual([]);
     });
 });
+
+describe("modal preview fixtures", () => {
+    it("modal=entry is a tournament with the hero's seat empty", () => {
+        const options = parsePreviewSearch(new URLSearchParams("modal=entry&seats=9"));
+        expect(options.dialog).toBe("entry");
+        expect(options.format).toBe("tournament");
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.round).toBe(TexasHoldemRound.ANTE);
+        expect(state.handNumber).toBe(1);
+        expect(state.players.map(player => player.seat)).toEqual([2, 3, 4, 5, 6, 7]);
+        expect(state.players.some(player => player.address === PREVIEW_HERO_ADDRESS)).toBe(false);
+        expect(state.gameOptions.maxPlayers).toBe(9);
+        expect(state.gameOptions.minPlayers).toBe(5);
+        expect(state.gameOptions.waitForStartTime).toBe(true);
+        expect(state.gameOptions.scheduledStartTime).toBeGreaterThan(Date.now());
+    });
+
+    it("modal=waiting seats the hero at a 4-handed table that has not started", () => {
+        const options = parsePreviewSearch(new URLSearchParams("modal=waiting&seats=4&format=tournament"));
+        expect(options.dialog).toBe("waiting");
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.players.map(player => player.seat)).toEqual([1, 2]);
+        expect(state.players[0]?.address).toBe(PREVIEW_HERO_ADDRESS);
+        expect(state.round).toBe(TexasHoldemRound.ANTE);
+        expect(state.previousActions).toEqual([]);
+        expect(state.gameOptions.maxPlayers).toBe(4);
+    });
+
+    it("keeps an explicit sit-and-go format on a dialog fixture", () => {
+        expect(parsePreviewSearch(new URLSearchParams("modal=waiting&format=sng")).format).toBe("sng");
+    });
+});
