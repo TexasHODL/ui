@@ -2,7 +2,8 @@
 import type { FinishingHand } from "../../utils/finishingHand";
 import { getCardImageUrl } from "../../utils/cardImages";
 import { HoleCardFan } from "../playPage/Card/HoleCardFan";
-import { finishingWinnerCards, normalizeCard } from "../../utils/finishingHand";
+import { hasValue } from "../../utils/guards";
+import { finishingSeatHeading, finishingWinnerCards, normalizeCard } from "../../utils/finishingHand";
 
 const suits: Record<string, string> = { H: "hearts", D: "diamonds", C: "clubs", S: "spades" };
 const ranks: Record<string, string> = { A: "Ace", K: "King", Q: "Queen", J: "Jack", T: "10" };
@@ -23,6 +24,7 @@ export function FinishingHandRecap({ hand, viewerAddress }: { hand: FinishingHan
     if (!hand) return <p className="finish-recap-note">The finishing hand wasn’t captured in this session. No cards have been guessed.</p>;
     const winners = finishingWinnerCards(hand);
     const you = viewerAddress?.toLowerCase() ?? null;
+    const viewerWon = hand.players.some(player => hasValue(player.won) && player.address?.toLowerCase() === you);
     return <section className="finish-recap" aria-label="Finishing hand recap">
         <h3>Hand #{hand.handNumber} · Final snapshot</h3>
         <p className="finish-recap-note">Community cards</p>
@@ -33,7 +35,7 @@ export function FinishingHandRecap({ hand, viewerAddress }: { hand: FinishingHan
             return <div className={`finish-seat${isYours ? " finish-seat-yours" : ""}`} key={player.seat}>
                 <div>
                     <span>
-                        <strong>{isYours ? "Your Cards" : `Seat ${player.seat}`}</strong>
+                        <strong>{finishingSeatHeading(player, you, viewerWon)}</strong>
                         {isYours && <span className="finish-your-seat">Seat {player.seat}</span>}
                     </span>
                     {player.won !== null && <span className="finish-winner">Won {Number(player.won).toLocaleString()} chips</span>}
