@@ -2,6 +2,9 @@
  * Transaction formatting utilities
  */
 
+import { BettingLimit } from "@block52/poker-vm-sdk";
+import { coerceScheduledStartTimeMs } from "./convertUtils";
+import { hasContent, hasValue, isRecord, isString } from "./guards";
 import { truncateMiddle } from "./stringUtils";
 import { formatMicroUsd } from "./moneyDisplay";
 
@@ -67,10 +70,7 @@ export function getMessageSigner(msg: TxMessageSigner): string | undefined {
  * @returns the absolute micro-USDC amount and its direction, or undefined when
  *          the address is not party to a USDC transfer or the net is zero
  */
-export function netUsdcTransferFor(
-    events: TransferEvent[],
-    address: string
-): { amount: string; direction: "sent" | "received" } | undefined {
+export function netUsdcTransferFor(events: TransferEvent[], address: string): { amount: string; direction: "sent" | "received" } | undefined {
     let net = 0n;
 
     for (const event of events) {
@@ -345,10 +345,7 @@ export function placeOrdinal(place: number): string {
  * Claim winnings broadcasts the same MsgLeaveGame as a cash leave (see
  * claimWinnings.ts); the event is what distinguishes a prize payout.
  */
-export function findSngPrizeClaimed(
-    events: TransferEvent[] | undefined,
-    player: string
-): { amount?: string; gameId?: string; player?: string } | undefined {
+export function findSngPrizeClaimed(events: TransferEvent[] | undefined, player: string): { amount?: string; gameId?: string; player?: string } | undefined {
     if (!events || !player) return undefined;
     const want = player.toLowerCase();
     for (const event of events) {
@@ -560,11 +557,25 @@ export function formatActionAmount(raw: string | undefined, format: ChainGameFor
     return `${BigInt(raw).toLocaleString("en-US")} chips`;
 }
 
-/** Parsed fields from a /block52/pokerchain/poker/v1/game/{id} response. */
+/**
+ * Parsed fields from a /block52/pokerchain/poker/v1/game/{id} response.
+ * Variant and stakes ride along with the prize fields: one cached getGame
+ * serves both the explorer's place labels and the profile session table.
+ */
 export interface GamePrizeMeta {
     format?: ChainGameFormat;
     results?: GameResultPlace[];
     payouts?: GamePayoutPlace[];
+    /** Chain variant string, e.g. "texas-holdem". Absent when the game record has none. */
+    variant?: string;
+    /** "no-limit" | "pot-limit" | "fixed-limit". Absent on legacy tables and when unrecognized. */
+    bettingLimit?: string;
+    smallBlind?: string;
+    bigBlind?: string;
+    minBuyIn?: string;
+    maxBuyIn?: string;
+    /** Epoch ms. Absent when the table has no scheduled start. */
+    scheduledStartTime?: number;
 }
 
 function parseGameObject(response: unknown): Record<string, unknown> | undefined {
@@ -588,9 +599,7 @@ export function parseGamePrizeMeta(response: unknown): GamePrizeMeta {
     const game = parseGameObject(response);
     if (!game) return {};
     const format = game.format;
-    const gs = (game.gameState && typeof game.gameState === "object" ? game.gameState : undefined) as
-        | { results?: unknown; payouts?: unknown }
-        | undefined;
+    const gs = (isRecord(game.gameState) ? game.gameState : undefined) as { results?: unknown; payouts?: unknown } | undefined;
     const resultsRaw = Array.isArray(gs?.results) ? gs!.results : undefined;
     const payoutsRaw = Array.isArray(gs?.payouts) ? gs!.payouts : undefined;
     const results = resultsRaw
@@ -615,8 +624,47 @@ export function parseGamePrizeMeta(response: unknown): GamePrizeMeta {
     return {
         format: format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined,
         results,
-        payouts
+        payouts,
+        ...readSessionTableFields(game)
     };
+}
+
+/** Variant, limit and stake fields from the same game record. Only values the chain sent. */
+function readSessionTableFields(game: Record<string, unknown>): Partial<GamePrizeMeta> {
+    const fields: Partial<GamePrizeMeta> = {};
+    if (isString(game.variant) && hasContent(game.variant)) fields.variant = game.variant;
+    const options = readGameOptions(game);
+    if (!hasValue(options)) return fields;
+    const bettingLimit = readBettingLimit(options.bettingLimit);
+    if (hasValue(bettingLimit)) fields.bettingLimit = bettingLimit;
+    const smallBlind = digitString(options.smallBlind);
+    if (hasValue(smallBlind)) fields.smallBlind = smallBlind;
+    const bigBlind = digitString(options.bigBlind);
+    if (hasValue(bigBlind)) fields.bigBlind = bigBlind;
+    const minBuyIn = digitString(options.minBuyIn);
+    if (hasValue(minBuyIn)) fields.minBuyIn = minBuyIn;
+    const maxBuyIn = digitString(options.maxBuyIn);
+    if (hasValue(maxBuyIn)) fields.maxBuyIn = maxBuyIn;
+    const scheduledStartTime = coerceScheduledStartTimeMs(options.scheduledStartTime);
+    if (hasValue(scheduledStartTime)) fields.scheduledStartTime = scheduledStartTime;
+    return fields;
+}
+
+/** gameState.gameOptions on the single-game endpoint; some records keep options at the root. */
+function readGameOptions(game: Record<string, unknown>): Record<string, unknown> | undefined {
+    const state = game.gameState;
+    if (isRecord(state) && isRecord(state.gameOptions)) return state.gameOptions;
+    return isRecord(game.gameOptions) ? game.gameOptions : undefined;
+}
+
+function readBettingLimit(value: unknown): string | undefined {
+    if (value === BettingLimit.NO_LIMIT || value === BettingLimit.POT_LIMIT || value === BettingLimit.FIXED_LIMIT) return value;
+    return undefined;
+}
+
+function digitString(value: unknown): string | undefined {
+    if (!isString(value) || !/^\d+$/.test(value)) return undefined;
+    return value;
 }
 
 const gamePrizeMetaCache = new Map<string, Promise<GamePrizeMeta>>();

@@ -7,13 +7,24 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
+import { ProfileHeaderAvatar } from "../components/players/ProfileHeaderAvatar";
 import { ProfileHub } from "../components/players/ProfileHub";
+import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { VipBadge } from "../components/players/VipBadge";
 import { formatScaledPercent } from "../utils/vip";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
-import { usePlayerSessions } from "../hooks/player/usePlayerSessions";
+import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
 import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
+import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
 import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
+import {
+    ALL_SESSION_GAMES,
+    filterSessionRows,
+    sessionGameFilterOptions,
+    sessionLabelsByGameId,
+    sessionPrizePlaceLabel,
+    uniqueGameIds
+} from "../utils/sessionGameDisplay";
 import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
@@ -36,15 +47,22 @@ export default function PlayerProfilePage() {
     const [sessionsPage, setSessionsPage] = useState(1);
     const [copied, setCopied] = useState(false);
 
+    const [gameFilter, setGameFilter] = useState(ALL_SESSION_GAMES);
+
     const { profile, loading, error } = usePlayerProfile(address);
-    const {
-        sessions,
-        total: sessionsTotal,
-        loading: sessionsLoading
-    } = usePlayerSessions(address, SESSIONS_PAGE_SIZE, (sessionsPage - 1) * SESSIONS_PAGE_SIZE);
+    const { sessions, loading: sessionsLoading } = useAllPlayerSessions(address);
     // Chain prize claims. Empty on failure, so the cards and rows stay on the indexer.
     const { claims, loading: prizesLoading } = usePlayerPrizeClaims(address);
+    const gameIds = useMemo(() => uniqueGameIds(sessions.map(session => session.game_id)), [sessions]);
+    const { byId: gamesById, loading: gamesLoading } = useSessionGameMeta(gameIds);
     const rows = useMemo(() => sessionRowsWithPrizes(sessions, claims), [sessions, claims]);
+    const gameLabels = useMemo(() => sessionLabelsByGameId(gamesById), [gamesById]);
+    const gameFilterOptions = useMemo(() => sessionGameFilterOptions(Object.values(gameLabels)), [gameLabels]);
+    const filteredRows = useMemo(() => filterSessionRows(rows, gameLabels, gameFilter), [rows, gameLabels, gameFilter]);
+    const pageRows = useMemo(() => {
+        const start = (sessionsPage - 1) * SESSIONS_PAGE_SIZE;
+        return filteredRows.slice(start, start + SESSIONS_PAGE_SIZE);
+    }, [filteredRows, sessionsPage]);
     const prizeMoney = useMemo(
         () =>
             hasValue(profile) && !prizesLoading
@@ -59,6 +77,11 @@ export default function PlayerProfilePage() {
         return () => {
             document.title = "Texas HODL";
         };
+    }, [address]);
+
+    useEffect(() => {
+        setGameFilter(ALL_SESSION_GAMES);
+        setSessionsPage(1);
     }, [address]);
 
     const copyAddress = () => {
@@ -100,11 +123,14 @@ export default function PlayerProfilePage() {
                         {/* Header */}
                         <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                <div className="flex items-center gap-3 flex-wrap">
-                                    <span className={`font-mono text-sm break-all ${styles.brandText}`}>{profile.player_address}</span>
-                                    <button onClick={copyAddress} className="text-xs text-gray-400 hover:text-white transition-colors">
-                                        {copied ? "Copied!" : "Copy"}
-                                    </button>
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <ProfileHeaderAvatar address={profile.player_address} />
+                                    <div className="flex items-center gap-3 flex-wrap min-w-0">
+                                        <span className={`font-mono text-sm break-all ${styles.brandText}`}>{profile.player_address}</span>
+                                        <button onClick={copyAddress} className="text-xs text-gray-400 hover:text-white transition-colors">
+                                            {copied ? "Copied!" : "Copy"}
+                                        </button>
+                                    </div>
                                 </div>
                                 <VipBadge tier={profile.vip_tier} rakebackPct={profile.rakeback_pct} showRakeback />
                             </div>
@@ -162,17 +188,27 @@ export default function PlayerProfilePage() {
 
                         {/* Session history */}
                         <div className={`backdrop-blur-md rounded-xl shadow-2xl overflow-hidden ${styles.containerCard}`}>
-                            <div className="px-6 py-4 border-b border-white/10">
+                            <div className="relative z-20 px-6 py-4 border-b border-white/10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <h2 className="text-white font-bold">Session History</h2>
+                                {!gamesLoading && hasElements(gameFilterOptions) && (
+                                    <SessionHistoryFilter
+                                        value={gameFilter}
+                                        options={gameFilterOptions}
+                                        onChange={key => {
+                                            setGameFilter(key);
+                                            setSessionsPage(1);
+                                        }}
+                                    />
+                                )}
                             </div>
                             {historyLoading ? (
                                 <div className="p-8 text-center">
                                     <div className={`animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-3 ${styles.loadingSpinner}`}></div>
                                     <p className="text-gray-400">Loading sessions...</p>
                                 </div>
-                            ) : isEmpty(rows) ? (
+                            ) : isEmpty(filteredRows) ? (
                                 <div className="p-8 text-center">
-                                    <p className="text-gray-400">No sessions recorded</p>
+                                    <p className="text-gray-400">{gameFilter === ALL_SESSION_GAMES ? "No sessions recorded" : "No sessions for this game"}</p>
                                 </div>
                             ) : (
                                 <div className="overflow-x-auto">
@@ -187,43 +223,60 @@ export default function PlayerProfilePage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {rows.map((row, i) => (
-                                                <tr key={`${row.gameId}-${row.joinBlock}-${i}`} className={`border-t ${styles.tableRowBorder}`}>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`font-mono text-sm ${styles.brandText}`}>{truncateMiddle(row.gameId, 8, 6)}</span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right text-gray-300">{row.joinBlock.toLocaleString()}</td>
-                                                    <td className="px-6 py-4 text-right text-gray-300">
-                                                        {hasValue(row.leaveBlock) ? row.leaveBlock.toLocaleString() : "—"}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-right text-gray-300">{formatUsd(row.buyIn)}</td>
-                                                    <td className="px-6 py-4 text-right text-gray-300 whitespace-nowrap">
-                                                        {row.isPrize && hasContent(row.prizeTxHash) ? (
-                                                            <Link
-                                                                to={`/explorer/tx/${row.prizeTxHash}`}
-                                                                className="inline-flex items-center justify-end gap-2 hover:text-white"
-                                                            >
-                                                                <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-                                                                    Prize
-                                                                </span>
-                                                                <span>{hasValue(row.cashOut) ? formatUsd(row.cashOut) : "—"}</span>
-                                                            </Link>
-                                                        ) : hasValue(row.cashOut) ? (
-                                                            formatUsd(row.cashOut)
-                                                        ) : (
-                                                            "—"
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {pageRows.map((row, i) => {
+                                                const label = gameLabels[row.gameId];
+                                                const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
+                                                return (
+                                                    <tr key={`${row.gameId}-${row.joinBlock}-${i}`} className={`border-t ${styles.tableRowBorder}`}>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex max-w-[11.5rem] flex-col gap-0.5 sm:max-w-xs">
+                                                                {hasValue(label) && <span className="text-sm text-white">{label.title}</span>}
+                                                                {hasValue(label) && hasContent(label.detail) && (
+                                                                    <span className="text-xs text-gray-400">{label.detail}</span>
+                                                                )}
+                                                                <Link
+                                                                    to={`/table/${row.gameId}`}
+                                                                    title={row.gameId}
+                                                                    className={`font-mono hover:underline ${styles.brandText} ${hasValue(label) ? "text-xs" : "text-sm"}`}
+                                                                >
+                                                                    {truncateMiddle(row.gameId, 8, 6)}
+                                                                </Link>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right text-gray-300">{row.joinBlock.toLocaleString()}</td>
+                                                        <td className="px-6 py-4 text-right text-gray-300">
+                                                            {hasValue(row.leaveBlock) ? row.leaveBlock.toLocaleString() : "—"}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right text-gray-300">{formatUsd(row.buyIn)}</td>
+                                                        <td className="px-6 py-4 text-right text-gray-300 whitespace-nowrap">
+                                                            {row.isPrize && hasContent(row.prizeTxHash) ? (
+                                                                <Link
+                                                                    to={`/explorer/tx/${row.prizeTxHash}`}
+                                                                    className="inline-flex items-center justify-end gap-2 hover:text-white"
+                                                                >
+                                                                    <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                                                                        Prize
+                                                                    </span>
+                                                                    {hasContent(place) && <span className="text-xs font-semibold text-amber-200">{place}</span>}
+                                                                    <span>{hasValue(row.cashOut) ? formatUsd(row.cashOut) : "—"}</span>
+                                                                </Link>
+                                                            ) : hasValue(row.cashOut) ? (
+                                                                formatUsd(row.cashOut)
+                                                            ) : (
+                                                                "—"
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
                             )}
-                            {!historyLoading && hasElements(rows) && sessionsTotal > SESSIONS_PAGE_SIZE && (
+                            {!historyLoading && hasElements(filteredRows) && filteredRows.length > SESSIONS_PAGE_SIZE && (
                                 <Pagination
                                     currentPage={sessionsPage}
-                                    totalItems={sessionsTotal}
+                                    totalItems={filteredRows.length}
                                     pageSize={SESSIONS_PAGE_SIZE}
                                     onPageChange={setSessionsPage}
                                 />
