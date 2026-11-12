@@ -1,12 +1,13 @@
 /**
  * ProvablyFairPanel (ui#972)
  *
- * A non-modal provably-fair tab on the table, under the banner, the same size
- * as the History button so the two read as a pair. The label is "Provably" /
- * "fair" on two lines. The shield stays in the panel: it does not fit in the
- * History button's box next to those two lines. The fork does not show the
- * floating Blinds tab (that panel is a sidebar or a drawer), so this tab does
- * not offset beside it. It opens a panel that
+ * A non-modal "Provably fair" tab on the table, under the banner. Desktop and
+ * tablet keep the green pill (shield, PROVABLY FAIR, Seed on chain). Phones
+ * keep that look, smaller, without "Seed on chain": portrait stacks PROVABLY
+ * / FAIR beside the shield, and landscape is one line (shield + PROVABLY FAIR)
+ * in the corner the hand-strength chip used to occupy. The fork does not show
+ * the floating Blinds tab (that panel is a sidebar or a drawer), so this tab
+ * does not offset beside it. It opens a panel that
  * explains how Block52 deals and offers "Verify this hand" for the hand in
  * play (pending until it ends) and the last finished hand, which opens the
  * verify window.
@@ -72,14 +73,20 @@ const ProvablyFairPanel: React.FC = () => {
                     className={`${styles.tab} ${isOpen ? styles.tabOpen : ""}`}
                     aria-expanded={isOpen}
                     aria-haspopup="dialog"
-                    aria-label="Provably fair"
                     title="How Block52 deals, and verify a hand"
                     data-testid="provably-fair-tab"
                 >
-                    <span className={styles.tabLabel}>
-                        Provably
-                        <br />
-                        fair
+                    <ShieldIcon className={styles.tabIcon} />
+                    <span className={styles.tabText}>
+                        <span className={styles.tabLabel}>
+                            <span className={styles.labelWide}>Provably fair</span>
+                            <span className={styles.labelStack}>
+                                Provably
+                                <br />
+                                fair
+                            </span>
+                        </span>
+                        <span className={styles.tabSub}>Seed on chain</span>
                     </span>
                 </button>
 

@@ -4,8 +4,7 @@
 
 .root {
     position: fixed;
-    /* Same offset History uses under the banner, so the two sit on one row. */
-    top: calc(var(--mobile-chrome-end, 104px) + 4px);
+    top: calc(var(--mobile-chrome-end, 104px) + 8px);
     left: max(8px, env(safe-area-inset-left, 0px));
     z-index: 40;
     display: flex;
@@ -15,73 +14,60 @@
     pointer-events: none;
 }
 
-/* Desktop and tablet: the header History button (TableHeader .panelTabs).
-   Two lines of its 13px type fit the same 36px box with the same horizontal
-   padding, border and radius. The fill matches the floating History button
-   so the tab stays readable on the felt. */
 .tab {
     pointer-events: auto;
-    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    height: 36px;
-    padding: 2px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--theme-wash, #b995cf66);
-    background-color: var(--theme-surface, #100b1799);
-    color: var(--theme-ink, #c9b2d9);
+    gap: 7px;
+    padding: 4px 10px 4px 8px;
+    border-radius: 8px;
+    border: 1px solid rgba(52, 211, 153, 0.55);
+    background-color: rgba(11, 15, 20, 0.7);
+    color: #d1fae5;
     cursor: pointer;
-    font-family: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 15px;
-    letter-spacing: 0;
-    text-transform: none;
-    text-align: center;
-    white-space: nowrap;
+    backdrop-filter: blur(4px);
     transition: background-color 0.15s ease, border-color 0.15s ease;
+    text-align: left;
 }
 
 .tab:hover {
-    border-color: var(--theme-muted, #d3a6ed);
+    border-color: #34d399;
 }
 
 .tabOpen {
-    color: var(--theme-ink, #efdfff);
-    border-color: var(--theme-accent, #c58ce9);
-    background-color: var(--theme-wash, #b14cff12);
+    background-color: rgba(16, 185, 129, 0.22);
+}
+
+.tabIcon {
+    width: 16px;
+    height: 16px;
+    color: #34d399;
+    flex-shrink: 0;
+}
+
+.tabText {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
 }
 
 .tabLabel {
-    display: block;
-    font-size: inherit;
-    font-weight: inherit;
-    line-height: inherit;
-    letter-spacing: 0;
-    text-transform: none;
-    color: inherit;
-}
-
-/* Phones: the floating History button is 24px (padding 2px 8px, radius 12px,
-   12px type on one line). Two lines of 12px type do not fit that box, and a
-   shield beside them makes the tab wider than History, which is what runs
-   into the top seat. The stacked label is 9px so both words sit in the same
-   24px height. */
-:global(.table-container[data-compact-mobile="true"]) .tab {
-    height: 24px;
-    padding: 2px 8px;
-    border-radius: 12px;
-    border-color: var(--theme-wash, #b995cf50);
-    background-color: var(--theme-surface, #100b1799);
-    color: var(--theme-ink, #dcc7ed);
     font-size: 9px;
-    font-weight: 600;
-    line-height: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #a7f3d0;
 }
 
-:global(.table-container[data-compact-mobile="true"]) .tabOpen {
-    background-color: var(--theme-wash, #b14cff22);
+/* Hidden on desktop and tablet, where the single "Provably fair" line shows. */
+.labelStack {
+    display: none;
+}
+
+.tabSub {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
 }
 
 .panel {
@@ -234,20 +220,16 @@
     color: #34d399;
 }
 
-/* Phones: stay under the banner, on the same row as History. A bottom sheet
-   would cover the fork's action dock (portrait) and the fold button.
-   When History has taken this corner, the tab sits directly under it. */
+/* Phones: stay under the banner. A bottom sheet would cover the fork's action
+   dock (portrait) and the fold button. Landscape already parks hand strength
+   in this corner, so the tab drops below that chip. */
 @media (max-width: 640px) {
     .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 4px);
+        top: calc(var(--mobile-chrome-end, 48px) + 8px);
         left: max(8px, env(safe-area-inset-left, 0px));
         right: auto;
         bottom: auto;
         align-items: flex-start;
-    }
-
-    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 32px);
     }
 
     .panel {
@@ -258,12 +240,8 @@
     }
 }
 
-/* Landscape phones park hand strength in this corner, on History's row. Drop
-   the tab below that chip. It stays History's height, so the drop clears the
-   chip without reaching the top seats. */
-@media (orientation: landscape) {
-    :global(.table-container[data-compact-mobile="true"]) .root,
-    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
+@media (max-height: 500px) and (orientation: landscape) {
+    .root {
         top: calc(var(--mobile-chrome-end, 48px) + 40px);
     }
 }
@@ -271,5 +249,86 @@
 @media (prefers-reduced-motion: reduce) {
     .panel {
         animation: none;
+    }
+}
+
+/* Phones only. Desktop and tablet keep the rules above, unchanged.
+   Portrait: shield beside PROVABLY / FAIR, no "Seed on chain". A 12px shield
+   and 8px caps fit History's 24px height and stay left of the winner pill's
+   roll window on a 360px phone.
+   Landscape: one line, shield + PROVABLY FAIR, in the top-left the
+   hand-strength chip used to occupy. */
+@media (orientation: portrait) {
+    :global(.table-container[data-compact-mobile="true"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 4px);
+    }
+
+    /* History takes this corner on a narrow 9-max phone. Sit underneath it. */
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 32px);
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tab {
+        gap: 2px;
+        padding: 2px 2px 2px 2px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabIcon {
+        width: 12px;
+        height: 12px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabText {
+        line-height: 1;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabLabel {
+        font-size: 8px;
+        line-height: 9px;
+        letter-spacing: 0;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .labelWide,
+    :global(.table-container[data-compact-mobile="true"]) .tabSub {
+        display: none;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .labelStack {
+        display: block;
+    }
+}
+
+@media (orientation: landscape) {
+    :global(.table-container[data-compact-mobile="true"]) .root,
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 4px);
+    }
+
+    /* Left-hand, hero's turn: the bet column owns the top-left, and History
+       sits on its inner edge. The tab takes the next spot under the banner,
+       clear of the slider and of History. */
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="dock"]:has(.hand-left)) .root {
+        left: calc(var(--history-left, 124px) + 80px);
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tab {
+        gap: 4px;
+        padding: 4px 8px 4px 6px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabIcon {
+        width: 14px;
+        height: 14px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabLabel {
+        font-size: 10px;
+        line-height: 12px;
+        letter-spacing: 0.04em;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .labelStack,
+    :global(.table-container[data-compact-mobile="true"]) .tabSub {
+        display: none;
     }
 }
