@@ -256,8 +256,9 @@
    Portrait: shield beside PROVABLY / FAIR, no "Seed on chain". A 12px shield
    and 8px caps fit History's 24px height and stay left of the winner pill's
    roll window on a 360px phone.
-   Landscape: one line, shield + PROVABLY FAIR, in the top-left the
-   hand-strength chip used to occupy. */
+   Landscape, right-hand: one line, shield + PROVABLY FAIR, in the top-left
+   the hand-strength chip used to occupy. Left-hand mirrors that tab to the
+   top-right; History takes the left corner instead. */
 @media (orientation: portrait) {
     :global(.table-container[data-compact-mobile="true"]) .root {
         top: calc(var(--mobile-chrome-end, 48px) + 4px);
@@ -304,11 +305,13 @@
         top: calc(var(--mobile-chrome-end, 48px) + 4px);
     }
 
-    /* Left-hand, hero's turn: the bet column owns the top-left, and History
-       sits on its inner edge. The tab takes the next spot under the banner,
-       clear of the slider and of History. */
-    :global(.table-container[data-compact-mobile="true"][data-history-anchor="dock"]:has(.hand-left)) .root {
-        left: calc(var(--history-left, 124px) + 80px);
+    /* Left-hand mirrors the tab to the right edge under the banner, in every
+       state. History takes the left corner (or sits beside the slider on a
+       hero's turn), so the two do not share this edge. */
+    :global(.table-container[data-compact-mobile="true"]:has(.hand-left)) .root {
+        left: auto;
+        right: max(8px, env(safe-area-inset-right, 0px));
+        align-items: flex-end;
     }
 
     :global(.table-container[data-compact-mobile="true"]) .tab {
