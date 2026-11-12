@@ -1,0 +1,28 @@
+.chip,
+.fallback {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid color-mix(in srgb, var(--brand-primary) 45%, transparent);
+    background-color: color-mix(in srgb, var(--ui-bg-medium) 60%, transparent);
+    box-sizing: border-box;
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.fallback {
+    color: var(--brand-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
