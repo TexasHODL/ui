@@ -261,7 +261,7 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
 
 const PreviewPanelGate = ({ options, onChange }: PreviewPanelProps) => {
     // The fixture is the dialog. The dev panel is fixed over the banner the dialog must clear.
-    if (options.dialog) return null;
+    if (options.dialog || options.runout) return null;
     return <PreviewPanel options={options} onChange={onChange} />;
 };
 
