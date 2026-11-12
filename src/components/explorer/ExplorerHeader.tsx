@@ -5,17 +5,25 @@ interface ExplorerHeaderProps {
     title?: string;
 }
 
-const sections = [
+const explorerSections = [
     { href: "/explorer", label: "Latest blocks", description: "Explore recent activity on the poker network." },
     { href: "/explorer/accounts", label: "Accounts", description: "Browse network accounts and balances." },
     { href: "/explorer/address", label: "Address lookup", description: "Find an address and inspect its activity." },
-    { href: "/explorer/distribution", label: "Hand distribution", description: "Explore recorded card frequencies and distribution statistics." },
-    { href: "/awards", label: "Awards", description: "The biggest nit, the maniac and the calling station." }
+    { href: "/explorer/distribution", label: "Hand distribution", description: "Explore recorded card frequencies and distribution statistics." }
 ];
+
+/** Heading for the standalone `/awards` page. The link itself is a profile tab. */
+const awardsHeading = {
+    href: "/awards",
+    label: "Awards",
+    description: "The biggest nit, the maniac and the calling station."
+};
+
+const headings = [...explorerSections, awardsHeading];
 
 export const ExplorerHeader = ({ title = "Block explorer" }: ExplorerHeaderProps) => {
     const { pathname } = useLocation();
-    const section = sections.find(item => item.href === pathname);
+    const section = headings.find(item => item.href === pathname);
     const explorer = pathname.startsWith("/explorer");
     const hands = pathname === "/hands";
     const players = pathname.startsWith("/players");
@@ -38,7 +46,7 @@ export const ExplorerHeader = ({ title = "Block explorer" }: ExplorerHeaderProps
             />
             {explorer && (
                 <nav className="page-section-tabs" aria-label="Explorer sections">
-                    {sections.map(item => (
+                    {explorerSections.map(item => (
                         <Link
                             key={item.href}
                             to={item.href}

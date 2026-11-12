@@ -10,16 +10,14 @@ export const PROFILE_TAB_PARAM = "tab";
 /** Shown on the Profile link when there is no game wallet to open. */
 export const PROFILE_SETUP_TITLE = "Set up your wallet to open your profile";
 
-export type ProfileTab = "hands" | "wallet" | "stats";
+export type ProfileTab = "hands" | "wallet" | "stats" | "awards";
 
 export interface PrimaryNavItem {
     label: string;
     to: string;
-    /** False when the link must not be marked as the current page (Profile falls back to the wallet). */
+    /** False when the link must not be marked as the current page. */
     matchRoute: boolean;
     title?: string;
-    /** Set when this item is a section of the connected player's profile. */
-    section?: "profile" | "wallet";
 }
 
 export interface ProfileHubItem {
@@ -45,21 +43,24 @@ export const profileTabPath = (address: string, tab: ProfileTab): string => {
 
 /** `?tab=` on a profile. A missing or unknown value is Stats. */
 export const parseProfileTab = (value: string | null | undefined): ProfileTab => {
-    if (value === "hands" || value === "wallet" || value === "stats") return value;
+    if (value === "hands" || value === "wallet" || value === "stats" || value === "awards") return value;
     return "stats";
 };
 
 /**
- * Hands and Wallet exist only on your own profile. Another player's profile,
- * or a profile opened with no wallet, stays on Stats.
+ * Hands and Wallet exist only on your own profile. Awards is the global
+ * leaderboard, so it opens on any profile. Anything else on another player's
+ * profile, or a profile opened with no wallet, stays on Stats.
  */
 export const visibleProfileTab = (viewer: string | null | undefined, profile: string | null | undefined, raw: string | null | undefined): ProfileTab => {
+    const tab = parseProfileTab(raw);
+    if (tab === "awards") return "awards";
     if (!isOwnPlayerProfile(viewer, profile)) return "stats";
-    return parseProfileTab(raw);
+    return tab;
 };
 
-/** Where `/hands` and `/wallet` should send a player who already has a wallet. */
-export const standaloneSectionTarget = (viewer: string | null | undefined, tab: "hands" | "wallet"): string | null => {
+/** Where `/hands`, `/wallet` and `/awards` should send a player who already has a wallet. */
+export const standaloneSectionTarget = (viewer: string | null | undefined, tab: "hands" | "wallet" | "awards"): string | null => {
     if (!hasContent(viewer)) return null;
     return profileTabPath(viewer, tab);
 };
@@ -88,52 +89,52 @@ const navPathname = (to: string): string => {
 };
 
 /**
- * Lobby, Profile, Wallet. Profile opens `/players/<address>`. With no wallet it
- * goes to the wallet page (the same place My Hands sends you to create one) and
- * is not shown as the current page, so Wallet keeps that highlight.
- * With a wallet, Wallet opens that profile's Wallet tab.
+ * Lobby and Profile. The wallet is a tab on the player's profile, so the banner
+ * does not link it. With no game wallet, Profile opens the wallet setup page
+ * (the same place My Hands sends you to create one).
  */
 export const primaryNavItems = (address: string | null | undefined): PrimaryNavItem[] => {
     const connected = hasContent(address);
     const profile: PrimaryNavItem = connected
-        ? { label: "Profile", to: playerProfilePath(address), matchRoute: true, section: "profile" }
-        : { label: "Profile", to: WALLET_PATH, matchRoute: false, title: PROFILE_SETUP_TITLE };
-    const wallet: PrimaryNavItem = connected
-        ? { label: "Wallet", to: profileTabPath(address, "wallet"), matchRoute: true, section: "wallet" }
-        : { label: "Wallet", to: WALLET_PATH, matchRoute: true };
-    return [{ label: "Lobby", to: "/", matchRoute: true }, profile, wallet];
+        ? { label: "Profile", to: playerProfilePath(address), matchRoute: true }
+        : { label: "Profile", to: WALLET_PATH, matchRoute: true, title: PROFILE_SETUP_TITLE };
+    return [{ label: "Lobby", to: "/", matchRoute: true }, profile];
 };
 
 /**
- * Top nav highlight. Profile and Wallet share the profile pathname, so the
- * wallet tab belongs to Wallet and the hands and stats tabs belong to Profile.
+ * Top nav highlight. Every tab on your profile, including Wallet and Awards,
+ * belongs to Profile. The query does not move the highlight.
  */
-export const isPrimaryNavCurrent = (item: PrimaryNavItem, pathname: string, search: string): boolean => {
+export const isPrimaryNavCurrent = (item: PrimaryNavItem, pathname: string, _search: string): boolean => {
     if (!item.matchRoute) return false;
-    if (pathname !== navPathname(item.to)) return false;
-    const tab = parseProfileTab(new URLSearchParams(search).get(PROFILE_TAB_PARAM));
-    if (item.section === "wallet") return tab === "wallet";
-    if (item.section === "profile") return tab !== "wallet";
-    return true;
+    return pathname === navPathname(item.to);
 };
 
 /**
- * Sections on a player profile. All three stay on this page. My Hands and
- * Wallet are only offered on your own profile.
+ * Sections on a player profile. All of them stay on this page. My Hands and
+ * Wallet are only offered on your own profile. Awards is on every profile.
  */
 export const profileHubItems = (viewer: string | null | undefined, profile: string | null | undefined, active: ProfileTab): ProfileHubItem[] => {
     if (!hasContent(profile)) return [];
-    const tab = isOwnPlayerProfile(viewer, profile) ? active : "stats";
+    const own = isOwnPlayerProfile(viewer, profile);
+    const tab = own || active === "awards" ? active : "stats";
     const stats: ProfileHubItem = {
         id: "stats",
         label: "Stats",
         to: profileTabPath(profile, "stats"),
         current: tab === "stats"
     };
-    if (!isOwnPlayerProfile(viewer, profile)) return [stats];
+    const awards: ProfileHubItem = {
+        id: "awards",
+        label: "Awards",
+        to: profileTabPath(profile, "awards"),
+        current: tab === "awards"
+    };
+    if (!own) return [stats, awards];
     return [
         { id: "hands", label: "My Hands", to: profileTabPath(profile, "hands"), current: tab === "hands" },
         { id: "wallet", label: "Wallet", to: profileTabPath(profile, "wallet"), current: tab === "wallet" },
-        stats
+        stats,
+        awards
     ];
 };

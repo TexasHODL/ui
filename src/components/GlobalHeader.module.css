@@ -146,7 +146,7 @@
     outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 3px;
 }
-/* The single row — logo, Lobby / Profile / Wallet, theme toggle, More,
+/* The single row — logo, Lobby / Profile, theme toggle, More,
    avatar, the 48px group gaps and the 32px padding — fits at 864px and
    wider (Chromium, Space Grotesk). Below that the logo box was squeezed
    and, from 789px through 701px, overflow-x: hidden on the page clipped
