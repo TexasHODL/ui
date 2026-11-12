@@ -7,6 +7,7 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements, hasValue } from "../utils/guards";
 import { Pagination } from "../components/common";
+import { ProfileHub } from "../components/players/ProfileHub";
 import { VipBadge } from "../components/players/VipBadge";
 import { formatScaledPercent } from "../utils/vip";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
@@ -65,6 +66,8 @@ export default function PlayerProfilePage() {
                 <button onClick={() => navigate("/players")} className="mb-4 text-sm text-gray-400 hover:text-white transition-colors">
                     ← Back to players
                 </button>
+
+                <ProfileHub profileAddress={address} />
 
                 {loading ? (
                     <div className={`backdrop-blur-md rounded-xl shadow-2xl p-8 text-center ${styles.containerCard}`}>
