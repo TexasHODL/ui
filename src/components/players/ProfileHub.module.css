@@ -1,0 +1,4 @@
+/* Sits under the page heading. The shared tab chrome comes from page-section-tabs. */
+nav.tabs {
+    margin: 4px 0 28px;
+}

@@ -1,9 +1,13 @@
 /**
  * ProvablyFairPanel (ui#972)
  *
- * A small non-modal "Provably fair" tab on the table, under the banner. The
- * fork does not show the floating Blinds tab (that panel is a sidebar or a
- * drawer), so this tab does not offset beside it. It opens a panel that
+ * A non-modal "Provably fair" tab on the table, under the banner. Desktop and
+ * tablet keep the green pill (shield, PROVABLY FAIR, Seed on chain). Phones
+ * keep that look, smaller, without "Seed on chain": portrait stacks PROVABLY
+ * / FAIR beside the shield, and landscape is one line (shield + PROVABLY FAIR)
+ * in the corner the hand-strength chip used to occupy. The fork does not show
+ * the floating Blinds tab (that panel is a sidebar or a drawer), so this tab
+ * does not offset beside it. It opens a panel that
  * explains how Block52 deals and offers "Verify this hand" for the hand in
  * play (pending until it ends) and the last finished hand, which opens the
  * verify window.
@@ -74,7 +78,14 @@ const ProvablyFairPanel: React.FC = () => {
                 >
                     <ShieldIcon className={styles.tabIcon} />
                     <span className={styles.tabText}>
-                        <span className={styles.tabLabel}>Provably fair</span>
+                        <span className={styles.tabLabel}>
+                            <span className={styles.labelWide}>Provably fair</span>
+                            <span className={styles.labelStack}>
+                                Provably
+                                <br />
+                                fair
+                            </span>
+                        </span>
                         <span className={styles.tabSub}>Seed on chain</span>
                     </span>
                 </button>

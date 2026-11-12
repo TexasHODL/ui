@@ -59,6 +59,11 @@
     color: #a7f3d0;
 }
 
+/* Hidden on desktop and tablet, where the single "Provably fair" line shows. */
+.labelStack {
+    display: none;
+}
+
 .tabSub {
     font-size: 12px;
     font-weight: 600;
@@ -244,5 +249,89 @@
 @media (prefers-reduced-motion: reduce) {
     .panel {
         animation: none;
+    }
+}
+
+/* Phones only. Desktop and tablet keep the rules above, unchanged.
+   Portrait: shield beside PROVABLY / FAIR, no "Seed on chain". A 12px shield
+   and 8px caps fit History's 24px height and stay left of the winner pill's
+   roll window on a 360px phone.
+   Landscape, right-hand: one line, shield + PROVABLY FAIR, in the top-left
+   the hand-strength chip used to occupy. Left-hand mirrors that tab to the
+   top-right; History takes the left corner instead. */
+@media (orientation: portrait) {
+    :global(.table-container[data-compact-mobile="true"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 4px);
+    }
+
+    /* History takes this corner on a narrow 9-max phone. Sit underneath it. */
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 32px);
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tab {
+        gap: 2px;
+        padding: 2px 2px 2px 2px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabIcon {
+        width: 12px;
+        height: 12px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabText {
+        line-height: 1;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabLabel {
+        font-size: 8px;
+        line-height: 9px;
+        letter-spacing: 0;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .labelWide,
+    :global(.table-container[data-compact-mobile="true"]) .tabSub {
+        display: none;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .labelStack {
+        display: block;
+    }
+}
+
+@media (orientation: landscape) {
+    :global(.table-container[data-compact-mobile="true"]) .root,
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 4px);
+    }
+
+    /* Left-hand mirrors the tab to the right edge under the banner, in every
+       state. History takes the left corner (or sits beside the slider on a
+       hero's turn), so the two do not share this edge. */
+    :global(.table-container[data-compact-mobile="true"]:has(.hand-left)) .root {
+        left: auto;
+        right: max(8px, env(safe-area-inset-right, 0px));
+        align-items: flex-end;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tab {
+        gap: 4px;
+        padding: 4px 8px 4px 6px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabIcon {
+        width: 14px;
+        height: 14px;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .tabLabel {
+        font-size: 10px;
+        line-height: 12px;
+        letter-spacing: 0.04em;
+    }
+
+    :global(.table-container[data-compact-mobile="true"]) .labelStack,
+    :global(.table-container[data-compact-mobile="true"]) .tabSub {
+        display: none;
     }
 }

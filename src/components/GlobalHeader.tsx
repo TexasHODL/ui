@@ -5,6 +5,9 @@ import { NetworkSelector } from "./NetworkSelector";
 import { ProfileAvatarButton } from "./profile";
 import { TEXAS_HODL_LOGO } from "../constants/branding";
 import { ThemeToggle } from "./ThemeToggle";
+import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
+import { getCosmosAddress } from "../utils/cosmos/storage";
+import { primaryNavItems, viewerAddress } from "../utils/profileHub";
 import styles from "./GlobalHeader.module.css";
 
 
@@ -33,6 +36,8 @@ const extraGroups = [
 
 export const GlobalHeader: React.FC = () => {
     const { pathname } = useLocation();
+    const { address } = useCosmosWallet();
+    const viewer = viewerAddress(address, getCosmosAddress());
     if (pathname.startsWith("/table/") && pathname !== "/table/admin") return null;
     return (
         <header className={styles.headerShell}>
@@ -48,15 +53,22 @@ export const GlobalHeader: React.FC = () => {
                     </span>
                 </Link>
                 <nav className={styles.primaryNav} aria-label="Main navigation">
-                    {[
-                        ["/", "Lobby"],
-                        ["/hands", "My hands"],
-                        ["/wallet", "Wallet"]
-                    ].map(([path, label]) => (
-                        <NavLink key={path} to={path} end className={({ isActive }) => (isActive ? styles.navItemActive : styles.navItemInactive)}>
-                            {label}
-                        </NavLink>
-                    ))}
+                    {primaryNavItems(viewer).map(item =>
+                        item.matchRoute ? (
+                            <NavLink
+                                key={item.label}
+                                to={item.to}
+                                end
+                                className={({ isActive }) => (isActive ? styles.navItemActive : styles.navItemInactive)}
+                            >
+                                {item.label}
+                            </NavLink>
+                        ) : (
+                            <Link key={item.label} to={item.to} className={styles.navItemInactive} title={item.title}>
+                                {item.label}
+                            </Link>
+                        )
+                    )}
                 </nav>
                 <div className={styles.utilities}>
                     <ThemeToggle />
