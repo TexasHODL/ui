@@ -1,9 +1,12 @@
 /**
  * ProvablyFairPanel (ui#972)
  *
- * A small non-modal "Provably fair" tab on the table, under the banner. The
- * fork does not show the floating Blinds tab (that panel is a sidebar or a
- * drawer), so this tab does not offset beside it. It opens a panel that
+ * A non-modal provably-fair tab on the table, under the banner, the same size
+ * as the History button so the two read as a pair. The label is "Provably" /
+ * "fair" on two lines. The shield stays in the panel: it does not fit in the
+ * History button's box next to those two lines. The fork does not show the
+ * floating Blinds tab (that panel is a sidebar or a drawer), so this tab does
+ * not offset beside it. It opens a panel that
  * explains how Block52 deals and offers "Verify this hand" for the hand in
  * play (pending until it ends) and the last finished hand, which opens the
  * verify window.
@@ -69,13 +72,14 @@ const ProvablyFairPanel: React.FC = () => {
                     className={`${styles.tab} ${isOpen ? styles.tabOpen : ""}`}
                     aria-expanded={isOpen}
                     aria-haspopup="dialog"
+                    aria-label="Provably fair"
                     title="How Block52 deals, and verify a hand"
                     data-testid="provably-fair-tab"
                 >
-                    <ShieldIcon className={styles.tabIcon} />
-                    <span className={styles.tabText}>
-                        <span className={styles.tabLabel}>Provably fair</span>
-                        <span className={styles.tabSub}>Seed on chain</span>
+                    <span className={styles.tabLabel}>
+                        Provably
+                        <br />
+                        fair
                     </span>
                 </button>
 

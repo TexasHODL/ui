@@ -4,7 +4,8 @@
 
 .root {
     position: fixed;
-    top: calc(var(--mobile-chrome-end, 104px) + 8px);
+    /* Same offset History uses under the banner, so the two sit on one row. */
+    top: calc(var(--mobile-chrome-end, 104px) + 4px);
     left: max(8px, env(safe-area-inset-left, 0px));
     z-index: 40;
     display: flex;
@@ -14,55 +15,73 @@
     pointer-events: none;
 }
 
+/* Desktop and tablet: the header History button (TableHeader .panelTabs).
+   Two lines of its 13px type fit the same 36px box with the same horizontal
+   padding, border and radius. The fill matches the floating History button
+   so the tab stays readable on the felt. */
 .tab {
     pointer-events: auto;
+    box-sizing: border-box;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 4px 10px 4px 8px;
-    border-radius: 8px;
-    border: 1px solid rgba(52, 211, 153, 0.55);
-    background-color: rgba(11, 15, 20, 0.7);
-    color: #d1fae5;
+    justify-content: center;
+    height: 36px;
+    padding: 2px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--theme-wash, #b995cf66);
+    background-color: var(--theme-surface, #100b1799);
+    color: var(--theme-ink, #c9b2d9);
     cursor: pointer;
-    backdrop-filter: blur(4px);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 15px;
+    letter-spacing: 0;
+    text-transform: none;
+    text-align: center;
+    white-space: nowrap;
     transition: background-color 0.15s ease, border-color 0.15s ease;
-    text-align: left;
 }
 
 .tab:hover {
-    border-color: #34d399;
+    border-color: var(--theme-muted, #d3a6ed);
 }
 
 .tabOpen {
-    background-color: rgba(16, 185, 129, 0.22);
-}
-
-.tabIcon {
-    width: 16px;
-    height: 16px;
-    color: #34d399;
-    flex-shrink: 0;
-}
-
-.tabText {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.1;
+    color: var(--theme-ink, #efdfff);
+    border-color: var(--theme-accent, #c58ce9);
+    background-color: var(--theme-wash, #b14cff12);
 }
 
 .tabLabel {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #a7f3d0;
+    display: block;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+    letter-spacing: 0;
+    text-transform: none;
+    color: inherit;
 }
 
-.tabSub {
-    font-size: 12px;
+/* Phones: the floating History button is 24px (padding 2px 8px, radius 12px,
+   12px type on one line). Two lines of 12px type do not fit that box, and a
+   shield beside them makes the tab wider than History, which is what runs
+   into the top seat. The stacked label is 9px so both words sit in the same
+   24px height. */
+:global(.table-container[data-compact-mobile="true"]) .tab {
+    height: 24px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    border-color: var(--theme-wash, #b995cf50);
+    background-color: var(--theme-surface, #100b1799);
+    color: var(--theme-ink, #dcc7ed);
+    font-size: 9px;
     font-weight: 600;
-    color: #fff;
+    line-height: 9px;
+}
+
+:global(.table-container[data-compact-mobile="true"]) .tabOpen {
+    background-color: var(--theme-wash, #b14cff22);
 }
 
 .panel {
@@ -215,16 +234,20 @@
     color: #34d399;
 }
 
-/* Phones: stay under the banner. A bottom sheet would cover the fork's action
-   dock (portrait) and the fold button. Landscape already parks hand strength
-   in this corner, so the tab drops below that chip. */
+/* Phones: stay under the banner, on the same row as History. A bottom sheet
+   would cover the fork's action dock (portrait) and the fold button.
+   When History has taken this corner, the tab sits directly under it. */
 @media (max-width: 640px) {
     .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 8px);
+        top: calc(var(--mobile-chrome-end, 48px) + 4px);
         left: max(8px, env(safe-area-inset-left, 0px));
         right: auto;
         bottom: auto;
         align-items: flex-start;
+    }
+
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
+        top: calc(var(--mobile-chrome-end, 48px) + 32px);
     }
 
     .panel {
@@ -235,8 +258,12 @@
     }
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-    .root {
+/* Landscape phones park hand strength in this corner, on History's row. Drop
+   the tab below that chip. It stays History's height, so the drop clears the
+   chip without reaching the top seats. */
+@media (orientation: landscape) {
+    :global(.table-container[data-compact-mobile="true"]) .root,
+    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
         top: calc(var(--mobile-chrome-end, 48px) + 40px);
     }
 }
