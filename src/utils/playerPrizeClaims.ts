@@ -1,6 +1,20 @@
-import type { PlayerSession } from "../types/players";
-import { hasContent, hasValue, isBlank, isNumber, isRecord, isString } from "./guards";
+import type { PlayerListItem, PlayerSession } from "../types/players";
+import { hasContent, hasElements, hasValue, isBlank, isNumber, isRecord, isString } from "./guards";
 import { findSngPrizeClaimed, type TransferEvent } from "./transactionUtils";
+
+/** Every successful Sit & Go / tournament prize claim. The node accepts this event query. */
+export const ALL_PRIZE_CLAIMS_QUERY = "sng_prize_claimed.player EXISTS";
+
+/**
+ * A directory-wide scan returns full tx bodies (about 170 today, two pages).
+ * The shared Cosmos client times out at 5s, which is tight for that payload.
+ */
+export const PRIZE_DIRECTORY_QUERY_TIMEOUT_MS = 20_000;
+
+/** Event query for one player's prize claims. `player` must already be a safe address. */
+export function prizeClaimsQueryFor(player: string): string {
+    return `sng_prize_claimed.player='${player}'`;
+}
 
 /**
  * A successful `sng_prize_claimed` payout. The indexer never sees these: the
@@ -37,26 +51,53 @@ export interface ProfileMoney {
 }
 
 /**
- * Successful prize claims for `player` from a GetTxsEvent body.
+ * Successful prize claims in a GetTxsEvent body, grouped by lowercase player.
  * A tx with code !== 0 is ignored, same as hasSngPayoutReceipt: a rejected
- * claim is not a payout. Amounts come from findSngPrizeClaimed.
+ * claim is not a payout. One tx contributes at most one claim per player (the
+ * first sng_prize_claimed event for that player), matching findSngPrizeClaimed.
  */
-export function prizeClaimsFromTxSearch(body: unknown, player: string): PlayerPrizeClaim[] {
-    if (!isRecord(body) || !Array.isArray(body.tx_responses) || !hasContent(player)) return [];
-    const claims: PlayerPrizeClaim[] = [];
+export function prizeClaimsByPlayer(body: unknown): Map<string, PlayerPrizeClaim[]> {
+    const grouped = new Map<string, PlayerPrizeClaim[]>();
+    if (!isRecord(body) || !Array.isArray(body.tx_responses)) return grouped;
     const seen = new Set<string>();
     for (const tx of body.tx_responses) {
         if (!isRecord(tx) || !isNumber(tx.code) || tx.code !== 0) continue;
         const txhash = tx.txhash;
         const height = blockHeight(tx.height);
-        if (!isString(txhash) || isBlank(txhash) || !hasValue(height) || seen.has(txhash)) continue;
-        const prize = findSngPrizeClaimed(readEvents(tx.events), player);
-        const amount = microAmount(prize?.amount);
-        if (!hasValue(prize) || !hasContent(prize.gameId) || !hasValue(amount)) continue;
-        seen.add(txhash);
-        claims.push({ gameId: prize.gameId, amount, height, txhash });
+        if (!isString(txhash) || isBlank(txhash) || !hasValue(height)) continue;
+        const events = readEvents(tx.events);
+        for (const player of prizePlayers(events)) {
+            const key = `${txhash}:${player}`;
+            if (seen.has(key)) continue;
+            const prize = findSngPrizeClaimed(events, player);
+            const amount = microAmount(prize?.amount);
+            if (!hasValue(prize) || !hasContent(prize.gameId) || !hasValue(amount)) continue;
+            seen.add(key);
+            const list = grouped.get(player) ?? [];
+            list.push({ gameId: prize.gameId, amount, height, txhash });
+            grouped.set(player, list);
+        }
     }
-    return claims;
+    return grouped;
+}
+
+/**
+ * Successful prize claims for `player` from a GetTxsEvent body.
+ * A tx with code !== 0 is ignored, same as hasSngPayoutReceipt: a rejected
+ * claim is not a payout. Amounts come from findSngPrizeClaimed.
+ */
+export function prizeClaimsFromTxSearch(body: unknown, player: string): PlayerPrizeClaim[] {
+    if (!hasContent(player)) return [];
+    return prizeClaimsByPlayer(body).get(player.toLowerCase()) ?? [];
+}
+
+/**
+ * True when the node rejected the event query (CometBFT parse / gRPC code 13).
+ * A dropped connection is not this: the directory then keeps the indexer figures
+ * instead of asking once per player.
+ */
+export function isUnsupportedTxQuery(err: unknown): boolean {
+    return isRecord(err) && isNumber(err.code) && err.code === 13;
 }
 
 /**
@@ -104,6 +145,19 @@ export function sessionRowsWithPrizes(sessions: PlayerSession[], claims: PlayerP
  * not depend on which page is open.
  */
 export function profileMoneyWithPrizes(money: ProfileMoney, sessions: PlayerSession[], claims: PlayerPrizeClaim[]): ProfileMoney {
+    const added = addedPrizeCash(sessions, claims);
+    return {
+        totalCashOuts: money.totalCashOuts + added,
+        netProfit: money.netProfit + added
+    };
+}
+
+/**
+ * USDC micro-units to add to an indexer's cash-out and net for these claims.
+ * A claim matched to a session adds only the part the indexer did not already
+ * record. A claim with no row is added in full (those rows store 0 today).
+ */
+export function addedPrizeCash(sessions: PlayerSession[], claims: PlayerPrizeClaim[]): number {
     const matches = matchPrizeClaims(sessions, claims);
     const matched = new Set<string>();
     let added = 0;
@@ -115,10 +169,28 @@ export function profileMoneyWithPrizes(money: ProfileMoney, sessions: PlayerSess
         if (matched.has(claim.txhash)) continue;
         added += claim.amount;
     }
-    return {
-        totalCashOuts: money.totalCashOuts + added,
-        netProfit: money.netProfit + added
-    };
+    return added;
+}
+
+/**
+ * Directory rows with prize claims applied to net profit.
+ * Players with no claims are returned as-is. A missing session list is treated
+ * as no rows, so each claim is added in full — the same rule as a profile
+ * whose session page does not contain the game.
+ */
+export function playerListWithPrizes(
+    players: PlayerListItem[],
+    claimsByPlayer: Map<string, PlayerPrizeClaim[]>,
+    sessionsByPlayer: Map<string, PlayerSession[]>
+): PlayerListItem[] {
+    return players.map(player => {
+        const key = player.player_address.toLowerCase();
+        const claims = claimsByPlayer.get(key);
+        if (!hasElements(claims)) return player;
+        const added = addedPrizeCash(sessionsByPlayer.get(key) ?? [], claims);
+        if (added === 0) return player;
+        return { ...player, net_profit: player.net_profit + added };
+    });
 }
 
 /**
@@ -168,6 +240,22 @@ function microAmount(amount: string | undefined): number | undefined {
     if (!hasContent(amount) || !/^\d+$/.test(amount)) return undefined;
     const value = Number(amount);
     return Number.isSafeInteger(value) ? value : undefined;
+}
+
+function prizePlayers(events: TransferEvent[] | undefined): string[] {
+    if (!hasValue(events)) return [];
+    const players: string[] = [];
+    const seen = new Set<string>();
+    for (const event of events) {
+        if (event.type !== "sng_prize_claimed") continue;
+        const player = event.attributes?.find(attribute => attribute.key === "player")?.value;
+        if (!hasContent(player)) continue;
+        const key = player.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        players.push(key);
+    }
+    return players;
 }
 
 function readEvents(value: unknown): TransferEvent[] | undefined {
