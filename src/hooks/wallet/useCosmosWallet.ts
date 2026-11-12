@@ -12,7 +12,7 @@ import { getCosmosClient, getSigningClient } from "../../utils/cosmos/client";
 import { getCosmosMnemonic, getCosmosAddress, setCosmosMnemonic, setCosmosAddress } from "../../utils/cosmos/storage";
 import { getAddressFromMnemonic } from "@block52/poker-vm-sdk";
 import { useNetwork } from "../../context/NetworkContext";
-import { isString } from "../../utils/guards";
+import { hasContent, isString } from "../../utils/guards";
 
 interface Balance {
     denom: string;
@@ -40,8 +40,9 @@ export const useCosmosWallet = (): UseCosmosWalletReturn => {
     useEffect(() => {
         const loadAddress = async () => {
             const mnemonic = getCosmosMnemonic();
-            if (!mnemonic) {
-                setAddress(null);
+            if (!hasContent(mnemonic)) {
+                const stored = getCosmosAddress();
+                setAddress(hasContent(stored) ? stored : null);
                 return;
             }
 

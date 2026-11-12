@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, Link, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FaEllipsisH, FaArrowUp } from "react-icons/fa";
 import { NetworkSelector } from "./NetworkSelector";
 import { ProfileAvatarButton } from "./profile";
@@ -7,9 +7,8 @@ import { TEXAS_HODL_LOGO } from "../constants/branding";
 import { ThemeToggle } from "./ThemeToggle";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
 import { getCosmosAddress } from "../utils/cosmos/storage";
-import { primaryNavItems, viewerAddress } from "../utils/profileHub";
+import { isPrimaryNavCurrent, primaryNavItems, viewerAddress } from "../utils/profileHub";
 import styles from "./GlobalHeader.module.css";
-
 
 const extraGroups = [
     {
@@ -35,7 +34,7 @@ const extraGroups = [
 ];
 
 export const GlobalHeader: React.FC = () => {
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
     const { address } = useCosmosWallet();
     const viewer = viewerAddress(address, getCosmosAddress());
     if (pathname.startsWith("/table/") && pathname !== "/table/admin") return null;
@@ -53,22 +52,20 @@ export const GlobalHeader: React.FC = () => {
                     </span>
                 </Link>
                 <nav className={styles.primaryNav} aria-label="Main navigation">
-                    {primaryNavItems(viewer).map(item =>
-                        item.matchRoute ? (
-                            <NavLink
+                    {primaryNavItems(viewer).map(item => {
+                        const current = isPrimaryNavCurrent(item, pathname, search);
+                        return (
+                            <Link
                                 key={item.label}
                                 to={item.to}
-                                end
-                                className={({ isActive }) => (isActive ? styles.navItemActive : styles.navItemInactive)}
+                                className={current ? styles.navItemActive : styles.navItemInactive}
+                                aria-current={current ? "page" : undefined}
+                                title={item.title}
                             >
                                 {item.label}
-                            </NavLink>
-                        ) : (
-                            <Link key={item.label} to={item.to} className={styles.navItemInactive} title={item.title}>
-                                {item.label}
                             </Link>
-                        )
-                    )}
+                        );
+                    })}
                 </nav>
                 <div className={styles.utilities}>
                     <ThemeToggle />

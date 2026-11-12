@@ -26,7 +26,7 @@ const SeedPhraseGrid = ({ mnemonic, hidden = false }: { mnemonic: string; hidden
     );
 };
 
-const CosmosWalletPage = () => {
+const CosmosWalletPage = ({ embedded = false }: { embedded?: boolean }) => {
     const navigate = useNavigate();
     const cosmosWallet = useCosmosWallet();
     const gameWalletUsdc = useMemo(() => readUsdcBalance(cosmosWallet.balance), [cosmosWallet.balance]);
@@ -147,16 +147,9 @@ const CosmosWalletPage = () => {
         alert(`${label} copied to clipboard!`);
     };
 
-    return (
-        <main className="site-page">
-            <AnimatedBackground />
-            <div className="site-page-content">
-                <PageHeading
-                    title="Your wallet"
-                    eyebrow="YOUR ACCOUNT"
-                    description="Manage your game wallet, keep a safe backup, and connect a wallet for funding."
-                />
-                {isLoading ? (
+    const walletBody = (
+        <>
+            {isLoading ? (
                     <div className="page-panel page-empty" role="status">
                         Loading your wallet…
                     </div>
@@ -187,11 +180,13 @@ const CosmosWalletPage = () => {
                                                 sendTokens={cosmosWallet.sendTokens}
                                                 onRefresh={cosmosWallet.refreshBalance}
                                             />
-                                            <div className={styles.walletActions}>
-                                                <button type="button" onClick={() => navigate("/")} className={styles.secondaryButton}>
-                                                    Back to the lobby ↗
-                                                </button>
-                                            </div>
+                                            {!embedded && (
+                                                <div className={styles.walletActions}>
+                                                    <button type="button" onClick={() => navigate("/")} className={styles.secondaryButton}>
+                                                        Back to the lobby ↗
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                         <label htmlFor="game-wallet-address" className={styles.fieldLabel}>
                                             Wallet address
@@ -322,6 +317,21 @@ const CosmosWalletPage = () => {
                         </div>
                     </>
                 )}
+        </>
+    );
+
+    if (embedded) return walletBody;
+
+    return (
+        <main className="site-page">
+            <AnimatedBackground />
+            <div className="site-page-content">
+                <PageHeading
+                    title="Your wallet"
+                    eyebrow="YOUR ACCOUNT"
+                    description="Manage your game wallet, keep a safe backup, and connect a wallet for funding."
+                />
+                {walletBody}
             </div>
         </main>
     );

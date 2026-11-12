@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { GlobalHeader } from "./GlobalHeader";
 import { STORAGE_COSMOS_ADDRESS } from "../utils/cosmos/storage";
@@ -34,7 +34,11 @@ const renderHeader = (path = "/") => {
 };
 
 function renderLogo() {
-    render(<MemoryRouter><GlobalHeader /></MemoryRouter>);
+    render(
+        <MemoryRouter>
+            <GlobalHeader />
+        </MemoryRouter>
+    );
     return within(screen.getByRole("link", { name: "Texas HODL lobby" })).getByRole("presentation");
 }
 
@@ -84,11 +88,22 @@ describe("primary navigation", () => {
         const profile = within(nav).getByRole("link", { name: "Profile" });
         expect(profile).toHaveAttribute("href", `/players/${ME}`);
         expect(profile).toHaveAttribute("aria-current", "page");
-        expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/wallet");
+        expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", `/players/${ME}?tab=wallet`);
         expect(within(nav).getByRole("link", { name: "Wallet" })).not.toHaveAttribute("aria-current");
         expect(within(nav).getByRole("link", { name: "Lobby" })).toHaveAttribute("href", "/");
         expect(within(nav).queryByRole("link", { name: "My hands" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "My hands" })).not.toBeInTheDocument();
+    });
+
+    it("marks Wallet current on the profile wallet tab and Profile current on My Hands", () => {
+        mockAddress = ME;
+        const onWallet = renderHeader(`/players/${ME}?tab=wallet`);
+        expect(within(onWallet).getByRole("link", { name: "Wallet" })).toHaveAttribute("aria-current", "page");
+        expect(within(onWallet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
+        cleanup();
+        const onHands = renderHeader(`/players/${ME}?tab=hands`);
+        expect(within(onHands).getByRole("link", { name: "Profile" })).toHaveAttribute("aria-current", "page");
+        expect(within(onHands).getByRole("link", { name: "Wallet" })).not.toHaveAttribute("aria-current");
     });
 
     it("does not mark Profile current on someone else's profile", () => {

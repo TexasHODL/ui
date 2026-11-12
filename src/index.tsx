@@ -12,8 +12,8 @@ import { installModalViewportFit } from "./utils/modalViewportFit";
 import { installChunkLoadRecovery } from "./utils/lazyRoute";
 import { Profiler } from "react";
 import { NetworkProvider } from "./context/NetworkContext";
-import { getCosmosMnemonic, setCosmosMnemonic, setCosmosAddress } from "./utils/cosmos/storage";
-
+import { hasContent } from "./utils/guards";
+import { getCosmosMnemonic, getCosmosAddress, setCosmosMnemonic, setCosmosAddress } from "./utils/cosmos/storage";
 
 const projectId = import.meta.env.VITE_PROJECT_ID;
 if (!projectId) {
@@ -25,7 +25,9 @@ if (!projectId) {
 // other consumer that only reads localStorage on mount) sees the new
 // mnemonic. Doing this inside a component is a race: the hook's mount
 // effect would already have read null by the time generation finished.
-if (!getCosmosMnemonic()) {
+// A stored address with no mnemonic is left alone: that address is already
+// the viewer, and generating a new key would replace it.
+if (!getCosmosMnemonic() && !hasContent(getCosmosAddress())) {
     try {
         // ui#779: import cosmjs proto-signing only on first visit (when there is
         // no stored mnemonic). Returning users — the common case — never pull

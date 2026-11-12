@@ -13,9 +13,9 @@ jest.mock("../../hooks/wallet/useCosmosWallet", () => ({
     default: () => ({ address: mockAddress })
 }));
 
-const renderHub = (profileAddress: string | undefined) =>
+const renderHub = (profileAddress: string | undefined, path = "/") =>
     render(
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[path]}>
             <ProfileHub profileAddress={profileAddress} />
         </MemoryRouter>
     );
@@ -32,11 +32,23 @@ describe("ProfileHub", () => {
         mockAddress = ME;
         renderHub(ME);
         const nav = sections();
-        expect(within(nav).getByRole("link", { name: "My Hands" })).toHaveAttribute("href", "/hands");
-        expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/wallet");
+        expect(within(nav).getByRole("link", { name: "My Hands" })).toHaveAttribute("href", `/players/${ME}?tab=hands`);
+        expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", `/players/${ME}?tab=wallet`);
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("href", `/players/${ME}`);
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
         expect(within(nav).getByRole("link", { name: "My Hands" })).not.toHaveAttribute("aria-current");
+    });
+
+    it("marks the tab named in the url and keeps the other sections on this page", () => {
+        mockAddress = ME;
+        renderHub(ME, `/players/${ME}?tab=hands`);
+        const nav = sections();
+        expect(within(nav).getByRole("link", { name: "My Hands" })).toHaveAttribute("aria-current", "page");
+        expect(within(nav).getByRole("link", { name: "Wallet" })).not.toHaveAttribute("aria-current");
+        expect(within(nav).getByRole("link", { name: "Stats" })).not.toHaveAttribute("aria-current");
+        renderHub(ME, `/players/${ME}?tab=wallet`);
+        const walletNav = screen.getAllByRole("navigation", { name: "Profile sections" })[1];
+        expect(within(walletNav).getByRole("link", { name: "Wallet" })).toHaveAttribute("aria-current", "page");
     });
 
     it("treats a different-cased wallet address as your own profile", () => {
@@ -66,7 +78,7 @@ describe("ProfileHub", () => {
     it("uses a stored address before the wallet hook has derived one", () => {
         localStorage.setItem(STORAGE_COSMOS_ADDRESS, ME);
         renderHub(ME);
-        expect(within(sections()).getByRole("link", { name: "My Hands" })).toHaveAttribute("href", "/hands");
+        expect(within(sections()).getByRole("link", { name: "My Hands" })).toHaveAttribute("href", `/players/${ME}?tab=hands`);
     });
 
     it("renders nothing when the profile route has no address", () => {
