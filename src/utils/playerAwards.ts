@@ -6,8 +6,11 @@ import { isEmpty } from "./guards";
  * recorded action counts and hands. The rules follow the 9 High article
  * "The Nit, the Station, and the Maniac".
  *
- * There is deliberately no money award: the indexer's net_profit only counts
+ * There is deliberately no money award. The indexer's net_profit only counts
  * cash-outs, not sit-and-go prizes, so nearly every wallet looks like a loser.
+ * A single profile corrects its own cash-outs and net from chain prize claims
+ * (playerPrizeClaims.ts). Ranking everyone would query the chain once per
+ * wallet, so this list stays about how someone plays.
  */
 
 /** Fewest recorded decisions to be ranked at all, so nobody wins for folding three hands and going home. */
@@ -94,8 +97,7 @@ const everyone = (): boolean => true;
 
 const aggressionEvidence = (line: PlayerAwardLine): string =>
     `Aggression ${factor(aggressionFactor(line))}: ${count(aggressiveActions(line))} bets and raises against ${count(line.calls)} calls`;
-const winEvidence = (line: PlayerAwardLine): string =>
-    `Won ${count(line.handsWon)} of ${count(line.handsCounted)} hands: ${percent(winRate(line))}`;
+const winEvidence = (line: PlayerAwardLine): string => `Won ${count(line.handsWon)} of ${count(line.handsCounted)} hands: ${percent(winRate(line))}`;
 
 interface AwardRule {
     id: string;

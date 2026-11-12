@@ -1,17 +1,19 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
 import { truncateMiddle } from "../utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
-import { isEmpty, hasElements, hasValue } from "../utils/guards";
+import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
 import { ProfileHub } from "../components/players/ProfileHub";
 import { VipBadge } from "../components/players/VipBadge";
 import { formatScaledPercent } from "../utils/vip";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { usePlayerSessions } from "../hooks/player/usePlayerSessions";
+import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
+import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
 import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
@@ -40,6 +42,17 @@ export default function PlayerProfilePage() {
         total: sessionsTotal,
         loading: sessionsLoading
     } = usePlayerSessions(address, SESSIONS_PAGE_SIZE, (sessionsPage - 1) * SESSIONS_PAGE_SIZE);
+    // Chain prize claims. Empty on failure, so the cards and rows stay on the indexer.
+    const { claims, loading: prizesLoading } = usePlayerPrizeClaims(address);
+    const rows = useMemo(() => sessionRowsWithPrizes(sessions, claims), [sessions, claims]);
+    const prizeMoney = useMemo(
+        () =>
+            hasValue(profile) && !prizesLoading
+                ? profileMoneyWithPrizes({ totalCashOuts: profile.total_cash_outs, netProfit: profile.net_profit }, sessions, claims)
+                : null,
+        [profile, sessions, claims, prizesLoading]
+    );
+    const historyLoading = sessionsLoading || prizesLoading;
 
     useEffect(() => {
         document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Texas HODL` : "Player - Texas HODL";
@@ -102,11 +115,11 @@ export default function PlayerProfilePage() {
                             <StatCard label="Hands Played" value={profile.total_hands.toLocaleString()} />
                             <StatCard
                                 label="Net Profit"
-                                value={formatUsd(profile.net_profit)}
-                                valueClass={profile.net_profit >= 0 ? "text-green-400" : "text-red-400"}
+                                value={hasValue(prizeMoney) ? formatUsd(prizeMoney.netProfit) : "…"}
+                                valueClass={hasValue(prizeMoney) && prizeMoney.netProfit < 0 ? "text-red-400" : "text-green-400"}
                             />
                             <StatCard label="Total Buy-In" value={formatUsd(profile.total_buy_ins)} />
-                            <StatCard label="Total Cash-Out" value={formatUsd(profile.total_cash_outs)} />
+                            <StatCard label="Total Cash-Out" value={hasValue(prizeMoney) ? formatUsd(prizeMoney.totalCashOuts) : "…"} />
                             <StatCard label="Sessions" value={profile.session_count.toLocaleString()} />
                             <StatCard label="Total Actions" value={profile.total_actions.toLocaleString()} />
                             <StatCard label="Rake Contributed" value={formatUsd(profile.total_rake_contributed)} />
@@ -152,12 +165,12 @@ export default function PlayerProfilePage() {
                             <div className="px-6 py-4 border-b border-white/10">
                                 <h2 className="text-white font-bold">Session History</h2>
                             </div>
-                            {sessionsLoading ? (
+                            {historyLoading ? (
                                 <div className="p-8 text-center">
                                     <div className={`animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-3 ${styles.loadingSpinner}`}></div>
                                     <p className="text-gray-400">Loading sessions...</p>
                                 </div>
-                            ) : isEmpty(sessions) ? (
+                            ) : isEmpty(rows) ? (
                                 <div className="p-8 text-center">
                                     <p className="text-gray-400">No sessions recorded</p>
                                 </div>
@@ -174,18 +187,32 @@ export default function PlayerProfilePage() {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {sessions.map((s, i) => (
-                                                <tr key={`${s.game_id}-${s.join_block}-${i}`} className={`border-t ${styles.tableRowBorder}`}>
+                                            {rows.map((row, i) => (
+                                                <tr key={`${row.gameId}-${row.joinBlock}-${i}`} className={`border-t ${styles.tableRowBorder}`}>
                                                     <td className="px-6 py-4">
-                                                        <span className={`font-mono text-sm ${styles.brandText}`}>{truncateMiddle(s.game_id, 8, 6)}</span>
+                                                        <span className={`font-mono text-sm ${styles.brandText}`}>{truncateMiddle(row.gameId, 8, 6)}</span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-right text-gray-300">{s.join_block.toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-right text-gray-300">{row.joinBlock.toLocaleString()}</td>
                                                     <td className="px-6 py-4 text-right text-gray-300">
-                                                        {hasValue(s.leave_block) ? s.leave_block.toLocaleString() : "—"}
+                                                        {hasValue(row.leaveBlock) ? row.leaveBlock.toLocaleString() : "—"}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right text-gray-300">{formatUsd(s.buy_in_amount)}</td>
-                                                    <td className="px-6 py-4 text-right text-gray-300">
-                                                        {hasValue(s.cash_out_amount) ? formatUsd(s.cash_out_amount) : "—"}
+                                                    <td className="px-6 py-4 text-right text-gray-300">{formatUsd(row.buyIn)}</td>
+                                                    <td className="px-6 py-4 text-right text-gray-300 whitespace-nowrap">
+                                                        {row.isPrize && hasContent(row.prizeTxHash) ? (
+                                                            <Link
+                                                                to={`/explorer/tx/${row.prizeTxHash}`}
+                                                                className="inline-flex items-center justify-end gap-2 hover:text-white"
+                                                            >
+                                                                <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                                                                    Prize
+                                                                </span>
+                                                                <span>{hasValue(row.cashOut) ? formatUsd(row.cashOut) : "—"}</span>
+                                                            </Link>
+                                                        ) : hasValue(row.cashOut) ? (
+                                                            formatUsd(row.cashOut)
+                                                        ) : (
+                                                            "—"
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -193,7 +220,7 @@ export default function PlayerProfilePage() {
                                     </table>
                                 </div>
                             )}
-                            {!sessionsLoading && hasElements(sessions) && sessionsTotal > SESSIONS_PAGE_SIZE && (
+                            {!historyLoading && hasElements(rows) && sessionsTotal > SESSIONS_PAGE_SIZE && (
                                 <Pagination
                                     currentPage={sessionsPage}
                                     totalItems={sessionsTotal}
