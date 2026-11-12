@@ -59,16 +59,19 @@ export class CosmosApi extends HTTPClient {
     /**
      * Every tx matching an event query, newest first.
      * Pages through the node (max {@link TX_SEARCH_PAGE_SIZE} per request) until `total` is covered.
+     * `timeoutMs` overrides the client timeout for this read (a directory-wide event scan is larger than one wallet's txs).
      */
-    public getAllTransactionsMatching = async (eventQuery: string): Promise<TxSearchPage> => {
-        const first = (await this.get(buildTxSearchPath(eventQuery, { limit: TX_SEARCH_PAGE_SIZE, page: 1 }))) as TxSearchPage;
+    public getAllTransactionsMatching = async (eventQuery: string, timeoutMs?: number): Promise<TxSearchPage> => {
+        const config = hasValue(timeoutMs) ? { timeout: timeoutMs } : undefined;
+        const first = (await this.get(buildTxSearchPath(eventQuery, { limit: TX_SEARCH_PAGE_SIZE, page: 1 }), config)) as TxSearchPage;
         const total = Number.parseInt(first.total || "0", 10);
         const pageCount = Math.max(1, Math.ceil(total / TX_SEARCH_PAGE_SIZE));
         if (pageCount === 1) return first;
 
         const rest = await Promise.all(
-            Array.from({ length: pageCount - 1 }, (_, i) =>
-                this.get(buildTxSearchPath(eventQuery, { limit: TX_SEARCH_PAGE_SIZE, page: i + 2 })) as Promise<TxSearchPage>
+            Array.from(
+                { length: pageCount - 1 },
+                (_, i) => this.get(buildTxSearchPath(eventQuery, { limit: TX_SEARCH_PAGE_SIZE, page: i + 2 }), config) as Promise<TxSearchPage>
             )
         );
         const pages = [first, ...rest];

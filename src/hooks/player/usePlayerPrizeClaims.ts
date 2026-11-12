@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { httpErrorMessage } from "../../apis/HTTPClient";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { hasContent, hasValue } from "../../utils/guards";
-import { isPrizeClaimAddress, prizeClaimsFromTxSearch, type PlayerPrizeClaim } from "../../utils/playerPrizeClaims";
+import { isPrizeClaimAddress, prizeClaimsFromTxSearch, prizeClaimsQueryFor, type PlayerPrizeClaim } from "../../utils/playerPrizeClaims";
 
 interface UsePlayerPrizeClaimsResult {
     claims: PlayerPrizeClaim[];
@@ -38,7 +38,7 @@ export function usePlayerPrizeClaims(address: string | undefined): UsePlayerPriz
         }
         let cancelled = false;
         cosmosApi
-            .getAllTransactionsMatching(`sng_prize_claimed.player='${player}'`)
+            .getAllTransactionsMatching(prizeClaimsQueryFor(player))
             .then(response => {
                 if (cancelled) return;
                 setState({ address: player, claims: prizeClaimsFromTxSearch(response, player), error: null });

@@ -1,5 +1,14 @@
-import type { PlayerSession } from "../types/players";
-import { isPrizeClaimAddress, prizeClaimsFromTxSearch, profileMoneyWithPrizes, sessionRowsWithPrizes, type PlayerPrizeClaim } from "./playerPrizeClaims";
+import type { PlayerListItem, PlayerSession } from "../types/players";
+import {
+    isPrizeClaimAddress,
+    isUnsupportedTxQuery,
+    playerListWithPrizes,
+    prizeClaimsByPlayer,
+    prizeClaimsFromTxSearch,
+    profileMoneyWithPrizes,
+    sessionRowsWithPrizes,
+    type PlayerPrizeClaim
+} from "./playerPrizeClaims";
 
 const GAME = "0xc2d776e6261a15594d50c8861cd1d75c27793e7a624ead6ba35ad0db73c4aca4";
 const PLAYER = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
@@ -130,6 +139,61 @@ describe("profileMoneyWithPrizes", () => {
         expect(profileMoneyWithPrizes({ totalCashOuts: 0, netProfit: 0 }, reentries, [claim({ amount: 80, height: 400, txhash: "ONCE" })]).totalCashOuts).toBe(
             80
         );
+    });
+});
+
+const listRow = (player_address: string, net_profit: number): PlayerListItem => ({
+    player_address,
+    vip_tier: "bronze",
+    rakeback_pct: 0,
+    total_hands: 1,
+    total_actions: 1,
+    net_profit,
+    total_rake_contributed: 0
+});
+
+describe("prizeClaimsByPlayer", () => {
+    const other = "b521otherplayer";
+
+    it("groups successful claims by player and drops a failed or repeated tx", () => {
+        const body = {
+            tx_responses: [
+                { code: 1113, height: "10", txhash: "FAIL", events: [prizeEvent(PLAYER, "999")] },
+                { code: 0, height: "12", txhash: "A1", events: [prizeEvent(PLAYER, "80")] },
+                { code: 0, height: "12", txhash: "A1", events: [prizeEvent(PLAYER, "80")] },
+                { code: 0, height: "14", txhash: "B1", events: [prizeEvent(other, "40", "0xother")] }
+            ]
+        };
+        const grouped = prizeClaimsByPlayer(body);
+        expect(grouped.get(PLAYER)).toEqual([claim({ amount: 80, height: 12, txhash: "A1" })]);
+        expect(grouped.get(other)).toEqual([claim({ gameId: "0xother", amount: 40, height: 14, txhash: "B1" })]);
+        expect(prizeClaimsFromTxSearch(body, PLAYER)).toEqual(grouped.get(PLAYER));
+    });
+});
+
+describe("playerListWithPrizes", () => {
+    it("adds a prize the indexer recorded as 0 and leaves everyone else alone", () => {
+        const players = [listRow(PLAYER, -1_000), listRow("b521otherplayer", 25)];
+        const claims = new Map([[PLAYER, [claim({ amount: 400 })]]]);
+        const sessions = new Map([[PLAYER, [session()]]]);
+        const [winner, other] = playerListWithPrizes(players, claims, sessions);
+        expect(winner.net_profit).toBe(-600);
+        expect(other).toBe(players[1]);
+    });
+
+    it("does not add a prize the matched session already recorded as a cash-out", () => {
+        const players = [listRow(PLAYER, -1_000)];
+        const claims = new Map([[PLAYER, [claim({ amount: 6_240_000 })]]]);
+        const sessions = new Map([[PLAYER, [session({ leave_block: 1011858, cash_out_amount: 6_240_000 })]]]);
+        expect(playerListWithPrizes(players, claims, sessions)[0].net_profit).toBe(-1_000);
+    });
+});
+
+describe("isUnsupportedTxQuery", () => {
+    it("recognises a rejected event query and ignores a transport failure", () => {
+        expect(isUnsupportedTxQuery({ code: 13, message: "failed to search for txs" })).toBe(true);
+        expect(isUnsupportedTxQuery({ code: 5 })).toBe(false);
+        expect(isUnsupportedTxQuery(new Error("offline"))).toBe(false);
     });
 });
 
