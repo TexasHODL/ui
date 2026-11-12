@@ -46,6 +46,7 @@ import { lazyRoute } from "./utils/lazyRoute";
 import FaviconSetter from "./components/FaviconSetter";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { GlobalHeader } from "./components/GlobalHeader";
+import { ProfileSectionRedirect } from "./components/players/ProfileSectionRedirect";
 import { ProfileAvatarProvider } from "./context/profile/ProfileAvatarContext";
 import { ProfileAvatarModal } from "./components/profile";
 import { PaymentApiProvider } from "./context/PaymentApiContext";
@@ -141,7 +142,7 @@ function AppContent() {
                 ) : null}
                 <Route path="/table/:id" element={<Table />} />
                 <Route path="/table/admin" element={<TableAdminPage />} /> {/* Legacy - keep for backwards compat */}
-                <Route path="/wallet" element={<CosmosWalletPage />} />
+                <Route path="/wallet" element={<ProfileSectionRedirect tab="wallet"><CosmosWalletPage /></ProfileSectionRedirect>} />
                 <Route path="/tables" element={<TableAdminPage />} />
                 {/* User-facing routes */}
                 <Route path="/withdrawals" element={<WithdrawalDashboard />} />
@@ -167,7 +168,7 @@ function AppContent() {
                 <Route path="/explorer/distribution" element={<DistributionPage />} />
                 <Route path="/explorer/hand/:gameId/:handNumber" element={<HandReplayPage />} />
                 <Route path="/explorer/hand/:gameId" element={<HandPage />} />
-                <Route path="/hands" element={<MyHandsPage />} />
+                <Route path="/hands" element={<ProfileSectionRedirect tab="hands"><MyHandsPage /></ProfileSectionRedirect>} />
                 <Route path="/players" element={<PlayersPage />} />
                 <Route path="/players/:address" element={<PlayerProfilePage />} />
                 <Route path="/awards" element={<PlayerAwardsPage />} />

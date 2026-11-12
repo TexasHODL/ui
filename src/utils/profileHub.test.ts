@@ -3,10 +3,15 @@ import {
     PROFILE_SETUP_TITLE,
     WALLET_PATH,
     isOwnPlayerProfile,
+    isPrimaryNavCurrent,
+    parseProfileTab,
     playerProfilePath,
     primaryNavItems,
     profileHubItems,
-    viewerAddress
+    profileTabPath,
+    standaloneSectionTarget,
+    viewerAddress,
+    visibleProfileTab
 } from "./profileHub";
 
 const ME = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
@@ -36,10 +41,10 @@ describe("isOwnPlayerProfile", () => {
 });
 
 describe("primaryNavItems", () => {
-    it("labels Profile and opens the connected player's profile, leaving Wallet on /wallet", () => {
+    it("opens Profile on the stats tab and Wallet on the wallet tab", () => {
         const items = primaryNavItems(ME);
         expect(items.map(item => item.label)).toEqual(["Lobby", "Profile", "Wallet"]);
-        expect(items.map(item => item.to)).toEqual(["/", playerProfilePath(ME), WALLET_PATH]);
+        expect(items.map(item => item.to)).toEqual(["/", playerProfilePath(ME), profileTabPath(ME, "wallet")]);
         expect(items.every(item => item.matchRoute)).toBe(true);
         expect(items.map(item => item.to)).not.toContain(MY_HANDS_PATH);
     });
@@ -52,22 +57,95 @@ describe("primaryNavItems", () => {
     });
 });
 
-describe("profileHubItems", () => {
-    it("offers My Hands, Wallet and Stats on your own profile, with Stats as this page", () => {
-        expect(profileHubItems(ME.toUpperCase(), ME)).toEqual([
-            { id: "hands", label: "My Hands", to: MY_HANDS_PATH, current: false },
-            { id: "wallet", label: "Wallet", to: WALLET_PATH, current: false },
-            { id: "stats", label: "Stats", to: playerProfilePath(ME), current: true }
-        ]);
+describe("isPrimaryNavCurrent", () => {
+    const items = primaryNavItems(ME);
+    const profile = items.find(item => item.label === "Profile");
+    const wallet = items.find(item => item.label === "Wallet");
+    const lobby = items.find(item => item.label === "Lobby");
+
+    it("gives the wallet tab to Wallet and hands or stats to Profile", () => {
+        expect(profile).toBeDefined();
+        expect(wallet).toBeDefined();
+        expect(lobby).toBeDefined();
+        if (!profile || !wallet || !lobby) return;
+        expect(isPrimaryNavCurrent(profile, playerProfilePath(ME), "")).toBe(true);
+        expect(isPrimaryNavCurrent(wallet, playerProfilePath(ME), "")).toBe(false);
+        expect(isPrimaryNavCurrent(profile, playerProfilePath(ME), "?tab=hands")).toBe(true);
+        expect(isPrimaryNavCurrent(wallet, playerProfilePath(ME), "?tab=hands")).toBe(false);
+        expect(isPrimaryNavCurrent(profile, playerProfilePath(ME), "?tab=stats")).toBe(true);
+        expect(isPrimaryNavCurrent(wallet, playerProfilePath(ME), "?tab=wallet")).toBe(true);
+        expect(isPrimaryNavCurrent(profile, playerProfilePath(ME), "?tab=wallet")).toBe(false);
+        expect(isPrimaryNavCurrent(lobby, "/", "")).toBe(true);
+        expect(isPrimaryNavCurrent(lobby, playerProfilePath(ME), "")).toBe(false);
     });
 
-    it("shows only Stats for another player", () => {
-        expect(profileHubItems(ME, THEM)).toEqual([{ id: "stats", label: "Stats", to: playerProfilePath(THEM), current: true }]);
+    it("keeps Wallet current on the setup page and does not mark the fallback Profile link", () => {
+        const setup = primaryNavItems(null);
+        const profile = setup.find(item => item.label === "Profile");
+        const wallet = setup.find(item => item.label === "Wallet");
+        expect(profile).toBeDefined();
+        expect(wallet).toBeDefined();
+        if (!profile || !wallet) return;
+        expect(isPrimaryNavCurrent(wallet, WALLET_PATH, "")).toBe(true);
+        expect(isPrimaryNavCurrent(profile, WALLET_PATH, "")).toBe(false);
+    });
+});
+
+describe("profile tabs", () => {
+    it("parses the three sections and treats anything else as Stats", () => {
+        expect(parseProfileTab("hands")).toBe("hands");
+        expect(parseProfileTab("wallet")).toBe("wallet");
+        expect(parseProfileTab("stats")).toBe("stats");
+        expect(parseProfileTab(null)).toBe("stats");
+        expect(parseProfileTab(undefined)).toBe("stats");
+        expect(parseProfileTab("")).toBe("stats");
+        expect(parseProfileTab("lobby")).toBe("stats");
+    });
+
+    it("keeps Stats on the profile path and records the other sections in the query", () => {
+        expect(profileTabPath(ME, "stats")).toBe(playerProfilePath(ME));
+        expect(profileTabPath(ME, "hands")).toBe(`${playerProfilePath(ME)}?tab=hands`);
+        expect(profileTabPath(ME, "wallet")).toBe(`${playerProfilePath(ME)}?tab=wallet`);
+    });
+
+    it("hides hands and wallet on someone else's profile", () => {
+        expect(visibleProfileTab(ME, ME, "hands")).toBe("hands");
+        expect(visibleProfileTab(ME.toUpperCase(), ME, "wallet")).toBe("wallet");
+        expect(visibleProfileTab(ME, THEM, "wallet")).toBe("stats");
+        expect(visibleProfileTab(null, ME, "hands")).toBe("stats");
+        expect(visibleProfileTab(ME, ME, "nope")).toBe("stats");
+    });
+
+    it("redirects a connected wallet's standalone pages onto the profile tab", () => {
+        expect(standaloneSectionTarget(ME, "hands")).toBe(profileTabPath(ME, "hands"));
+        expect(standaloneSectionTarget(ME, "wallet")).toBe(profileTabPath(ME, "wallet"));
+        expect(standaloneSectionTarget(null, "hands")).toBeNull();
+        expect(standaloneSectionTarget("", "wallet")).toBeNull();
+    });
+});
+
+describe("profileHubItems", () => {
+    it("offers My Hands, Wallet and Stats on your own profile and marks the open tab", () => {
+        expect(profileHubItems(ME.toUpperCase(), ME, "stats")).toEqual([
+            { id: "hands", label: "My Hands", to: profileTabPath(ME, "hands"), current: false },
+            { id: "wallet", label: "Wallet", to: profileTabPath(ME, "wallet"), current: false },
+            { id: "stats", label: "Stats", to: playerProfilePath(ME), current: true }
+        ]);
+        expect(profileHubItems(ME, ME, "hands")).toEqual([
+            { id: "hands", label: "My Hands", to: profileTabPath(ME, "hands"), current: true },
+            { id: "wallet", label: "Wallet", to: profileTabPath(ME, "wallet"), current: false },
+            { id: "stats", label: "Stats", to: playerProfilePath(ME), current: false }
+        ]);
+        expect(profileHubItems(ME, ME, "wallet").find(item => item.id === "wallet")).toMatchObject({ current: true });
+    });
+
+    it("shows only Stats for another player, even if the url asks for another tab", () => {
+        expect(profileHubItems(ME, THEM, "hands")).toEqual([{ id: "stats", label: "Stats", to: playerProfilePath(THEM), current: true }]);
     });
 
     it("shows only Stats when no wallet is connected, and nothing without a profile address", () => {
-        expect(profileHubItems(null, ME)).toEqual([{ id: "stats", label: "Stats", to: playerProfilePath(ME), current: true }]);
-        expect(profileHubItems(ME, undefined)).toEqual([]);
-        expect(profileHubItems(ME, "")).toEqual([]);
+        expect(profileHubItems(null, ME, "wallet")).toEqual([{ id: "stats", label: "Stats", to: playerProfilePath(ME), current: true }]);
+        expect(profileHubItems(ME, undefined, "stats")).toEqual([]);
+        expect(profileHubItems(ME, "", "stats")).toEqual([]);
     });
 });

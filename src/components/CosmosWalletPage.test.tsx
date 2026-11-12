@@ -1,4 +1,3 @@
-
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import CosmosWalletPage from "./CosmosWalletPage";
@@ -78,6 +77,18 @@ describe("Wallet page presentation", () => {
         expect(screen.getByRole("dialog", { name: "Withdraw Funds" })).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: /Connect Web3 wallet/ }));
         expect(mockConnect).toHaveBeenCalledTimes(1);
+    });
+    it("embeds on the profile without the page heading or the lobby back link", async () => {
+        render(
+            <MemoryRouter>
+                <CosmosWalletPage embedded />
+            </MemoryRouter>
+        );
+        await screen.findByRole("heading", { name: "Game wallet" });
+        expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+        expect(screen.queryByText("YOUR ACCOUNT")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Back to the lobby/ })).not.toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Add funds" })).toBeInTheDocument();
     });
     it("offers create/import when there is no saved game wallet", async () => {
         mockAddress = null;

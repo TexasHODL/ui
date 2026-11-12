@@ -1,18 +1,23 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
 import { useState, useEffect, useMemo } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import { truncateMiddle } from "../utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
+import CosmosWalletPage from "../components/CosmosWalletPage";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
+import { MyHandsPanel } from "../components/players/MyHandsPanel";
 import { ProfileHeaderAvatar } from "../components/players/ProfileHeaderAvatar";
 import { ProfileHub } from "../components/players/ProfileHub";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { VipBadge } from "../components/players/VipBadge";
 import { formatScaledPercent } from "../utils/vip";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
+import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
+import { getCosmosAddress } from "../utils/cosmos/storage";
+import { PROFILE_TAB_PARAM, viewerAddress, visibleProfileTab } from "../utils/profileHub";
 import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
 import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
@@ -71,6 +76,9 @@ export default function PlayerProfilePage() {
         [profile, sessions, claims, prizesLoading]
     );
     const historyLoading = sessionsLoading || prizesLoading;
+    const { address: walletAddress } = useCosmosWallet();
+    const [searchParams] = useSearchParams();
+    const tab = visibleProfileTab(viewerAddress(walletAddress, getCosmosAddress()), address, searchParams.get(PROFILE_TAB_PARAM));
 
     useEffect(() => {
         document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Texas HODL` : "Player - Texas HODL";
@@ -105,7 +113,11 @@ export default function PlayerProfilePage() {
 
                 <ProfileHub profileAddress={address} />
 
-                {loading ? (
+                {tab === "hands" ? (
+                    <MyHandsPanel address={address} />
+                ) : tab === "wallet" ? (
+                    <CosmosWalletPage embedded />
+                ) : loading ? (
                     <div className={`backdrop-blur-md rounded-xl shadow-2xl p-8 text-center ${styles.containerCard}`}>
                         <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${styles.loadingSpinner}`}></div>
                         <p className="text-gray-400">Loading player...</p>
