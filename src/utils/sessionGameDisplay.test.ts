@@ -2,6 +2,7 @@ import { parseGamePrizeMeta, type GamePrizeMeta } from "./transactionUtils";
 import {
     ALL_SESSION_GAMES,
     filterSessionRows,
+    sessionRowExpandDetail,
     sessionGameFilterOptions,
     sessionGameLabel,
     sessionLabelsByGameId,
@@ -142,6 +143,26 @@ describe("session game filter", () => {
         expect(filterSessionRows(rows, labelsById, ALL_SESSION_GAMES).map(row => row.gameId)).toEqual(["cash", "sng", "gone"]);
         expect(filterSessionRows(rows, labelsById, "Sit & Go · Texas Hold'em").map(row => row.gameId)).toEqual(["sng"]);
         expect(filterSessionRows(rows, labelsById, "")).toEqual(rows);
+    });
+});
+
+describe("sessionRowExpandDetail", () => {
+    it("shows the join, the leave, and the length in blocks", () => {
+        expect(sessionRowExpandDetail(1_000_000, 1_000_400)).toEqual({
+            joinBlock: (1_000_000).toLocaleString(),
+            leaveBlock: (1_000_400).toLocaleString(),
+            length: `${(400).toLocaleString()} blocks`
+        });
+    });
+
+    it("leaves the length blank when the seat has not left, or the leave is not later", () => {
+        expect(sessionRowExpandDetail(1_020_000, undefined)).toEqual({
+            joinBlock: (1_020_000).toLocaleString(),
+            leaveBlock: "—",
+            length: "—"
+        });
+        expect(sessionRowExpandDetail(10, 10).length).toBe("—");
+        expect(sessionRowExpandDetail(20, 19).length).toBe("—");
     });
 });
 
