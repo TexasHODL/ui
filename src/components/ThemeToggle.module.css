@@ -1,6 +1,32 @@
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--theme-line, rgba(255, 255, 255, 0.12));
+}
+.copy {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.label {
+    margin: 0;
+    color: var(--theme-ink, #ffffff);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+.hint {
+    margin: 2px 0 0;
+    color: var(--theme-muted, #a398ad);
+    font-size: 12px;
+    line-height: 1.3;
+}
 .group {
     display: inline-flex;
     align-items: center;
+    flex: 0 0 auto;
     gap: 2px;
     padding: 3px;
     border: 1px solid var(--theme-line, rgba(255, 255, 255, 0.12));
@@ -8,15 +34,20 @@
     background: var(--theme-wash, rgba(177, 76, 255, 0.09));
 }
 .group button {
-    display: grid;
-    place-items: center;
-    width: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     height: 32px;
-    padding: 0;
+    padding: 0 10px;
     border: 0;
     border-radius: 999px;
     background: transparent;
     color: var(--theme-muted, #a398ad);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
 }
 .group button[aria-pressed="true"] {
     background: var(--texas-gradient);
@@ -25,9 +56,4 @@
 .group button:focus-visible {
     outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 2px;
-}
-
-.touch button {
-    width: 44px;
-    height: 44px;
 }

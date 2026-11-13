@@ -800,7 +800,6 @@ html.table-page-lock .app-shell {
 .settings-history-row > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .settings-history-row > div > span:first-child { white-space: nowrap; }
 .settings-appearance { display: block; padding: 10px 0; border-bottom: 1px solid var(--theme-line, #ffffff12); color: var(--theme-ink, #ffffff); font-size: 14px; }
-.settings-theme-row { display: flex; justify-content: flex-end; padding: 10px 0 8px; border-bottom: 1px solid var(--theme-line, #ffffff12); }
 .settings-appearance select { padding: 7px 9px; margin-top: 6px; }
 @media (max-height: 600px) and (min-width: 600px) {
     .table-container :is(#table-settings-panel, #table-blinds-panel, #table-history-panel[data-sidebar="true"]).action-log-open { width: min(540px, calc(100vw - 32px)); right: 16px; }

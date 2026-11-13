@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures.js";
 /**
  * Site header stays usable while the window is resized (ui#196).
  *
- * The single row — logo, Lobby / Profile, theme toggle, More and
+ * The single row — logo, Lobby / Profile, More and
  * the avatar, with the 48px group gaps and 32px padding — fits at 864px and
  * wider in Chromium with Space Grotesk. Narrower than that, the logo box
  * used to shrink and then More and the avatar were clipped, because the
@@ -55,8 +55,6 @@ async function report(page: import("@playwright/test").Page): Promise<HeaderRepo
       ["brand", brand],
       ["Lobby", named("Lobby")],
       ["Profile", named("Profile")],
-      ["Light theme", document.querySelector("header button[aria-label='Light theme']")],
-      ["Dark theme", document.querySelector("header button[aria-label='Dark theme']")],
       ["More", document.querySelector("header summary")],
       ["avatar", document.querySelector("header button[aria-label='Choose your avatar']")],
     ];
@@ -142,8 +140,15 @@ test("More menu and avatar stay reachable on desktop, the old clip range, and co
   for (const size of samples) {
     await page.setViewportSize(size);
     const summary = page.locator("header summary");
+    await expect(page.getByRole("button", { name: "Light theme" })).toHaveCount(0);
     await summary.click();
     const menu = page.locator("header details");
+    await expect(menu.getByText("Theme", { exact: true })).toBeVisible();
+    await expect(menu.getByRole("group", { name: "Color theme" })).toBeVisible();
+    await page.getByRole("button", { name: "Light theme" }).click();
+    await expect(page.getByRole("button", { name: "Light theme" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Dark theme" }).click();
+    await expect(page.getByRole("button", { name: "Dark theme" })).toHaveAttribute("aria-pressed", "true");
     await expect.poll(() => menu.evaluate((el: HTMLDetailsElement) => el.open)).toBe(true);
     const menuProblems = await page.evaluate(() => {
       const viewportWidth = document.documentElement.clientWidth;
@@ -173,11 +178,6 @@ test("More menu and avatar stay reachable on desktop, the old clip range, and co
     expect(menuProblems, `${size.width}x${size.height} menu: ${menuProblems.join("; ")}`).toEqual([]);
     await summary.click();
     await expect.poll(() => menu.evaluate((el: HTMLDetailsElement) => el.open)).toBe(false);
-
-    await page.getByRole("button", { name: "Light theme" }).click();
-    await expect(page.getByRole("button", { name: "Light theme" })).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: "Dark theme" }).click();
-    await expect(page.getByRole("button", { name: "Dark theme" })).toHaveAttribute("aria-pressed", "true");
 
     await page.getByRole("button", { name: "Choose your avatar" }).click();
     const dialog = page.getByRole("dialog", { name: "Select Profile Avatar" });
