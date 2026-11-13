@@ -88,22 +88,26 @@ describe("primary navigation", () => {
         const profile = within(nav).getByRole("link", { name: "Profile" });
         expect(profile).toHaveAttribute("href", `/players/${ME}`);
         expect(profile).toHaveAttribute("aria-current", "page");
-        expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", `/players/${ME}?tab=wallet`);
-        expect(within(nav).getByRole("link", { name: "Wallet" })).not.toHaveAttribute("aria-current");
+        expect(within(nav).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
         expect(within(nav).getByRole("link", { name: "Lobby" })).toHaveAttribute("href", "/");
         expect(within(nav).queryByRole("link", { name: "My hands" })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "My hands" })).not.toBeInTheDocument();
     });
 
-    it("marks Wallet current on the profile wallet tab and Profile current on My Hands", () => {
+    it("keeps Profile current on the wallet tab and on My Hands", () => {
         mockAddress = ME;
         const onWallet = renderHeader(`/players/${ME}?tab=wallet`);
-        expect(within(onWallet).getByRole("link", { name: "Wallet" })).toHaveAttribute("aria-current", "page");
-        expect(within(onWallet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
+        expect(within(onWallet).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
+        expect(within(onWallet).getByRole("link", { name: "Profile" })).toHaveAttribute("aria-current", "page");
+        expect(within(onWallet).getByRole("link", { name: "Profile" })).toHaveAttribute("href", `/players/${ME}`);
         cleanup();
         const onHands = renderHeader(`/players/${ME}?tab=hands`);
         expect(within(onHands).getByRole("link", { name: "Profile" })).toHaveAttribute("aria-current", "page");
-        expect(within(onHands).getByRole("link", { name: "Wallet" })).not.toHaveAttribute("aria-current");
+        expect(within(onHands).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
+        cleanup();
+        const onAwards = renderHeader(`/players/${ME}?tab=awards`);
+        expect(within(onAwards).getByRole("link", { name: "Profile" })).toHaveAttribute("aria-current", "page");
+        expect(within(onAwards).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
     });
 
     it("does not mark Profile current on someone else's profile", () => {
@@ -113,13 +117,14 @@ describe("primary navigation", () => {
         expect(within(onTheirs).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
     });
 
-    it("keeps Wallet as the current page when Profile has no wallet to open", () => {
+    it("sends Profile to wallet setup, and marks it current, when there is no game wallet", () => {
         const nav = renderHeader("/wallet");
         const profile = within(nav).getByRole("link", { name: "Profile" });
         expect(profile).toHaveAttribute("href", "/wallet");
         expect(profile).toHaveAttribute("title", PROFILE_SETUP_TITLE);
-        expect(profile).not.toHaveAttribute("aria-current");
-        expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("aria-current", "page");
+        expect(profile).toHaveAttribute("aria-current", "page");
+        expect(within(nav).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
+        expect(within(nav).getByRole("link", { name: "Lobby" })).not.toHaveAttribute("aria-current");
         expect(within(nav).queryByRole("link", { name: "My hands" })).not.toBeInTheDocument();
     });
 

@@ -28,15 +28,17 @@ describe("ProfileHub", () => {
         localStorage.clear();
     });
 
-    it("shows My Hands, Wallet and Stats on your own profile", () => {
+    it("shows My Hands, Wallet, Stats and Awards on your own profile", () => {
         mockAddress = ME;
         renderHub(ME);
         const nav = sections();
         expect(within(nav).getByRole("link", { name: "My Hands" })).toHaveAttribute("href", `/players/${ME}?tab=hands`);
         expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", `/players/${ME}?tab=wallet`);
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("href", `/players/${ME}`);
+        expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("href", `/players/${ME}?tab=awards`);
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
         expect(within(nav).getByRole("link", { name: "My Hands" })).not.toHaveAttribute("aria-current");
+        expect(within(nav).getByRole("link", { name: "Awards" })).not.toHaveAttribute("aria-current");
     });
 
     it("marks the tab named in the url and keeps the other sections on this page", () => {
@@ -49,6 +51,10 @@ describe("ProfileHub", () => {
         renderHub(ME, `/players/${ME}?tab=wallet`);
         const walletNav = screen.getAllByRole("navigation", { name: "Profile sections" })[1];
         expect(within(walletNav).getByRole("link", { name: "Wallet" })).toHaveAttribute("aria-current", "page");
+        renderHub(ME, `/players/${ME}?tab=awards`);
+        const awardsNav = screen.getAllByRole("navigation", { name: "Profile sections" })[2];
+        expect(within(awardsNav).getByRole("link", { name: "Awards" })).toHaveAttribute("aria-current", "page");
+        expect(within(awardsNav).getByRole("link", { name: "Stats" })).not.toHaveAttribute("aria-current");
     });
 
     it("treats a different-cased wallet address as your own profile", () => {
@@ -57,20 +63,23 @@ describe("ProfileHub", () => {
         expect(within(sections()).getByRole("link", { name: "My Hands" })).toBeInTheDocument();
     });
 
-    it("shows only Stats on someone else's profile", () => {
+    it("shows Stats and Awards on someone else's profile", () => {
         mockAddress = ME;
-        renderHub(THEM);
+        renderHub(THEM, `/players/${THEM}?tab=awards`);
         const nav = sections();
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("href", `/players/${THEM}`);
-        expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
+        expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("href", `/players/${THEM}?tab=awards`);
+        expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("aria-current", "page");
+        expect(within(nav).getByRole("link", { name: "Stats" })).not.toHaveAttribute("aria-current");
         expect(within(nav).queryByRole("link", { name: "My Hands" })).not.toBeInTheDocument();
         expect(within(nav).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
     });
 
-    it("shows only Stats when no wallet is connected", () => {
-        renderHub(ME);
+    it("keeps Awards and hides My Hands and Wallet when no wallet is connected", () => {
+        renderHub(ME, `/players/${ME}?tab=hands`);
         const nav = sections();
-        expect(within(nav).getByRole("link", { name: "Stats" })).toBeInTheDocument();
+        expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
+        expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("href", `/players/${ME}?tab=awards`);
         expect(within(nav).queryByRole("link", { name: "My Hands" })).not.toBeInTheDocument();
         expect(within(nav).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
     });

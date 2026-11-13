@@ -171,7 +171,7 @@ function AppContent() {
                 <Route path="/hands" element={<ProfileSectionRedirect tab="hands"><MyHandsPage /></ProfileSectionRedirect>} />
                 <Route path="/players" element={<PlayersPage />} />
                 <Route path="/players/:address" element={<PlayerProfilePage />} />
-                <Route path="/awards" element={<PlayerAwardsPage />} />
+                <Route path="/awards" element={<ProfileSectionRedirect tab="awards"><PlayerAwardsPage /></ProfileSectionRedirect>} />
                 <Route path="/nodes" element={<NodesPage />} />
                 <Route path="/node/:name" element={<NodeStatusPage />} />
                 <Route path="/tech-notes" element={<TechNotesPage />} />
