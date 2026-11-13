@@ -25,9 +25,10 @@ import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
-import { hasElements } from "../../../utils/guards";
+import { hasElements, hasValue } from "../../../utils/guards";
 import { winnerCardHighlight } from "../../../utils/holeCardLayout";
 import { HoleCardRow } from "./HoleCardRow";
+import { FinishedSeatCards } from "./FinishedSeatCards";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
@@ -129,7 +130,9 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                     </div>
                 )}
                 <div className="player-cards flex justify-center gap-1">
-                    {hasElements(holeCards) && !isFolded ? (
+                    {hasValue(tournamentResult) ? (
+                        <FinishedSeatCards place={tournamentResult.place} payout={tournamentResult.payout} />
+                    ) : hasElements(holeCards) && !isFolded ? (
                         isShowingCards && hasElements(showingCards) ? (
                             showingCards.length <= 2 ? (
                                 <HoleCardFan>

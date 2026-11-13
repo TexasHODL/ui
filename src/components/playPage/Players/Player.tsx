@@ -12,13 +12,14 @@ import type { PlayerProps } from "../../../types/index";
 import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { winnerCardHighlight } from "../../../utils/holeCardLayout";
 import { HoleCardRow } from "./HoleCardRow";
+import { FinishedSeatCards } from "./FinishedSeatCards";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useActionSubmit } from "../../../context/ActionSubmitContext";
 import { SIT_IN_METHOD_POST_NOW, sitIn } from "../../../hooks/playerActions";
-import { hasElements } from "../../../utils/guards";
+import { hasElements, hasValue } from "../../../utils/guards";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
@@ -162,7 +163,13 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                         <div className="text-orange-300">Addr: ...{playerData?.address ? playerData.address.slice(-3) : "N/A"}</div>
                     </div>
                 )}
-                <div className="player-cards flex justify-center gap-1">{renderCards()}</div>
+                <div className="player-cards flex justify-center gap-1">
+                    {hasValue(tournamentResult) ? (
+                        <FinishedSeatCards place={tournamentResult.place} payout={tournamentResult.payout} />
+                    ) : (
+                        renderCards()
+                    )}
+                </div>
                 <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
                     {selectedAvatarUrl && (
                         <NftAvatarImage

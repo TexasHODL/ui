@@ -1,7 +1,6 @@
-import { prizeMicroIsPositive } from "../../../utils/prizeDisplay";
-import { PrizeAmount } from "../PrizeAmount";
 import React, { useLayoutEffect, useRef } from "react";
-import { hasValue } from "../../../utils/guards";
+import { hasValue, isNullish } from "../../../utils/guards";
+import { finishedSeatDisplay } from "../../../utils/finishedSeatDisplay";
 import { getViewportMode } from "../../../config/stageGeometry";
 import { usePlayerActionDropBox } from "../../../hooks/player/usePlayerActionDropBox";
 import { WinAmountFloat } from "./WinAmountFloat";
@@ -179,20 +178,9 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 ? "action-display-enter"
                 : "";
 
-    // Get place suffix (1st, 2nd, 3rd, 4th)
-    const getPlaceSuffix = (place: number) => {
-        if (place === 1) return "1st";
-        if (place === 2) return "2nd";
-        if (place === 3) return "3rd";
-        return `${place}th`;
-    };
-
-    const getTournamentPlaceClass = (place: number) => {
-        if (place === 1) return "tournament-place-first";
-        if (place === 2) return "tournament-place-second";
-        if (place === 3) return "tournament-place-third";
-        return "tournament-place-other";
-    };
+    // A recorded place (busted or in the money) replaces the stack amount.
+    // Playing seats keep the stack. Same results[] source as the old pills.
+    const finished = hasValue(tournamentPlace) ? finishedSeatDisplay(tournamentPlace, tournamentPayout) : null;
 
     // --- Render inner content based on mode ---
     const renderBannerContent = () => {
@@ -277,16 +265,17 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         }
     };
 
-    const showEquityChip = hasValue(playerEquity);
+    const showEquityChip = isNullish(finished) && hasValue(playerEquity);
+    const finishedClass = finished ? ` badge-finished badge-finished-${finished.tone}` : "";
 
     return (
-        <div className="badge-container">
+        <div className={`badge-container${finishedClass}`} data-finished-tone={finished?.tone}>
             {leading && <div className="badge-leading">{leading}</div>}
             <div style={{ backgroundColor: color }} className="badge-number">
                 {count}
             </div>
-            <div className="badge-value">
-                {formattedValue}
+            <div className="badge-value" data-testid={finished ? "finished-seat-place" : undefined}>
+                {finished ? finished.placeLabel : formattedValue}
             </div>
 
             {showEquityChip && (
@@ -295,24 +284,11 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 </div>
             )}
 
-            {/* Tournament Results Display */}
-            {tournamentPlace && (
-                <div className="badge-tournament-results">
-                    <div className={`tournament-place ${getTournamentPlaceClass(tournamentPlace)}`}>
-                        {getPlaceSuffix(tournamentPlace)} Place
-                    </div>
-                    {prizeMicroIsPositive(tournamentPayout) && (
-                        <div className="tournament-payout tournament-payout-win">
-                            Won: <PrizeAmount micro={tournamentPayout} />
-                        </div>
-                    )}
-                </div>
-            )}
-
             {/* Unified seat banner — single animated container for all modes.
                 Portrait side seats sit on the rail, so a wide line is slid
-                inward until it clears the viewport. Landscape stays centred. */}
-            <div ref={shellRef} data-banner-mode={bannerMode} className={`seat-banner-shell ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
+                inward until it clears the viewport. Landscape stays centred.
+                A finished place replaces the action line, as the old place pill did. */}
+            <div ref={shellRef} data-banner-mode={bannerMode} className={`seat-banner-shell ${finished ? "seat-banner-suppressed" : ""} ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
                 <div
                     className={`seat-banner-box ${
                         (bannerMode === "action" && !isTransientAnimatingOut) ? "action-display-pulse" : ""
