@@ -8,7 +8,7 @@ interface SessionHistoryFilterProps {
     onChange: (key: string) => void;
 }
 
-/** Game-type menu for Session History. All, then each type present in the history. */
+/** Game-type menu for the History panel. All, then each type present in the history. */
 export const SessionHistoryFilter: FC<SessionHistoryFilterProps> = ({ value, options, onChange }) => {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
