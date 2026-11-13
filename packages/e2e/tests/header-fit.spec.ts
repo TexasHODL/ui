@@ -3,7 +3,7 @@ import { test, expect } from "./fixtures.js";
 /**
  * Site header stays usable while the window is resized (ui#196).
  *
- * The single row — logo, Lobby / Profile / Wallet, theme toggle, More and
+ * The single row — logo, Lobby / Profile, theme toggle, More and
  * the avatar, with the 48px group gaps and 32px padding — fits at 864px and
  * wider in Chromium with Space Grotesk. Narrower than that, the logo box
  * used to shrink and then More and the avatar were clipped, because the
@@ -55,7 +55,6 @@ async function report(page: import("@playwright/test").Page): Promise<HeaderRepo
       ["brand", brand],
       ["Lobby", named("Lobby")],
       ["Profile", named("Profile")],
-      ["Wallet", named("Wallet")],
       ["Light theme", document.querySelector("header button[aria-label='Light theme']")],
       ["Dark theme", document.querySelector("header button[aria-label='Dark theme']")],
       ["More", document.querySelector("header summary")],

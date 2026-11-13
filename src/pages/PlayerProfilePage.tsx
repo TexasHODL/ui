@@ -5,6 +5,7 @@ import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { truncateMiddle } from "../utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import CosmosWalletPage from "../components/CosmosWalletPage";
+import PlayerAwardsPage from "./PlayerAwardsPage";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
@@ -124,6 +125,8 @@ export default function PlayerProfilePage() {
                     <MyHandsPanel address={address} />
                 ) : tab === "wallet" ? (
                     <CosmosWalletPage embedded />
+                ) : tab === "awards" ? (
+                    <PlayerAwardsPage embedded />
                 ) : loading ? (
                     <div className={`backdrop-blur-md rounded-xl shadow-2xl p-8 text-center ${styles.containerCard}`}>
                         <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${styles.loadingSpinner}`}></div>

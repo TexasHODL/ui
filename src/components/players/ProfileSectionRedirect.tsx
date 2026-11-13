@@ -6,14 +6,14 @@ import { hasValue } from "../../utils/guards";
 import { standaloneSectionTarget, viewerAddress } from "../../utils/profileHub";
 
 interface ProfileSectionRedirectProps {
-    tab: "hands" | "wallet";
+    tab: "hands" | "wallet" | "awards";
     children: ReactNode;
 }
 
 /**
- * `/hands` and `/wallet` open the matching tab on your profile once a game
- * wallet exists. With no wallet they keep the standalone page, which is where
- * a wallet is created.
+ * `/hands`, `/wallet` and `/awards` open the matching tab on your profile once
+ * a game wallet exists. With no wallet they keep the standalone page. `/wallet`
+ * is where a wallet is created.
  */
 export const ProfileSectionRedirect: FC<ProfileSectionRedirectProps> = ({ tab, children }) => {
     const { address } = useCosmosWallet();

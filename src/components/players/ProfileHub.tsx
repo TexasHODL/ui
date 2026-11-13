@@ -13,8 +13,8 @@ interface ProfileHubProps {
 }
 
 /**
- * My Hands, Wallet and Stats for your own profile. Each tab renders on this
- * page. Another player's profile shows Stats only.
+ * My Hands, Wallet, Stats and Awards for your own profile. Each tab renders
+ * on this page. Another player's profile shows Stats and Awards.
  */
 export const ProfileHub: FC<ProfileHubProps> = ({ profileAddress }) => {
     const { address } = useCosmosWallet();
