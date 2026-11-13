@@ -1,5 +1,5 @@
 import { formatMicroUsd } from "./moneyDisplay";
-import { compareSessionCashOut, sessionCashOutAmountClass } from "./sessionCashOut";
+import { compareSessionCashOut, sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "./sessionCashOut";
 
 /** What the profile table prints, grouping commas removed so it can be compared. */
 function displayedDollars(micro: number): string {
@@ -75,5 +75,15 @@ describe("sessionCashOutAmountClass", () => {
         expect(sessionCashOutAmountClass(1_990_001, 2_000_000)).toBe("");
         expect(sessionCashOutAmountClass(2_000_000, undefined)).toBe("");
         expect(sessionCashOutAmountClass(Number.NaN, 1)).toBe("");
+    });
+});
+
+describe("sessionPrizeCashOutClass", () => {
+    it("stacks the prize badge above the amount on phones and keeps one line from sm up", () => {
+        const layout = sessionPrizeCashOutClass();
+        expect(layout).toContain("flex-col");
+        expect(layout).toContain("sm:flex-row");
+        expect(sessionPrizeAmountRowClass()).toContain("whitespace-nowrap");
+        expect(sessionCashOutAmountClass(1_000_000, 3_510_000)).toBe("text-green-400");
     });
 });
