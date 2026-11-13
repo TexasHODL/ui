@@ -4,7 +4,7 @@
 
 import { BettingLimit } from "@block52/poker-vm-sdk";
 import { coerceScheduledStartTimeMs } from "./convertUtils";
-import { hasContent, hasValue, isRecord, isString } from "./guards";
+import { hasContent, hasValue, isBlank, isNumber, isRecord, isString } from "./guards";
 import { truncateMiddle } from "./stringUtils";
 import { formatMicroUsd } from "./moneyDisplay";
 
@@ -380,6 +380,15 @@ export interface GameResultPlace {
     payout?: string;
 }
 
+/** One seat from gameState.players, only the fields a session row needs. */
+export interface GameSeatSnapshot {
+    address: string;
+    /** Chain player status, e.g. "busted" or "active". Absent when the seat omitted it. */
+    status?: string;
+    /** Chip or micro-USDC stack, as the chain sent it. Absent when it was not a digit string. */
+    stack?: string;
+}
+
 /** One entry of gameState.payouts (prize schedule by place). */
 export interface GamePayoutPlace {
     place: number;
@@ -576,6 +585,16 @@ export interface GamePrizeMeta {
     maxBuyIn?: string;
     /** Epoch ms. Absent when the table has no scheduled start. */
     scheduledStartTime?: number;
+    /**
+     * Hands dealt so far, including a hand still in progress. 0 before the first
+     * hand. Absent when the record has no handNumber.
+     */
+    handNumber?: number;
+    /**
+     * Seats as the chain last stored them. Absent when the record has no players
+     * array — an empty array means the table sent one and nobody is seated.
+     */
+    players?: GameSeatSnapshot[];
 }
 
 function parseGameObject(response: unknown): Record<string, unknown> | undefined {
@@ -625,8 +644,29 @@ export function parseGamePrizeMeta(response: unknown): GamePrizeMeta {
         format: format === "cash" || format === "sit-and-go" || format === "tournament" ? format : undefined,
         results,
         payouts,
-        ...readSessionTableFields(game)
+        ...readSessionTableFields(game),
+        ...readTournamentSeats(isRecord(game.gameState) ? game.gameState : undefined)
     };
+}
+
+/** Hand count and seats from the same game record. Only values the chain sent. */
+function readTournamentSeats(state: Record<string, unknown> | undefined): Pick<GamePrizeMeta, "handNumber" | "players"> {
+    if (!hasValue(state)) return {};
+    const fields: Pick<GamePrizeMeta, "handNumber" | "players"> = {};
+    if (isNumber(state.handNumber) && Number.isSafeInteger(state.handNumber) && state.handNumber >= 0) {
+        fields.handNumber = state.handNumber;
+    }
+    if (!Array.isArray(state.players)) return fields;
+    const players: GameSeatSnapshot[] = [];
+    for (const player of state.players) {
+        if (!isRecord(player) || !isString(player.address) || isBlank(player.address)) continue;
+        const seat: GameSeatSnapshot = { address: player.address };
+        if (isString(player.status) && hasContent(player.status)) seat.status = player.status;
+        if (isString(player.stack) && /^\d+$/.test(player.stack)) seat.stack = player.stack;
+        players.push(seat);
+    }
+    fields.players = players;
+    return fields;
 }
 
 /** Variant, limit and stake fields from the same game record. Only values the chain sent. */
