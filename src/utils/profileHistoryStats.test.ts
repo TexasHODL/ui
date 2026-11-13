@@ -4,6 +4,7 @@ import { ALL_SESSION_GAMES, sessionLabelsByGameId } from "./sessionGameDisplay";
 import {
     formatHistoryAmount,
     formatHistoryBlocks,
+    handBelongsToSettledSession,
     handsForHistory,
     historyMoneyUnit,
     historyMoneyUnits,
@@ -16,6 +17,7 @@ import {
     sessionSpansForHistory,
     variantMoneyFromRows,
     variantMoneyTotals,
+    withHandContributions,
     type HistoryHandAmount,
     type HistorySessionSpan
 } from "./profileHistoryStats";
@@ -295,8 +297,20 @@ describe("variant money totals", () => {
     });
 });
 
+describe("handBelongsToSettledSession", () => {
+    const settled = { gameId: "cashA", joinBlock: 100, cashOut: 50 };
+    const open = { gameId: "cashA", joinBlock: 300 };
+
+    it("keeps a hand from a closed seat and drops one from the open re-entry", () => {
+        expect(handBelongsToSettledSession({ gameId: "cashA", blockHeight: 150 }, [settled, open])).toBe(true);
+        expect(handBelongsToSettledSession({ gameId: "cashA", blockHeight: 400 }, [settled, open])).toBe(false);
+        expect(handBelongsToSettledSession({ gameId: "cashA", blockHeight: 50 }, [settled])).toBe(false);
+        expect(handBelongsToSettledSession({ gameId: "cashA", blockHeight: 150 }, [{ ...settled, cashOut: 0 }])).toBe(true);
+    });
+});
+
 describe("handsForHistory", () => {
-    it("keeps the awarded amount and does not invent a contribution", () => {
+    it("keeps the awarded amount and the hand number, and does not invent a contribution", () => {
         expect(
             handsForHistory([
                 {
@@ -310,7 +324,22 @@ describe("handsForHistory", () => {
                     winner_count: 1
                 }
             ])
-        ).toEqual([{ gameId: "cashA", wonAmount: 18_400_000 }]);
+        ).toEqual([{ gameId: "cashA", handNumber: 1, wonAmount: 18_400_000 }]);
+    });
+});
+
+describe("withHandContributions", () => {
+    it("attaches a chain contribution only for the hand that was read", () => {
+        const rows = [
+            { gameId: "cashA", handNumber: 4, wonAmount: 5_000_000 },
+            { gameId: "cashA", handNumber: 5, wonAmount: 0 },
+            { gameId: "cashB", wonAmount: 1_000_000 }
+        ];
+        expect(withHandContributions(rows, { "cashA#4": 1_000_000 })).toEqual([
+            { gameId: "cashA", handNumber: 4, wonAmount: 5_000_000, contributed: 1_000_000 },
+            { gameId: "cashA", handNumber: 5, wonAmount: 0 },
+            { gameId: "cashB", wonAmount: 1_000_000 }
+        ]);
     });
 });
 

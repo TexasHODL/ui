@@ -15,6 +15,7 @@ import { ProfileHub } from "../components/players/ProfileHub";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { VipBadge } from "../components/players/VipBadge";
 import { formatScaledPercent } from "../utils/vip";
+import { useHandContributions } from "../hooks/player/useHandContributions";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
@@ -37,22 +38,26 @@ import {
 } from "../utils/sessionGameDisplay";
 import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
+import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
 import {
     formatHistoryAmount,
     formatHistoryBlocks,
+    handBelongsToSettledSession,
     handsForHistory,
     historyMoneyUnits,
     historyNetClass,
     openSessionTotalsNote,
     profileHistoryStats,
-    sessionStateRetentionNote,
     sessionSpansForHistory,
+    sessionStateRetentionNote,
     settledSessionCashOut,
-    variantMoneyFromRows
+    variantMoneyFromRows,
+    withHandContributions
 } from "../utils/profileHistoryStats";
 import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
+const NO_PROFIT_HANDS: HandContributionTarget[] = [];
 
 const formatUsd = (micro: number): string => {
     const label = formatMicroUsd(micro, true);
@@ -102,7 +107,32 @@ export default function PlayerProfilePage() {
     // Every filtered bust, not only the visible page, so the longest session does not depend on which page is open.
     const eliminationLookups = useMemo(() => eliminationLookupsFor(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
     const eliminationBlocks = useSessionEliminationBlocks(address, eliminationLookups);
-    const historyHands = useMemo(() => (hasContent(handHistory.error) ? [] : handsForHistory(handHistory.hands)), [handHistory.error, handHistory.hands]);
+    const settledWindows = useMemo(
+        () =>
+            filteredRows.map(row => ({
+                gameId: row.gameId,
+                joinBlock: row.joinBlock,
+                cashOut: settledSessionCashOut(row, hasContent(address) && hasValue(sessionBustFor(row, rows, gamesById[row.gameId], address)))
+            })),
+        [filteredRows, address, rows, gamesById]
+    );
+    const settledHands = useMemo(
+        () => handHistory.hands.filter(hand => handBelongsToSettledSession({ gameId: hand.game_id, blockHeight: hand.block_height }, settledWindows)),
+        [handHistory.hands, settledWindows]
+    );
+    // Chain action logs for settled hands in this variant, once those tables share a money unit.
+    const profitHands = useMemo(
+        () =>
+            gamesLoading || hasContent(handHistory.error) || !hasContent(gameFilter)
+                ? undefined
+                : profitHandsToMeasure(settledHands, gameLabels, historyMoneyUnits(gamesById), gameFilter),
+        [gamesLoading, handHistory.error, gameFilter, settledHands, gameLabels, gamesById]
+    );
+    const contributions = useHandContributions(address, profitHands ?? NO_PROFIT_HANDS, hasValue(profitHands));
+    const historyHands = useMemo(
+        () => withHandContributions(hasContent(handHistory.error) ? [] : handsForHistory(settledHands), contributions.byKey),
+        [handHistory.error, settledHands, contributions.byKey]
+    );
     const historyStats = useMemo(
         () =>
             profileHistoryStats(
@@ -116,6 +146,8 @@ export default function PlayerProfilePage() {
     );
     const handsPending = tab === "stats" && hasContent(address) && !handHistory.complete && !hasContent(handHistory.error);
     const moneyLoading = handsPending || handHistory.loading || gamesLoading;
+    const profitLoading = moneyLoading || contributions.pending;
+    const profitNote = profitLoading ? undefined : handContributionNote(contributions.unavailable, hasValue(profitHands) ? profitHands.length : 0);
     const variantTotals = useMemo(() => variantMoneyFromRows(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
     const openSessionsNote = openSessionTotalsNote(variantTotals.excludedOpen);
     const netClass = hasValue(variantTotals.netProfit) ? historyNetClass(variantTotals.netProfit) : "";
@@ -295,7 +327,7 @@ export default function PlayerProfilePage() {
                                             />
                                             <StatCard
                                                 label="Biggest Hand Profit"
-                                                value={formatHistoryAmount(historyStats.biggestHandProfit, historyStats.profitUnit, moneyLoading)}
+                                                value={formatHistoryAmount(historyStats.biggestHandProfit, historyStats.profitUnit, profitLoading)}
                                             />
                                             <StatCard
                                                 label="Longest Session (blocks)"
@@ -304,6 +336,7 @@ export default function PlayerProfilePage() {
                                         </div>
                                         {hasContent(openSessionsNote) && <p className="mt-3 text-xs text-gray-400">{openSessionsNote}</p>}
                                         <p className="mt-3 text-xs text-gray-500">{sessionStateRetentionNote()}</p>
+                                        {hasContent(profitNote) && <p className="mt-1 text-xs text-gray-500">{profitNote}</p>}
                                     </div>
                                     {isEmpty(filteredRows) ? (
                                         <div className="p-8 text-center">

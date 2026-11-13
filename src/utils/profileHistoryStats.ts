@@ -19,12 +19,14 @@
  * table format is unknown, has no single figure — the panel shows an em dash.
  *
  * Biggest hand profit is the pot awarded minus what this player put into the
- * hand. The hand list My Hands loads does not record that contribution, so
- * the figure stays unknown and the panel shows an em dash. Pass `contributed`
- * only when a hand record actually has it.
+ * hand. The hand list does not record that contribution. Pass `contributed`
+ * only when the chain's action log for that hand was actually read
+ * (see handContribution). Hands still unread, or no longer on the node, are
+ * left out of the figure rather than counted as 0.
  */
 import type { PlayerHand } from "../types/players";
 import { hasContent, hasValue, isEmpty, isNumber } from "./guards";
+import { handKey } from "./handHistory";
 import { formatMicroUsd } from "./moneyDisplay";
 import type { SessionPrizeRow } from "./playerPrizeClaims";
 import { ALL_SESSION_GAMES, filterSessionRows, type SessionGameLabel } from "./sessionGameDisplay";
@@ -45,6 +47,8 @@ export interface HistorySessionSpan {
 
 export interface HistoryHandAmount {
     gameId: string;
+    /** Set on indexer rows so a chain contribution can be attached to this hand. */
+    handNumber?: number;
     /** Pot share awarded to this player. 0 when they did not win the hand. */
     wonAmount: number;
     /**
@@ -82,9 +86,19 @@ export function historyMoneyUnits(metas: Record<string, GamePrizeMeta | undefine
     return units;
 }
 
-/** The indexer hand row, reduced to the amounts this panel can read. */
+/** The indexer hand row, reduced to the amounts this panel can read. No contribution until the chain log is read. */
 export function handsForHistory(hands: PlayerHand[]): HistoryHandAmount[] {
-    return hands.map(hand => ({ gameId: hand.game_id, wonAmount: hand.won_amount }));
+    return hands.map(hand => ({ gameId: hand.game_id, handNumber: hand.hand_number, wonAmount: hand.won_amount }));
+}
+
+/** Attaches a chain contribution where that hand's log was read. A missing key leaves the hand unmeasured. */
+export function withHandContributions(hands: HistoryHandAmount[], contributedByKey: Record<string, number | undefined>): HistoryHandAmount[] {
+    return hands.map(hand => {
+        if (!isNumber(hand.handNumber)) return hand;
+        const contributed = contributedByKey[handKey({ game_id: hand.gameId, hand_number: hand.handNumber })];
+        if (!hasValue(contributed)) return hand;
+        return { ...hand, contributed };
+    });
 }
 
 /**
@@ -124,7 +138,7 @@ function longestBlocks(spans: HistorySessionSpan[]): number | undefined {
 }
 
 /** One unit shared by every id, or undefined when the set is empty, mixed, or missing a format. */
-function agreedUnit(gameIds: string[], units: Record<string, HistoryMoneyUnit | undefined>): HistoryMoneyUnit | undefined {
+export function sharedHistoryUnit(gameIds: string[], units: Record<string, HistoryMoneyUnit | undefined>): HistoryMoneyUnit | undefined {
     if (isEmpty(gameIds)) return undefined;
     let agreed: HistoryMoneyUnit | undefined;
     for (const gameId of gameIds) {
@@ -159,7 +173,7 @@ export function profileHistoryStats(
     const selectedHands = filterSessionRows(hands, labels, hasContent(filterKey) ? filterKey : ALL_SESSION_GAMES);
 
     const wins = selectedHands.filter(hand => finiteNumber(hand.wonAmount) && hand.wonAmount > 0);
-    const potUnit = agreedUnit(
+    const potUnit = sharedHistoryUnit(
         wins.map(hand => hand.gameId),
         units
     );
@@ -174,7 +188,7 @@ export function profileHistoryStats(
         const contributed = hand.contributed;
         return hasValue(contributed) && finiteNumber(contributed) && finiteNumber(hand.wonAmount);
     });
-    const profitUnit = agreedUnit(
+    const profitUnit = sharedHistoryUnit(
         measured.map(hand => hand.gameId),
         units
     );
@@ -244,6 +258,28 @@ export function variantMoneyTotals(sessions: VariantSessionMoney[]): VariantMone
     }
     if (counted === 0) return { excludedOpen };
     return { totalBuyIn, totalCashOut, netProfit: totalCashOut - totalBuyIn, excludedOpen };
+}
+
+export interface SettledSessionWindow {
+    gameId: string;
+    joinBlock: number;
+    /** Undefined while the seat is open. 0 is a settled bust. */
+    cashOut?: number;
+}
+
+/**
+ * The hand counts toward this variant's pot and profit when it was dealt in a
+ * settled session: the latest join of that table at or before the hand's end
+ * block, and that seat has a cash-out (including 0.00). An open seat is left
+ * out, the same way the buy-in, cash-out, and net cards skip it.
+ */
+export function handBelongsToSettledSession(hand: { gameId: string; blockHeight: number }, sessions: SettledSessionWindow[]): boolean {
+    let owner: SettledSessionWindow | undefined;
+    for (const session of sessions) {
+        if (session.gameId !== hand.gameId || !isNumber(session.joinBlock) || session.joinBlock > hand.blockHeight) continue;
+        if (!hasValue(owner) || session.joinBlock >= owner.joinBlock) owner = session;
+    }
+    return hasValue(owner) && hasValue(owner.cashOut) && Number.isFinite(owner.cashOut);
 }
 
 /** Buy-in and the cash-out the table shows, for one selected set of rows. */
