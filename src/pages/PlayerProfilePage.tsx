@@ -27,7 +27,7 @@ import { useSessionEliminationBlocks } from "../hooks/player/useSessionEliminati
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
 import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
 import {
-    ALL_SESSION_GAMES,
+    defaultSessionVariant,
     filterSessionRows,
     sessionRowExpandDetail,
     sessionGameFilterOptions,
@@ -42,8 +42,12 @@ import {
     formatHistoryBlocks,
     handsForHistory,
     historyMoneyUnits,
+    historyNetClass,
+    openSessionTotalsNote,
     profileHistoryStats,
-    sessionSpansForHistory
+    sessionSpansForHistory,
+    settledSessionCashOut,
+    variantMoneyFromRows
 } from "../utils/profileHistoryStats";
 import styles from "./explorer/AllAccountsPage.module.css";
 
@@ -67,7 +71,7 @@ export default function PlayerProfilePage() {
     const [sessionsPage, setSessionsPage] = useState(1);
     const [copied, setCopied] = useState(false);
 
-    const [gameFilter, setGameFilter] = useState(ALL_SESSION_GAMES);
+    const [gameFilter, setGameFilter] = useState("");
     const [openSessionKey, setOpenSessionKey] = useState<string | null>(null);
 
     const { profile, loading, error } = usePlayerProfile(address);
@@ -88,6 +92,7 @@ export default function PlayerProfilePage() {
     const rows = useMemo(() => sessionRowsWithPrizes(sessions, claims), [sessions, claims]);
     const gameLabels = useMemo(() => sessionLabelsByGameId(gamesById), [gamesById]);
     const gameFilterOptions = useMemo(() => sessionGameFilterOptions(Object.values(gameLabels)), [gameLabels]);
+    const defaultVariant = useMemo(() => defaultSessionVariant(rows, gameLabels), [rows, gameLabels]);
     const filteredRows = useMemo(() => filterSessionRows(rows, gameLabels, gameFilter), [rows, gameLabels, gameFilter]);
     const pageRows = useMemo(() => {
         const start = (sessionsPage - 1) * SESSIONS_PAGE_SIZE;
@@ -110,6 +115,9 @@ export default function PlayerProfilePage() {
     );
     const handsPending = tab === "stats" && hasContent(address) && !handHistory.complete && !hasContent(handHistory.error);
     const moneyLoading = handsPending || handHistory.loading || gamesLoading;
+    const variantTotals = useMemo(() => variantMoneyFromRows(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
+    const openSessionsNote = openSessionTotalsNote(variantTotals.excludedOpen);
+    const netClass = hasValue(variantTotals.netProfit) ? historyNetClass(variantTotals.netProfit) : "";
     const prizeMoney = useMemo(
         () =>
             hasValue(profile) && !prizesLoading
@@ -127,10 +135,15 @@ export default function PlayerProfilePage() {
     }, [address]);
 
     useEffect(() => {
-        setGameFilter(ALL_SESSION_GAMES);
+        setGameFilter("");
         setSessionsPage(1);
         setOpenSessionKey(null);
     }, [address]);
+
+    useEffect(() => {
+        if (historyLoading || gamesLoading || !hasContent(defaultVariant)) return;
+        setGameFilter(current => (gameFilterOptions.some(option => option.key === current) ? current : defaultVariant));
+    }, [historyLoading, gamesLoading, defaultVariant, gameFilterOptions]);
 
     const copyAddress = () => {
         if (!address) return;
@@ -237,170 +250,216 @@ export default function PlayerProfilePage() {
                         <div className={`backdrop-blur-md rounded-xl shadow-2xl overflow-hidden ${styles.containerCard}`}>
                             <div className="relative z-20 px-6 py-4 border-b border-white/10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <h2 className="text-white font-bold">History</h2>
-                                {!gamesLoading && hasElements(gameFilterOptions) && (
+                                {!gamesLoading && hasContent(gameFilter) && hasElements(gameFilterOptions) && (
                                     <SessionHistoryFilter
                                         value={gameFilter}
                                         options={gameFilterOptions}
                                         onChange={key => {
                                             setGameFilter(key);
                                             setSessionsPage(1);
+                                            setOpenSessionKey(null);
                                         }}
                                     />
                                 )}
                             </div>
-                            <div className="grid grid-cols-2 gap-4 border-b border-white/10 p-4 sm:p-6 md:grid-cols-3">
-                                <StatCard label="Biggest Pot Won" value={formatHistoryAmount(historyStats.biggestPotWon, historyStats.potUnit, moneyLoading)} />
-                                <StatCard
-                                    label="Biggest Hand Profit"
-                                    value={formatHistoryAmount(historyStats.biggestHandProfit, historyStats.profitUnit, moneyLoading)}
-                                />
-                                <StatCard label="Longest Session (blocks)" value={formatHistoryBlocks(historyStats.longestSessionBlocks, historyLoading)} />
-                            </div>
-                            {historyLoading ? (
+                            {historyLoading || (hasElements(rows) && (gamesLoading || !hasContent(gameFilter))) ? (
                                 <div className="p-8 text-center">
                                     <div className={`animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-3 ${styles.loadingSpinner}`}></div>
                                     <p className="text-gray-400">Loading sessions...</p>
                                 </div>
-                            ) : isEmpty(filteredRows) ? (
+                            ) : isEmpty(rows) || !hasContent(gameFilter) ? (
                                 <div className="p-8 text-center">
-                                    <p className="text-gray-400">{gameFilter === ALL_SESSION_GAMES ? "No sessions recorded" : "No sessions for this game"}</p>
+                                    <p className="text-gray-400">No sessions recorded</p>
                                 </div>
                             ) : (
-                                <div className="sm:overflow-x-auto">
-                                    <table className="w-full table-fixed sm:table-auto">
-                                        <thead>
-                                            <tr className={styles.tableHeaderRow}>
-                                                <th className="px-6 py-4 text-left text-gray-400 font-semibold">Game</th>
-                                                <th className="hidden px-6 py-4 text-right text-gray-400 font-semibold sm:table-cell">Join Block</th>
-                                                <th className="hidden px-6 py-4 text-right text-gray-400 font-semibold sm:table-cell">Leave Block</th>
-                                                <th className="w-[5.25rem] px-3 py-4 text-right text-gray-400 font-semibold whitespace-nowrap sm:w-auto sm:px-6">
-                                                    Buy-In
-                                                </th>
-                                                <th className="w-[6.25rem] px-3 py-4 text-right text-gray-400 font-semibold whitespace-nowrap sm:w-auto sm:px-6">
-                                                    Cash-Out
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {pageRows.map((row, i) => {
-                                                const label = gameLabels[row.gameId];
-                                                const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
-                                                const bust = sessionBustFor(row, rows, gamesById[row.gameId], profile.player_address);
-                                                const leaveBlock = sessionLeaveBlock(row, bust, eliminationBlocks[row.gameId]);
-                                                const sessionKey = `${row.gameId}-${row.joinBlock}-${i}`;
-                                                const expanded = openSessionKey === sessionKey;
-                                                const detailId = `session-blocks-${i}`;
-                                                const detail = sessionRowExpandDetail(row.joinBlock, leaveBlock);
-                                                const gameName = hasValue(label) ? label.title : "this session";
-                                                return (
-                                                    <tr
-                                                        key={sessionKey}
-                                                        className={`border-t ${styles.tableRowBorder}`}
-                                                        onClick={event => {
-                                                            if (window.matchMedia("(min-width: 640px)").matches) return;
-                                                            const target = event.target;
-                                                            if (target instanceof Element && target.closest("a, button")) return;
-                                                            setOpenSessionKey(expanded ? null : sessionKey);
-                                                        }}
-                                                    >
-                                                        <td className="relative align-top px-3 py-4 sm:px-6 sm:align-middle">
-                                                            <button
-                                                                type="button"
-                                                                className="absolute inset-0 z-0 sm:hidden"
-                                                                aria-expanded={expanded}
-                                                                aria-controls={detailId}
-                                                                aria-label={`${expanded ? "Hide" : "Show"} blocks for ${gameName}`}
-                                                                onClick={() => setOpenSessionKey(expanded ? null : sessionKey)}
-                                                            />
-                                                            <div className="pointer-events-none relative z-10 flex items-start gap-2 sm:pointer-events-auto sm:block">
-                                                                <span className="mt-1 shrink-0 text-xs leading-none text-gray-400 sm:hidden" aria-hidden="true">
-                                                                    {expanded ? "▴" : "▾"}
-                                                                </span>
-                                                                <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-0.5 sm:pointer-events-auto sm:max-w-xs">
-                                                                    {hasValue(label) && <span className="text-sm text-white">{label.title}</span>}
-                                                                    {hasValue(label) && hasContent(label.detail) && (
-                                                                        <span className="text-xs text-gray-400">{label.detail}</span>
-                                                                    )}
-                                                                    <Link
-                                                                        to={`/table/${row.gameId}`}
-                                                                        title={row.gameId}
-                                                                        className={`pointer-events-auto font-mono hover:underline ${styles.brandText} ${hasValue(label) ? "text-xs" : "text-sm"}`}
-                                                                    >
-                                                                        {truncateMiddle(row.gameId, 8, 6)}
-                                                                    </Link>
-                                                                    <dl id={detailId} className={expanded ? "mt-2 space-y-0.5 text-xs sm:hidden" : "hidden"}>
-                                                                        <div className="flex justify-between gap-3">
-                                                                            <dt className="whitespace-nowrap text-gray-400">Join block</dt>
-                                                                            <dd className="whitespace-nowrap text-gray-200">{detail.joinBlock}</dd>
+                                <>
+                                    <div className="border-b border-white/10 p-4 sm:p-6">
+                                        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+                                            <StatCard
+                                                label="Total Buy-In"
+                                                value={hasValue(variantTotals.totalBuyIn) ? formatUsd(variantTotals.totalBuyIn) : "—"}
+                                            />
+                                            <StatCard
+                                                label="Total Cash-Out"
+                                                value={hasValue(variantTotals.totalCashOut) ? formatUsd(variantTotals.totalCashOut) : "—"}
+                                            />
+                                            <StatCard
+                                                label="Net Profit"
+                                                value={hasValue(variantTotals.netProfit) ? formatUsd(variantTotals.netProfit) : "—"}
+                                                valueClass={hasContent(netClass) ? netClass : "text-white"}
+                                            />
+                                            <StatCard
+                                                label="Biggest Pot Won"
+                                                value={formatHistoryAmount(historyStats.biggestPotWon, historyStats.potUnit, moneyLoading)}
+                                            />
+                                            <StatCard
+                                                label="Biggest Hand Profit"
+                                                value={formatHistoryAmount(historyStats.biggestHandProfit, historyStats.profitUnit, moneyLoading)}
+                                            />
+                                            <StatCard
+                                                label="Longest Session (blocks)"
+                                                value={formatHistoryBlocks(historyStats.longestSessionBlocks, historyLoading)}
+                                            />
+                                        </div>
+                                        {hasContent(openSessionsNote) && <p className="mt-3 text-xs text-gray-400">{openSessionsNote}</p>}
+                                    </div>
+                                    {isEmpty(filteredRows) ? (
+                                        <div className="p-8 text-center">
+                                            <p className="text-gray-400">No sessions for this game</p>
+                                        </div>
+                                    ) : (
+                                        <div className="sm:overflow-x-auto">
+                                            <table className="w-full table-fixed sm:table-auto">
+                                                <thead>
+                                                    <tr className={styles.tableHeaderRow}>
+                                                        <th className="px-6 py-4 text-left text-gray-400 font-semibold">Game</th>
+                                                        <th className="hidden px-6 py-4 text-right text-gray-400 font-semibold sm:table-cell">Join Block</th>
+                                                        <th className="hidden px-6 py-4 text-right text-gray-400 font-semibold sm:table-cell">Leave Block</th>
+                                                        <th className="w-[5.25rem] px-3 py-4 text-right text-gray-400 font-semibold whitespace-nowrap sm:w-auto sm:px-6">
+                                                            Buy-In
+                                                        </th>
+                                                        <th className="w-[6.25rem] px-3 py-4 text-right text-gray-400 font-semibold whitespace-nowrap sm:w-auto sm:px-6">
+                                                            Cash-Out
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {pageRows.map((row, i) => {
+                                                        const label = gameLabels[row.gameId];
+                                                        const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
+                                                        const bust = sessionBustFor(row, rows, gamesById[row.gameId], profile.player_address);
+                                                        const leaveBlock = sessionLeaveBlock(row, bust, eliminationBlocks[row.gameId]);
+                                                        const cashOutAmount = settledSessionCashOut(row, hasValue(bust));
+                                                        const sessionKey = `${row.gameId}-${row.joinBlock}-${i}`;
+                                                        const expanded = openSessionKey === sessionKey;
+                                                        const detailId = `session-blocks-${i}`;
+                                                        const detail = sessionRowExpandDetail(row.joinBlock, leaveBlock);
+                                                        const gameName = hasValue(label) ? label.title : "this session";
+                                                        return (
+                                                            <tr
+                                                                key={sessionKey}
+                                                                className={`border-t ${styles.tableRowBorder}`}
+                                                                onClick={event => {
+                                                                    if (window.matchMedia("(min-width: 640px)").matches) return;
+                                                                    const target = event.target;
+                                                                    if (target instanceof Element && target.closest("a, button")) return;
+                                                                    setOpenSessionKey(expanded ? null : sessionKey);
+                                                                }}
+                                                            >
+                                                                <td className="relative align-top px-3 py-4 sm:px-6 sm:align-middle">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="absolute inset-0 z-0 sm:hidden"
+                                                                        aria-expanded={expanded}
+                                                                        aria-controls={detailId}
+                                                                        aria-label={`${expanded ? "Hide" : "Show"} blocks for ${gameName}`}
+                                                                        onClick={() => setOpenSessionKey(expanded ? null : sessionKey)}
+                                                                    />
+                                                                    <div className="pointer-events-none relative z-10 flex items-start gap-2 sm:pointer-events-auto sm:block">
+                                                                        <span
+                                                                            className="mt-1 shrink-0 text-xs leading-none text-gray-400 sm:hidden"
+                                                                            aria-hidden="true"
+                                                                        >
+                                                                            {expanded ? "▴" : "▾"}
+                                                                        </span>
+                                                                        <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-0.5 sm:pointer-events-auto sm:max-w-xs">
+                                                                            {hasValue(label) && <span className="text-sm text-white">{label.title}</span>}
+                                                                            {hasValue(label) && hasContent(label.detail) && (
+                                                                                <span className="text-xs text-gray-400">{label.detail}</span>
+                                                                            )}
+                                                                            <Link
+                                                                                to={`/table/${row.gameId}`}
+                                                                                title={row.gameId}
+                                                                                className={`pointer-events-auto font-mono hover:underline ${styles.brandText} ${hasValue(label) ? "text-xs" : "text-sm"}`}
+                                                                            >
+                                                                                {truncateMiddle(row.gameId, 8, 6)}
+                                                                            </Link>
+                                                                            <dl
+                                                                                id={detailId}
+                                                                                className={expanded ? "mt-2 space-y-0.5 text-xs sm:hidden" : "hidden"}
+                                                                            >
+                                                                                <div className="flex justify-between gap-3">
+                                                                                    <dt className="whitespace-nowrap text-gray-400">Join block</dt>
+                                                                                    <dd className="whitespace-nowrap text-gray-200">{detail.joinBlock}</dd>
+                                                                                </div>
+                                                                                <div className="flex justify-between gap-3">
+                                                                                    <dt className="whitespace-nowrap text-gray-400">Leave block</dt>
+                                                                                    <dd className="whitespace-nowrap text-gray-200">{detail.leaveBlock}</dd>
+                                                                                </div>
+                                                                                <div className="flex justify-between gap-3">
+                                                                                    <dt className="whitespace-nowrap text-gray-400">Length</dt>
+                                                                                    <dd className="whitespace-nowrap text-gray-200">{detail.length}</dd>
+                                                                                </div>
+                                                                            </dl>
                                                                         </div>
-                                                                        <div className="flex justify-between gap-3">
-                                                                            <dt className="whitespace-nowrap text-gray-400">Leave block</dt>
-                                                                            <dd className="whitespace-nowrap text-gray-200">{detail.leaveBlock}</dd>
-                                                                        </div>
-                                                                        <div className="flex justify-between gap-3">
-                                                                            <dt className="whitespace-nowrap text-gray-400">Length</dt>
-                                                                            <dd className="whitespace-nowrap text-gray-200">{detail.length}</dd>
-                                                                        </div>
-                                                                    </dl>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="hidden px-6 py-4 text-right text-gray-300 sm:table-cell">
-                                                            {row.joinBlock.toLocaleString()}
-                                                        </td>
-                                                        <td className="hidden px-6 py-4 text-right text-gray-300 sm:table-cell">
-                                                            {hasValue(leaveBlock) ? leaveBlock.toLocaleString() : "—"}
-                                                        </td>
-                                                        <td className="align-top px-3 py-4 text-right text-gray-300 sm:px-6 sm:align-middle">
-                                                            {formatUsd(row.buyIn)}
-                                                        </td>
-                                                        <td className="align-top px-3 py-4 text-right text-gray-300 whitespace-normal sm:whitespace-nowrap sm:px-6 sm:align-middle">
-                                                            {row.isPrize && hasContent(row.prizeTxHash) ? (
-                                                                <Link
-                                                                    to={`/explorer/tx/${row.prizeTxHash}`}
-                                                                    className="inline-flex items-center justify-end gap-2 hover:text-white"
-                                                                >
-                                                                    <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
-                                                                        Prize
-                                                                    </span>
-                                                                    {hasContent(place) && <span className="text-xs font-semibold text-amber-200">{place}</span>}
-                                                                    {hasValue(row.cashOut) ? (
-                                                                        <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>
-                                                                            {formatUsd(row.cashOut)}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="hidden px-6 py-4 text-right text-gray-300 sm:table-cell">
+                                                                    {row.joinBlock.toLocaleString()}
+                                                                </td>
+                                                                <td className="hidden px-6 py-4 text-right text-gray-300 sm:table-cell">
+                                                                    {hasValue(leaveBlock) ? leaveBlock.toLocaleString() : "—"}
+                                                                </td>
+                                                                <td className="align-top px-3 py-4 text-right text-gray-300 sm:px-6 sm:align-middle">
+                                                                    {formatUsd(row.buyIn)}
+                                                                </td>
+                                                                <td className="align-top px-3 py-4 text-right text-gray-300 whitespace-normal sm:whitespace-nowrap sm:px-6 sm:align-middle">
+                                                                    {row.isPrize && hasContent(row.prizeTxHash) ? (
+                                                                        <Link
+                                                                            to={`/explorer/tx/${row.prizeTxHash}`}
+                                                                            className="inline-flex items-center justify-end gap-2 hover:text-white"
+                                                                        >
+                                                                            <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
+                                                                                Prize
+                                                                            </span>
+                                                                            {hasContent(place) && (
+                                                                                <span className="text-xs font-semibold text-amber-200">{place}</span>
+                                                                            )}
+                                                                            {hasValue(cashOutAmount) ? (
+                                                                                <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                    {formatUsd(cashOutAmount)}
+                                                                                </span>
+                                                                            ) : (
+                                                                                "—"
+                                                                            )}
+                                                                        </Link>
+                                                                    ) : hasValue(bust) ? (
+                                                                        <span className="inline-flex items-center justify-end gap-2">
+                                                                            {hasContent(bust.placeLabel) && (
+                                                                                <span className="text-xs font-semibold text-amber-200">{bust.placeLabel}</span>
+                                                                            )}
+                                                                            {hasValue(cashOutAmount) ? (
+                                                                                <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                    {formatUsd(cashOutAmount)}
+                                                                                </span>
+                                                                            ) : (
+                                                                                "—"
+                                                                            )}
+                                                                        </span>
+                                                                    ) : hasValue(cashOutAmount) ? (
+                                                                        <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                            {formatUsd(cashOutAmount)}
                                                                         </span>
                                                                     ) : (
                                                                         "—"
                                                                     )}
-                                                                </Link>
-                                                            ) : hasValue(bust) ? (
-                                                                <span className="inline-flex items-center justify-end gap-2">
-                                                                    {hasContent(bust.placeLabel) && (
-                                                                        <span className="text-xs font-semibold text-amber-200">{bust.placeLabel}</span>
-                                                                    )}
-                                                                    <span className={sessionCashOutAmountClass(row.buyIn, 0)}>{formatUsd(0)}</span>
-                                                                </span>
-                                                            ) : hasValue(row.cashOut) ? (
-                                                                <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>
-                                                                    {formatUsd(row.cashOut)}
-                                                                </span>
-                                                            ) : (
-                                                                "—"
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                            {!historyLoading && hasElements(filteredRows) && filteredRows.length > SESSIONS_PAGE_SIZE && (
-                                <Pagination
-                                    currentPage={sessionsPage}
-                                    totalItems={filteredRows.length}
-                                    pageSize={SESSIONS_PAGE_SIZE}
-                                    onPageChange={setSessionsPage}
-                                />
+                                                                </td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                    {!historyLoading && hasElements(filteredRows) && filteredRows.length > SESSIONS_PAGE_SIZE && (
+                                        <Pagination
+                                            currentPage={sessionsPage}
+                                            totalItems={filteredRows.length}
+                                            pageSize={SESSIONS_PAGE_SIZE}
+                                            onPageChange={setSessionsPage}
+                                        />
+                                    )}
+                                </>
                             )}
                         </div>
                     </>
