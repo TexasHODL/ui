@@ -198,6 +198,84 @@ export function profileHistoryStats(
     };
 }
 
+/**
+ * Micro-USDC the cash-out cell prints. Undefined when the cell is an em dash
+ * (the seat is still open). A bust is 0, which the cell prints as 0.00.
+ * A recorded cash-out, including a prize, is that amount.
+ */
+export function settledSessionCashOut(row: { isPrize: boolean; prizeTxHash?: string; cashOut?: number }, isBust: boolean): number | undefined {
+    if (row.isPrize && hasContent(row.prizeTxHash)) return hasValue(row.cashOut) ? row.cashOut : undefined;
+    if (isBust) return 0;
+    return hasValue(row.cashOut) ? row.cashOut : undefined;
+}
+
+export interface VariantSessionMoney {
+    buyIn: number;
+    /** Undefined when the table shows an em dash. 0 is a settled bust. */
+    cashOut?: number;
+}
+
+export interface VariantMoneyTotals {
+    totalBuyIn?: number;
+    totalCashOut?: number;
+    netProfit?: number;
+    /** Open seats left out of the three totals. */
+    excludedOpen: number;
+}
+
+/**
+ * Buy-in, cash-out, and net for the sessions whose cash-out cell is a number.
+ * An open seat (no cash-out) is counted in excludedOpen and left out of every
+ * total, so an unfinished session does not change the net.
+ */
+export function variantMoneyTotals(sessions: VariantSessionMoney[]): VariantMoneyTotals {
+    let totalBuyIn = 0;
+    let totalCashOut = 0;
+    let counted = 0;
+    let excludedOpen = 0;
+    for (const session of sessions) {
+        if (!hasValue(session.cashOut) || !Number.isFinite(session.buyIn) || !Number.isFinite(session.cashOut)) {
+            if (!hasValue(session.cashOut)) excludedOpen += 1;
+            continue;
+        }
+        totalBuyIn += session.buyIn;
+        totalCashOut += session.cashOut;
+        counted += 1;
+    }
+    if (counted === 0) return { excludedOpen };
+    return { totalBuyIn, totalCashOut, netProfit: totalCashOut - totalBuyIn, excludedOpen };
+}
+
+/** Buy-in and the cash-out the table shows, for one selected set of rows. */
+export function variantMoneyFromRows(
+    selected: SessionPrizeRow[],
+    allRows: SessionPrizeRow[],
+    metas: Record<string, GamePrizeMeta | undefined>,
+    player: string | undefined
+): VariantMoneyTotals {
+    return variantMoneyTotals(
+        selected.map(row => ({
+            buyIn: row.buyIn,
+            cashOut: settledSessionCashOut(row, hasContent(player) && hasValue(sessionBustFor(row, allRows, metas[row.gameId], player)))
+        }))
+    );
+}
+
+/** Green, red, or the card's own colour, from the cents the money cards print. */
+export function historyNetClass(netMicro: number): string {
+    const label = formatMicroUsd(netMicro, true);
+    if (!hasContent(label) || label === "0.00" || label === "—") return "";
+    if (label.startsWith("-")) return "text-red-400";
+    return "text-green-400";
+}
+
+/** Caption under the money cards when open seats were left out. */
+export function openSessionTotalsNote(excludedOpen: number): string | undefined {
+    if (!Number.isFinite(excludedOpen) || excludedOpen < 1) return undefined;
+    if (excludedOpen === 1) return "1 open session isn't in these totals";
+    return `${excludedOpen.toLocaleString()} open sessions aren't in these totals`;
+}
+
 /** "18.40" for cash, "24,600 chips" for a tournament. An unknown figure is an em dash, never 0. */
 export function formatHistoryAmount(amount: number | undefined, unit: HistoryMoneyUnit | undefined, loading: boolean): string {
     if (loading) return "…";

@@ -7,8 +7,13 @@ import {
     handsForHistory,
     historyMoneyUnit,
     historyMoneyUnits,
+    historyNetClass,
+    openSessionTotalsNote,
     profileHistoryStats,
+    settledSessionCashOut,
     sessionSpansForHistory,
+    variantMoneyFromRows,
+    variantMoneyTotals,
     type HistoryHandAmount,
     type HistorySessionSpan
 } from "./profileHistoryStats";
@@ -217,6 +222,71 @@ describe("sessionSpansForHistory", () => {
     it("does not invent a leave block for a seat that is still open", () => {
         const row: SessionPrizeRow = { gameId: "cashA", joinBlock: 10, buyIn: 1, isPrize: false };
         expect(sessionSpansForHistory([row], metas, player, {})[0].leaveBlock).toBeUndefined();
+    });
+});
+
+describe("variant money totals", () => {
+    const player = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
+    const closed = (buyIn: number, cashOut: number, gameId = "cashA"): SessionPrizeRow => ({
+        gameId,
+        joinBlock: 10,
+        buyIn,
+        cashOut,
+        isPrize: false
+    });
+
+    it("sums the buy-ins and cash-outs the table prints, and nets them", () => {
+        const totals = variantMoneyTotals([
+            { buyIn: 1_000_000, cashOut: 2_500_000 },
+            { buyIn: 2_000_000, cashOut: 500_000 }
+        ]);
+        expect(totals).toEqual({ totalBuyIn: 3_000_000, totalCashOut: 3_000_000, netProfit: 0, excludedOpen: 0 });
+        expect(historyNetClass(totals.netProfit!)).toBe("");
+        expect(historyNetClass(1_000_000)).toBe("text-green-400");
+        expect(historyNetClass(-1_000_000)).toBe("text-red-400");
+    });
+
+    it("leaves an open seat out of every total", () => {
+        const totals = variantMoneyTotals([{ buyIn: 2_000_000, cashOut: 7_200_000 }, { buyIn: 10_000 }, { buyIn: 2_000_000 }]);
+        expect(totals).toEqual({ totalBuyIn: 2_000_000, totalCashOut: 7_200_000, netProfit: 5_200_000, excludedOpen: 2 });
+        expect(openSessionTotalsNote(2)).toBe("2 open sessions aren't in these totals");
+        expect(openSessionTotalsNote(1)).toBe("1 open session isn't in these totals");
+        expect(openSessionTotalsNote(0)).toBeUndefined();
+    });
+
+    it("has no totals when every seat is still open", () => {
+        expect(variantMoneyTotals([{ buyIn: 1_000_000 }, { buyIn: 2_000_000 }])).toEqual({ excludedOpen: 2 });
+    });
+
+    it("counts a bust as a 0.00 cash-out and a prize as its claim", () => {
+        const busted: GamePrizeMeta = {
+            ...tournament(),
+            handNumber: 3,
+            results: [{ place: 2, playerId: player, payout: "0" }],
+            payouts: [{ place: 1, amount: "27000" }],
+            players: [{ address: player, stack: "0", status: "busted" }]
+        };
+        const bust: SessionPrizeRow = { gameId: "tourn", joinBlock: 200, buyIn: 2_000_000, isPrize: false };
+        const prize: SessionPrizeRow = {
+            gameId: "tourn",
+            joinBlock: 100,
+            buyIn: 2_000_000,
+            cashOut: 7_200_000,
+            isPrize: true,
+            prizeTxHash: "ABC"
+        };
+        const open: SessionPrizeRow = { gameId: "cashA", joinBlock: 300, buyIn: 10_000, isPrize: false };
+        const rows = [bust, prize, open];
+        expect(settledSessionCashOut(bust, true)).toBe(0);
+        expect(settledSessionCashOut(prize, false)).toBe(7_200_000);
+        expect(settledSessionCashOut({ isPrize: true, prizeTxHash: "ABC" }, false)).toBeUndefined();
+        expect(settledSessionCashOut(open, false)).toBeUndefined();
+        expect(variantMoneyFromRows(rows, rows, { tourn: busted, cashA: cash() }, player)).toEqual({
+            totalBuyIn: 4_000_000,
+            totalCashOut: 7_200_000,
+            netProfit: 3_200_000,
+            excludedOpen: 1
+        });
     });
 });
 

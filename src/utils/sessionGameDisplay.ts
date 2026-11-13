@@ -85,6 +85,34 @@ export function sessionGameLabel(meta: GamePrizeMeta | undefined): SessionGameLa
     return hasContent(detail) ? { title, detail, filterKey: title } : { title, filterKey: title };
 }
 
+/**
+ * The variant to open on. The one with the most sessions, and on a tie the
+ * one whose latest join is more recent. A further tie follows the menu order
+ * (cash, then sit & go, then tournament). Sessions with no game label are
+ * skipped. Undefined when nothing is labelled.
+ */
+export function defaultSessionVariant(
+    rows: Array<{ gameId: string; joinBlock: number }>,
+    labels: Record<string, SessionGameLabel | undefined>
+): string | undefined {
+    const byKey = new Map<string, { count: number; latestJoin: number }>();
+    for (const row of rows) {
+        const key = labels[row.gameId]?.filterKey;
+        if (!hasContent(key) || !Number.isFinite(row.joinBlock)) continue;
+        const current = byKey.get(key);
+        if (!hasValue(current)) {
+            byKey.set(key, { count: 1, latestJoin: row.joinBlock });
+            continue;
+        }
+        current.count += 1;
+        if (row.joinBlock > current.latestJoin) current.latestJoin = row.joinBlock;
+    }
+    const ranked = [...byKey.entries()].sort(
+        (a, b) => b[1].count - a[1].count || b[1].latestJoin - a[1].latestJoin || formatRank(a[0]) - formatRank(b[0]) || a[0].localeCompare(b[0])
+    );
+    return ranked[0]?.[0];
+}
+
 /** One label per distinct title, Cash Game then Sit & Go then Tournament. */
 export function sessionGameFilterOptions(labels: Array<SessionGameLabel | undefined>): SessionGameFilterOption[] {
     const byKey = new Map<string, SessionGameFilterOption>();
