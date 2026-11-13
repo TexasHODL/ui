@@ -38,6 +38,7 @@ import SngPayoutPanel from "../../SngPayoutPanel";
 import { MobileDrawerShell } from "./MobileDrawerShell";
 import { hasValue } from "../../../../utils/guards";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
+import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
 
 export type TableStyleOption = "modern" | "classic" | "nouns";
 
@@ -291,7 +292,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     <button
                         onClick={fetchAccountBalance}
                         disabled={isBalanceLoading}
-                        className="min-h-[44px] flex items-center px-2 disabled:opacity-50"
+                        className="mobile-balance-button min-h-[44px] flex items-center px-2 disabled:opacity-50"
                         title="Refresh balance"
                     >
                         {isBalanceLoading ? (
@@ -299,10 +300,11 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         ) : (
                             <span className="text-white font-medium text-xs whitespace-nowrap">
                                 ${balanceFormatted}
-                                <span className="text-[11px] ml-1 text-gray-400">USDC</span>
+                                <span className="mobile-balance-unit text-[11px] ml-1 text-gray-400">USDC</span>
                             </span>
                         )}
                     </button>
+                    <ProvablyFairButton touch />
                     <button
                         onClick={() => {
                             setMenuOpen(false);

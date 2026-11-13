@@ -83,7 +83,7 @@ import { useGameStateSounds } from "../../hooks/notifications/useGameStateSounds
 import NoWalletOverlay from "./NoWalletOverlay";
 import SngPayoutPanel from "./SngPayoutPanel";
 import BlindsPanel from "./BlindsPanel";
-import ProvablyFairPanel from "./ProvablyFair/ProvablyFairPanel";
+import { ProvablyFairFrame } from "./ProvablyFair/ProvablyFairPanel";
 
 // Table Error Page
 import TableErrorPage from "./TableErrorPage";
@@ -1393,6 +1393,7 @@ const Table = React.memo(() => {
                 collapsed one-row header + hamburger */}
                 {tableOnly && <button className="restore-table-banner" aria-label="Restore table banners" title="Restore banners (Esc)" onClick={() => setTableOnly(false)}>↙ <span>Show controls</span></button>}
                 <div className="table-banner-wrap" ref={measureMobileChrome}>
+                <ProvablyFairFrame enabled={!isReplayMode}>
                 {isCompactMobile ? (
                     <MobileTableHeader
                         onToggleFocus={() => setTableOnly(true)}
@@ -1466,6 +1467,7 @@ const Table = React.memo(() => {
                         handleShareHand={handleShareHand}
                     />
                 )}
+                </ProvablyFairFrame>
 
                 </div>
                 {/* Blinds structure panel (ui#794) — self-gates to SNG/tournament;
@@ -1476,10 +1478,6 @@ const Table = React.memo(() => {
                     // PC: one active side panel (History / Settings / Blinds), owned by useTablePanels.
                     <BlindsPanel hideTab variant="sidebar" isOpen={blindsOpen} onClose={closeBlinds} />
                 ))}
-                {/* Provably fair tab + verify window (ui#972). The fork hides the
-                    floating Blinds tab, so this tab sits on its own under the banner.
-                    Hidden in replay mode, like the Blinds panel. */}
-                {!isReplayMode && <ProvablyFairPanel />}
                 {/*//! BODY — measured by the geometry engine. Mobile landscape gives
                     the action column a fixed width beside this stage. */}
                 {isCompactMobile && <LiveHandStrengthDisplay />}

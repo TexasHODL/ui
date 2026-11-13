@@ -1,4 +1,4 @@
-import { chooseHistoryAnchor, historyBesideDock, historyCorner, historyNudge, overlapArea, type Box } from "./placeMobileHistory";
+import { chooseHistoryAnchor, historyBesideDock, historyNudge, overlapArea, type Box } from "./placeMobileHistory";
 
 const seat = (left: number, top: number, width = 120, height = 140): Box => ({
     left,
@@ -34,18 +34,6 @@ describe("historyNudge", () => {
 
     it("does not push the launcher down the felt when a seat still covers it", () => {
         expect(historyNudge(button, [seat(300, 40)])).toBe(0);
-    });
-});
-
-describe("historyCorner", () => {
-    it("keeps the scored corner in right-hand mode", () => {
-        expect(historyCorner(false, "right")).toBe("right");
-        expect(historyCorner(false, "left")).toBe("left");
-    });
-
-    it("takes the left corner in left-hand mode so the provably-fair tab can have the right", () => {
-        expect(historyCorner(true, "right")).toBe("left");
-        expect(historyCorner(true, "left")).toBe("left");
     });
 });
 

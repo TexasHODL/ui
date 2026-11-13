@@ -47,7 +47,10 @@ test("verify a hand: pending while it runs, verified from its seed once it ends"
   });
 
   await test.step("while hand #2 runs: the panel and a pending verification", async () => {
-    await page.getByTestId("provably-fair-tab").click();
+    const tab = page.getByTestId("provably-fair-tab");
+    await expect(tab).toHaveAccessibleName("Provably fair");
+    await expect(tab).toHaveAttribute("title", "Provably fair");
+    await tab.click();
     const panel = page.getByTestId("provably-fair-panel");
     await expect(panel.getByTestId("provably-fair-this-hand")).toContainText("This hand #2");
     await expect(panel.getByTestId("provably-fair-this-hand")).toContainText("opens when the hand ends");
