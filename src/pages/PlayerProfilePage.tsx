@@ -32,6 +32,7 @@ import {
     sessionPrizePlaceLabel,
     uniqueGameIds
 } from "../utils/sessionGameDisplay";
+import { sessionCashOutAmountClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import styles from "./explorer/AllAccountsPage.module.css";
 
@@ -282,17 +283,21 @@ export default function PlayerProfilePage() {
                                                                         Prize
                                                                     </span>
                                                                     {hasContent(place) && <span className="text-xs font-semibold text-amber-200">{place}</span>}
-                                                                    <span>{hasValue(row.cashOut) ? formatUsd(row.cashOut) : "—"}</span>
+                                                                    {hasValue(row.cashOut) ? (
+                                                                        <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>{formatUsd(row.cashOut)}</span>
+                                                                    ) : (
+                                                                        "—"
+                                                                    )}
                                                                 </Link>
                                                             ) : hasValue(bust) ? (
                                                                 <span className="inline-flex items-center justify-end gap-2">
                                                                     {hasContent(bust.placeLabel) && (
                                                                         <span className="text-xs font-semibold text-amber-200">{bust.placeLabel}</span>
                                                                     )}
-                                                                    <span>{formatUsd(0)}</span>
+                                                                    <span className={sessionCashOutAmountClass(row.buyIn, 0)}>{formatUsd(0)}</span>
                                                                 </span>
                                                             ) : hasValue(row.cashOut) ? (
-                                                                formatUsd(row.cashOut)
+                                                                <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>{formatUsd(row.cashOut)}</span>
                                                             ) : (
                                                                 "—"
                                                             )}
