@@ -182,7 +182,9 @@ describe("More menu", () => {
         expect(menu).toContainElement(within(menu).getByRole("button", { name: "Light theme" }));
         fireEvent.click(menu.querySelector("summary")!);
         const settings = within(menu).getByText("SETTINGS").closest("div");
-        expect(settings).toContainElement(within(menu).getByText("Theme"));
+        expect(within(menu).queryByText("Theme")).not.toBeInTheDocument();
+        expect(within(menu).queryByText("Dark or light appearance.")).not.toBeInTheDocument();
+        expect(settings).toContainElement(within(menu).getByRole("group", { name: "Color theme" }));
         const light = within(menu).getByRole("button", { name: "Light theme" });
         const dark = within(menu).getByRole("button", { name: "Dark theme" });
         expect(light).toHaveTextContent("Light");
@@ -195,6 +197,42 @@ describe("More menu", () => {
         fireEvent.click(dark);
         expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
         expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+        document.documentElement.removeAttribute("data-theme");
+        localStorage.removeItem(THEME_STORAGE_KEY);
+    });
+
+    it("closes on a click or tap outside, and not on the toggle, a menu item, or the More button", () => {
+        const menu = moreMenu();
+        if (!(menu instanceof HTMLDetailsElement)) throw new Error("More menu missing");
+        const press = (el: Element, pointerType: string) => {
+            const event = new MouseEvent("pointerdown", { bubbles: true, cancelable: true });
+            Object.defineProperty(event, "pointerType", { value: pointerType });
+            el.dispatchEvent(event);
+        };
+        const light = within(menu).getByRole("button", { name: "Light theme" });
+        const tables = within(menu).getByRole("link", { name: "Tables" });
+        const summary = menu.querySelector("summary");
+        if (!(summary instanceof HTMLElement)) throw new Error("More summary missing");
+        const outside = screen.getByRole("link", { name: "Texas HODL lobby" });
+
+        for (const pointerType of ["mouse", "touch"]) {
+            menu.open = true;
+            press(light, pointerType);
+            fireEvent.click(light);
+            expect(menu.open).toBe(true);
+            expect(light).toHaveAttribute("aria-pressed", "true");
+
+            press(tables, pointerType);
+            expect(menu.open).toBe(true);
+            expect(tables).toHaveAttribute("href", "/tables");
+
+            press(summary, pointerType);
+            expect(menu.open).toBe(true);
+
+            press(outside, pointerType);
+            expect(menu.open).toBe(false);
+        }
+
         document.documentElement.removeAttribute("data-theme");
         localStorage.removeItem(THEME_STORAGE_KEY);
     });

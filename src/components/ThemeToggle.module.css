@@ -57,3 +57,11 @@
     outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 2px;
 }
+/* More menu: the control is the whole row, so Dark and Light share it evenly. */
+.controlOnly .group {
+    display: flex;
+    width: 100%;
+}
+.controlOnly .group button {
+    flex: 1 1 0;
+}

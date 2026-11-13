@@ -21,8 +21,13 @@ function MoonIcon() {
     );
 }
 
+interface ThemeToggleProps {
+    /** Settings keeps the label. The More menu passes false and shows only Dark / Light. */
+    showCopy?: boolean;
+}
+
 /** Dark / Light choice. Same persistence as the header pill this replaced. */
-export function ThemeToggle() {
+export function ThemeToggle({ showCopy = true }: ThemeToggleProps) {
     const theme = useAppliedTheme();
 
     const choose = (next: ThemeChoice) => {
@@ -30,11 +35,13 @@ export function ThemeToggle() {
     };
 
     return (
-        <div className={`${styles.row} settings-theme-row`}>
-            <div className={styles.copy}>
-                <p className={styles.label}>Theme</p>
-                <p className={styles.hint}>Dark or light appearance.</p>
-            </div>
+        <div className={`${styles.row} settings-theme-row${showCopy ? "" : ` ${styles.controlOnly}`}`}>
+            {showCopy && (
+                <div className={styles.copy}>
+                    <p className={styles.label}>Theme</p>
+                    <p className={styles.hint}>Dark or light appearance.</p>
+                </div>
+            )}
             <div className={styles.group} role="group" aria-label="Color theme">
                 <button type="button" aria-label="Dark theme" aria-pressed={theme === "dark"} title="Dark theme" onClick={() => choose("dark")}>
                     <MoonIcon />

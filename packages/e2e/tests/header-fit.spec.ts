@@ -143,10 +143,14 @@ test("More menu and avatar stay reachable on desktop, the old clip range, and co
     await expect(page.getByRole("button", { name: "Light theme" })).toHaveCount(0);
     await summary.click();
     const menu = page.locator("header details");
-    await expect(menu.getByText("Theme", { exact: true })).toBeVisible();
+    await expect(menu.getByText("Theme", { exact: true })).toHaveCount(0);
+    await expect(menu.getByText("Dark or light appearance.")).toHaveCount(0);
     await expect(menu.getByRole("group", { name: "Color theme" })).toBeVisible();
     await page.getByRole("button", { name: "Light theme" }).click();
     await expect(page.getByRole("button", { name: "Light theme" })).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => menu.evaluate((el: HTMLDetailsElement) => el.open)).toBe(true);
+    await menu.getByRole("link", { name: "Tables" }).dispatchEvent("pointerdown");
+    await expect.poll(() => menu.evaluate((el: HTMLDetailsElement) => el.open)).toBe(true);
     await page.getByRole("button", { name: "Dark theme" }).click();
     await expect(page.getByRole("button", { name: "Dark theme" })).toHaveAttribute("aria-pressed", "true");
     await expect.poll(() => menu.evaluate((el: HTMLDetailsElement) => el.open)).toBe(true);
@@ -176,7 +180,7 @@ test("More menu and avatar stay reachable on desktop, the old clip range, and co
       return problems;
     });
     expect(menuProblems, `${size.width}x${size.height} menu: ${menuProblems.join("; ")}`).toEqual([]);
-    await summary.click();
+    await page.getByRole("link", { name: "Texas HODL lobby" }).dispatchEvent("pointerdown");
     await expect.poll(() => menu.evaluate((el: HTMLDetailsElement) => el.open)).toBe(false);
 
     await page.getByRole("button", { name: "Choose your avatar" }).click();
