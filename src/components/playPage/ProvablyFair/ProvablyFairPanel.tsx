@@ -49,7 +49,9 @@ export const ProvablyFairButton: React.FC<{ touch?: boolean }> = ({ touch = fals
             title="Provably fair"
             data-testid="provably-fair-tab"
         >
-            <ShieldIcon className={styles.shieldIcon} />
+            <span className={styles.shieldTile}>
+                <ShieldIcon className={styles.shieldIcon} />
+            </span>
         </button>
     );
 };

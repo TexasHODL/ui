@@ -42,9 +42,12 @@ describe("Provably fair header shield", () => {
         expect(button.closest(".roomTools")).not.toBeNull();
     });
 
-    it("uses a 44px phone hit target", () => {
+    it("uses a 44px phone hit target with the boxed tile inside it", () => {
         renderShield(true);
-        expect(screen.getByRole("button", { name: "Provably fair" })).toHaveClass("shieldButtonTouch");
+        const button = screen.getByRole("button", { name: "Provably fair" });
+        expect(button).toHaveClass("shieldButton", "shieldButtonTouch");
+        expect(button.querySelector(".shieldTile")).not.toBeNull();
+        expect(button.querySelector(".shieldIcon")).not.toBeNull();
     });
 
     it("stays hidden in replay mode", () => {
