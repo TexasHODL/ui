@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { GlobalHeader } from "./GlobalHeader";
 import { STORAGE_COSMOS_ADDRESS } from "../utils/cosmos/storage";
 import { PROFILE_SETUP_TITLE } from "../utils/profileHub";
+import { THEME_STORAGE_KEY } from "../theme/theme";
 import { viteEnv } from "../utils/viteEnv";
 
 const ME = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
@@ -52,8 +53,9 @@ it("uses the sharp mark in light mode when the bundled logo is showing", () => {
     document.documentElement.setAttribute("data-theme", "light");
     try {
         expect(renderLogo()).toHaveAttribute("src", "/texas-hodl-logo-sharp.svg");
-        expect(screen.getByRole("button", { name: "Light theme" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Dark theme" })).toBeInTheDocument();
+        const menu = screen.getByText("More").closest("details");
+        expect(menu).toContainElement(screen.getByRole("button", { name: "Light theme" }));
+        expect(menu).not.toHaveAttribute("open");
     } finally {
         document.documentElement.removeAttribute("data-theme");
     }
@@ -170,5 +172,30 @@ describe("More menu", () => {
         expect(menu.getByRole("link", { name: "Players" })).toHaveAttribute("href", "/players");
         expect(menu.getByRole("link", { name: "Block explorer" })).toHaveAttribute("href", "/explorer");
         expect(menu.getByRole("link", { name: "Network nodes" })).toHaveAttribute("href", "/nodes");
+    });
+
+    it("puts Dark and Light under Settings and applies the choice immediately", () => {
+        document.documentElement.removeAttribute("data-theme");
+        localStorage.removeItem(THEME_STORAGE_KEY);
+        const menu = moreMenu();
+        expect(menu).not.toHaveAttribute("open");
+        expect(menu).toContainElement(within(menu).getByRole("button", { name: "Light theme" }));
+        fireEvent.click(menu.querySelector("summary")!);
+        const settings = within(menu).getByText("SETTINGS").closest("div");
+        expect(settings).toContainElement(within(menu).getByText("Theme"));
+        const light = within(menu).getByRole("button", { name: "Light theme" });
+        const dark = within(menu).getByRole("button", { name: "Dark theme" });
+        expect(light).toHaveTextContent("Light");
+        expect(dark).toHaveTextContent("Dark");
+        expect(dark).toHaveAttribute("aria-pressed", "true");
+        fireEvent.click(light);
+        expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+        expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+        expect(light).toHaveAttribute("aria-pressed", "true");
+        fireEvent.click(dark);
+        expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
+        expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+        document.documentElement.removeAttribute("data-theme");
+        localStorage.removeItem(THEME_STORAGE_KEY);
     });
 });
