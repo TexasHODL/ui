@@ -5,19 +5,27 @@ const mockApi = { getSentTransactions: jest.fn() };
 const mockPublicStateAt = jest.fn();
 jest.mock("../../context/CosmosApiContext", () => ({
     useCosmosApi: () => mockApi,
-    useCometRpcApiFactory: () => () => ({ abciQuery: jest.fn() })
+    useCometRpcApiFactory: () => (url: string) => ({ url })
 }));
 jest.mock("../../context/NetworkContext", () => ({
-    useNetwork: () => ({ currentNetwork: { rpc: "https://node1.block52.xyz/rpc/" } })
+    useNetwork: () => ({ currentNetwork: mockNetwork }),
+    NETWORK_PRESETS: [
+        { name: "Block52", rpc: "https://node1.block52.xyz/rpc/", rest: "", grpc: "", ws: "" },
+        { name: "Texas Hodl", rpc: "https://node.texashodl.net/rpc/", rest: "", grpc: "", ws: "" }
+    ]
 }));
-jest.mock("../../utils/chainHistory", () => ({
-    publicStateAt: (...args: unknown[]) => mockPublicStateAt(...args)
-}));
+jest.mock("../../utils/chainHistory", () => {
+    const actual = jest.requireActual("../../utils/chainHistory");
+    return { ...actual, publicStateAt: (...args: unknown[]) => mockPublicStateAt(...args) };
+});
+
+let mockNetwork: { name: string; rpc: string } = { name: "Block52", rpc: "https://node1.block52.xyz/rpc/" };
 
 const PLAYER = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
 const GAME = "0x7db1aa4491963b889ad43dd7213d11e383b1052aacb9ceafe3099b42ae0797e7";
 
 beforeEach(() => {
+    mockNetwork = { name: "Block52", rpc: "https://node1.block52.xyz/rpc/" };
     mockApi.getSentTransactions.mockReset();
     mockPublicStateAt.mockReset();
 });
@@ -43,6 +51,29 @@ test("a failed lookup is recorded as not found", async () => {
     mockApi.getSentTransactions.mockRejectedValue(new Error("offline"));
     const { result } = renderHook(() => useSessionEliminationBlocks(PLAYER, [{ gameId: GAME, handCount: 1 }]));
     await waitFor(() => expect(result.current[GAME]).toBeNull());
+});
+
+test("retries a pruned height on Block52 and keeps any other error on the selected node", async () => {
+    mockNetwork = { name: "Texas Hodl", rpc: "https://node.texashodl.net/rpc/" };
+    mockApi.getSentTransactions.mockResolvedValue({
+        tx_responses: [{ code: 0, height: "700000", events: [{ type: "hand_ended", attributes: [{ key: "block_height", value: "700000" }] }] }]
+    });
+    mockPublicStateAt.mockImplementation(async (rpc: { url: string }) => {
+        if (rpc.url === "https://node.texashodl.net/rpc/") {
+            throw new Error("failed to load state at height 700000; version does not exist");
+        }
+        return { results: [{ place: 4, playerId: PLAYER, payout: "0" }], players: [] };
+    });
+    const pruned = renderHook(() => useSessionEliminationBlocks(PLAYER, [{ gameId: GAME, handCount: 1 }]));
+    await waitFor(() => expect(pruned.result.current[GAME]).toBe(700000));
+    expect(mockPublicStateAt).toHaveBeenCalledWith(expect.objectContaining({ url: "https://node1.block52.xyz/rpc/" }), GAME, 700000);
+    pruned.unmount();
+
+    mockPublicStateAt.mockReset();
+    mockPublicStateAt.mockRejectedValue(new Error("rpc error: code = NotFound desc = game state with ID"));
+    const missing = renderHook(() => useSessionEliminationBlocks("b521otherplayer", [{ gameId: GAME, handCount: 1 }]));
+    await waitFor(() => expect(missing.result.current[GAME]).toBeNull());
+    expect(mockPublicStateAt).toHaveBeenCalledTimes(1);
 });
 
 test("does not keep another player's blocks", async () => {

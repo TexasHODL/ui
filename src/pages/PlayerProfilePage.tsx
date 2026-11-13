@@ -35,7 +35,7 @@ import {
     sessionPrizePlaceLabel,
     uniqueGameIds
 } from "../utils/sessionGameDisplay";
-import { sessionCashOutAmountClass } from "../utils/sessionCashOut";
+import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import {
     formatHistoryAmount,
@@ -45,6 +45,7 @@ import {
     historyNetClass,
     openSessionTotalsNote,
     profileHistoryStats,
+    sessionStateRetentionNote,
     sessionSpansForHistory,
     settledSessionCashOut,
     variantMoneyFromRows
@@ -302,6 +303,7 @@ export default function PlayerProfilePage() {
                                             />
                                         </div>
                                         {hasContent(openSessionsNote) && <p className="mt-3 text-xs text-gray-400">{openSessionsNote}</p>}
+                                        <p className="mt-3 text-xs text-gray-500">{sessionStateRetentionNote()}</p>
                                     </div>
                                     {isEmpty(filteredRows) ? (
                                         <div className="p-8 text-center">
@@ -407,21 +409,23 @@ export default function PlayerProfilePage() {
                                                                     {row.isPrize && hasContent(row.prizeTxHash) ? (
                                                                         <Link
                                                                             to={`/explorer/tx/${row.prizeTxHash}`}
-                                                                            className="inline-flex items-center justify-end gap-2 hover:text-white"
+                                                                            className={sessionPrizeCashOutClass()}
                                                                         >
                                                                             <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
                                                                                 Prize
                                                                             </span>
-                                                                            {hasContent(place) && (
-                                                                                <span className="text-xs font-semibold text-amber-200">{place}</span>
-                                                                            )}
-                                                                            {hasValue(cashOutAmount) ? (
-                                                                                <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
-                                                                                    {formatUsd(cashOutAmount)}
-                                                                                </span>
-                                                                            ) : (
-                                                                                "—"
-                                                                            )}
+                                                                            <span className={sessionPrizeAmountRowClass()}>
+                                                                                {hasContent(place) && (
+                                                                                    <span className="text-xs font-semibold text-amber-200">{place}</span>
+                                                                                )}
+                                                                                {hasValue(cashOutAmount) ? (
+                                                                                    <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                        {formatUsd(cashOutAmount)}
+                                                                                    </span>
+                                                                                ) : (
+                                                                                    "—"
+                                                                                )}
+                                                                            </span>
                                                                         </Link>
                                                                     ) : hasValue(bust) ? (
                                                                         <span className="inline-flex items-center justify-end gap-2">

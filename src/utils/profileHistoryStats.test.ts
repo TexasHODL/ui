@@ -9,6 +9,8 @@ import {
     historyMoneyUnits,
     historyNetClass,
     openSessionTotalsNote,
+    SESSION_CHAIN_STATE_DAYS,
+    sessionStateRetentionNote,
     profileHistoryStats,
     settledSessionCashOut,
     sessionSpansForHistory,
@@ -252,6 +254,9 @@ describe("variant money totals", () => {
         expect(openSessionTotalsNote(2)).toBe("2 open sessions aren't in these totals");
         expect(openSessionTotalsNote(1)).toBe("1 open session isn't in these totals");
         expect(openSessionTotalsNote(0)).toBeUndefined();
+        expect(SESSION_CHAIN_STATE_DAYS).toBe(23);
+        expect(sessionStateRetentionNote()).toContain("last 23 days");
+        expect(sessionStateRetentionNote()).toContain("Older rows show —");
     });
 
     it("has no totals when every seat is still open", () => {
