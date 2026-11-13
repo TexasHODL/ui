@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaEllipsisH, FaArrowUp } from "react-icons/fa";
 import { NetworkSelector } from "./NetworkSelector";
 import { ProfileAvatarButton } from "./profile";
 import { TEXAS_HODL_LOGO } from "../constants/branding";
 import { ThemeToggle } from "./ThemeToggle";
+import { useDismissDetailsOnOutsidePointer } from "../hooks/useDismissDetailsOnOutsidePointer";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
 import { getCosmosAddress } from "../utils/cosmos/storage";
 import { isPrimaryNavCurrent, primaryNavItems, viewerAddress } from "../utils/profileHub";
@@ -31,6 +32,8 @@ const extraGroups = [
 export const GlobalHeader: React.FC = () => {
     const { pathname, search } = useLocation();
     const { address } = useCosmosWallet();
+    const moreRef = useRef<HTMLDetailsElement>(null);
+    useDismissDetailsOnOutsidePointer(moreRef);
     const viewer = viewerAddress(address, getCosmosAddress());
     if (pathname.startsWith("/table/") && pathname !== "/table/admin") return null;
     return (
@@ -63,7 +66,7 @@ export const GlobalHeader: React.FC = () => {
                     })}
                 </nav>
                 <div className={styles.utilities}>
-                    <details className={styles.more} key={pathname}>
+                    <details className={styles.more} key={pathname} ref={moreRef}>
                         <summary aria-label="More options">
                             <FaEllipsisH />
                             <span>More</span>
@@ -71,7 +74,7 @@ export const GlobalHeader: React.FC = () => {
                         <div className={styles.dropdown}>
                             <div className={styles.menuGroup}>
                                 <p>SETTINGS</p>
-                                <ThemeToggle />
+                                <ThemeToggle showCopy={false} />
                             </div>
                             {extraGroups.map(group => (
                                 <div key={group.label} className={styles.menuGroup}>

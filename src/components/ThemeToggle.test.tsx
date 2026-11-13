@@ -10,6 +10,7 @@ afterEach(() => {
 it("labels the choice Dark and Light and defaults to dark", () => {
     render(<ThemeToggle />);
     expect(screen.getByText("Theme")).toBeInTheDocument();
+    expect(screen.getByText("Dark or light appearance.")).toBeInTheDocument();
     const dark = screen.getByRole("button", { name: "Dark theme" });
     const light = screen.getByRole("button", { name: "Light theme" });
     expect(dark).toHaveTextContent("Dark");
@@ -19,6 +20,15 @@ it("labels the choice Dark and Light and defaults to dark", () => {
     expect(dark).toHaveAttribute("aria-pressed", "true");
     expect(light).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("group", { name: "Color theme" })).toContainElement(dark);
+});
+
+it("can show only the Dark and Light control", () => {
+    render(<ThemeToggle showCopy={false} />);
+    expect(screen.queryByText("Theme")).not.toBeInTheDocument();
+    expect(screen.queryByText("Dark or light appearance.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dark theme" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Light theme" })).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Color theme" })).toBeInTheDocument();
 });
 
 it("switches to light and back, and remembers the choice", () => {
