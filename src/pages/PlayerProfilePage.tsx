@@ -15,6 +15,7 @@ import { ProfileHub } from "../components/players/ProfileHub";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { VipBadge } from "../components/players/VipBadge";
 import { formatScaledPercent } from "../utils/vip";
+import { useHandContributions } from "../hooks/player/useHandContributions";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
@@ -37,17 +38,20 @@ import {
 } from "../utils/sessionGameDisplay";
 import { sessionCashOutAmountClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
+import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
 import {
     formatHistoryAmount,
     formatHistoryBlocks,
     handsForHistory,
     historyMoneyUnits,
     profileHistoryStats,
-    sessionSpansForHistory
+    sessionSpansForHistory,
+    withHandContributions
 } from "../utils/profileHistoryStats";
 import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
+const NO_PROFIT_HANDS: HandContributionTarget[] = [];
 
 const formatUsd = (micro: number): string => {
     const label = formatMicroUsd(micro, true);
@@ -96,7 +100,19 @@ export default function PlayerProfilePage() {
     // Every filtered bust, not only the visible page, so the longest session does not depend on which page is open.
     const eliminationLookups = useMemo(() => eliminationLookupsFor(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
     const eliminationBlocks = useSessionEliminationBlocks(address, eliminationLookups);
-    const historyHands = useMemo(() => (hasContent(handHistory.error) ? [] : handsForHistory(handHistory.hands)), [handHistory.error, handHistory.hands]);
+    // Chain action logs for this variant only, and only once its tables share a money unit.
+    const profitHands = useMemo(
+        () =>
+            gamesLoading || hasContent(handHistory.error)
+                ? undefined
+                : profitHandsToMeasure(handHistory.hands, gameLabels, historyMoneyUnits(gamesById), gameFilter),
+        [gamesLoading, handHistory.error, handHistory.hands, gameLabels, gamesById, gameFilter]
+    );
+    const contributions = useHandContributions(address, profitHands ?? NO_PROFIT_HANDS, hasValue(profitHands));
+    const historyHands = useMemo(
+        () => withHandContributions(hasContent(handHistory.error) ? [] : handsForHistory(handHistory.hands), contributions.byKey),
+        [handHistory.error, handHistory.hands, contributions.byKey]
+    );
     const historyStats = useMemo(
         () =>
             profileHistoryStats(
@@ -110,6 +126,8 @@ export default function PlayerProfilePage() {
     );
     const handsPending = tab === "stats" && hasContent(address) && !handHistory.complete && !hasContent(handHistory.error);
     const moneyLoading = handsPending || handHistory.loading || gamesLoading;
+    const profitLoading = moneyLoading || contributions.pending;
+    const profitNote = profitLoading ? undefined : handContributionNote(contributions.unavailable);
     const prizeMoney = useMemo(
         () =>
             hasValue(profile) && !prizesLoading
@@ -252,10 +270,11 @@ export default function PlayerProfilePage() {
                                 <StatCard label="Biggest Pot Won" value={formatHistoryAmount(historyStats.biggestPotWon, historyStats.potUnit, moneyLoading)} />
                                 <StatCard
                                     label="Biggest Hand Profit"
-                                    value={formatHistoryAmount(historyStats.biggestHandProfit, historyStats.profitUnit, moneyLoading)}
+                                    value={formatHistoryAmount(historyStats.biggestHandProfit, historyStats.profitUnit, profitLoading)}
                                 />
                                 <StatCard label="Longest Session (blocks)" value={formatHistoryBlocks(historyStats.longestSessionBlocks, historyLoading)} />
                             </div>
+                            {hasContent(profitNote) && <p className="px-4 pb-4 text-xs text-gray-500 sm:px-6">{profitNote}</p>}
                             {historyLoading ? (
                                 <div className="p-8 text-center">
                                     <div className={`animate-spin rounded-full h-10 w-10 border-b-2 mx-auto mb-3 ${styles.loadingSpinner}`}></div>

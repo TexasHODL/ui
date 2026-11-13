@@ -9,6 +9,7 @@ import {
     historyMoneyUnits,
     profileHistoryStats,
     sessionSpansForHistory,
+    withHandContributions,
     type HistoryHandAmount,
     type HistorySessionSpan
 } from "./profileHistoryStats";
@@ -221,7 +222,7 @@ describe("sessionSpansForHistory", () => {
 });
 
 describe("handsForHistory", () => {
-    it("keeps the awarded amount and does not invent a contribution", () => {
+    it("keeps the awarded amount and the hand number, and does not invent a contribution", () => {
         expect(
             handsForHistory([
                 {
@@ -235,7 +236,22 @@ describe("handsForHistory", () => {
                     winner_count: 1
                 }
             ])
-        ).toEqual([{ gameId: "cashA", wonAmount: 18_400_000 }]);
+        ).toEqual([{ gameId: "cashA", handNumber: 1, wonAmount: 18_400_000 }]);
+    });
+});
+
+describe("withHandContributions", () => {
+    it("attaches a chain contribution only for the hand that was read", () => {
+        const rows = [
+            { gameId: "cashA", handNumber: 4, wonAmount: 5_000_000 },
+            { gameId: "cashA", handNumber: 5, wonAmount: 0 },
+            { gameId: "cashB", wonAmount: 1_000_000 }
+        ];
+        expect(withHandContributions(rows, { "cashA#4": 1_000_000 })).toEqual([
+            { gameId: "cashA", handNumber: 4, wonAmount: 5_000_000, contributed: 1_000_000 },
+            { gameId: "cashA", handNumber: 5, wonAmount: 0 },
+            { gameId: "cashB", wonAmount: 1_000_000 }
+        ]);
     });
 });
 
