@@ -108,11 +108,14 @@
     align-items: center;
     gap: 22px;
     min-height: 70px;
+    min-width: 0;
+    max-width: 100%;
     padding: 10px 26px;
 }
 .backButton {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     gap: 9px;
     padding: 10px 14px;
     border: 1px solid var(--theme-line, #ffffff18);
@@ -122,7 +125,9 @@
     font-weight: 700;
 }
 .roomIdentity {
+    flex: 1 1 auto;
     min-width: 0;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -140,10 +145,14 @@
     font-size: 12px;
     color: var(--theme-muted, #a295ac);
     font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .roomTools {
     display: flex;
     align-items: center;
+    flex-shrink: 0;
     gap: 12px;
     margin-left: auto;
 }
@@ -348,5 +357,17 @@
     }
     .roomTools {
         gap: 4px;
+    }
+}
+@media (max-width: 760px) {
+    .roomMain {
+        gap: 8px;
+        padding: 8px 12px;
+    }
+    .backButton {
+        padding: 8px 10px;
+    }
+    .roomTools {
+        gap: 2px;
     }
 }

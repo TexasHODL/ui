@@ -1,85 +1,64 @@
-/* Provably fair tab + panel (ui#972) — non-modal, under the table banner.
-   The fork hides the floating Blinds tab, so this tab does not sit beside it.
-   --mobile-chrome-end is the banner's bottom edge (Table.tsx). */
+/* Provably fair shield + panel (ui#972).
+   The shield is a header icon. The panel drops below the table banner,
+   right edge on the shield (top/right are set from the button). */
 
-.root {
-    position: fixed;
-    top: calc(var(--mobile-chrome-end, 104px) + 8px);
-    left: max(8px, env(safe-area-inset-left, 0px));
-    z-index: 40;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-    pointer-events: none;
-}
-
-.tab {
-    pointer-events: auto;
+.shieldButton {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 4px 10px 4px 8px;
-    border-radius: 8px;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 9px;
     border: 1px solid rgba(52, 211, 153, 0.55);
-    background-color: rgba(11, 15, 20, 0.7);
-    color: #d1fae5;
+    background: transparent;
     cursor: pointer;
-    backdrop-filter: blur(4px);
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-    text-align: left;
+    color: #34d399;
 }
 
-.tab:hover {
+/* Beats `.roomHeader button:hover`, which would recolor the shield. */
+.shieldButton.shieldButton:hover,
+.shieldButtonOpen.shieldButtonOpen {
+    color: #34d399;
     border-color: #34d399;
-}
-
-.tabOpen {
     background-color: rgba(16, 185, 129, 0.22);
 }
 
-.tabIcon {
-    width: 16px;
-    height: 16px;
+.shieldButton:focus-visible {
+    outline: 2px solid var(--theme-accent, #d5a4ff);
+    outline-offset: 3px;
+}
+
+/* Phone header icons are 44px hit targets (settings, menu). */
+.shieldButtonTouch.shieldButtonTouch {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 9px;
+}
+
+.shieldIcon {
+    width: 18px;
+    height: 18px;
     color: #34d399;
-    flex-shrink: 0;
-}
-
-.tabText {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.1;
-}
-
-.tabLabel {
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #a7f3d0;
-}
-
-/* Hidden on desktop and tablet, where the single "Provably fair" line shows. */
-.labelStack {
-    display: none;
-}
-
-.tabSub {
-    font-size: 12px;
-    font-weight: 600;
-    color: #fff;
 }
 
 .panel {
-    pointer-events: auto;
+    position: fixed;
+    z-index: 80;
+    top: calc(var(--table-banner-end, 120px) + 8px);
+    right: max(8px, env(safe-area-inset-right, 0px));
     width: 320px;
     max-width: calc(100vw - 16px);
+    max-height: min(70dvh, calc(100dvh - var(--table-banner-end, 120px) - 24px - env(safe-area-inset-bottom, 0px)));
+    overflow-x: hidden;
+    overflow-y: auto;
     border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background-color: #0d141c;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
     color: #e5e7eb;
-    overflow: hidden;
     animation: panelIn 0.15s ease;
 }
 
@@ -220,118 +199,8 @@
     color: #34d399;
 }
 
-/* Phones: stay under the banner. A bottom sheet would cover the fork's action
-   dock (portrait) and the fold button. Landscape already parks hand strength
-   in this corner, so the tab drops below that chip. */
-@media (max-width: 640px) {
-    .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 8px);
-        left: max(8px, env(safe-area-inset-left, 0px));
-        right: auto;
-        bottom: auto;
-        align-items: flex-start;
-    }
-
-    .panel {
-        width: min(320px, calc(100vw - 16px));
-        max-width: calc(100vw - 16px);
-        max-height: min(60vh, calc(100dvh - var(--mobile-chrome-end, 48px) - 120px));
-        overflow-y: auto;
-    }
-}
-
-@media (max-height: 500px) and (orientation: landscape) {
-    .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 40px);
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .panel {
         animation: none;
-    }
-}
-
-/* Phones only. Desktop and tablet keep the rules above, unchanged.
-   Portrait: shield beside PROVABLY / FAIR, no "Seed on chain". A 12px shield
-   and 8px caps fit History's 24px height and stay left of the winner pill's
-   roll window on a 360px phone.
-   Landscape, right-hand: one line, shield + PROVABLY FAIR, in the top-left
-   the hand-strength chip used to occupy. Left-hand mirrors that tab to the
-   top-right; History takes the left corner instead. */
-@media (orientation: portrait) {
-    :global(.table-container[data-compact-mobile="true"]) .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 4px);
-    }
-
-    /* History takes this corner on a narrow 9-max phone. Sit underneath it. */
-    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 32px);
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tab {
-        gap: 2px;
-        padding: 2px 2px 2px 2px;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tabIcon {
-        width: 12px;
-        height: 12px;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tabText {
-        line-height: 1;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tabLabel {
-        font-size: 8px;
-        line-height: 9px;
-        letter-spacing: 0;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .labelWide,
-    :global(.table-container[data-compact-mobile="true"]) .tabSub {
-        display: none;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .labelStack {
-        display: block;
-    }
-}
-
-@media (orientation: landscape) {
-    :global(.table-container[data-compact-mobile="true"]) .root,
-    :global(.table-container[data-compact-mobile="true"][data-history-anchor="left"]) .root {
-        top: calc(var(--mobile-chrome-end, 48px) + 4px);
-    }
-
-    /* Left-hand mirrors the tab to the right edge under the banner, in every
-       state. History takes the left corner (or sits beside the slider on a
-       hero's turn), so the two do not share this edge. */
-    :global(.table-container[data-compact-mobile="true"]:has(.hand-left)) .root {
-        left: auto;
-        right: max(8px, env(safe-area-inset-right, 0px));
-        align-items: flex-end;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tab {
-        gap: 4px;
-        padding: 4px 8px 4px 6px;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tabIcon {
-        width: 14px;
-        height: 14px;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .tabLabel {
-        font-size: 10px;
-        line-height: 12px;
-        letter-spacing: 0.04em;
-    }
-
-    :global(.table-container[data-compact-mobile="true"]) .labelStack,
-    :global(.table-container[data-compact-mobile="true"]) .tabSub {
-        display: none;
     }
 }

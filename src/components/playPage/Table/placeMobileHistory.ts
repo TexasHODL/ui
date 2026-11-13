@@ -1,5 +1,3 @@
-import { hasValue } from "../../../utils/guards";
-
 /** Boxes in viewport coordinates. */
 export interface Box {
     left: number;
@@ -13,15 +11,6 @@ export function overlapArea(a: Box, b: Box): number {
     const height = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
     if (width <= 0 || height <= 0) return 0;
     return width * height;
-}
-
-/**
- * Left-hand landscape gives the right corner to the provably-fair tab, so
- * History takes the left whenever it is not parked beside the bet slider.
- * Equal coverage otherwise stays on the right, where the launcher has always lived.
- */
-export function historyCorner(leftHand: boolean, leastOverlap: "left" | "right"): "left" | "right" {
-    return leftHand ? "left" : leastOverlap;
 }
 
 /**
@@ -111,8 +100,7 @@ export function placeMobileHistory(root: HTMLElement): void {
         const box = element.getBoundingClientRect();
         return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     });
-    const leftHandLayout = hasValue(root.querySelector(".hand-left"));
-    const anchor = historyCorner(leftHandLayout, chooseHistoryAnchor(rect.width, rect.height, top, window.innerWidth, obstacles, inset));
+    const anchor = chooseHistoryAnchor(rect.width, rect.height, top, window.innerWidth, obstacles, inset);
     const chosen: Box =
         anchor === "left"
             ? { left: inset, right: inset + rect.width, top, bottom: top + rect.height }
