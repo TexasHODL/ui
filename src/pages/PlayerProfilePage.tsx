@@ -20,6 +20,7 @@ import { getCosmosAddress } from "../utils/cosmos/storage";
 import { PROFILE_TAB_PARAM, viewerAddress, visibleProfileTab } from "../utils/profileHub";
 import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
 import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
+import { useSessionEliminationBlocks } from "../hooks/player/useSessionEliminationBlocks";
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
 import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
 import {
@@ -30,6 +31,7 @@ import {
     sessionPrizePlaceLabel,
     uniqueGameIds
 } from "../utils/sessionGameDisplay";
+import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
@@ -68,6 +70,11 @@ export default function PlayerProfilePage() {
         const start = (sessionsPage - 1) * SESSIONS_PAGE_SIZE;
         return filteredRows.slice(start, start + SESSIONS_PAGE_SIZE);
     }, [filteredRows, sessionsPage]);
+    const eliminationLookups = useMemo(
+        () => eliminationLookupsFor(pageRows, rows, gamesById, address),
+        [pageRows, rows, gamesById, address]
+    );
+    const eliminationBlocks = useSessionEliminationBlocks(address, eliminationLookups);
     const prizeMoney = useMemo(
         () =>
             hasValue(profile) && !prizesLoading
@@ -238,6 +245,8 @@ export default function PlayerProfilePage() {
                                             {pageRows.map((row, i) => {
                                                 const label = gameLabels[row.gameId];
                                                 const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
+                                                const bust = sessionBustFor(row, rows, gamesById[row.gameId], profile.player_address);
+                                                const leaveBlock = sessionLeaveBlock(row, bust, eliminationBlocks[row.gameId]);
                                                 return (
                                                     <tr key={`${row.gameId}-${row.joinBlock}-${i}`} className={`border-t ${styles.tableRowBorder}`}>
                                                         <td className="px-6 py-4">
@@ -257,7 +266,7 @@ export default function PlayerProfilePage() {
                                                         </td>
                                                         <td className="px-6 py-4 text-right text-gray-300">{row.joinBlock.toLocaleString()}</td>
                                                         <td className="px-6 py-4 text-right text-gray-300">
-                                                            {hasValue(row.leaveBlock) ? row.leaveBlock.toLocaleString() : "—"}
+                                                            {hasValue(leaveBlock) ? leaveBlock.toLocaleString() : "—"}
                                                         </td>
                                                         <td className="px-6 py-4 text-right text-gray-300">{formatUsd(row.buyIn)}</td>
                                                         <td className="px-6 py-4 text-right text-gray-300 whitespace-nowrap">
@@ -272,6 +281,13 @@ export default function PlayerProfilePage() {
                                                                     {hasContent(place) && <span className="text-xs font-semibold text-amber-200">{place}</span>}
                                                                     <span>{hasValue(row.cashOut) ? formatUsd(row.cashOut) : "—"}</span>
                                                                 </Link>
+                                                            ) : hasValue(bust) ? (
+                                                                <span className="inline-flex items-center justify-end gap-2">
+                                                                    {hasContent(bust.placeLabel) && (
+                                                                        <span className="text-xs font-semibold text-amber-200">{bust.placeLabel}</span>
+                                                                    )}
+                                                                    <span>{formatUsd(0)}</span>
+                                                                </span>
                                                             ) : hasValue(row.cashOut) ? (
                                                                 formatUsd(row.cashOut)
                                                             ) : (
