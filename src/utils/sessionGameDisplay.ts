@@ -133,6 +133,35 @@ export function sessionPrizePlaceLabel(row: { isPrize: boolean; cashOut?: number
     return hasContent(ordinal) ? ordinal : undefined;
 }
 
+/** Join block, leave block, and length shown when a phone session row is expanded. */
+export interface SessionRowExpandDetail {
+    joinBlock: string;
+    leaveBlock: string;
+    /** "400 blocks", or "—" when the seat is still open or the span is not positive. */
+    length: string;
+}
+
+/**
+ * The three facts a phone row reveals. Length is leave minus join, the same
+ * span as Longest Session. An open seat, or a leave that is not after the
+ * join, has no length.
+ */
+function sessionLengthBlocks(joinBlock: number, leaveBlock: number | undefined): number | undefined {
+    if (!hasValue(leaveBlock)) return undefined;
+    if (!Number.isSafeInteger(joinBlock) || !Number.isSafeInteger(leaveBlock)) return undefined;
+    if (leaveBlock <= joinBlock) return undefined;
+    return leaveBlock - joinBlock;
+}
+
+export function sessionRowExpandDetail(joinBlock: number, leaveBlock: number | undefined): SessionRowExpandDetail {
+    const span = sessionLengthBlocks(joinBlock, leaveBlock);
+    return {
+        joinBlock: joinBlock.toLocaleString(),
+        leaveBlock: hasValue(leaveBlock) ? leaveBlock.toLocaleString() : "—",
+        length: hasValue(span) ? `${span.toLocaleString()} blocks` : "—"
+    };
+}
+
 /** Game ids in first-seen order, skipping blanks and repeats. */
 export function uniqueGameIds(ids: Array<string | undefined>): string[] {
     const seen = new Set<string>();

@@ -29,6 +29,7 @@ import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPr
 import {
     ALL_SESSION_GAMES,
     filterSessionRows,
+    sessionRowExpandDetail,
     sessionGameFilterOptions,
     sessionLabelsByGameId,
     sessionPrizePlaceLabel,
@@ -67,6 +68,7 @@ export default function PlayerProfilePage() {
     const [copied, setCopied] = useState(false);
 
     const [gameFilter, setGameFilter] = useState(ALL_SESSION_GAMES);
+    const [openSessionKey, setOpenSessionKey] = useState<string | null>(null);
 
     const { profile, loading, error } = usePlayerProfile(address);
     const { sessions, loading: sessionsLoading } = useAllPlayerSessions(address);
@@ -127,6 +129,7 @@ export default function PlayerProfilePage() {
     useEffect(() => {
         setGameFilter(ALL_SESSION_GAMES);
         setSessionsPage(1);
+        setOpenSessionKey(null);
     }, [address]);
 
     const copyAddress = () => {
@@ -263,15 +266,19 @@ export default function PlayerProfilePage() {
                                     <p className="text-gray-400">{gameFilter === ALL_SESSION_GAMES ? "No sessions recorded" : "No sessions for this game"}</p>
                                 </div>
                             ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full">
+                                <div className="sm:overflow-x-auto">
+                                    <table className="w-full table-fixed sm:table-auto">
                                         <thead>
                                             <tr className={styles.tableHeaderRow}>
                                                 <th className="px-6 py-4 text-left text-gray-400 font-semibold">Game</th>
-                                                <th className="px-6 py-4 text-right text-gray-400 font-semibold">Join Block</th>
-                                                <th className="px-6 py-4 text-right text-gray-400 font-semibold">Leave Block</th>
-                                                <th className="px-6 py-4 text-right text-gray-400 font-semibold">Buy-In</th>
-                                                <th className="px-6 py-4 text-right text-gray-400 font-semibold">Cash-Out</th>
+                                                <th className="hidden px-6 py-4 text-right text-gray-400 font-semibold sm:table-cell">Join Block</th>
+                                                <th className="hidden px-6 py-4 text-right text-gray-400 font-semibold sm:table-cell">Leave Block</th>
+                                                <th className="w-[5.25rem] px-3 py-4 text-right text-gray-400 font-semibold whitespace-nowrap sm:w-auto sm:px-6">
+                                                    Buy-In
+                                                </th>
+                                                <th className="w-[6.25rem] px-3 py-4 text-right text-gray-400 font-semibold whitespace-nowrap sm:w-auto sm:px-6">
+                                                    Cash-Out
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -280,29 +287,74 @@ export default function PlayerProfilePage() {
                                                 const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
                                                 const bust = sessionBustFor(row, rows, gamesById[row.gameId], profile.player_address);
                                                 const leaveBlock = sessionLeaveBlock(row, bust, eliminationBlocks[row.gameId]);
+                                                const sessionKey = `${row.gameId}-${row.joinBlock}-${i}`;
+                                                const expanded = openSessionKey === sessionKey;
+                                                const detailId = `session-blocks-${i}`;
+                                                const detail = sessionRowExpandDetail(row.joinBlock, leaveBlock);
+                                                const gameName = hasValue(label) ? label.title : "this session";
                                                 return (
-                                                    <tr key={`${row.gameId}-${row.joinBlock}-${i}`} className={`border-t ${styles.tableRowBorder}`}>
-                                                        <td className="px-6 py-4">
-                                                            <div className="flex max-w-[11.5rem] flex-col gap-0.5 sm:max-w-xs">
-                                                                {hasValue(label) && <span className="text-sm text-white">{label.title}</span>}
-                                                                {hasValue(label) && hasContent(label.detail) && (
-                                                                    <span className="text-xs text-gray-400">{label.detail}</span>
-                                                                )}
-                                                                <Link
-                                                                    to={`/table/${row.gameId}`}
-                                                                    title={row.gameId}
-                                                                    className={`font-mono hover:underline ${styles.brandText} ${hasValue(label) ? "text-xs" : "text-sm"}`}
-                                                                >
-                                                                    {truncateMiddle(row.gameId, 8, 6)}
-                                                                </Link>
+                                                    <tr
+                                                        key={sessionKey}
+                                                        className={`border-t ${styles.tableRowBorder}`}
+                                                        onClick={event => {
+                                                            if (window.matchMedia("(min-width: 640px)").matches) return;
+                                                            const target = event.target;
+                                                            if (target instanceof Element && target.closest("a, button")) return;
+                                                            setOpenSessionKey(expanded ? null : sessionKey);
+                                                        }}
+                                                    >
+                                                        <td className="relative align-top px-3 py-4 sm:px-6 sm:align-middle">
+                                                            <button
+                                                                type="button"
+                                                                className="absolute inset-0 z-0 sm:hidden"
+                                                                aria-expanded={expanded}
+                                                                aria-controls={detailId}
+                                                                aria-label={`${expanded ? "Hide" : "Show"} blocks for ${gameName}`}
+                                                                onClick={() => setOpenSessionKey(expanded ? null : sessionKey)}
+                                                            />
+                                                            <div className="pointer-events-none relative z-10 flex items-start gap-2 sm:pointer-events-auto sm:block">
+                                                                <span className="mt-1 shrink-0 text-xs leading-none text-gray-400 sm:hidden" aria-hidden="true">
+                                                                    {expanded ? "▴" : "▾"}
+                                                                </span>
+                                                                <div className="pointer-events-none flex min-w-0 flex-1 flex-col gap-0.5 sm:pointer-events-auto sm:max-w-xs">
+                                                                    {hasValue(label) && <span className="text-sm text-white">{label.title}</span>}
+                                                                    {hasValue(label) && hasContent(label.detail) && (
+                                                                        <span className="text-xs text-gray-400">{label.detail}</span>
+                                                                    )}
+                                                                    <Link
+                                                                        to={`/table/${row.gameId}`}
+                                                                        title={row.gameId}
+                                                                        className={`pointer-events-auto font-mono hover:underline ${styles.brandText} ${hasValue(label) ? "text-xs" : "text-sm"}`}
+                                                                    >
+                                                                        {truncateMiddle(row.gameId, 8, 6)}
+                                                                    </Link>
+                                                                    <dl id={detailId} className={expanded ? "mt-2 space-y-0.5 text-xs sm:hidden" : "hidden"}>
+                                                                        <div className="flex justify-between gap-3">
+                                                                            <dt className="whitespace-nowrap text-gray-400">Join block</dt>
+                                                                            <dd className="whitespace-nowrap text-gray-200">{detail.joinBlock}</dd>
+                                                                        </div>
+                                                                        <div className="flex justify-between gap-3">
+                                                                            <dt className="whitespace-nowrap text-gray-400">Leave block</dt>
+                                                                            <dd className="whitespace-nowrap text-gray-200">{detail.leaveBlock}</dd>
+                                                                        </div>
+                                                                        <div className="flex justify-between gap-3">
+                                                                            <dt className="whitespace-nowrap text-gray-400">Length</dt>
+                                                                            <dd className="whitespace-nowrap text-gray-200">{detail.length}</dd>
+                                                                        </div>
+                                                                    </dl>
+                                                                </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 text-right text-gray-300">{row.joinBlock.toLocaleString()}</td>
-                                                        <td className="px-6 py-4 text-right text-gray-300">
+                                                        <td className="hidden px-6 py-4 text-right text-gray-300 sm:table-cell">
+                                                            {row.joinBlock.toLocaleString()}
+                                                        </td>
+                                                        <td className="hidden px-6 py-4 text-right text-gray-300 sm:table-cell">
                                                             {hasValue(leaveBlock) ? leaveBlock.toLocaleString() : "—"}
                                                         </td>
-                                                        <td className="px-6 py-4 text-right text-gray-300">{formatUsd(row.buyIn)}</td>
-                                                        <td className="px-6 py-4 text-right text-gray-300 whitespace-nowrap">
+                                                        <td className="align-top px-3 py-4 text-right text-gray-300 sm:px-6 sm:align-middle">
+                                                            {formatUsd(row.buyIn)}
+                                                        </td>
+                                                        <td className="align-top px-3 py-4 text-right text-gray-300 whitespace-normal sm:whitespace-nowrap sm:px-6 sm:align-middle">
                                                             {row.isPrize && hasContent(row.prizeTxHash) ? (
                                                                 <Link
                                                                     to={`/explorer/tx/${row.prizeTxHash}`}
@@ -313,7 +365,9 @@ export default function PlayerProfilePage() {
                                                                     </span>
                                                                     {hasContent(place) && <span className="text-xs font-semibold text-amber-200">{place}</span>}
                                                                     {hasValue(row.cashOut) ? (
-                                                                        <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>{formatUsd(row.cashOut)}</span>
+                                                                        <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>
+                                                                            {formatUsd(row.cashOut)}
+                                                                        </span>
                                                                     ) : (
                                                                         "—"
                                                                     )}
@@ -326,7 +380,9 @@ export default function PlayerProfilePage() {
                                                                     <span className={sessionCashOutAmountClass(row.buyIn, 0)}>{formatUsd(0)}</span>
                                                                 </span>
                                                             ) : hasValue(row.cashOut) ? (
-                                                                <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>{formatUsd(row.cashOut)}</span>
+                                                                <span className={sessionCashOutAmountClass(row.buyIn, row.cashOut)}>
+                                                                    {formatUsd(row.cashOut)}
+                                                                </span>
                                                             ) : (
                                                                 "—"
                                                             )}
