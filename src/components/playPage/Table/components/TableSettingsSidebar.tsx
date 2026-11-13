@@ -104,8 +104,6 @@ const BlindsRow: React.FC<{ onOpen: () => void }> = ({ onOpen }) => {
 export interface TableSettingsOptionsProps {
     tableStyle?: TableStyleOption;
     onTableStyleChange?: (style: TableStyleOption) => void;
-    /** The theme toggle; off where the host chrome already shows it (mobile header). */
-    showTheme?: boolean;
     /** Label for the table appearance dropdown (the mobile menu calls it "Felt"). */
     appearanceLabel?: string;
     /** Adds the 6 o'clock seat-orientation toggle (PC sidebar and mobile menu). */
@@ -116,7 +114,6 @@ export interface TableSettingsOptionsProps {
 export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
     tableStyle,
     onTableStyleChange,
-    showTheme = true,
     appearanceLabel = "Table appearance",
     showSeatToggle = false
 }) => {
@@ -159,11 +156,7 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
 
     return (
         <>
-            {showTheme && (
-                <div className="settings-theme-row">
-                    <ThemeToggle />
-                </div>
-            )}
+            <ThemeToggle />
             {tableStyle && onTableStyleChange && (
                 <label className="settings-appearance">
                     {appearanceLabel}
@@ -302,8 +295,7 @@ export const TableSettingsSidebar: React.FC<TableSettingsSidebarProps> = ({
                 />
             )}
             {onOpenBlinds && <BlindsRow onOpen={onOpenBlinds} />}
-            {/* The theme toggle lives in the table header banner, always visible. */}
-            <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle showTheme={false} />
+            <TableSettingsOptions tableStyle={tableStyle} onTableStyleChange={onTableStyleChange} showSeatToggle />
         </SettingsPanelShell>
     );
 };

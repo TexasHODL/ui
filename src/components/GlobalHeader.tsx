@@ -63,13 +63,16 @@ export const GlobalHeader: React.FC = () => {
                     })}
                 </nav>
                 <div className={styles.utilities}>
-                    <ThemeToggle />
                     <details className={styles.more} key={pathname}>
                         <summary aria-label="More options">
                             <FaEllipsisH />
                             <span>More</span>
                         </summary>
                         <div className={styles.dropdown}>
+                            <div className={styles.menuGroup}>
+                                <p>SETTINGS</p>
+                                <ThemeToggle />
+                            </div>
                             {extraGroups.map(group => (
                                 <div key={group.label} className={styles.menuGroup}>
                                     <p>{group.label.toUpperCase()}</p>

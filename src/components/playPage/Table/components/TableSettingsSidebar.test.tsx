@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TableSettingsSidebar } from "./TableSettingsSidebar";
+import { THEME_STORAGE_KEY } from "../../../../theme/theme";
 import { TABLE_STYLE_STORAGE_KEYS, resetTableStylesForTests } from "../../../../theme/tableStyles";
 import Chip from "../../common/Chip";
 import { getViewportMode } from "../../../../config/stageGeometry";
@@ -147,7 +148,23 @@ describe("PC Settings: Full screen and Blinds", () => {
     });
 });
 
-test("leaves the theme toggle to the header banner", () => {
+test("offers Dark and Light in Settings and applies the choice immediately", () => {
+    document.documentElement.removeAttribute("data-theme");
+    localStorage.removeItem(THEME_STORAGE_KEY);
     render(<TableSettingsSidebar isOpen />);
-    expect(screen.queryByRole("button", { name: "Light theme" })).not.toBeInTheDocument();
+    expect(screen.getByText("Theme")).toBeInTheDocument();
+    const light = screen.getByRole("button", { name: "Light theme" });
+    const dark = screen.getByRole("button", { name: "Dark theme" });
+    expect(light).toHaveTextContent("Light");
+    expect(dark).toHaveTextContent("Dark");
+    expect(dark).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(light);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
+    expect(light).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(dark);
+    expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("dark");
+    document.documentElement.removeAttribute("data-theme");
+    localStorage.removeItem(THEME_STORAGE_KEY);
 });

@@ -2,7 +2,7 @@
  * MobileTableHeader Component
  *
  * Phone replacement for TableHeader. The top row stays 44px: back, table name,
- * blinds / hand / next-to-act when they fit, theme, balance, table settings, menu.
+ * blinds / hand / next-to-act when they fit, balance, table settings, menu.
  * A 22px text row appears only when that status does not fit beside the name.
  * History is a floating overlay owned by TableSidebar, not part of this chrome.
  * Everything else lives in the hamburger drawer. Leave table stays visible
@@ -33,7 +33,6 @@ import type { NetworkEndpoints } from "../../../../context/NetworkContext";
 import { formatBlindCountdown } from "./TableHeader";
 import styles from "./TableHeader.module.css";
 import { TableSettingsOptions } from "./TableSettingsSidebar";
-import { ThemeToggle } from "../../../ThemeToggle";
 import SngPayoutPanel from "../../SngPayoutPanel";
 import { MobileDrawerShell } from "./MobileDrawerShell";
 import { hasValue } from "../../../../utils/guards";
@@ -268,7 +267,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
             {/* 44px row. viewport-fit=cover extends the page under the notch;
                 the safe-area paddings keep the content clear of it. Status joins
                 this row when the probe says it fits; otherwise it drops to the
-                22px row below. The theme control always stays here. */}
+                22px row below. */}
             <div
                 ref={rowRef}
                 className={`mobile-header-row w-full min-h-[44px] flex items-center relative z-[100] border-b-2 ${styles.headerRoot}`}
@@ -287,7 +286,6 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 </button>
                 {statusInline && <div className={`mobile-status-inline ${styles.mobileStatus}`}>{renderStatus(false)}</div>}
                 <div ref={toolsRef} className="mobile-header-tools">
-                    <ThemeToggle />
                     {/* Balance — money on the table, wanted at a glance; tap to refresh */}
                     <button
                         onClick={fetchAccountBalance}
@@ -470,12 +468,10 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 </>
                             )}
 
-                            {/* In-game settings, inline (formerly a separate Settings panel).
-                            Theme stays in the header row. */}
+                            {/* In-game settings, inline (formerly a separate Settings panel). */}
                         <div className="mobile-menu-settings px-4 py-2 border-t border-white/10" role="group" aria-label="Settings">
                             <p className="text-[12px] text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
                             <TableSettingsOptions
-                                showTheme={false}
                                 tableStyle={tableStyle}
                                 onTableStyleChange={onTableStyleChange}
                                 appearanceLabel="Felt"

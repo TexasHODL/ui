@@ -44,10 +44,11 @@ const makeProps = (): TableHeaderProps => ({
 });
 
 describe("Focused table header", () => {
-    it("offers light and dark themes directly on the table", () => {
+    it("keeps the color theme out of the table header", () => {
         render(<TableHeader {...makeProps()} />);
-        expect(screen.getByRole("button", { name: "Light theme" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Dark theme" })).toBeInTheDocument();
+        expect(screen.queryByRole("group", { name: "Color theme" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Light theme" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Dark theme" })).not.toBeInTheDocument();
     });
     it("no longer offers Full screen in the PC table options menu (it lives in Settings)", () => {
         render(<TableHeader {...makeProps()} />);

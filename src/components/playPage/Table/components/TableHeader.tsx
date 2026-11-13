@@ -13,7 +13,6 @@ import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { formatBlindCountdown } from "../../../../utils/blindStructure";
 import styles from "./TableHeader.module.css";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
-import { ThemeToggle } from "../../../ThemeToggle";
 import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
 
 // Re-exported for existing importers (e.g. MobileTableHeader); the formatter
@@ -130,7 +129,6 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     </span>
                 </div>
                 <div className={styles.roomTools}>
-                    <ThemeToggle />
                     <details className={styles.walletMenu}>
                         <summary aria-label="Wallet options">
                             {isBalanceLoading ? "Loading…" : "$" + balanceFormatted}

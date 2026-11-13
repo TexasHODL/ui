@@ -121,14 +121,14 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         mockTableState.gameFormat = "cash";
         mockTableState.gameState = { players: [], bigBlindPosition: 2, handNumber: 1, previousActions: [] };
     });
-    it("keeps blinds in the chrome and the theme control in the top row", () => {
+    it("keeps blinds in the chrome and the theme control out of the header", () => {
         renderHeader();
         expect(screen.queryByRole("button", { name: "Open hand history" })).not.toBeInTheDocument();
         const fallback = document.querySelector(".mobile-status-fallback");
         expect(fallback).not.toBeNull();
         expect(fallback).toHaveTextContent("Hand #1");
-        expect(screen.getByRole("group", { name: "Color theme" }).closest(".mobile-header-row")).not.toBeNull();
-        expect(screen.getByRole("group", { name: "Color theme" }).closest(".mobile-status-fallback")).toBeNull();
+        expect(screen.queryByRole("group", { name: "Color theme" })).not.toBeInTheDocument();
+        expect(document.querySelector(".mobile-header-row")).not.toBeNull();
     });
 
     it("puts the provably fair shield in the phone header tools", () => {
@@ -144,13 +144,18 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         expect(screen.getByRole("dialog", { name: "Provably fair deal" })).toBeInTheDocument();
     });
 
-    it("offers themes without opening the mobile drawer", () => {
+    it("offers Dark and Light from the menu Settings section", () => {
+        document.documentElement.removeAttribute("data-theme");
         renderHeader();
-        fireEvent.click(screen.getByRole("button", { name: "Light theme" }));
+        expect(screen.queryByRole("button", { name: "Light theme" })).not.toBeInTheDocument();
+        openMenu();
+        const settings = screen.getByRole("group", { name: "Settings" });
+        expect(within(settings).getByText("Theme")).toBeInTheDocument();
+        fireEvent.click(within(settings).getByRole("button", { name: "Light theme" }));
         expect(document.documentElement).toHaveAttribute("data-theme", "light");
-        fireEvent.click(screen.getByRole("button", { name: "Dark theme" }));
+        fireEvent.click(within(settings).getByRole("button", { name: "Dark theme" }));
         expect(document.documentElement).not.toHaveAttribute("data-theme");
-        expect(screen.queryByTestId("table-menu-drawer")).not.toBeInTheDocument();
+        document.documentElement.removeAttribute("data-theme");
     });
 
     it("shows a custom name, or a generated name when none was set", () => {
