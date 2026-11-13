@@ -173,7 +173,7 @@ export function profileHistoryStats(
     const selectedHands = filterSessionRows(hands, labels, hasContent(filterKey) ? filterKey : ALL_SESSION_GAMES);
 
     const wins = selectedHands.filter(hand => finiteNumber(hand.wonAmount) && hand.wonAmount > 0);
-        const potUnit = sharedHistoryUnit(
+    const potUnit = sharedHistoryUnit(
         wins.map(hand => hand.gameId),
         units
     );
@@ -210,6 +210,122 @@ export function profileHistoryStats(
         biggestHandProfit,
         profitUnit: hasValue(biggestHandProfit) ? profitUnit : undefined
     };
+}
+
+/**
+ * Micro-USDC the cash-out cell prints. Undefined when the cell is an em dash
+ * (the seat is still open). A bust is 0, which the cell prints as 0.00.
+ * A recorded cash-out, including a prize, is that amount.
+ */
+export function settledSessionCashOut(row: { isPrize: boolean; prizeTxHash?: string; cashOut?: number }, isBust: boolean): number | undefined {
+    if (row.isPrize && hasContent(row.prizeTxHash)) return hasValue(row.cashOut) ? row.cashOut : undefined;
+    if (isBust) return 0;
+    return hasValue(row.cashOut) ? row.cashOut : undefined;
+}
+
+export interface VariantSessionMoney {
+    buyIn: number;
+    /** Undefined when the table shows an em dash. 0 is a settled bust. */
+    cashOut?: number;
+}
+
+export interface VariantMoneyTotals {
+    totalBuyIn?: number;
+    totalCashOut?: number;
+    netProfit?: number;
+    /** Open seats left out of the three totals. */
+    excludedOpen: number;
+}
+
+/**
+ * Buy-in, cash-out, and net for the sessions whose cash-out cell is a number.
+ * An open seat (no cash-out) is counted in excludedOpen and left out of every
+ * total, so an unfinished session does not change the net.
+ */
+export function variantMoneyTotals(sessions: VariantSessionMoney[]): VariantMoneyTotals {
+    let totalBuyIn = 0;
+    let totalCashOut = 0;
+    let counted = 0;
+    let excludedOpen = 0;
+    for (const session of sessions) {
+        if (!hasValue(session.cashOut) || !Number.isFinite(session.buyIn) || !Number.isFinite(session.cashOut)) {
+            if (!hasValue(session.cashOut)) excludedOpen += 1;
+            continue;
+        }
+        totalBuyIn += session.buyIn;
+        totalCashOut += session.cashOut;
+        counted += 1;
+    }
+    if (counted === 0) return { excludedOpen };
+    return { totalBuyIn, totalCashOut, netProfit: totalCashOut - totalBuyIn, excludedOpen };
+}
+
+export interface SettledSessionWindow {
+    gameId: string;
+    joinBlock: number;
+    /** Undefined while the seat is open. 0 is a settled bust. */
+    cashOut?: number;
+}
+
+/**
+ * The hand counts toward this variant's pot and profit when it was dealt in a
+ * settled session: the latest join of that table at or before the hand's end
+ * block, and that seat has a cash-out (including 0.00). An open seat is left
+ * out, the same way the buy-in, cash-out, and net cards skip it.
+ */
+export function handBelongsToSettledSession(hand: { gameId: string; blockHeight: number }, sessions: SettledSessionWindow[]): boolean {
+    let owner: SettledSessionWindow | undefined;
+    for (const session of sessions) {
+        if (session.gameId !== hand.gameId || !isNumber(session.joinBlock) || session.joinBlock > hand.blockHeight) continue;
+        if (!hasValue(owner) || session.joinBlock >= owner.joinBlock) owner = session;
+    }
+    return hasValue(owner) && hasValue(owner.cashOut) && Number.isFinite(owner.cashOut);
+}
+
+/** Buy-in and the cash-out the table shows, for one selected set of rows. */
+export function variantMoneyFromRows(
+    selected: SessionPrizeRow[],
+    allRows: SessionPrizeRow[],
+    metas: Record<string, GamePrizeMeta | undefined>,
+    player: string | undefined
+): VariantMoneyTotals {
+    return variantMoneyTotals(
+        selected.map(row => ({
+            buyIn: row.buyIn,
+            cashOut: settledSessionCashOut(row, hasContent(player) && hasValue(sessionBustFor(row, allRows, metas[row.gameId], player)))
+        }))
+    );
+}
+
+/** Green, red, or the card's own colour, from the cents the money cards print. */
+export function historyNetClass(netMicro: number): string {
+    const label = formatMicroUsd(netMicro, true);
+    if (!hasContent(label) || label === "0.00" || label === "—") return "";
+    if (label.startsWith("-")) return "text-red-400";
+    return "text-green-400";
+}
+
+/**
+ * Days of app state Block52 still has, measured 2026-11-13: earliest retained
+ * height 677990 was 2026-10-21, about 23 days behind the chain tip. The default
+ * Texas Hodl node keeps roughly 6 days and Session History retries Block52 when
+ * a height is pruned, so this is the window a leave block can still be read.
+ * Finding the live boundary is a binary search of historical queries, which is
+ * too much to do on each profile view.
+ */
+export const SESSION_CHAIN_STATE_DAYS = 23;
+
+/** One line under the History cards. Older than this, leave block and length stay "—". */
+export function sessionStateRetentionNote(days: number = SESSION_CHAIN_STATE_DAYS): string {
+    const windowDays = Number.isSafeInteger(days) && days > 0 ? days : SESSION_CHAIN_STATE_DAYS;
+    return `Leave block, session length, and hand details are only available for roughly the last ${windowDays} days, since nodes don't keep older chain state. Older rows show —.`;
+}
+
+/** Caption under the money cards when open seats were left out. */
+export function openSessionTotalsNote(excludedOpen: number): string | undefined {
+    if (!Number.isFinite(excludedOpen) || excludedOpen < 1) return undefined;
+    if (excludedOpen === 1) return "1 open session isn't in these totals";
+    return `${excludedOpen.toLocaleString()} open sessions aren't in these totals`;
 }
 
 /** "18.40" for cash, "24,600 chips" for a tournament. An unknown figure is an em dash, never 0. */

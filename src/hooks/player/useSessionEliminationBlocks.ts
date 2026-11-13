@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCometRpcApiFactory, useCosmosApi } from "../../context/CosmosApiContext";
-import { useNetwork } from "../../context/NetworkContext";
-import { publicStateAt } from "../../utils/chainHistory";
+import { NETWORK_PRESETS, useNetwork } from "../../context/NetworkContext";
+import { block52HistoryRpc, publicStateAt, publicStateAtFallingBack } from "../../utils/chainHistory";
 import { hasContent, hasValue, isEmpty } from "../../utils/guards";
 import { mapWithConcurrency } from "../../utils/pagedFetch";
 import { findEliminationBlock, type SessionEliminationLookup } from "../../utils/sessionBust";
@@ -20,13 +20,16 @@ const EMPTY: StoredBlocks = { player: "", byGame: {} };
  * Leave-block heights for busted Sit & Go and tournament sessions on the
  * current page. Each game is one binary search over hand_ended plus the
  * public state at that block (ABCI query — the REST height header is blocked by
- * the node's CORS policy). A miss stays null so the cell keeps "—".
+ * the node's CORS policy). A height the selected node has pruned is read again
+ * from Block52, which keeps state longer. Any other failure stays on the
+ * selected node. A miss stays null so the cell keeps "—".
  */
 export function useSessionEliminationBlocks(player: string | undefined, lookups: SessionEliminationLookup[]): EliminationBlocks {
     const cosmosApi = useCosmosApi();
     const { currentNetwork } = useNetwork();
     const rpcFactory = useCometRpcApiFactory();
     const rpc = useMemo(() => rpcFactory(currentNetwork.rpc), [rpcFactory, currentNetwork.rpc]);
+    const fallbackRpc = useMemo(() => block52HistoryRpc(currentNetwork, NETWORK_PRESETS), [currentNetwork]);
     const [stored, setStored] = useState<StoredBlocks>(EMPTY);
     const lookupsRef = useRef(lookups);
     const storedRef = useRef(stored);
@@ -48,7 +51,13 @@ export function useSessionEliminationBlocks(player: string | undefined, lookups:
             try {
                 const block = await findEliminationBlock(lookup.gameId, lookup.handCount, player, {
                     handEnded: query => cosmosApi.getSentTransactions(query, { limit: 5, page: 1 }),
-                    stateAt: async (gameId, height) => ({ gameState: await publicStateAt(rpc, gameId, height) })
+                    stateAt: async (gameId, height) => ({
+                        gameState: await publicStateAtFallingBack(
+                            rpcUrl => publicStateAt(rpcUrl === currentNetwork.rpc ? rpc : rpcFactory(rpcUrl), gameId, height),
+                            currentNetwork.rpc,
+                            fallbackRpc
+                        )
+                    })
                 });
                 return [lookup.gameId, hasValue(block) ? block : null] as const;
             } catch (err) {
@@ -66,7 +75,7 @@ export function useSessionEliminationBlocks(player: string | undefined, lookups:
         return () => {
             cancelled = true;
         };
-    }, [cosmosApi, player, key, rpc]);
+    }, [cosmosApi, currentNetwork.rpc, fallbackRpc, player, key, rpc, rpcFactory]);
 
     return stored.player === player ? stored.byGame : {};
 }

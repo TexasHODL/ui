@@ -3,24 +3,35 @@ import { PlayerActionType } from "@block52/poker-vm-sdk";
 import { clearHandContributionCache, useHandContributions } from "./useHandContributions";
 
 const mockPublicStateAt = jest.fn();
-jest.mock("../../utils/chainHistory", () => ({
-    publicStateAt: (...args: unknown[]) => mockPublicStateAt(...args)
-}));
+jest.mock("../../utils/chainHistory", () => {
+    const actual = jest.requireActual("../../utils/chainHistory");
+    return { ...actual, publicStateAt: (...args: unknown[]) => mockPublicStateAt(...args) };
+});
 jest.mock("../../context/CosmosApiContext", () => ({
-    useCometRpcApiFactory: () => () => ({})
+    useCometRpcApiFactory: () => (url: string) => ({ url })
 }));
 jest.mock("../../context/NetworkContext", () => ({
-    useNetwork: () => ({
-        currentNetwork: { name: "Block52", rpc: "https://node1.block52.xyz/rpc/", rest: "", grpc: "", ws: "" }
-    }),
-    NETWORK_PRESETS: [{ name: "Block52", rpc: "https://node1.block52.xyz/rpc/", rest: "", grpc: "", ws: "" }]
+    useNetwork: () => ({ currentNetwork: mockNetwork }),
+    NETWORK_PRESETS: [
+        { name: "Block52", rpc: "https://node1.block52.xyz/rpc/", rest: "", grpc: "", ws: "" },
+        { name: "Texas Hodl", rpc: "https://node.texashodl.net/rpc/", rest: "", grpc: "", ws: "" }
+    ]
 }));
+
+let mockNetwork: { name: string; rpc: string; rest: string; grpc: string; ws: string } = {
+    name: "Block52",
+    rpc: "https://node1.block52.xyz/rpc/",
+    rest: "",
+    grpc: "",
+    ws: ""
+};
 
 const PLAYER = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
 const GAME = "0x3c3253dd13fdda80cf632efcc8e3662baa87da56";
 const HAND = { gameId: GAME, handNumber: 147, blockHeight: 1028644 };
 
 beforeEach(() => {
+    mockNetwork = { name: "Block52", rpc: "https://node1.block52.xyz/rpc/", rest: "", grpc: "", ws: "" };
     clearHandContributionCache();
     mockPublicStateAt.mockReset();
 });
@@ -55,6 +66,34 @@ test("records a hand the node no longer has instead of a zero contribution", asy
     await waitFor(() => expect(result.current.pending).toBe(false));
     expect(result.current.unavailable).toBe(1);
     expect(result.current.byKey).toEqual({});
+    error.mockRestore();
+});
+
+test("retries a pruned height on Block52 and does not retry any other error", async () => {
+    mockNetwork = { name: "Texas Hodl", rpc: "https://node.texashodl.net/rpc/", rest: "", grpc: "", ws: "" };
+    const error = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    mockPublicStateAt.mockImplementation(async (rpc: { url: string }) => {
+        if (rpc.url === "https://node.texashodl.net/rpc/") throw new Error("failed to load state at height 1028644; version does not exist");
+        return {
+            handNumber: 147,
+            previousActions: [
+                { playerId: "b521other", action: PlayerActionType.SMALL_BLIND, amount: "750" },
+                { playerId: PLAYER, action: PlayerActionType.BIG_BLIND, amount: "1500" },
+                { playerId: "b521other", action: PlayerActionType.FOLD, amount: "" }
+            ]
+        };
+    });
+    const pruned = renderHook(() => useHandContributions(PLAYER, [HAND], true));
+    await waitFor(() => expect(pruned.result.current.byKey[`${GAME}#147`]).toBe(1500));
+    expect(mockPublicStateAt).toHaveBeenCalledWith(expect.objectContaining({ url: "https://node1.block52.xyz/rpc/" }), GAME, 1028644);
+    pruned.unmount();
+    clearHandContributionCache();
+
+    mockPublicStateAt.mockReset();
+    mockPublicStateAt.mockRejectedValue(new Error("rpc error: code = NotFound desc = game state with ID"));
+    const missing = renderHook(() => useHandContributions(PLAYER, [{ gameId: GAME, handNumber: 2, blockHeight: 50 }], true));
+    await waitFor(() => expect(missing.result.current.unavailable).toBe(1));
+    expect(mockPublicStateAt.mock.calls.every(call => call[0].url === "https://node.texashodl.net/rpc/")).toBe(true);
     error.mockRestore();
 });
 

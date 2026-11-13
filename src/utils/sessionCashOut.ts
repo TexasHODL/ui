@@ -50,3 +50,17 @@ export function sessionCashOutAmountClass(buyInMicro: number, cashOutMicro: numb
     if (tone === "loss") return "text-red-400";
     return "";
 }
+
+/**
+ * Prize cash-out on a Session History row.
+ * Phones stack the PRIZE badge above the place and amount so a 390px
+ * Cash-Out cell can show the whole figure. From sm up they stay on one line.
+ */
+export function sessionPrizeCashOutClass(): string {
+    return "flex w-full max-w-full flex-col items-end gap-0.5 hover:text-white sm:inline-flex sm:w-auto sm:flex-row sm:items-center sm:gap-2";
+}
+
+/** Place and amount stay side by side on every width. The amount keeps its profit/loss colour. */
+export function sessionPrizeAmountRowClass(): string {
+    return "inline-flex max-w-full items-center justify-end gap-1 whitespace-nowrap sm:gap-2";
+}

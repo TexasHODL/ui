@@ -166,8 +166,9 @@ export function profitHandsToMeasure(
 }
 
 /** Shown once the read has finished and at least one selected hand had no action log on the node. */
-export function handContributionNote(unavailable: number): string | undefined {
+export function handContributionNote(unavailable: number, requested: number): string | undefined {
     if (!isNumber(unavailable) || !Number.isSafeInteger(unavailable) || unavailable <= 0) return undefined;
-    const noun = unavailable === 1 ? "hand" : "hands";
-    return `Skips ${unavailable.toLocaleString()} ${noun} no longer on the node.`;
+    if (!isNumber(requested) || !Number.isSafeInteger(requested) || requested < unavailable) return undefined;
+    const noun = requested === 1 ? "hand" : "hands";
+    return `Skips ${unavailable.toLocaleString()} of ${requested.toLocaleString()} ${noun} no longer on the node.`;
 }

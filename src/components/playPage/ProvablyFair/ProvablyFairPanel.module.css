@@ -2,8 +2,10 @@
    The shield is a header icon. The panel drops below the table banner,
    right edge on the shield (top/right are set from the button). */
 
-/* Resting state on every layout: a dark rounded tile, green outline, shield centred.
-   Same tile on desktop (36px) and phones (44px). Hover and open stay this shape. */
+/* The button is the hit target, the same footprint as the icons beside it:
+   36px on desktop (the ⋯ menu and the avatar) and 44px on phones (the
+   settings cog and the burger). The tile is a smaller dark rounded square
+   centred in that target, and the glyph is 18px — the cog and burger size. */
 .shieldButton {
     display: inline-flex;
     align-items: center;
@@ -13,25 +15,43 @@
     width: 36px;
     height: 36px;
     padding: 0;
-    border-radius: 8px;
-    border: 1.5px solid #34d399;
-    background-color: #0b0f14;
-    box-shadow: 0 0 8px rgba(52, 211, 153, 0.45);
+    border: 0;
+    background: transparent;
+    box-shadow: none;
     cursor: pointer;
     color: #34d399;
 }
 
-/* Beats `.roomHeader button:hover`, which would wash the tile purple. */
+.shieldTile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1.5px solid #34d399;
+    background-color: #0b0f14;
+    box-shadow: 0 0 8px rgba(52, 211, 153, 0.45);
+    color: #34d399;
+}
+
+/* Beats `.roomHeader button:hover`, which would wash the hit target purple. */
 .shieldButton.shieldButton:hover {
     color: #34d399;
+    background-color: transparent;
+}
+
+.shieldButton.shieldButton:hover .shieldTile {
     border-color: #6ee7b7;
     background-color: #101816;
     box-shadow: 0 0 10px rgba(52, 211, 153, 0.6);
 }
 
-.shieldButton.shieldButton:active,
-.shieldButtonOpen.shieldButtonOpen {
-    color: #6ee7b7;
+/* Same weight as the hover rule above, and later, so an open or pressed
+   shield stays the darker green while the pointer is still over it. */
+.shieldButton.shieldButton:active .shieldTile,
+.shieldButtonOpen.shieldButtonOpen .shieldTile.shieldTile {
     border-color: #a7f3d0;
     background-color: #145c48;
     box-shadow:
@@ -44,16 +64,10 @@
     outline-offset: 3px;
 }
 
-/* Phone header icons are 44px hit targets. The tile itself does not change. */
+/* Phone header icons are 44px hit targets. The tile and glyph stay the same size. */
 .shieldButtonTouch.shieldButtonTouch {
     width: 44px;
     height: 44px;
-    border-radius: 10px;
-}
-
-.shieldButtonTouch .shieldIcon {
-    width: 22px;
-    height: 22px;
 }
 
 .shieldButtonOpen .shieldIcon,

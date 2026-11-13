@@ -235,9 +235,9 @@ describe("profitHandsToMeasure", () => {
 
 describe("handContributionNote", () => {
     it("names the hands that were left out, and stays quiet when every hand was read", () => {
-        expect(handContributionNote(0)).toBeUndefined();
-        expect(handContributionNote(1)).toBe("Skips 1 hand no longer on the node.");
-        expect(handContributionNote(12)).toBe(`Skips ${(12).toLocaleString()} hands no longer on the node.`);
+        expect(handContributionNote(0, 4)).toBeUndefined();
+        expect(handContributionNote(1, 4)).toBe("Skips 1 of 4 hands no longer on the node.");
+        expect(handContributionNote(12, 40)).toBe(`Skips ${(12).toLocaleString()} of ${(40).toLocaleString()} hands no longer on the node.`);
     });
 });
 

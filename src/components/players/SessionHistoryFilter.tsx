@@ -1,5 +1,6 @@
 import { FC, useEffect, useRef, useState } from "react";
-import { ALL_SESSION_GAMES, type SessionGameFilterOption } from "../../utils/sessionGameDisplay";
+import { hasValue } from "../../utils/guards";
+import type { SessionGameFilterOption } from "../../utils/sessionGameDisplay";
 import styles from "./SessionHistoryFilter.module.css";
 
 interface SessionHistoryFilterProps {
@@ -8,11 +9,12 @@ interface SessionHistoryFilterProps {
     onChange: (key: string) => void;
 }
 
-/** Game-type menu for the History panel. All, then each type present in the history. */
+/** Game-type menu for the History panel. One entry per type present in the history. */
 export const SessionHistoryFilter: FC<SessionHistoryFilterProps> = ({ value, options, onChange }) => {
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement>(null);
-    const label = value === ALL_SESSION_GAMES ? "All" : value;
+    const selected = options.find(option => option.key === value);
+    const label = hasValue(selected) ? selected.label : value;
 
     useEffect(() => {
         if (!open) return;
@@ -49,20 +51,6 @@ export const SessionHistoryFilter: FC<SessionHistoryFilterProps> = ({ value, opt
             </button>
             {open && (
                 <ul className={styles.menu} role="listbox" aria-label="Game types">
-                    <li>
-                        <button
-                            type="button"
-                            role="option"
-                            aria-selected={value === ALL_SESSION_GAMES}
-                            className={`${styles.option} ${value === ALL_SESSION_GAMES ? styles.selected : ""}`}
-                            onClick={() => {
-                                onChange(ALL_SESSION_GAMES);
-                                setOpen(false);
-                            }}
-                        >
-                            All
-                        </button>
-                    </li>
                     {options.map(option => (
                         <li key={option.key}>
                             <button

@@ -1,6 +1,7 @@
 import { parseGamePrizeMeta, type GamePrizeMeta } from "./transactionUtils";
 import {
     ALL_SESSION_GAMES,
+    defaultSessionVariant,
     filterSessionRows,
     sessionRowExpandDetail,
     sessionGameFilterOptions,
@@ -163,6 +164,35 @@ describe("sessionRowExpandDetail", () => {
         });
         expect(sessionRowExpandDetail(10, 10).length).toBe("—");
         expect(sessionRowExpandDetail(20, 19).length).toBe("—");
+    });
+});
+
+describe("defaultSessionVariant", () => {
+    const labels = sessionLabelsByGameId({
+        cash: cash(),
+        omaha: cash({ variant: "omaha", bettingLimit: "pot-limit" }),
+        sng: sitAndGo(),
+        tourn: sitAndGo({ format: "tournament" })
+    });
+    const row = (gameId: string, joinBlock: number) => ({ gameId, joinBlock });
+
+    it("picks the variant with the most sessions", () => {
+        expect(defaultSessionVariant([row("cash", 10), row("tourn", 20), row("tourn", 30), row("sng", 40)], labels)).toBe("Tournament · Texas Hold'em");
+    });
+
+    it("breaks a tie with the most recent join", () => {
+        expect(defaultSessionVariant([row("cash", 10), row("cash", 50), row("tourn", 20), row("tourn", 40)], labels)).toBe("Cash Game · Texas Hold'em");
+        expect(defaultSessionVariant([row("cash", 10), row("cash", 30), row("tourn", 20), row("tourn", 40)], labels)).toBe("Tournament · Texas Hold'em");
+    });
+
+    it("uses menu order when the count and the latest join are the same", () => {
+        expect(defaultSessionVariant([row("tourn", 10), row("cash", 10)], labels)).toBe("Cash Game · Texas Hold'em");
+    });
+
+    it("ignores a session whose game has no label", () => {
+        expect(defaultSessionVariant([row("gone", 99), row("gone", 100), row("sng", 5)], labels)).toBe("Sit & Go · Texas Hold'em");
+        expect(defaultSessionVariant([row("gone", 1)], labels)).toBeUndefined();
+        expect(defaultSessionVariant([], labels)).toBeUndefined();
     });
 });
 
