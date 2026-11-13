@@ -135,3 +135,40 @@ describe("primary navigation", () => {
         expect(within(nav).getByRole("link", { name: "Profile" })).not.toHaveAttribute("title");
     });
 });
+
+describe("More menu", () => {
+    function moreMenu(): HTMLElement {
+        renderHeader();
+        const menu = screen.getByText("More").closest("details");
+        if (!(menu instanceof HTMLElement)) throw new Error("More menu missing");
+        expect(menu.querySelector("summary")).toHaveAttribute("aria-label", "More options");
+        return menu;
+    }
+
+    it("drops Administration, the Tools heading, and Hand distribution, and keeps the website link under Tech notes", () => {
+        const menu = within(moreMenu());
+
+        expect(menu.queryByRole("link", { name: "Administration" })).not.toBeInTheDocument();
+        expect(menu.queryByText("TOOLS")).not.toBeInTheDocument();
+        expect(menu.queryByRole("link", { name: "Hand distribution" })).not.toBeInTheDocument();
+
+        const website = menu.getByRole("link", { name: "Texas HODL website" });
+        expect(website).toHaveAttribute("href", "https://texashodl.net/");
+        expect(website).toHaveAttribute("target", "_blank");
+        expect(website).toHaveAttribute("rel", "noopener noreferrer");
+        expect(website.querySelector("svg")).not.toBeNull();
+
+        const techNotes = menu.getByRole("link", { name: "Tech notes" });
+        expect(techNotes).toHaveAttribute("href", "/tech-notes");
+        const platform = menu.getByText("PLATFORM").closest("div");
+        expect(platform).toContainElement(techNotes);
+        expect(platform?.nextElementSibling).toBe(website);
+        expect(website.nextElementSibling).toHaveTextContent("CONNECTED NETWORK");
+
+        expect(menu.getByText("EXPLORE")).toBeInTheDocument();
+        expect(menu.getByRole("link", { name: "Tables" })).toHaveAttribute("href", "/tables");
+        expect(menu.getByRole("link", { name: "Players" })).toHaveAttribute("href", "/players");
+        expect(menu.getByRole("link", { name: "Block explorer" })).toHaveAttribute("href", "/explorer");
+        expect(menu.getByRole("link", { name: "Network nodes" })).toHaveAttribute("href", "/nodes");
+    });
+});
