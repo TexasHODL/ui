@@ -20,6 +20,8 @@ import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { useShowingCardsByAddress } from "../../../hooks/player/useShowingCardsByAddress";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
+import { useGameStateContext } from "../../../context/GameStateContext";
+import { finishedPayoutPlace, finisherPlayedThisHand } from "../../../utils/finishedSeatDisplay";
 import { getCardBackUrl, CardBackStyle } from "../../../utils/cardImages";
 import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
@@ -47,6 +49,7 @@ type OppositePlayerProps = {
 
 const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, index, color, uiPosition, cardBackStyle }) => {
     const { id } = useParams<{ id: string }>();
+    const { gameState } = useGameStateContext();
     const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
     const { winnerInfo, winnerBySeat } = useWinnerInfo();
     const winnerCards = useWinnerCards();
@@ -68,6 +71,8 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
     const tournamentResult = React.useMemo(() => {
         return isSitAndGo ? getSeatResult(index) : null;
     }, [getSeatResult, isSitAndGo, index]);
+    const onFinishingHand = hasValue(tournamentResult) && finisherPlayedThisHand(gameState, playerData?.address);
+    const payoutInActionBanner = hasValue(tournamentResult) && finishedPayoutPlace(onFinishingHand, tournamentResult.payout) === "action-banner";
 
     // 1) detect when any winner exists
     const hasWinner = React.useMemo(() => hasElements(winnerInfo), [winnerInfo]);
@@ -130,7 +135,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                     </div>
                 )}
                 <div className="player-cards flex justify-center gap-1">
-                    {hasValue(tournamentResult) ? (
+                    {hasValue(tournamentResult) && !onFinishingHand ? (
                         <FinishedSeatCards place={tournamentResult.place} payout={tournamentResult.payout} />
                     ) : hasElements(holeCards) && !isFolded ? (
                         isShowingCards && hasElements(showingCards) ? (
@@ -206,6 +211,7 @@ const OppositePlayer: React.FC<OppositePlayerProps> = React.memo(({ left, top, i
                             color={color}
                             tournamentPlace={tournamentResult?.place}
                             tournamentPayout={tournamentResult?.payout}
+                            payoutInActionBanner={payoutInActionBanner}
                             isWinner={isWinner}
                             winnerAmount={winnerAmount}
                             winnerHandDescription={winnerHandDescription}

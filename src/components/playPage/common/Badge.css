@@ -122,7 +122,8 @@
    horizontal shift is the `translate` property so the drop animation, which
    writes `transform`, still keeps the banner centred. */
 .seat-banner-shell[data-banner-mode="action"],
-.seat-banner-shell[data-banner-mode="seat-join"] {
+.seat-banner-shell[data-banner-mode="seat-join"],
+.seat-banner-shell[data-banner-mode="payout"] {
   left: 50%;
   right: auto;
   width: max-content;
@@ -233,7 +234,8 @@
    countdown. Mobile keeps the 30px line. The box widens instead of wrapping
    or clipping. */
 [data-banner-mode="action"] .seat-banner-box,
-[data-banner-mode="seat-join"] .seat-banner-box {
+[data-banner-mode="seat-join"] .seat-banner-box,
+[data-banner-mode="payout"] .seat-banner-box {
   width: max-content;
   min-width: 100%;
   white-space: nowrap;
@@ -241,7 +243,8 @@
 }
 
 [data-banner-mode="action"] .action-display-content,
-[data-banner-mode="seat-join"] .action-display-content {
+[data-banner-mode="seat-join"] .action-display-content,
+[data-banner-mode="payout"] .action-display-content {
   margin-bottom: 2px;
   max-height: none;
 }
@@ -265,6 +268,16 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   opacity: 0.9;
+}
+
+/* "Won $X" on the finishing hand, in the action-banner slot. */
+.finished-seat-banner-payout {
+  color: var(--accent-success, #4ade80);
+  font-family: var(--type-num-family, inherit);
+  font-weight: var(--type-num-weight, 700);
+  font-size: var(--seat-amount-size);
+  line-height: 1.1;
+  font-variant-numeric: var(--type-num-variant, normal);
 }
 
 /* Countdown seconds. text-sm stays for the line box; this wins the size.

@@ -12,9 +12,9 @@ interface FinishedSeatCardsProps {
 }
 
 /**
- * The hole-card slot of a finished seat. A positive payout reads "Won $3.36"
- * where the cards were. A finisher who won nothing leaves the slot empty,
- * so the busted hand is not left face up.
+ * The hole-card slot after a later hand has been dealt. A positive payout
+ * reads "Won $3.36" where the cards were. On the finishing hand itself the
+ * cards stay up and the payout uses the action banner instead.
  */
 export const FinishedSeatCards: React.FC<FinishedSeatCardsProps> = ({ place, payout }) => {
     const { payoutMicro } = finishedSeatDisplay(place, payout);

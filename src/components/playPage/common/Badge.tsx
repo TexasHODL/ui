@@ -1,6 +1,7 @@
 import React, { useLayoutEffect, useRef } from "react";
 import { hasValue, isNullish } from "../../../utils/guards";
 import { finishedSeatDisplay } from "../../../utils/finishedSeatDisplay";
+import { PrizeAmount } from "../PrizeAmount";
 import { getViewportMode } from "../../../config/stageGeometry";
 import { usePlayerActionDropBox } from "../../../hooks/player/usePlayerActionDropBox";
 import { WinAmountFloat } from "./WinAmountFloat";
@@ -22,6 +23,12 @@ type BadgeProps = {
     // Sit & Go tournament results
     tournamentPlace?: number;
     tournamentPayout?: string;
+    /**
+     * The hand they finished is still on screen. "Won $X" uses the action
+     * banner and the hole cards stay up. A later hand leaves this false and
+     * the payout moves to the card slot.
+     */
+    payoutInActionBanner?: boolean;
     // Seat banner state — passed from parent player component
     isWinner?: boolean;
     winnerAmount?: string | null;
@@ -42,7 +49,7 @@ type BadgeProps = {
 
 const Badge: React.FC<BadgeProps> = React.memo(({
     count, value, color,
-    tournamentPlace, tournamentPayout,
+    tournamentPlace, tournamentPayout, payoutInActionBanner,
     isWinner, winnerAmount, winnerHandDescription, isTurnTimerActive,
     round, isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn, leading
 }) => {
@@ -75,11 +82,17 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         seatJoinNotification.isVisible ||
         seatJoinNotification.isAnimatingOut;
 
+    // A recorded place (busted or in the money) replaces the stack amount.
+    // Playing seats keep the stack. Same results[] source as the old pills.
+    const finished = hasValue(tournamentPlace) ? finishedSeatDisplay(tournamentPlace, tournamentPayout) : null;
+    const showFinishPayout = payoutInActionBanner === true && hasValue(finished?.payoutMicro);
+
     // --- Unified banner mode resolution (priority order) ---
-    // 1. Winner  2. Action  3. Seat-join  4. Timer/status  5. Hidden
-    type BannerMode = "winner" | "action" | "seat-join" | "timer" | "hidden";
+    // 1. Finish payout (this hand)  2. Winner  3. Action  4. Seat-join  5. Timer  6. Hidden
+    type BannerMode = "payout" | "winner" | "action" | "seat-join" | "timer" | "hidden";
 
     const bannerMode: BannerMode = (() => {
+        if (showFinishPayout) return "payout";
         if (isWinner) return "winner";
         if (actionDisplay.isVisible || actionDisplay.isAnimatingOut) return "action";
         if (seatJoinNotification.isVisible || seatJoinNotification.isAnimatingOut) return "seat-join";
@@ -137,24 +150,33 @@ const Badge: React.FC<BadgeProps> = React.memo(({
             ? seatJoinNotification.isTextHiding
             : false;
 
-    // Banner shell colour
+    // Banner shell colour. The finish payout uses the same dark chip as the
+    // old "Won" line, sitting where Call / Raise / All-in drops down.
     const bannerBg = isWinner
         ? colors.accent.success
         : (color || "#6b7280");
 
-    const bannerStyle: React.CSSProperties = bannerMode === "action" || bannerMode === "seat-join"
+    const bannerStyle: React.CSSProperties = bannerMode === "payout"
         ? {
-            backgroundColor: `${color || "#3b82f6"}dd`,
-            borderColor: color || "#3b82f6",
-            boxShadow: `0 4px 12px ${color || "#3b82f6"}40, 0 2px 4px rgba(0,0,0,0.3)`
-        }
-        : {
-            backgroundColor: `${bannerBg}dd`,
-            borderColor: bannerBg,
+            backgroundColor: "rgba(0, 0, 0, 0.82)",
+            borderColor: colors.accent.success,
             borderWidth: "1px",
             borderStyle: "solid",
-            boxShadow: `0 4px 12px ${bannerBg}40, 0 2px 4px rgba(0,0,0,0.3)`
-        };
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0,0,0,0.3)"
+        }
+        : bannerMode === "action" || bannerMode === "seat-join"
+            ? {
+                backgroundColor: `${color || "#3b82f6"}dd`,
+                borderColor: color || "#3b82f6",
+                boxShadow: `0 4px 12px ${color || "#3b82f6"}40, 0 2px 4px rgba(0,0,0,0.3)`
+            }
+            : {
+                backgroundColor: `${bannerBg}dd`,
+                borderColor: bannerBg,
+                borderWidth: "1px",
+                borderStyle: "solid",
+                boxShadow: `0 4px 12px ${bannerBg}40, 0 2px 4px rgba(0,0,0,0.3)`
+            };
 
     // When the banner was already showing (e.g. timer) and an action arrives,
     // skip the shell dropdown animation — just swap the content inside.
@@ -178,13 +200,20 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 ? "action-display-enter"
                 : "";
 
-    // A recorded place (busted or in the money) replaces the stack amount.
-    // Playing seats keep the stack. Same results[] source as the old pills.
-    const finished = hasValue(tournamentPlace) ? finishedSeatDisplay(tournamentPlace, tournamentPayout) : null;
-
     // --- Render inner content based on mode ---
     const renderBannerContent = () => {
         switch (bannerMode) {
+            case "payout": {
+                if (!hasValue(finished) || !hasValue(finished.payoutMicro)) return null;
+                return (
+                    <div className="action-display-content">
+                        <span className="finished-seat-banner-payout" data-testid="finished-seat-payout-banner">
+                            Won <PrizeAmount micro={finished.payoutMicro} />
+                        </span>
+                    </div>
+                );
+            }
+
             case "winner":
                 return (
                     <div className="seat-banner-text seat-banner-win-area">
@@ -267,6 +296,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
 
     const showEquityChip = isNullish(finished) && hasValue(playerEquity);
     const finishedClass = finished ? ` badge-finished badge-finished-${finished.tone}` : "";
+    const suppressBanner = hasValue(finished) && !showFinishPayout;
 
     return (
         <div className={`badge-container${finishedClass}`} data-finished-tone={finished?.tone}>
@@ -288,7 +318,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 Portrait side seats sit on the rail, so a wide line is slid
                 inward until it clears the viewport. Landscape stays centred.
                 A finished place replaces the action line, as the old place pill did. */}
-            <div ref={shellRef} data-banner-mode={bannerMode} className={`seat-banner-shell ${finished ? "seat-banner-suppressed" : ""} ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
+            <div ref={shellRef} data-banner-mode={bannerMode} className={`seat-banner-shell ${suppressBanner ? "seat-banner-suppressed" : ""} ${isBannerVisible ? "seat-banner-visible" : "seat-banner-hidden"} ${transientAnimClass}`}>
                 <div
                     className={`seat-banner-box ${
                         (bannerMode === "action" && !isTransientAnimatingOut) ? "action-display-pulse" : ""

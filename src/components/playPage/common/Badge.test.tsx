@@ -53,6 +53,30 @@ describe("Badge finished places", () => {
         expect(screen.queryByText("0.0%")).toBeNull();
     });
 
+    it("shows Won in the action banner on the finishing hand and keeps the win% hidden", () => {
+        const { container } = render(
+            <Badge count={3} value={0} tournamentPlace={3} tournamentPayout="1680000" payoutInActionBanner playerEquity={100} />
+        );
+        expect(screen.getByTestId("finished-seat-payout-banner")).toHaveTextContent("Won $1.68");
+        expect(container.querySelector(".seat-banner-shell")).toHaveAttribute("data-banner-mode", "payout");
+        expect(container.querySelector(".seat-banner-shell")).not.toHaveClass("seat-banner-suppressed");
+        expect(screen.getByTestId("finished-seat-place")).toHaveTextContent("3rd");
+        expect(container.querySelector(".badge-container")).toHaveClass("badge-finished-third");
+        expect(screen.queryByText("100.0%")).toBeNull();
+        expect(screen.queryByText("$0.00")).toBeNull();
+    });
+
+    it("shows no amount for a zero payout, including on the finishing hand", () => {
+        const { container } = render(
+            <Badge count={4} value={0} tournamentPlace={4} tournamentPayout="0" payoutInActionBanner playerEquity={0} />
+        );
+        expect(screen.queryByTestId("finished-seat-payout-banner")).toBeNull();
+        expect(screen.queryByText("$0.00")).toBeNull();
+        expect(screen.queryByText(/Won/)).toBeNull();
+        expect(container.querySelector(".seat-banner-shell")).toHaveClass("seat-banner-suppressed");
+        expect(screen.getByTestId("finished-seat-place")).toHaveTextContent("4th");
+    });
+
     it("leaves a seat that is still playing on the stack amount and the win% chip", () => {
         const { container } = render(<Badge count={1} value={4200} playerEquity={0} />);
         expect(container.querySelector(".badge-finished")).toBeNull();
