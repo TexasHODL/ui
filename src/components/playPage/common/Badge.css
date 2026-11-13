@@ -122,7 +122,8 @@
    horizontal shift is the `translate` property so the drop animation, which
    writes `transform`, still keeps the banner centred. */
 .seat-banner-shell[data-banner-mode="action"],
-.seat-banner-shell[data-banner-mode="seat-join"] {
+.seat-banner-shell[data-banner-mode="seat-join"],
+.seat-banner-shell[data-banner-mode="payout"] {
   left: 50%;
   right: auto;
   width: max-content;
@@ -233,7 +234,8 @@
    countdown. Mobile keeps the 30px line. The box widens instead of wrapping
    or clipping. */
 [data-banner-mode="action"] .seat-banner-box,
-[data-banner-mode="seat-join"] .seat-banner-box {
+[data-banner-mode="seat-join"] .seat-banner-box,
+[data-banner-mode="payout"] .seat-banner-box {
   width: max-content;
   min-width: 100%;
   white-space: nowrap;
@@ -241,7 +243,8 @@
 }
 
 [data-banner-mode="action"] .action-display-content,
-[data-banner-mode="seat-join"] .action-display-content {
+[data-banner-mode="seat-join"] .action-display-content,
+[data-banner-mode="payout"] .action-display-content {
   margin-bottom: 2px;
   max-height: none;
 }
@@ -265,6 +268,16 @@
   font-weight: 500;
   letter-spacing: 0.02em;
   opacity: 0.9;
+}
+
+/* "Won $X" on the finishing hand, in the action-banner slot. */
+.finished-seat-banner-payout {
+  color: var(--accent-success, #4ade80);
+  font-family: var(--type-num-family, inherit);
+  font-weight: var(--type-num-weight, 700);
+  font-size: var(--seat-amount-size);
+  line-height: 1.1;
+  font-variant-numeric: var(--type-num-variant, normal);
 }
 
 /* Countdown seconds. text-sm stays for the line box; this wins the size.
@@ -414,80 +427,53 @@
   white-space: nowrap;
 }
 
-/* Tournament Results Styles */
-.badge-tournament-results {
-  position: absolute;
-  /* Raise the results within the action-banner area to keep payouts in view. */
-  top: calc(100% - 12px);
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  z-index: 40;
-  animation: tournamentResultsFadeIn 0.5s ease-in-out;
+/* A finished place fills the stack pill. Metals are the old place-pill tones
+   (gold / silver / bronze). 4th and later stay the muted grey. The place
+   words use the stack amount's size and weight; only the colour changes.
+   .table-container restyles every stack pill, so these selectors have to
+   outrank `.table-container .badge-container` and `.badge-value`. */
+.badge-container.badge-finished,
+.table-container .badge-container.badge-finished {
+  border-width: 1px;
+  border-style: solid;
 }
 
-/* Final placing replaces the action message rather than overlapping its text. */
-.badge-tournament-results ~ .seat-banner-shell {
-  visibility: hidden;
+.badge-finished-first,
+.table-container .badge-container.badge-finished-first {
+  background: #ffd700;
+  border-color: #b8860b;
+  color: #1a1400;
 }
 
-.tournament-place {
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-weight: var(--type-label-weight, 800);
-  font-size: var(--stack-amount-size, var(--type-place-size, 1rem));
-  box-shadow: 0 4px 12px color-mix(in srgb, #000000 30%, transparent);
-  white-space: nowrap;
-  text-transform: uppercase;
-  letter-spacing: var(--type-label-tracking, 0.05em);
+.badge-finished-second,
+.table-container .badge-container.badge-finished-second {
+  background: #c0c0c0;
+  border-color: #6e6e6e;
+  color: #1a1a1a;
 }
 
-.tournament-place-first {
-  background-color: #ffd700;
-  color: #000;
+.badge-finished-third,
+.table-container .badge-container.badge-finished-third {
+  background: #cd7f32;
+  border-color: #7a4a12;
+  color: #1a0d00;
 }
 
-.tournament-place-second {
-  background-color: #c0c0c0;
-  color: #000;
-}
-
-.tournament-place-third {
-  background-color: #cd7f32;
-  color: #000;
-}
-
-.tournament-place-other {
-  background-color: #666;
+.badge-finished-other,
+.table-container .badge-container.badge-finished-other {
+  background: #666;
+  border-color: #3f3f3f;
   color: #fff;
 }
 
-.tournament-payout {
-  padding: 0.125rem 0.5rem;
-  background-color: color-mix(in srgb, #000000 80%, transparent);
-  border-radius: 0.375rem;
-  font-weight: 600;
-  font-size: var(--stack-amount-size, 0.875rem);
-  white-space: nowrap;
-  box-shadow: 0 2px 8px color-mix(in srgb, #000000 40%, transparent);
+.badge-container.badge-finished .badge-value,
+.table-container .badge-container.badge-finished .badge-value {
+  color: inherit;
 }
 
-.tournament-payout-win {
-  color: #4ade80;
-}
-
-@keyframes tournamentResultsFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(4px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0) scale(1);
-  }
+/* The place replaces the action line, so a fold or win banner cannot sit under it. */
+.seat-banner-suppressed {
+  visibility: hidden;
 }
 
 /* Reduced motion support */
@@ -496,8 +482,7 @@
   .action-display-exit,
   .action-display-pulse,
   .action-display-bridge-enter,
-  .action-display-bridge-exit,
-  .badge-tournament-results {
+  .action-display-bridge-exit {
     animation: none;
   }
 
