@@ -13,6 +13,7 @@ import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { formatBlindCountdown } from "../../../../utils/blindStructure";
 import styles from "./TableHeader.module.css";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
+import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
 
 // Re-exported for existing importers (e.g. MobileTableHeader); the formatter
 // itself now lives in utils/blindStructure so the Blinds panel can share it.
@@ -161,6 +162,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                             <span>Replay</span>
                         </button>
                     )}
+                    <ProvablyFairButton />
                     <details className={styles.moreMenu}>
                         <summary aria-label="Table options">
                             <FaEllipsisH />

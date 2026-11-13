@@ -12,13 +12,16 @@ import type { PlayerProps } from "../../../types/index";
 import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { winnerCardHighlight } from "../../../utils/holeCardLayout";
 import { HoleCardRow } from "./HoleCardRow";
+import { FinishedSeatCards } from "./FinishedSeatCards";
 import { useSitAndGoPlayerResults } from "../../../hooks/game/useSitAndGoPlayerResults";
+import { useGameStateContext } from "../../../context/GameStateContext";
+import { finishedPayoutPlace, finisherPlayedThisHand } from "../../../utils/finishedSeatDisplay";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useActionSubmit } from "../../../context/ActionSubmitContext";
 import { SIT_IN_METHOD_POST_NOW, sitIn } from "../../../hooks/playerActions";
-import { hasElements } from "../../../utils/guards";
+import { hasElements, hasValue } from "../../../utils/guards";
 import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
@@ -27,6 +30,7 @@ import { NftAvatarImage } from "../../profile/NftAvatarImage";
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
     ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
         const { id } = useParams<{ id: string }>();
+        const { gameState } = useGameStateContext();
         const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
         const { winnerInfo, winnerBySeat } = useWinnerInfo();
         const winnerCards = useWinnerCards();
@@ -59,6 +63,8 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
         const tournamentResult = useMemo(() => {
             return isSitAndGo ? getSeatResult(index) : null;
         }, [getSeatResult, isSitAndGo, index]);
+        const onFinishingHand = hasValue(tournamentResult) && finisherPlayedThisHand(gameState, playerData?.address);
+        const payoutInActionBanner = hasValue(tournamentResult) && finishedPayoutPlace(onFinishingHand, tournamentResult.payout) === "action-banner";
 
         // 1) detect when any winner exists
         const hasWinner = useMemo(() => hasElements(winnerInfo), [winnerInfo]);
@@ -162,7 +168,13 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                         <div className="text-orange-300">Addr: ...{playerData?.address ? playerData.address.slice(-3) : "N/A"}</div>
                     </div>
                 )}
-                <div className="player-cards flex justify-center gap-1">{renderCards()}</div>
+                <div className="player-cards flex justify-center gap-1">
+                    {hasValue(tournamentResult) && !onFinishingHand ? (
+                        <FinishedSeatCards place={tournamentResult.place} payout={tournamentResult.payout} />
+                    ) : (
+                        renderCards()
+                    )}
+                </div>
                 <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
                     {selectedAvatarUrl && (
                         <NftAvatarImage
@@ -182,6 +194,7 @@ const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
                             color={color}
                             tournamentPlace={tournamentResult?.place}
                             tournamentPayout={tournamentResult?.payout}
+                            payoutInActionBanner={payoutInActionBanner}
                             isWinner={isWinner}
                             winnerAmount={winnerAmount}
                             winnerHandDescription={winnerHandDescription}

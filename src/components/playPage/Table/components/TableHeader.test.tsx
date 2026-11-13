@@ -1,13 +1,17 @@
-
 import { render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../../../../utils/generatedTableName";
 import { TableHeader, TableHeaderProps } from "./TableHeader";
+import { ProvablyFairFrame } from "../../ProvablyFair/ProvablyFairPanel";
 
 jest.mock("../../../common/Modal", () => ({ Modal: () => null }));
 jest.mock("../../../NetworkSelector", () => ({ NetworkSelector: () => <span>Test network</span> }));
 jest.mock("../../../profile", () => ({ ProfileAvatarButton: () => <button>Avatar</button> }));
 jest.mock("../../../../hooks/game/useBlindLevel", () => ({ useBlindLevel: () => ({ isActive: false }) }));
+jest.mock("../../../../context/GameStateContext", () => ({
+    useGameStateContext: () => ({ gameState: { handNumber: 12, round: "flop" }, gameVariant: undefined, gameName: "Friday game" })
+}));
 
 const makeProps = (): TableHeaderProps => ({
     tableId: "0x123456789abcdef",
@@ -82,6 +86,23 @@ describe("Focused table header", () => {
         expect(props.onCloseSideBar).toHaveBeenCalledTimes(1);
         expect(props.onToggleSettings).toHaveBeenCalledTimes(1);
         expect(props.handleLeaveTableClick).not.toHaveBeenCalled();
+        expect(screen.queryByRole("button", { name: "Provably fair" })).not.toBeInTheDocument();
+    });
+
+    it("puts the provably fair shield with the header icon buttons", () => {
+        render(
+            <MemoryRouter>
+                <ProvablyFairFrame enabled>
+                    <TableHeader {...makeProps()} handleOpenReplay={jest.fn()} replayHand={4} />
+                </ProvablyFairFrame>
+            </MemoryRouter>
+        );
+        const shield = screen.getByRole("button", { name: "Provably fair" });
+        expect(shield.closest("[class*='roomTools']")).toBe(screen.getByRole("button", { name: "Invite" }).parentElement);
+        expect(shield.compareDocumentPosition(screen.getByRole("button", { name: "Replay" })) & Node.DOCUMENT_POSITION_PRECEDING).not.toBe(0);
+        expect(shield.compareDocumentPosition(screen.getByLabelText("Table options")) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+        fireEvent.click(shield);
+        expect(screen.getByRole("dialog", { name: "Provably fair deal" })).toBeInTheDocument();
     });
 
     it("does not label tournament chip blinds as dollars", () => {

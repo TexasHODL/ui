@@ -1,28 +1,22 @@
 import type { CSSProperties } from "react";
 
 /**
- * Phone landscape hand-strength chip (ui provably-fair tab).
+ * Phone landscape hand-strength chip.
  *
- * The chip used to sit in the top-left, which is where the compact provably-fair
- * tab now lives. It moves to the bottom corner opposite the action column so it
- * stays off the fold / bet buttons and the slider:
- * right-hand mode keeps that column on the right, so the chip sits lower-left;
- * left-hand mode mirrors the column, so the chip sits lower-right.
+ * It sits under the header at the top-left, in both left-hand and right-hand
+ * mode. A provably-fair tab used to take that corner and park the chip in the
+ * bottom corner opposite the action column. The tab is a header icon now, so
+ * the chip is back in this spot.
  */
-export function landscapeHandStrengthStyle(leftHand: boolean): CSSProperties {
-    const bottom = "max(8px, env(safe-area-inset-bottom, 0px))";
-    const shared: CSSProperties = {
+export function landscapeHandStrengthStyle(): CSSProperties {
+    return {
         position: "fixed",
-        top: "auto",
-        bottom,
+        top: "calc(var(--mobile-chrome-end, 48px) + 4px)",
+        left: "max(8px, env(safe-area-inset-left, 0px))",
         margin: 0,
         padding: "4px 8px",
-        maxWidth: "40%",
+        maxWidth: "calc(100% - 16px)",
         pointerEvents: "none",
         zIndex: 30
     };
-    if (leftHand) {
-        return { ...shared, left: "auto", right: "max(8px, env(safe-area-inset-right, 0px))" };
-    }
-    return { ...shared, right: "auto", left: "max(8px, env(safe-area-inset-left, 0px))" };
 }

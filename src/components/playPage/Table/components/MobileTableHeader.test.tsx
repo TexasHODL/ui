@@ -8,10 +8,12 @@
  */
 import React from "react";
 import { render, screen, fireEvent, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { GameFormat, NonPlayerActionType, type LegalActionDTO } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../../../../utils/generatedTableName";
 import { MobileTableHeader } from "./MobileTableHeader";
 import { SitOutIntentProvider } from "../../../../context/SitOutIntentContext";
+import { ProvablyFairFrame } from "../../ProvablyFair/ProvablyFairPanel";
 
 const mockSubmit = jest.fn();
 const mockToggleSeatAtBottom = jest.fn();
@@ -48,9 +50,20 @@ jest.mock("../../SngPayoutPanel", () => ({ __esModule: true, default: () => <div
 
 const sitOutLegal: LegalActionDTO[] = [{ action: NonPlayerActionType.SIT_OUT, min: "0", max: "0", index: 1 } as LegalActionDTO];
 
-function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[]; tableName?: string; openSidebar?: boolean; onHistory?: () => void; gameOptions?: unknown; gameFormat?: GameFormat | null } = {}) {
+function renderHeader(
+    over: {
+        seated?: boolean;
+        legalActions?: LegalActionDTO[];
+        tableName?: string;
+        openSidebar?: boolean;
+        onHistory?: () => void;
+        gameOptions?: unknown;
+        gameFormat?: GameFormat | null;
+    } = {},
+    provablyFair = false
+) {
     const legalActions = over.legalActions ?? [];
-    return render(
+    const tree = (
         <SitOutIntentProvider tableId="0xtable" network={{} as never} pendingSitOut={null} legalActions={legalActions}>
             <MobileTableHeader
                 onToggleFocus={mockToggleFocus}
@@ -89,6 +102,15 @@ function renderHeader(over: { seated?: boolean; legalActions?: LegalActionDTO[];
             />
         </SitOutIntentProvider>
     );
+    return render(
+        provablyFair ? (
+            <MemoryRouter>
+                <ProvablyFairFrame enabled>{tree}</ProvablyFairFrame>
+            </MemoryRouter>
+        ) : (
+            tree
+        )
+    );
 }
 
 const openMenu = () => fireEvent.click(screen.getByLabelText("Open menu"));
@@ -107,6 +129,19 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         expect(fallback).toHaveTextContent("Hand #1");
         expect(screen.queryByRole("group", { name: "Color theme" })).not.toBeInTheDocument();
         expect(document.querySelector(".mobile-header-row")).not.toBeNull();
+    });
+
+    it("puts the provably fair shield in the phone header tools", () => {
+        renderHeader({}, true);
+        const shield = screen.getByRole("button", { name: "Provably fair" });
+        expect(shield).toHaveAttribute("title", "Provably fair");
+        expect(shield.closest(".mobile-header-tools")).not.toBeNull();
+        expect(shield).toHaveClass("shieldButtonTouch");
+        const tools = shield.closest(".mobile-header-tools");
+        expect(tools).toContainElement(screen.getByRole("button", { name: "Open settings" }));
+        expect(tools).toContainElement(screen.getByRole("button", { name: "Open menu" }));
+        fireEvent.click(shield);
+        expect(screen.getByRole("dialog", { name: "Provably fair deal" })).toBeInTheDocument();
     });
 
     it("offers Dark and Light from the menu Settings section", () => {

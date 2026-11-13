@@ -2,7 +2,6 @@ import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useCardsForHandStrength } from "../../hooks/player/useCardsForHandStrength";
 import { usePlayerSeatInfo } from "../../hooks/player/usePlayerSeatInfo";
 import { getViewportMode } from "../../config/stageGeometry";
-import { useGameSettings } from "../../context/GameSettingsContext";
 import { landscapeHandStrengthStyle } from "../../utils/handStrengthPlacement";
 import { HAND_STRENGTH_DESKTOP_BOTTOM } from "./desktopActionBar";
 
@@ -33,7 +32,6 @@ export function renderedStackAmountSize(doc: Document = document): number | null
 const LiveHandStrengthDisplay: React.FC = () => {
     const { currentUserSeat } = usePlayerSeatInfo();
     const handStrength = useCardsForHandStrength(currentUserSeat);
-    const { leftHandMode } = useGameSettings();
     const [viewportMode, setViewportMode] = useState(getViewportMode());
 
     useEffect(() => {
@@ -113,14 +111,13 @@ const LiveHandStrengthDisplay: React.FC = () => {
         return null;
     }
 
-    // Landscape phones park the chip in the bottom corner opposite the action
-    // column, so the provably-fair tab can take the top-left. Portrait phones
+    // Landscape phones overlay the chip under the header, top-left. Portrait phones
     // sit it just above Fold (or the bottom dock). It does not take clicks.
     const isPortrait = viewportMode === "mobile-portrait";
     const isLandscape = viewportMode === "mobile-landscape";
     const isCompactMobile = isPortrait || isLandscape;
     const positionStyle: React.CSSProperties = isLandscape
-        ? landscapeHandStrengthStyle(leftHandMode)
+        ? landscapeHandStrengthStyle()
         : isPortrait
           ? { position: "fixed", bottom: `${anchor?.bottom ?? 170}px`, left: `max(${anchor?.left ?? 8}px, env(safe-area-inset-left, 0px))`, margin: 0, padding: "4px 8px", maxWidth: "40%", pointerEvents: "none", zIndex: 30 }
           : { position: "fixed", bottom: HAND_STRENGTH_DESKTOP_BOTTOM, right: "16px" };
