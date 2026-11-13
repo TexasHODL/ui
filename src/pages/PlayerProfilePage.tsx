@@ -45,6 +45,7 @@ import {
     historyNetClass,
     openSessionTotalsNote,
     profileHistoryStats,
+    sessionStateRetentionNote,
     sessionSpansForHistory,
     settledSessionCashOut,
     variantMoneyFromRows
@@ -302,6 +303,7 @@ export default function PlayerProfilePage() {
                                             />
                                         </div>
                                         {hasContent(openSessionsNote) && <p className="mt-3 text-xs text-gray-400">{openSessionsNote}</p>}
+                                        <p className="mt-3 text-xs text-gray-500">{sessionStateRetentionNote()}</p>
                                     </div>
                                     {isEmpty(filteredRows) ? (
                                         <div className="p-8 text-center">

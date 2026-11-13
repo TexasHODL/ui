@@ -269,6 +269,22 @@ export function historyNetClass(netMicro: number): string {
     return "text-green-400";
 }
 
+/**
+ * Days of app state Block52 still has, measured 2026-11-13: earliest retained
+ * height 677990 was 2026-10-21, about 23 days behind the chain tip. The default
+ * Texas Hodl node keeps roughly 6 days and Session History retries Block52 when
+ * a height is pruned, so this is the window a leave block can still be read.
+ * Finding the live boundary is a binary search of historical queries, which is
+ * too much to do on each profile view.
+ */
+export const SESSION_CHAIN_STATE_DAYS = 23;
+
+/** One line under the History cards. Older than this, leave block and length stay "—". */
+export function sessionStateRetentionNote(days: number = SESSION_CHAIN_STATE_DAYS): string {
+    const windowDays = Number.isSafeInteger(days) && days > 0 ? days : SESSION_CHAIN_STATE_DAYS;
+    return `Leave block, session length, and hand details are only available for roughly the last ${windowDays} days, since nodes don't keep older chain state. Older rows show —.`;
+}
+
 /** Caption under the money cards when open seats were left out. */
 export function openSessionTotalsNote(excludedOpen: number): string | undefined {
     if (!Number.isFinite(excludedOpen) || excludedOpen < 1) return undefined;
