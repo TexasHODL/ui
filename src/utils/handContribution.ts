@@ -42,12 +42,24 @@ export interface ContributionAction {
     playerId?: string;
     action?: string;
     amount?: string;
+    /** Street the action was dealt on. Playing style uses it; contribution does not. */
+    round?: string;
+}
+
+/** One pot winner on a public snapshot. Playing style uses the address, amount, and whether cards were shown. */
+export interface HandLogWinner {
+    address?: string;
+    amount?: string;
+    cards?: string[];
 }
 
 /** The fields of a public game state this read uses. A full chain snapshot satisfies it. */
 export interface ContributionSnapshot {
     handNumber?: number;
     previousActions?: ContributionAction[] | null;
+    communityCards?: string[];
+    round?: string;
+    winners?: HandLogWinner[];
 }
 
 export interface HandContributionTarget {
@@ -106,25 +118,36 @@ export function contributionFromActions(actions: ContributionAction[] | null | u
 /**
  * The hand's final public state. The end block is first; if that block already
  * shows the next hand, the block before it still has this hand's last action.
+ * Undefined when neither block can be read or neither is still this hand.
  */
-export async function readContributionAtHeights(
-    playerId: string,
+export async function readHandLogAtHeights(
     hand: HandContributionTarget,
     stateAt: (gameId: string, height: number) => Promise<ContributionSnapshot>
-): Promise<number | undefined> {
-    if (!hasContent(playerId)) return undefined;
+): Promise<ContributionSnapshot | undefined> {
     if (!Number.isSafeInteger(hand.handNumber) || hand.handNumber < 1) return undefined;
     if (!Number.isSafeInteger(hand.blockHeight) || hand.blockHeight < 1) return undefined;
     for (const height of snapshotHeights(hand.blockHeight)) {
         try {
             const state = await stateAt(hand.gameId, height);
             if (state.handNumber !== hand.handNumber) continue;
-            return contributionFromActions(state.previousActions, playerId);
+            return state;
         } catch (err) {
             console.error("Failed to read hand state for contribution:", err);
         }
     }
     return undefined;
+}
+
+/** Contribution from the hand's final public state. Undefined when that state cannot be read. */
+export async function readContributionAtHeights(
+    playerId: string,
+    hand: HandContributionTarget,
+    stateAt: (gameId: string, height: number) => Promise<ContributionSnapshot>
+): Promise<number | undefined> {
+    if (!hasContent(playerId)) return undefined;
+    const state = await readHandLogAtHeights(hand, stateAt);
+    if (!hasValue(state)) return undefined;
+    return contributionFromActions(state.previousActions, playerId);
 }
 
 /**
