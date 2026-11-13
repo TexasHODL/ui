@@ -145,11 +145,12 @@ describe("More menu", () => {
         return menu;
     }
 
-    it("drops Administration and the Tools heading, and keeps the website link under Tech notes", () => {
+    it("drops Administration, the Tools heading, and Hand distribution, and keeps the website link under Tech notes", () => {
         const menu = within(moreMenu());
 
         expect(menu.queryByRole("link", { name: "Administration" })).not.toBeInTheDocument();
         expect(menu.queryByText("TOOLS")).not.toBeInTheDocument();
+        expect(menu.queryByRole("link", { name: "Hand distribution" })).not.toBeInTheDocument();
 
         const website = menu.getByRole("link", { name: "Texas HODL website" });
         expect(website).toHaveAttribute("href", "https://texashodl.net/");
@@ -168,7 +169,6 @@ describe("More menu", () => {
         expect(menu.getByRole("link", { name: "Tables" })).toHaveAttribute("href", "/tables");
         expect(menu.getByRole("link", { name: "Players" })).toHaveAttribute("href", "/players");
         expect(menu.getByRole("link", { name: "Block explorer" })).toHaveAttribute("href", "/explorer");
-        expect(menu.getByRole("link", { name: "Hand distribution" })).toHaveAttribute("href", "/explorer/distribution");
         expect(menu.getByRole("link", { name: "Network nodes" })).toHaveAttribute("href", "/nodes");
     });
 });

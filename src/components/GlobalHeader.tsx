@@ -16,8 +16,7 @@ const extraGroups = [
         links: [
             ["/tables", "Tables"],
             ["/players", "Players"],
-            ["/explorer", "Block explorer"],
-            ["/explorer/distribution", "Hand distribution"]
+            ["/explorer", "Block explorer"]
         ]
     },
     {
