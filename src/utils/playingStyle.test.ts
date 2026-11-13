@@ -4,6 +4,7 @@ import {
     addHandStyle,
     emptyPlayingStyle,
     formatPlayingStyle,
+    PLAYING_STYLE_FIGURES,
     playingStyleHands,
     playingStyleNote,
     styleFromSnapshot,
@@ -233,6 +234,22 @@ describe("playing style totals and display", () => {
         expect(playingStyleNote(489, 0)).toBe("Based on 489 hands.");
         expect(playingStyleNote(489, 46)).toBe("Based on 489 hands. Skips 46 hands the node no longer has.");
         expect(playingStyleNote(12, 1)).toBe("Based on 12 hands. Skips 1 hand the node no longer has.");
+    });
+});
+
+describe("PLAYING_STYLE_FIGURES", () => {
+    it("names each figure in full and keeps the explanation for its bubble", () => {
+        expect(PLAYING_STYLE_FIGURES.map(figure => [figure.title, figure.name, figure.explanation])).toEqual([
+            [
+                "VPIP",
+                "Voluntarily put money in pot",
+                "How often you put chips in preflop by choice, by calling or raising, not just posting blinds. It shows how loose you play."
+            ],
+            ["PFR", "Preflop raise", "How often you raise preflop. It shows how aggressive you are before the flop."],
+            ["Aggression", "Aggression", "Bets and raises divided by calls. Above 1 means you bet more than you call."],
+            ["WTSD", "Went to showdown", "Of the hands where you saw the flop, how often you reached showdown."],
+            ["W$SD", "Won money at showdown", "Of the hands that reached showdown, how often you won."]
+        ]);
     });
 });
 

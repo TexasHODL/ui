@@ -13,6 +13,7 @@ import { MyHandsPanel } from "../components/players/MyHandsPanel";
 import { ProfileHeaderAvatar } from "../components/players/ProfileHeaderAvatar";
 import { ProfileHub } from "../components/players/ProfileHub";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
+import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
 import { VipBadge } from "../components/players/VipBadge";
 import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandContributions";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
@@ -38,7 +39,7 @@ import {
 import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
-import { formatPlayingStyle, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
+import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
 import {
     formatHistoryAmount,
     formatHistoryBlocks,
@@ -262,26 +263,15 @@ export default function PlayerProfilePage() {
                         <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                             <h2 className="text-white font-bold mb-4">Playing Style</h2>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                <div>
-                                    <p className="text-gray-400 text-sm mb-1">VPIP</p>
-                                    <p className="text-xl font-bold text-white">{styleDisplay.vpip}</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm mb-1">PFR</p>
-                                    <p className="text-xl font-bold text-white">{styleDisplay.pfr}</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm mb-1">Aggression</p>
-                                    <p className="text-xl font-bold text-white">{styleDisplay.aggression}</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm mb-1">WTSD</p>
-                                    <p className="text-xl font-bold text-white">{styleDisplay.wtsd}</p>
-                                </div>
-                                <div>
-                                    <p className="text-gray-400 text-sm mb-1">W$SD</p>
-                                    <p className="text-xl font-bold text-white">{styleDisplay.wssd}</p>
-                                </div>
+                                {PLAYING_STYLE_FIGURES.map(figure => (
+                                    <div key={figure.key}>
+                                        <div className="flex items-center gap-1">
+                                            <p className="text-sm text-gray-400">{figure.title}</p>
+                                            <PlayingStyleTip figure={figure} />
+                                        </div>
+                                        <p className="mt-1 text-xl font-bold text-white">{styleDisplay[figure.key]}</p>
+                                    </div>
+                                ))}
                             </div>
                             {hasContent(styleNote) && <p className="mt-3 text-xs text-gray-500">{styleNote}</p>}
                         </div>

@@ -79,6 +79,47 @@ export interface PlayingStyleDisplay {
     wssd: string;
 }
 
+/** Title, the full name shown in bold, and the rest of the explanation bubble. */
+export interface PlayingStyleFigure {
+    key: keyof PlayingStyleDisplay;
+    title: string;
+    name: string;
+    explanation: string;
+}
+
+export const PLAYING_STYLE_FIGURES: readonly PlayingStyleFigure[] = [
+    {
+        key: "vpip",
+        title: "VPIP",
+        name: "Voluntarily put money in pot",
+        explanation: "How often you put chips in preflop by choice, by calling or raising, not just posting blinds. It shows how loose you play."
+    },
+    {
+        key: "pfr",
+        title: "PFR",
+        name: "Preflop raise",
+        explanation: "How often you raise preflop. It shows how aggressive you are before the flop."
+    },
+    {
+        key: "aggression",
+        title: "Aggression",
+        name: "Aggression",
+        explanation: "Bets and raises divided by calls. Above 1 means you bet more than you call."
+    },
+    {
+        key: "wtsd",
+        title: "WTSD",
+        name: "Went to showdown",
+        explanation: "Of the hands where you saw the flop, how often you reached showdown."
+    },
+    {
+        key: "wssd",
+        title: "W$SD",
+        name: "Won money at showdown",
+        explanation: "Of the hands that reached showdown, how often you won."
+    }
+];
+
 /** A whole chip count. A blank amount put nothing in. Anything else is unreadable. */
 function wholeChips(amount: string | undefined): number | undefined {
     if (!hasContent(amount)) return 0;
