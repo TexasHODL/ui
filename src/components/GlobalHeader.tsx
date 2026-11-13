@@ -26,10 +26,6 @@ const extraGroups = [
             ["/nodes", "Network nodes"],
             ["/tech-notes", "Tech notes"]
         ]
-    },
-    {
-        label: "Tools",
-        links: [["/admin", "Administration"]]
     }
 ];
 
