@@ -22,7 +22,9 @@ import { calculateBuyIn, BUY_IN_PRESETS } from "../utils/buyInUtils";
 import { sortTablesByAvailableSeats } from "../utils/tableSortingUtils";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
 import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
-import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
+import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isMultiTableCreateType, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
+import { TournamentCreateFields, type TournamentCreateFieldsHandle } from "../components/tournament/TournamentCreateFields";
+import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import { SNG_PREVIEW_LEVEL_COUNT, TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
 import {
@@ -57,6 +59,8 @@ export default function TableAdminPage() {
     const navigate = useNavigate();
     const cosmosWallet = useCosmosWallet();
     const { createTable, isCreating, error: createError } = useNewTable();
+    const mttFields = useRef<TournamentCreateFieldsHandle>(null);
+    const tournamentActions = useTournamentActions(async () => undefined);
     const { games: fetchedGames, isLoading, error: gamesError, refetch } = useFindGames();
 
     // Default table settings for Cash Game, 9 players, Texas Hold'em
@@ -224,6 +228,14 @@ export default function TableAdminPage() {
     const handleCreateTable = async () => {
         if (!cosmosWallet.address) {
             toast.error("No Block52 wallet found. Please create or import a wallet first.");
+            return;
+        }
+
+        if (isMultiTableCreateType(gameType)) {
+            const params = mttFields.current?.submit();
+            if (isNullish(params)) return;
+            const id = await tournamentActions.create(params);
+            if (hasValue(id)) toast.success("Tournament created. Players can register now.");
             return;
         }
 
@@ -404,6 +416,8 @@ export default function TableAdminPage() {
                                 <h2>Make it your table.</h2>
                                 <p>Choose the game, seats and stakes.</p>
                             </div>
+                            {!isMultiTableCreateType(gameType) && (
+                            <>
                             {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
                             <div className="mb-4">
                                 <label className="text-gray-300 text-xs mb-1 block">
@@ -429,6 +443,8 @@ export default function TableAdminPage() {
                                     <p className="text-xs text-gray-500 mt-1">Free if left blank. Lowercase a–z, 0–9 and hyphens; $0.10 per character.</p>
                                 )}
                             </div>
+                            </>
+                            )}
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                 <div>
@@ -450,6 +466,8 @@ export default function TableAdminPage() {
                                         ))}
                                     </select>
                                 </div>
+                                {!isMultiTableCreateType(gameType) && (
+                                <>
                                 <div>
                                     <label className="text-gray-300 text-xs mb-1 block">Game</label>
                                     <select
@@ -498,8 +516,19 @@ export default function TableAdminPage() {
                                         ))}
                                     </select>
                                 </div>
+                                </>
+                                )}
                             </div>
 
+                            {isMultiTableCreateType(gameType) ? (
+                                <TournamentCreateFields
+                                    ref={mttFields}
+                                    layout="grid"
+                                    controlClassName="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    labelClassName="text-gray-300 text-xs mb-1 block"
+                                />
+                            ) : (
+                            <>
                             {gameType === "sit-and-go" && (
                                 <div className="mb-4">
                                     <ScheduledStartCard checked={scheduled} onChange={setScheduled}>
@@ -1006,6 +1035,8 @@ export default function TableAdminPage() {
                                     </div>
                                 )}
                             </div>
+                            </>
+                            )}
                         </section>
                         <aside className="creation-review" aria-label="Creation cost">
                             <div className="creation-section-heading">
@@ -1018,19 +1049,26 @@ export default function TableAdminPage() {
                                 <strong>{cosmosWallet.address ? `$${usdcBalanceFormatted} USDC` : "No game wallet"}</strong>
                             </div>
                             {/* Creation Fee Info */}
+                            {!isMultiTableCreateType(gameType) && (
                             <div className="creation-fee">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400 text-sm">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds):</span>
                                     <span className="text-white font-mono text-sm">{creationFeeFormatted} USDC</span>
                                 </div>
                             </div>
+                            )}
 
+                            {!isMultiTableCreateType(gameType) && (
                             <div className="creation-total">
                                 <span>Total to create</span>
                                 <strong>{totalCostFormatted} USDC</strong>
                             </div>
+                            )}
+                            {isMultiTableCreateType(gameType) && tournamentActions.error && (
+                                <p className="text-red-400 text-xs mt-2">{tournamentActions.error}</p>
+                            )}
                             {/* Insufficient USDC Warning */}
-                            {cosmosWallet.address && !hasEnoughUsdc && (
+                            {cosmosWallet.address && !hasEnoughUsdc && !isMultiTableCreateType(gameType) && (
                                 <div className="creation-notice" role="status">
                                     <div className="flex items-start gap-3">
                                         <svg className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1066,10 +1104,12 @@ export default function TableAdminPage() {
                             <div className="flex gap-3">
                                 <button
                                     onClick={handleCreateTable}
-                                    disabled={isCreating || !cosmosWallet.address || !hasEnoughUsdc || !!tableNameError || insufficientForName}
+                                    disabled={isMultiTableCreateType(gameType) ? tournamentActions.busy || !cosmosWallet.address : isCreating || !cosmosWallet.address || !hasEnoughUsdc || !!tableNameError || insufficientForName}
                                     className="creation-primary flex-1"
                                 >
-                                    {isCreating ? "Creating..." : !hasEnoughUsdc ? "Insufficient USDC" : tableNameError ? (tableNameError.includes("already taken") ? "Name taken" : "Invalid table name") : "Create Table"}
+                                    {isMultiTableCreateType(gameType)
+                                        ? (tournamentActions.busy ? "Creating..." : "Create tournament")
+                                        : isCreating ? "Creating..." : !hasEnoughUsdc ? "Insufficient USDC" : tableNameError ? (tableNameError.includes("already taken") ? "Name taken" : "Invalid table name") : "Create Table"}
                                 </button>
                                 <button onClick={() => void refetch()} disabled={isLoading} className="creation-secondary" title="Refresh tables">
                                     <svg className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

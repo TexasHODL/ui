@@ -36,6 +36,7 @@ describe("lobby discovery", () => {
     it("combines format and open-seat filters", () => {
         expect(filterLobbyGames(games, { ...options, format: "cash", openOnly: true }).map(game => game.gameId)).toEqual(["cash-active", "cash-empty"]);
         expect(filterLobbyGames(games, { ...options, format: "tournament" }).map(game => game.gameId)).toEqual(["sng-open"]);
+        expect(filterLobbyGames(games, { ...options, format: "mtt" })).toEqual([]);
     });
     it("finds names or IDs case-insensitively and handles no matches", () => {
         expect(filterLobbyGames(games, { ...options, search: "  FRIDAY  " })[0].gameId).toBe("sng-open");

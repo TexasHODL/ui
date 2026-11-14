@@ -105,9 +105,11 @@
 .gameTabs {
     display: flex;
     gap: 28px;
+    overflow-x: auto;
     border-bottom: 1px solid var(--theme-line, #ffffff16);
 }
 .gameTabs button {
+    flex-shrink: 0;
     padding: 12px 0 16px;
     border-bottom: 2px solid transparent;
     color: var(--theme-muted, #9e98a9);

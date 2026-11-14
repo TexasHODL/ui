@@ -4,7 +4,7 @@ import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
 import { TABLE_SEAT_OPTIONS } from "../utils/sngAdvancedParams";
 import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import "../components/common/TableCreation.css";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "../utils/scheduledSng";
 import { useNavigate } from "react-router-dom";
 
@@ -40,7 +40,9 @@ import type { CreateTableOptions } from "../hooks/game/useNewTable";
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
 import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
-import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
+import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isMultiTableCreateType, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
+import { TournamentCreateFields, type TournamentCreateFieldsHandle } from "../components/tournament/TournamentCreateFields";
+import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import {
     BLIND_STRUCTURE_CHOICES,
@@ -98,6 +100,8 @@ const Dashboard: React.FC = () => {
 
     // Use the new useNewTable hook from hooks directory
     const { createTable, isCreating: isCreatingTable, error: createTableError } = useNewTable();
+    const mttFields = useRef<TournamentCreateFieldsHandle>(null);
+    const tournamentActions = useTournamentActions(async () => undefined);
 
     // Removed: Ethereum private key import modal states
 
@@ -230,6 +234,17 @@ const Dashboard: React.FC = () => {
         // Check for Cosmos wallet
         if (!cosmosWallet.address) {
             setCreateGameError("No Block52 wallet found. Please create or import a Block52 wallet first.");
+            return;
+        }
+
+        if (isMultiTableCreateType(modalGameType)) {
+            const params = mttFields.current?.submit();
+            if (isNullish(params)) return;
+            const id = await tournamentActions.create(params);
+            if (hasValue(id)) {
+                setShowCreateGameModal(false);
+                setCreateGameError("");
+            }
             return;
         }
 
@@ -402,8 +417,9 @@ const Dashboard: React.FC = () => {
     const extraOptionsInvalid = isModalTournament
         ? !Number.isInteger(modalStartingStack) || modalStartingStack <= 0 || !Number.isFinite(entryFee) || entryFee < 0
         : enableRake && (![rakeThreshold, rakeCap, rakePercentage].every(Number.isFinite) || rakeThreshold < 0 || rakeCap < 0 || rakePercentage < 1 || rakePercentage > 10);
-    const createDisabled =
-        isCreatingTable || !!tableNameError || insufficientForName || insufficientForCreation || extraOptionsInvalid || (isModalTournament && !!blindPlan.error);
+    const createDisabled = isMultiTableCreateType(modalGameType)
+        ? tournamentActions.busy
+        : isCreatingTable || !!tableNameError || insufficientForName || insufficientForCreation || extraOptionsInvalid || (isModalTournament && !!blindPlan.error);
 
     // Auto-switch to Ethereum Mainnet when wallet connects
     useEffect(() => {
@@ -702,6 +718,8 @@ const Dashboard: React.FC = () => {
                         >
                                 <ModalHeader kicker="Your game, your table" titleId="create-table-title" title="Create a table." subtitle="Choose your setup. Invite your players." />
                                 <div className="creation-form-grid">
+                                    {!isMultiTableCreateType(modalGameType) && (
+                                    <>
                                     {/* Optional paid table name (poker-vm#337): $0.10/char, live preview */}
                                     <div className="creation-span">
                                         <label className="block text-white text-sm mb-1">
@@ -735,6 +753,8 @@ const Dashboard: React.FC = () => {
                                             </p>
                                         )}
                                     </div>
+                                    </>
+                                    )}
 
                                     <div>
                                         <label className="block text-white text-sm mb-1">Game Type</label>
@@ -756,6 +776,15 @@ const Dashboard: React.FC = () => {
                                         </select>
                                     </div>
 
+                                    {isMultiTableCreateType(modalGameType) ? (
+                                        <TournamentCreateFields
+                                            ref={mttFields}
+                                            layout="stack"
+                                            controlClassName="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            labelClassName="block text-white text-sm mb-1"
+                                        />
+                                    ) : (
+                                    <>
                                     {/* Variant and betting limit (ui#768) */}
                                     <div>
                                             <label className="block text-white text-sm mb-1">Game</label>
@@ -1190,6 +1219,12 @@ const Dashboard: React.FC = () => {
                                     {extraOptionsInvalid && <p className="creation-span" role="alert">Enter a positive whole-number starting stack and valid non-negative fee/rake amounts.</p>}
                                     {createGameError && <p className="creation-span text-red-500 text-sm">{createGameError}</p>}
                                     {createTableError && <p className="creation-span text-red-500 text-sm">{createTableError.message}</p>}
+                                    </>
+                                    )}
+
+                                    {isMultiTableCreateType(modalGameType) && tournamentActions.error && (
+                                        <p className="creation-span text-red-500 text-sm">{tournamentActions.error}</p>
+                                    )}
 
                                     <div className="creation-span flex justify-end space-x-3">
                                         <button
@@ -1220,6 +1255,8 @@ const Dashboard: React.FC = () => {
                                                     </svg>
                                                     Creating Table...
                                                 </>
+                                            ) : isMultiTableCreateType(modalGameType) ? (
+                                                tournamentActions.busy ? "Creating..." : "Create tournament"
                                             ) : (
                                                 "Create table"
                                             )}

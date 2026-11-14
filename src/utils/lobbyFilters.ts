@@ -3,7 +3,7 @@ import { displayTableName } from "./generatedTableName";
 import { isCashFormat, isSitAndGoFormat, isTournamentFormat } from "./gameFormatUtils";
 import { scheduledSngPhase } from "./scheduledSng";
 
-export type LobbyFormat = "all" | "cash" | "tournament";
+export type LobbyFormat = "all" | "cash" | "tournament" | "mtt";
 export type LobbySort = "activity" | "buyin";
 
 /** Minimal progress mark from useLobbyTournamentStarted (Started / Finished). */
@@ -75,6 +75,14 @@ export function isOpenScheduledRegistration(
     return phase === "registering" || phase === "ready" || phase === "short";
 }
 
+/** Which tables a lobby tab lists. Multi-table tournaments are cards, not table rows. */
+export function matchesLobbyFormat(game: GameWithFormat, format: LobbyFormat): boolean {
+    if (format === "all") return true;
+    if (format === "cash") return isCashFormat(game.gameFormat);
+    if (format === "tournament") return isTournamentFormat(game.gameFormat);
+    return false;
+}
+
 /** Filter real table data without mutating the shared game list. Full tables remain watchable. */
 export function filterLobbyGames(
     games: GameWithFormat[],
@@ -86,7 +94,7 @@ export function filterLobbyGames(
     return games
         .filter(
             game =>
-                (options.format === "all" || (options.format === "cash" ? isCashFormat(game.gameFormat) : isTournamentFormat(game.gameFormat))) &&
+                matchesLobbyFormat(game, options.format) &&
                 (!options.openOnly || game.currentPlayers < game.maxPlayers) &&
                 (!query || [displayTableName(game.name, game.gameId), game.gameId].join(" ").toLowerCase().includes(query))
         )

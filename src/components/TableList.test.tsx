@@ -1,6 +1,8 @@
 
 import { readFileSync } from "fs";
+import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import { displayTableName } from "../utils/generatedTableName";
 import TableList from "./TableList";
@@ -37,10 +39,29 @@ let mockTournamentCards: {
     cost: { gross: bigint };
     myTable?: { gameId: string; number: number };
 }[] = [];
-jest.mock("../hooks/tournament/useTournamentLobby", () => ({
-    useTournamentLobby: () => ({ cards: mockTournamentCards, isLoading: false, error: null, failedCount: 0, refresh: jest.fn() })
+jest.mock("../hooks/tournament/useTournamentLobby", () => {
+    const actual = jest.requireActual("../hooks/tournament/useTournamentLobby");
+    return {
+        ...actual,
+        useTournamentLobby: () => ({ cards: mockTournamentCards, isLoading: false, error: null, failedCount: 0, refresh: jest.fn() })
+    };
+});
+jest.mock("../hooks/tournament/useTournamentActions", () => ({
+    useTournamentActions: () => ({
+        busy: false,
+        error: null,
+        clearError: jest.fn(),
+        register: jest.fn().mockResolvedValue(true),
+        unregister: jest.fn().mockResolvedValue(true),
+        create: jest.fn().mockResolvedValue("0xcreated")
+    })
 }));
-jest.mock("./common", () => ({ Pagination: () => null }));
+// The real Modal pulls colorConfig, which reads import.meta.env. This stand-in still opens the tournament dialogs.
+jest.mock("./common", () => ({
+    Pagination: () => null,
+    Modal: ({ isOpen, title, children, ariaLabel }: { isOpen: boolean; title?: string; children?: ReactNode; ariaLabel?: string }) =>
+        isOpen ? <div role="dialog" aria-label={ariaLabel || title}>{children}</div> : null
+}));
 jest.mock("./modals/DeleteTableModal", () => ({ __esModule: true, default: ({ isOpen, gameId }: { isOpen: boolean; gameId: string }) => isOpen ? <div role="dialog">Delete confirmation: {gameId}</div> : null }));
 jest.mock("./modals/ForceCloseTableModal", () => ({ __esModule: true, default: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div role="dialog">Refund confirmation</div> : null }));
 
@@ -431,7 +452,69 @@ test("a multi-table tournament is one lobby row, and a seat you have says Take m
         myTable: { gameId: "0xface4d5c131b7d806a87883d234dd1929a296c5e-t2", number: 2 }
     }];
     render(<TableList />);
+    expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
     expect(screen.getByTestId("lobby-tournament-row")).toHaveTextContent("Take my seat");
     expect(screen.getByTestId("lobby-tournament-runners")).toHaveTextContent("12/27");
     expect(screen.getByTestId("lobby-tournament-seat")).toHaveTextContent("table 2");
+});
+
+const TOURNAMENT_ID = "0xface4d5c131b7d806a87883d234dd1929a296c5e";
+
+const openTournamentCard = {
+    tournamentId: TOURNAMENT_ID,
+    phase: "open",
+    registered: 3,
+    maxEntrants: 27,
+    minEntrants: 4,
+    seatsPerTable: 6,
+    startingStack: "1500",
+    blindLabel: "25/50 blinds, 5 min levels",
+    cost: { gross: 1_000_000n, entryFee: 0n, protocolCut: 0n, net: 1_000_000n },
+    prizePoolMicro: 3_000_000n,
+    prizePoolIsProjected: true,
+    startsAtMs: Date.now() + 3_600_000,
+    atRiskOfCancelling: true,
+    isRegistered: false,
+    canRegister: true,
+    canUnregister: false
+};
+
+const renderLobby = () => render(<MemoryRouter><TableList /></MemoryRouter>);
+
+test("the Tournaments tab shows multi-table cards, and Sit & Go does not list them as rows", () => {
+    mockTournamentCards = [openTournamentCard];
+    renderLobby();
+    fireEvent.click(screen.getByRole("button", { name: "Sit & Go" }));
+    expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
+    expect(screen.getByText("My tournament")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+    const section = screen.getByTestId("lobby-mtt-section");
+    expect(within(section).getByTestId("tournament-name-link")).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
+    expect(within(section).getByTestId("tournament-name-link")).toHaveTextContent("Tournament 0xface4d…6c5e");
+    expect(within(section).queryByRole("button", { name: "Create tournament" })).not.toBeInTheDocument();
+    expect(within(section).queryByRole("link", { name: "View all" })).not.toBeInTheDocument();
+    expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
+
+    fireEvent.click(within(section).getByRole("button", { name: /Register/ }));
+    expect(screen.getByRole("dialog", { name: "Register for tournament" })).toBeInTheDocument();
+});
+
+test("the Tournaments tab shows a compact empty state when no multi-table tournaments exist", () => {
+    renderLobby();
+    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+
+    const empty = screen.getByTestId("lobby-mtt-empty");
+    expect(empty).toHaveTextContent("No multi-table tournaments yet");
+    expect(within(empty).queryByRole("button", { name: "Create tournament" })).not.toBeInTheDocument();
+    expect(screen.queryByText("The next game starts with you")).not.toBeInTheDocument();
+});
+
+test("cash games do not show the multi-table tournament section", () => {
+    mockTournamentCards = [openTournamentCard];
+    renderLobby();
+    fireEvent.click(screen.getByRole("button", { name: "Cash games" }));
+    expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
 });
