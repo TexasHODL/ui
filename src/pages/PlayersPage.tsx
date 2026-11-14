@@ -8,7 +8,6 @@ import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel, ExplorerReloadButton, ExplorerSearchInput } from "../components/explorer/ExplorerPanel";
 import { isEmpty, hasElements } from "../utils/guards";
 import { Pagination } from "../components/common";
-import { VipBadge } from "../components/players/VipBadge";
 import { usePlayersDirectory } from "../hooks/player/usePlayersDirectory";
 import type { PlayerSortField } from "../types/players";
 import styles from "./explorer/AllAccountsPage.module.css";
@@ -93,25 +92,20 @@ export default function PlayersPage() {
                         <ExplorerEmpty>{appliedSearch ? "No players match that address." : "No players yet."}</ExplorerEmpty>
                     ) : (
                         <div className="overflow-x-auto" id="players-table-top">
+                            {/* The page rule pads every cell 12px under 760px, which pushes Net Profit off a phone. */}
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className={styles.tableHeaderRow}>
                                         <th className="hidden sm:table-cell px-4 py-2 text-left text-gray-400 font-semibold whitespace-nowrap">#</th>
-                                        <th className="px-3 sm:px-4 py-2 text-left text-gray-400 font-semibold">Player</th>
+                                        <th className="!px-2 sm:!px-4 py-2 text-left text-gray-400 font-semibold">Player</th>
                                         <th
-                                            className="hidden sm:table-cell px-3 sm:px-4 py-2 text-left text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
-                                            onClick={() => toggleSort("vip_points")}
-                                        >
-                                            VIP{sortArrow("vip_points")}
-                                        </th>
-                                        <th
-                                            className="px-3 sm:px-4 py-2 text-right text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
+                                            className="!px-2 sm:!px-4 py-2 text-right text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
                                             onClick={() => toggleSort("total_hands")}
                                         >
                                             Hands{sortArrow("total_hands")}
                                         </th>
                                         <th
-                                            className="px-3 sm:px-4 py-2 text-right text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
+                                            className="!px-2 sm:!px-4 py-2 text-right text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
                                             onClick={() => toggleSort("net_profit")}
                                         >
                                             Net Profit{sortArrow("net_profit")}
@@ -132,16 +126,13 @@ export default function PlayersPage() {
                                             onClick={() => navigate(`/players/${p.player_address}`)}
                                         >
                                             <td className="hidden sm:table-cell px-4 py-2 text-gray-500">{(page - 1) * PAGE_SIZE + index + 1}</td>
-                                            <td className="px-3 sm:px-4 py-2">
+                                            <td className="!px-2 sm:!px-4 py-2">
                                                 <span className={`font-mono text-xs sm:text-sm hover:underline ${styles.brandText}`}>
                                                     {truncateMiddle(p.player_address, 12, 8)}
                                                 </span>
                                             </td>
-                                            <td className="hidden sm:table-cell px-3 sm:px-4 py-2">
-                                                <VipBadge tier={p.vip_tier} rakebackPct={p.rakeback_pct} />
-                                            </td>
-                                            <td className="px-3 sm:px-4 py-2 text-right text-white">{p.total_hands.toLocaleString()}</td>
-                                            <td className="px-3 sm:px-4 py-2 text-right">
+                                            <td className="!px-2 sm:!px-4 py-2 text-right text-white">{p.total_hands.toLocaleString()}</td>
+                                            <td className="!px-2 sm:!px-4 py-2 text-right">
                                                 <span className={p.net_profit >= 0 ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
                                                     {formatUsd(p.net_profit)}
                                                 </span>

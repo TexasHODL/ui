@@ -34,8 +34,5 @@ function sortValue(player: PlayerListItem, sort: PlayerSortField): number {
     if (sort === "last_seen_block") return hasValue(player.last_seen_block) ? player.last_seen_block : 0;
     if (sort === "total_hands") return player.total_hands;
     if (sort === "total_rake_contributed") return player.total_rake_contributed;
-    // The list payload has the tier, not the points. Every current wallet is the
-    // same tier, and the indexer's vip_points order matches this address tie-break.
-    if (sort === "vip_points") return 0;
     return player.net_profit;
 }
