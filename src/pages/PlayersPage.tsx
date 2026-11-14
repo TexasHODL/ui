@@ -100,12 +100,6 @@ export default function PlayersPage() {
                                         <th className="!px-2 sm:!px-4 py-2 text-left text-gray-400 font-semibold">Player</th>
                                         <th
                                             className="!px-2 sm:!px-4 py-2 text-right text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
-                                            onClick={() => toggleSort("total_hands")}
-                                        >
-                                            Hands{sortArrow("total_hands")}
-                                        </th>
-                                        <th
-                                            className="!px-2 sm:!px-4 py-2 text-right text-gray-400 font-semibold whitespace-nowrap cursor-pointer hover:text-white transition-colors"
                                             onClick={() => toggleSort("net_profit")}
                                         >
                                             Net Profit{sortArrow("net_profit")}
@@ -131,7 +125,6 @@ export default function PlayersPage() {
                                                     {truncateMiddle(p.player_address, 12, 8)}
                                                 </span>
                                             </td>
-                                            <td className="!px-2 sm:!px-4 py-2 text-right text-white">{p.total_hands.toLocaleString()}</td>
                                             <td className="!px-2 sm:!px-4 py-2 text-right">
                                                 <span className={p.net_profit >= 0 ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
                                                     {formatUsd(p.net_profit)}
