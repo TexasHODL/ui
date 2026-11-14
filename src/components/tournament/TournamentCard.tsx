@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { tableUrl } from "../../utils/tableUrl";
+import { tableUrl, tournamentUrl } from "../../utils/tableUrl";
+import { truncateMiddle } from "../../utils/stringUtils";
 import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
 import { formatUsdc, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
 
@@ -36,9 +37,14 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs, onR
         <div className="rounded-[14px] border border-white/10 bg-[#0c0911] p-4 flex flex-col gap-3" data-testid="tournament-card">
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                    <div className="text-white font-semibold truncate" title={card.tournamentId}>
-                        Tournament {card.tournamentId.slice(0, 8)}…{card.tournamentId.slice(-4)}
-                    </div>
+                    <Link
+                        to={tournamentUrl(card.tournamentId)}
+                        className="block truncate text-white font-semibold hover:underline"
+                        title={card.tournamentId}
+                        data-testid="tournament-name-link"
+                    >
+                        Tournament {truncateMiddle(card.tournamentId, 8, 4, "…")}
+                    </Link>
                     <div className="text-xs text-gray-400 font-bold">
                         {card.seatsPerTable}-max tables · {Number(card.startingStack).toLocaleString("en-US")} chips · {card.blindLabel}
                     </div>

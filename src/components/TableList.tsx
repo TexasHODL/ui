@@ -19,6 +19,7 @@ import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
 import { hasContent, isEmpty, isNullish } from "../utils/guards";
 import { useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
+import { LobbyMttSection } from "./tournament/LobbyMttSection";
 import { LobbyTournamentRows } from "./tournament/LobbyTournamentRows";
 import { parseTournamentGameId } from "../utils/tableUrl";
 import DeleteTableModal from "./modals/DeleteTableModal";
@@ -86,9 +87,10 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
         return ownedOnly ? listed.filter(game => hasContent(address) && game.creator?.toLowerCase() === address.toLowerCase()) :
             (treasuryOnly && treasuryAddress && !searchIsId ? listed.filter(game => game.creator === treasuryAddress) : listed);
     }, [rawGames, treasuryOnly, ownedOnly, address, searchIsId]);
-    const { cards: tournamentCards } = useTournamentLobby();
+    const { cards: tournamentCards, isLoading: tournamentsLoading, error: tournamentsError, failedCount: tournamentsFailed, refresh: refreshTournaments } = useTournamentLobby();
     const tournamentRows = useMemo(() => {
-        if (format === "cash") return [];
+        // The Sit & Go tab shows these as cards above the table. All games keeps one row each.
+        if (format !== "all") return [];
         const q = search.trim().toLowerCase();
         return tournamentCards.filter(card => !hasContent(q) || card.tournamentId.toLowerCase().includes(q));
     }, [tournamentCards, format, search]);
@@ -229,6 +231,16 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     </select>
                 </label>
             </div>
+
+            {format === "tournament" && (
+                <LobbyMttSection
+                    cards={tournamentCards}
+                    isLoading={tournamentsLoading}
+                    error={tournamentsError}
+                    failedCount={tournamentsFailed}
+                    onRefresh={refreshTournaments}
+                />
+            )}
 
             {error ? (
                 <div className={styles.empty} role="alert">
