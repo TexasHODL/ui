@@ -12,13 +12,17 @@ jest.mock("../../hooks/game/useSngPayoutStatus", () => ({
     useSngPayoutStatus: () => ({ status: mockPayoutStatus, check: mockCheck, retry: jest.fn() })
 }));
 jest.mock("react-router-dom", () => ({ useNavigate: () => mockNavigate }));
+let mockGameState: { tournamentId?: string } | undefined = {};
+jest.mock("../../context/GameStateContext", () => ({
+    useGameStateContext: () => ({ gameState: mockGameState })
+}));
 let mockResult: PlayerResultData | null;
 let mockIsSitAndGo = true;
 let mockResults: { place: number }[] = [];
 const mockGetPlayerResult = () => mockResult;
 jest.mock("../../hooks/game/useSitAndGoPlayerResults", () => ({
     useSitAndGoPlayerResults: () => ({
-        getPlayerResult: () => mockGetPlayerResult(),
+        getPlayerResult: mockGetPlayerResult,
         isSitAndGo: mockIsSitAndGo,
         allResults: mockResults
     })
@@ -39,6 +43,7 @@ beforeEach(() => {
     mockIsSitAndGo = true;
     mockResult = result(3);
     mockResults = [];
+    mockGameState = {};
 });
 
 test("opens the centred finishing-hand review immediately without review or NFT buttons", () => {
@@ -235,4 +240,48 @@ test.each(["unfinished", "cash", "spectator", "dismissed"])("does not open for %
 test("stays hidden while a live tournament finish is still being shown (ui#874)", () => {
     render(<SitAndGoResultModal tableId={TABLE_ID} onClaim={jest.fn()} held />);
     expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+describe("directed table (multi-table tournament)", () => {
+    const results = [
+        { place: 2, playerId: USER_ADDRESS, payout: "6561000" },
+        { place: 1, playerId: "b521winner", payout: "9720000" }
+    ];
+
+    beforeEach(() => {
+        mockGameState = { tournamentId: "0xtournament" };
+        mockIsSitAndGo = false;
+        mockResult = null;
+    });
+
+    test("shows the finisher's place from the tournament, with the floored prize already paid", () => {
+        render(<SitAndGoResultModal tableId={TABLE_ID} onClaim={jest.fn()} held={false} tournamentResults={results} tournamentSize={27} />);
+        expect(screen.getByTestId("sng-result-heading")).toHaveTextContent("You finished 2nd out of 27!");
+        expect(screen.getByTestId("sng-result-prize-collected")).toHaveTextContent("paid to your wallet");
+        expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+        expect(screen.getByRole("button", { name: "View table" })).toBeInTheDocument();
+    });
+
+    test("offers the lobby, never a collect, when the player busted unpaid", () => {
+        render(
+            <SitAndGoResultModal
+                tableId={TABLE_ID}
+                onClaim={jest.fn()}
+                held={false}
+                tournamentResults={[{ place: 13, playerId: USER_ADDRESS, payout: "0" }]}
+                tournamentSize={27}
+            />
+        );
+        expect(screen.getByTestId("sng-result-heading")).toHaveTextContent("You busted out — finished 13th out of 27.");
+        expect(screen.queryByTestId("sng-result-claim-winnings-btn")).toBeNull();
+        fireEvent.click(screen.getByRole("button", { name: "Back to lobby" }));
+        expect(mockNavigate).toHaveBeenCalledWith("/");
+    });
+
+    test("renders nothing while the wallet has no result in the tournament", () => {
+        const { container } = render(
+            <SitAndGoResultModal tableId={TABLE_ID} onClaim={jest.fn()} held={false} tournamentResults={[{ place: 5, playerId: "b521other", payout: "0" }]} />
+        );
+        expect(container).toBeEmptyDOMElement();
+    });
 });

@@ -12,7 +12,7 @@
  */
 import React, { useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useParams } from "react-router-dom";
+import { useTableId } from "../../../hooks/game/useTableId";
 import { holeCardsPerPlayer } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { DEAL_ORDER_DESCRIPTION, DERIVATION_DESCRIPTION, handPhase, previousHand } from "../../../utils/provablyFair";
@@ -58,7 +58,7 @@ export const ProvablyFairButton: React.FC<{ touch?: boolean }> = ({ touch = fals
 
 /** Renders the panel and verify window. The header mounts {@link ProvablyFairButton}. */
 const ProvablyFairProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { id: tableId } = useParams<{ id: string }>();
+    const tableId = useTableId();
     const { gameState, gameVariant, gameName } = useGameStateContext();
     const [isOpen, setIsOpen] = useState(false);
     const [showHow, setShowHow] = useState(false);

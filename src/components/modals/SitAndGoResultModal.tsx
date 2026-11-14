@@ -4,7 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { ModalHeader } from "../common/ModalHeader";
 import { formatFlooredPrizeDollars, parsePrizeMicro, prizeMicroIsPositive } from "../../utils/prizeDisplay";
 import { PrizeAmount } from "../playPage/PrizeAmount";
+import type { ResultDTO } from "@block52/poker-vm-sdk";
+import { useGameStateContext } from "../../context/GameStateContext";
 import { hasValue } from "../../utils/guards";
+import { finisherResult } from "../../utils/tournamentResult";
+import { tournamentIdOf } from "../../utils/tournamentBlinds";
 import { getFinishingHand, subscribeFinishingHand } from "../../utils/finishingHand";
 import { FinishingHandRecap } from "./FinishingHandRecap";
 import { useSitAndGoPlayerResults, type PlayerResultData } from "../../hooks/game/useSitAndGoPlayerResults";
@@ -22,24 +26,32 @@ interface SitAndGoResultModalProps {
     onClaim: () => Promise<void>;
     /** True while a live finish is still shown on the table (ui#874); the modal waits. */
     held: boolean;
+    /** Results from the multi-table tournament record. A directed table has none of its own. */
+    tournamentResults?: ResultDTO[];
+    /** How many players that tournament started with, for "2nd out of 27". */
+    tournamentSize?: number;
 }
 
 /** Opens the finishing hand immediately. Collection and navigation are separate:
  * only Collect sends a transaction; spectating simply dismisses the dialog.
  * Mount with a table-specific key so pending/collected state never crosses tables.
  */
-export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onClaim, held }) => {
+export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableId, onClaim, held, tournamentResults, tournamentSize }) => {
     const navigate = useNavigate();
     const collecting = useRef(false);
     const { isSitAndGo, getPlayerResult } = useSitAndGoPlayerResults();
+    const { gameState } = useGameStateContext();
+    const directed = hasValue(tournamentIdOf(gameState));
     const userAddress = useMemo(
         () => localStorage.getItem(STORAGE_KEYS.cosmosAddress)?.toLowerCase() ?? null,
         [],
     );
     const currentResult = useMemo(() => {
-        if (!isSitAndGo || !userAddress) return null;
+        if (!userAddress) return null;
+        if (directed) return finisherResult(tournamentResults, userAddress);
+        if (!isSitAndGo) return null;
         return getPlayerResult(userAddress);
-    }, [isSitAndGo, getPlayerResult, userAddress]);
+    }, [directed, tournamentResults, isSitAndGo, getPlayerResult, userAddress]);
     // Settlement can remove the live result. Keep the receipt and navigation
     // available until the user explicitly chooses what to do next.
     const [retainedResult, setRetainedResult] = useState<PlayerResultData | null>(null);
@@ -52,16 +64,17 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
     const [dismissed, setDismissed] = useState(() =>
         !!tableId && !!userAddress && localStorage.getItem(dismissKey(tableId, userAddress)) === "true");
     const [prizeClaim, setPrizeClaim] = useState<{ kind: "idle" | "claiming" | "done" | "error"; message?: string }>({ kind: "idle" });
-    const payoutStatus = useSngPayoutStatus(tableId, userAddress, isSitAndGo && !!playerResult && prizeMicroIsPositive(playerResult.payout) && !dismissed);
+    const payoutStatus = useSngPayoutStatus(tableId, userAddress, !directed && isSitAndGo && !!playerResult && prizeMicroIsPositive(playerResult.payout) && !dismissed);
 
-    if (!isSitAndGo || !playerResult || dismissed || held || !tableId || !userAddress) return null;
+    if ((!directed && !isSitAndGo) || !playerResult || dismissed || held || !tableId || !userAddress) return null;
 
     const { place, payout, isWinner } = playerResult;
     const isPaid = prizeMicroIsPositive(payout);
     const prizeMicro = parsePrizeMicro(payout);
     const flooredPrize = hasValue(prizeMicro) ? formatFlooredPrizeDollars(prizeMicro) : null;
     const isBusy = prizeClaim.kind === "claiming";
-    const collected = prizeClaim.kind === "done" || payoutStatus.status === "claimed";
+    // A directed table pays the prize straight to the wallet: nothing to collect.
+    const collected = directed || prizeClaim.kind === "done" || payoutStatus.status === "claimed";
     const canNavigate = !isPaid || collected;
 
     const handleDismiss = () => {
@@ -87,9 +100,10 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
         }
     };
 
+    const outOf = directed && hasValue(tournamentSize) ? ` out of ${tournamentSize}` : "";
     const heading = isWinner
         ? "🏆 You won the tournament!"
-        : isPaid ? `You finished ${ordinal(place)}!` : `You busted out — finished ${ordinal(place)}.`;
+        : isPaid ? `You finished ${ordinal(place)}${outOf}!` : `You busted out — finished ${ordinal(place)}${outOf}.`;
 
     return createPortal(
         <div className="sng-result-notice sng-result-expanded" data-testid="sng-result-modal" role="dialog" aria-label="Tournament result">
@@ -100,7 +114,7 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                 <FinishingHandRecap hand={finishingHand} viewerAddress={userAddress} />
                 {isPaid && (
                     <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 mb-6 text-center">
-                        <div className="text-xs text-green-300 font-semibold mb-1">{collected ? "WINNINGS COLLECTED" : "YOUR PAYOUT"}</div>
+                        <div className="text-xs text-green-300 font-semibold mb-1">{directed ? "WINNINGS PAID TO YOUR WALLET" : collected ? "WINNINGS COLLECTED" : "YOUR PAYOUT"}</div>
                         <div className="text-3xl text-white font-bold" data-testid="sng-result-payout"><PrizeAmount micro={payout} /></div>
                     </div>
                 )}
@@ -112,12 +126,16 @@ export const SitAndGoResultModal: React.FC<SitAndGoResultModalProps> = ({ tableI
                 {prizeClaim.kind === "error" && (
                     <p role="alert" className="text-xs text-red-400 text-center mb-3" data-testid="sng-result-prize-claim-error">{prizeClaim.message}</p>
                 )}
-                {collected && <p role="status" className="finish-recap-note">Your winnings have been collected.</p>}
+                {collected && isPaid && (
+                    <p role="status" className="finish-recap-note" data-testid="sng-result-prize-collected">
+                        {directed ? "Your winnings were paid to your wallet." : "Your winnings have been collected."}
+                    </p>
+                )}
                 <div className="text-center mt-4"><span className="text-xs text-gray-400">Powered by Block52</span></div>
                 {/* Sticky footer: next steps stay visible even when the finishing-hand recap scrolls. */}
                 {((isPaid && !collected && payoutStatus.status === "unclaimed") || canNavigate) && (
                 <div className="sng-result-actions" data-testid="sng-result-actions">
-                    {isPaid && !collected && payoutStatus.status === "unclaimed" && (
+                    {isPaid && !directed && !collected && payoutStatus.status === "unclaimed" && (
                         <button onClick={handleCollect} disabled={isBusy} data-testid="sng-result-claim-winnings-btn"
                             className="hodl-primary w-full py-3 px-4 rounded-lg text-sm font-semibold disabled:cursor-not-allowed"
                             aria-label={isBusy ? "Collecting…" : flooredPrize ? `Collect $${flooredPrize}` : "Collect prize"}>

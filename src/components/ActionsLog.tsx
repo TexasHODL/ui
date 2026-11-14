@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useSyncExternalStore } from "react";
 import { buildHandShareUrl } from "../utils/handReplay";
-import { useParams } from "react-router-dom";
+import { useTableId } from "../hooks/game/useTableId";
 import { useGameProgress } from "../hooks/game/useGameProgress";
 import { useWinnerInfo } from "../hooks/game/useWinnerInfo";
 import { formatSeatLabel } from "../utils/playerSeatUtils";
@@ -27,7 +27,7 @@ interface ActionsLogProps {
 }
 
 const ActionsLog: React.FC<ActionsLogProps> = ({ summary = false, expanded = true, onExpand, onClose, variant = "default" }) => {
-    const { id } = useParams<{ id: string }>();
+    const id = useTableId();
     const { previousActions } = useGameProgress(id);
     const { gameState, gameFormat, gameVariant } = useGameStateContext();
     const { winnerInfo } = useWinnerInfo();

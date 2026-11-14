@@ -24,6 +24,8 @@ import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useActionSubmit } from "../../../../context/ActionSubmitContext";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
+import { hasValue } from "../../../../utils/guards";
+import { tournamentIdOf } from "../../../../utils/tournamentBlinds";
 
 export interface PlayerActionButtonsProps {
     isMobile: boolean;
@@ -219,7 +221,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
                         <span>
                             {isTableFull
                                 ? "You’re watching · All seats are taken"
-                                : registrationClosed
+                                : registrationClosed || hasValue(tournamentIdOf(gameState))
                                   ? "You’re watching"
                                   : "You’re watching · Choose an open seat to play"}
                         </span>

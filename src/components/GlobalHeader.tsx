@@ -10,6 +10,7 @@ import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
 import { getCosmosAddress } from "../utils/cosmos/storage";
 import { isPrimaryNavCurrent, primaryNavItems, viewerAddress } from "../utils/profileHub";
 import styles from "./GlobalHeader.module.css";
+import { isTournamentTablePath } from "../utils/tableUrl";
 
 const extraGroups = [
     {
@@ -35,7 +36,9 @@ export const GlobalHeader: React.FC = () => {
     const moreRef = useRef<HTMLDetailsElement>(null);
     useDismissDetailsOnOutsidePointer(moreRef);
     const viewer = viewerAddress(address, getCosmosAddress());
-    if (pathname.startsWith("/table/") && pathname !== "/table/admin") return null;
+    // The table page has its own header. A multi-table tournament table lives at
+    // /tournament/:id/table/:n, so the site header stays off there too.
+    if ((pathname.startsWith("/table/") && pathname !== "/table/admin") || isTournamentTablePath(pathname)) return null;
     return (
         <header className={styles.headerShell}>
             <div className={styles.inner}>
