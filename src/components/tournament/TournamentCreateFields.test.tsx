@@ -25,6 +25,8 @@ test("default multi-table fields submit a create payload", () => {
     expect(params?.maxEntrants).toBe(27);
     expect(params?.actionTimeoutSeconds).toBe(25);
     expect(params?.blindStructure).toBeDefined();
+    // The chain is charged the exact micro fee (1,666,666). The label ceilings to the next cent.
+    expect(screen.getByTestId("tournament-create-fee")).toHaveTextContent("Creating costs you $1.67");
 });
 
 test("an empty buy-in is shown on the field and does not submit", () => {

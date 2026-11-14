@@ -22,7 +22,7 @@ import {
     type TournamentFormValues
 } from "../../utils/tournamentCreate";
 import { hasElements, isBlank, isNullish } from "../../utils/guards";
-import { formatUsdc } from "../../utils/tournamentLobby";
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { parseUsdcToMicro } from "../../constants/currency";
 import type { CreateTournamentParams } from "../../utils/tournamentTx";
 
@@ -150,7 +150,7 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
                 </div>
 
                 <div className="text-xs text-gray-400 rounded-lg border border-gray-700 bg-gray-900/50 p-3" data-testid="tournament-create-fee">
-                    {isNullish(creationFee) ? "Creation fee: set the buy-in, starting stack and blinds to see it." : `Creating costs you ${formatUsdc(creationFee)} (10 big blinds of level 1, priced at the buy-in's chip value).`}
+                    {isNullish(creationFee) ? "Creation fee: set the buy-in, starting stack and blinds to see it." : `Creating costs you $${formatMicroUsd(creationFee)} (10 big blinds of level 1, priced at the buy-in's chip value).`}
                 </div>
 
                 {submitted && hasElements(Object.keys(result.errors)) && (

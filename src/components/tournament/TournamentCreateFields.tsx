@@ -21,7 +21,7 @@ import {
     type TournamentFormValues
 } from "../../utils/tournamentCreate";
 import { hasElements, isBlank, isNullish } from "../../utils/guards";
-import { formatUsdc } from "../../utils/tournamentLobby";
+import { formatMicroUsd } from "../../utils/moneyDisplay";
 import type { CreateTournamentParams } from "../../utils/tournamentTx";
 
 const PREVIEW_LEVELS = 8;
@@ -167,7 +167,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
             </div>
 
             <p className="text-xs text-gray-400 mt-3" data-testid="tournament-create-fee">
-                {isNullish(creationFee) ? "Creation fee: set the buy-in, starting stack and blinds to see it." : `Creating costs you ${formatUsdc(creationFee)} (10 big blinds of level 1, priced at the buy-in's chip value).`}
+                {isNullish(creationFee) ? "Creation fee: set the buy-in, starting stack and blinds to see it." : `Creating costs you $${formatMicroUsd(creationFee)} (10 big blinds of level 1, priced at the buy-in's chip value).`}
             </p>
 
             {submitted && hasElements(Object.keys(result.errors)) && (
