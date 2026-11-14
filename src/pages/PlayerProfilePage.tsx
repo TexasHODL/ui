@@ -39,6 +39,7 @@ import {
 import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
+import { formatHandsPlayed, handsPlayedReadFailed } from "../utils/handsPlayed";
 import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
 import {
     formatHistoryAmount,
@@ -135,6 +136,13 @@ export default function PlayerProfilePage() {
     const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error));
     const stylePending = tab === "stats" && hasContent(address) && !hasContent(handHistory.error) && (!handHistory.complete || styleRead.pending);
     const styleDisplay = formatPlayingStyle(styleRead.counts, stylePending);
+    // Chain count from the Playing Style logs. Ellipsis until those finish, so the indexer's total_hands never flashes first.
+    const handsPlayedLabel = formatHandsPlayed({
+        pending: stylePending,
+        failed: handsPlayedReadFailed(hasContent(handHistory.error), styleSelection.hands.length, styleRead.dealt, styleRead.unavailable),
+        dealt: styleRead.dealt,
+        indexerHands: hasValue(profile) ? profile.total_hands : undefined
+    });
     const styleNote = stylePending ? undefined : playingStyleNote(styleRead.counts.hands, styleRead.unavailable + styleSelection.dropped);
     const historyHands = useMemo(
         () => withHandContributions(hasContent(handHistory.error) ? [] : handsForHistory(settledHands), contributions.byKey),
@@ -245,7 +253,7 @@ export default function PlayerProfilePage() {
 
                         {/* Volume & money */}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <StatCard label="Hands Played" value={profile.total_hands.toLocaleString()} />
+                            <StatCard label="Hands Played" value={handsPlayedLabel} />
                             <StatCard
                                 label="Net Profit"
                                 value={hasValue(prizeMoney) ? formatUsd(prizeMoney.netProfit) : "…"}

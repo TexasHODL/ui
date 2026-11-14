@@ -119,7 +119,29 @@ test("playing style and hand profit share one snapshot read", async () => {
     expect(mockPublicStateAt).toHaveBeenCalledTimes(1);
     expect(result.current.profit.byKey[`${GAME}#147`]).toBe(1500);
     expect(result.current.style.unavailable).toBe(0);
+    expect(result.current.style.dealt).toBe(1);
     expect(result.current.style.counts).toMatchObject({ hands: 1, vpip: 0, pfr: 0, showdown: 0, wonShowdown: 0 });
+});
+
+test("counts a dealt hand once and does not count a sit-out the log can still read", async () => {
+    mockPublicStateAt.mockImplementation(async (_rpc: unknown, _gameId: string, height: number) => {
+        if (height === 1028644) {
+            return {
+                handNumber: 147,
+                previousActions: [{ playerId: PLAYER, action: PlayerActionType.FOLD, amount: "", round: "preflop" }]
+            };
+        }
+        return {
+            handNumber: 2,
+            previousActions: [{ playerId: PLAYER, action: "sit-out", amount: "", round: "" }]
+        };
+    });
+    const satOut = { gameId: "0xsng", handNumber: 2, blockHeight: 50, wonAmount: 0 };
+    const { result } = renderHook(() => usePlayingStyle(PLAYER, [{ ...HAND, wonAmount: 0 }, { ...HAND, wonAmount: 9 }, satOut], true));
+    await waitFor(() => expect(result.current.pending).toBe(false));
+    expect(result.current.dealt).toBe(1);
+    expect(result.current.counts.hands).toBe(2);
+    expect(result.current.unavailable).toBe(0);
 });
 
 test("does not read while the selection has no single money unit", async () => {
