@@ -9,12 +9,7 @@
 
 export type VipTier = "bronze" | "silver" | "gold" | "platinum" | "diamond";
 
-export type PlayerSortField =
-    | "net_profit"
-    | "total_hands"
-    | "total_rake_contributed"
-    | "vip_points"
-    | "last_seen_block";
+export type PlayerSortField = "net_profit" | "total_hands" | "total_rake_contributed" | "last_seen_block";
 
 export interface PlayerSearchParams {
     search?: string;

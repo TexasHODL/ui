@@ -14,7 +14,6 @@ import { ProfileHeaderAvatar } from "../components/players/ProfileHeaderAvatar";
 import { ProfileHub } from "../components/players/ProfileHub";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
-import { VipBadge } from "../components/players/VipBadge";
 import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandContributions";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
@@ -59,14 +58,21 @@ import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
 const NO_PROFIT_HANDS: HandContributionTarget[] = [];
+// Seven volume cards keep the old two- and four-column widths. The short last row is centered.
+const VOLUME_STAT_CARD = "w-[calc(50%-0.5rem)] shrink-0 md:w-[calc(25%-0.75rem)]";
 
 const formatUsd = (micro: number): string => {
     const label = formatMicroUsd(micro, true);
     return label.startsWith("-") ? `-${label.slice(1)}` : `${label}`;
 };
 
-const StatCard: React.FC<{ label: string; value: string; valueClass?: string }> = ({ label, value, valueClass = "text-white" }) => (
-    <div className={`backdrop-blur-md p-5 rounded-xl shadow-2xl ${styles.containerCard}`}>
+const StatCard: React.FC<{ label: string; value: string; valueClass?: string; className?: string }> = ({
+    label,
+    value,
+    valueClass = "text-white",
+    className = ""
+}) => (
+    <div className={`backdrop-blur-md p-5 rounded-xl shadow-2xl ${styles.containerCard} ${className}`}>
         <p className="text-gray-400 text-sm mb-1">{label}</p>
         <p className={`text-2xl font-bold ${valueClass}`}>{value}</p>
     </div>
@@ -229,34 +235,35 @@ export default function PlayerProfilePage() {
                     <>
                         {/* Header */}
                         <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <ProfileHeaderAvatar address={profile.player_address} />
-                                    <div className="flex items-center gap-3 flex-wrap min-w-0">
-                                        <span className={`font-mono text-sm break-all ${styles.brandText}`}>{profile.player_address}</span>
-                                        <button onClick={copyAddress} className="text-xs text-gray-400 hover:text-white transition-colors">
-                                            {copied ? "Copied!" : "Copy"}
-                                        </button>
-                                    </div>
+                            <div className="flex items-center gap-3 min-w-0">
+                                <ProfileHeaderAvatar address={profile.player_address} />
+                                <div className="flex items-center gap-3 flex-wrap min-w-0">
+                                    <span className={`font-mono text-sm break-all ${styles.brandText}`}>{profile.player_address}</span>
+                                    <button onClick={copyAddress} className="shrink-0 text-xs text-gray-400 hover:text-white transition-colors">
+                                        {copied ? "Copied!" : "Copy"}
+                                    </button>
                                 </div>
-                                <VipBadge tier={profile.vip_tier} rakebackPct={profile.rakeback_pct} showRakeback />
                             </div>
                         </div>
 
                         {/* Volume & money */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <StatCard label="Hands Played" value={profile.total_hands.toLocaleString()} />
+                        <div className="mb-6 flex flex-wrap justify-center gap-4">
+                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={profile.total_hands.toLocaleString()} />
                             <StatCard
+                                className={VOLUME_STAT_CARD}
                                 label="Net Profit"
                                 value={hasValue(prizeMoney) ? formatUsd(prizeMoney.netProfit) : "…"}
                                 valueClass={hasValue(prizeMoney) && prizeMoney.netProfit < 0 ? "text-red-400" : "text-green-400"}
                             />
-                            <StatCard label="Total Buy-In" value={formatUsd(profile.total_buy_ins)} />
-                            <StatCard label="Total Cash-Out" value={hasValue(prizeMoney) ? formatUsd(prizeMoney.totalCashOuts) : "…"} />
-                            <StatCard label="Sessions" value={profile.session_count.toLocaleString()} />
-                            <StatCard label="Total Actions" value={profile.total_actions.toLocaleString()} />
-                            <StatCard label="Rake Contributed" value={formatUsd(profile.total_rake_contributed)} />
-                            <StatCard label="VIP Points" value={profile.vip_points.toLocaleString()} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Total Buy-In" value={formatUsd(profile.total_buy_ins)} />
+                            <StatCard
+                                className={VOLUME_STAT_CARD}
+                                label="Total Cash-Out"
+                                value={hasValue(prizeMoney) ? formatUsd(prizeMoney.totalCashOuts) : "…"}
+                            />
+                            <StatCard className={VOLUME_STAT_CARD} label="Sessions" value={profile.session_count.toLocaleString()} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Total Actions" value={profile.total_actions.toLocaleString()} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Rake Contributed" value={formatUsd(profile.total_rake_contributed)} />
                         </div>
 
                         {/* Playing style: every variant, from the chain action logs. */}
