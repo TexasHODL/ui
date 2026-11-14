@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
+import { PageHeading } from "../components/common/PageHeading";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel, ExplorerReloadButton } from "../components/explorer/ExplorerPanel";
 import { TournamentCard } from "../components/tournament/TournamentCard";
 import { TournamentRegisterModal } from "../components/tournament/TournamentRegisterModal";
@@ -43,23 +44,22 @@ export default function TournamentLobbyPage() {
     };
 
     return (
-        <div className="min-h-screen p-4 sm:p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-5xl mx-auto relative z-10">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                    <h1 className="text-2xl font-bold text-white">Tournaments</h1>
-                    <button
-                        type="button"
-                        onClick={() => setCreating(true)}
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-500 text-white"
-                        data-testid="open-create-tournament"
-                    >
-                        Create tournament
-                    </button>
-                </div>
+            <div className="site-page-content">
+                <PageHeading
+                    title="Tournaments"
+                    eyebrow="THE LOBBY"
+                    description="Multi-table events. Register for one, or put the next one on the calendar."
+                    action={
+                        <button type="button" onClick={() => setCreating(true)} className="page-button-primary w-full sm:w-auto" data-testid="open-create-tournament">
+                            Create tournament
+                        </button>
+                    }
+                />
 
                 {createdId && (
-                    <p role="status" className="mb-3 text-sm text-green-400" data-testid="tournament-created-note">
+                    <p role="status" className="mb-3 text-sm text-purple-300 font-bold" data-testid="tournament-created-note">
                         Tournament created. Players can register now.
                     </p>
                 )}
@@ -87,11 +87,11 @@ export default function TournamentLobbyPage() {
                 </ExplorerPanel>
 
                 {failedCount > 0 && (
-                    <p role="status" className="mt-3 text-sm text-yellow-400">
+                    <p role="status" className="mt-3 text-sm text-yellow-400 font-bold">
                         {failedCount} {failedCount === 1 ? "tournament" : "tournaments"} could not be read and {failedCount === 1 ? "is" : "are"} not shown.
                     </p>
                 )}
-                <p className="mt-4 text-xs text-gray-400">
+                <p className="mt-4 text-xs text-gray-400 font-bold">
                     The entry fee and the protocol fee come out of the buy-in when you register and are not refunded. Unregistering, or a tournament cancelled for too
                     few entrants, returns only the rest of the buy-in held in escrow.
                 </p>

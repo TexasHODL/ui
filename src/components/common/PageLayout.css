@@ -176,6 +176,45 @@
 .page-button-primary:hover {
     filter: brightness(1.1);
 }
+.page-button:disabled,
+.page-button-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+}
+.page-pill {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+.page-pill-open,
+.page-pill-running {
+    color: var(--theme-accent, #cba1eb);
+    background: color-mix(in srgb, var(--theme-accent, #be87e5) 16%, transparent);
+    border-color: color-mix(in srgb, var(--theme-accent, #be87e5) 45%, transparent);
+}
+.page-pill-full,
+.page-pill-starting {
+    color: #fde047;
+    background: #fde04718;
+    border-color: #fde04755;
+}
+.page-pill-finished {
+    color: var(--theme-muted, #b2a4c0);
+    border-color: var(--theme-line, #ffffff24);
+}
+.page-pill-cancelled {
+    color: #fda4af;
+    background: #fb718514;
+    border-color: #fb718555;
+}
 .site-page :is(a, button, input, select, textarea, summary):focus-visible {
     outline: 2px solid var(--theme-accent, #d5a4ff);
     outline-offset: 3px;

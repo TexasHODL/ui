@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
+import { PageHeading } from "../components/common/PageHeading";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel } from "../components/explorer/ExplorerPanel";
 import { useTournament } from "../hooks/tournament/useTournament";
 import { hasElements, isNullish } from "../utils/guards";
@@ -34,17 +35,19 @@ export default function TournamentPage() {
     }
 
     const me = getCosmosAddressSync()?.toLowerCase();
+    const title = tournamentId ? `Tournament ${truncateMiddle(tournamentId, 6, 4, "…")}` : "Tournament";
 
     return (
-        <div className="min-h-screen p-4 sm:p-8 relative">
+        <div className="site-page">
             <AnimatedBackground />
-            <div className="max-w-3xl mx-auto relative z-10">
-                <div className="flex items-center justify-between gap-3 mb-4">
-                    <h1 className="text-2xl font-bold text-white">Tournament {tournamentId ? truncateMiddle(tournamentId, 6, 4, "…") : ""}</h1>
-                    <Link to="/tournaments" className="text-sm text-purple-200 hover:underline">
-                        All tournaments
-                    </Link>
-                </div>
+            <div className="site-page-content">
+                <PageHeading
+                    title={title}
+                    eyebrow="TOURNAMENT"
+                    description="Where this event stands, and the tables still in play."
+                    backTo="/tournaments"
+                    backLabel="Tournaments"
+                />
 
                 {isNullish(tournament) ? (
                     isLoading ? (
@@ -59,11 +62,11 @@ export default function TournamentPage() {
                         <ExplorerPanel header="Status">
                             <dl className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm" data-testid="tournament-summary">
                                 <div>
-                                    <dt className="text-gray-400">Status</dt>
+                                    <dt className="text-gray-400 font-bold">Status</dt>
                                     <dd className="text-white capitalize">{tournament.status}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-gray-400">Runners</dt>
+                                    <dt className="text-gray-400 font-bold">Runners</dt>
                                     <dd className="text-white">
                                         {tournament.status === "registering"
                                             ? `${tournamentSize(tournament)} / ${tournament.options.maxEntrants}`
@@ -72,19 +75,19 @@ export default function TournamentPage() {
                                 </div>
                                 {tournament.status === "registering" ? (
                                     <div>
-                                        <dt className="text-gray-400">Starts in</dt>
+                                        <dt className="text-gray-400 font-bold">Starts in</dt>
                                         <dd className="text-white" data-testid="tournament-start-countdown">
                                             {startCountdownText(tournament.options.startTime, now)}
                                         </dd>
                                     </div>
                                 ) : (
                                     <div>
-                                        <dt className="text-gray-400">Level</dt>
+                                        <dt className="text-gray-400 font-bold">Level</dt>
                                         <dd className="text-white">{isNullish(level) ? "-" : level + 1}</dd>
                                     </div>
                                 )}
                                 <div>
-                                    <dt className="text-gray-400">Prize pool</dt>
+                                    <dt className="text-gray-400 font-bold">Prize pool</dt>
                                     <dd className="text-white">${formatUSDCToSimpleDollars(tournament.prizePool)}</dd>
                                 </div>
                             </dl>
@@ -92,13 +95,13 @@ export default function TournamentPage() {
 
                         <ExplorerPanel header="Tables">
                             {hasElements(liveTournamentTables(tournament)) ? (
-                                <ul className="divide-y divide-gray-700/50">
+                                <ul className="divide-y divide-white/10">
                                     {liveTournamentTables(tournament).map(row => (
-                                        <li key={row.gameId} className="flex items-center justify-between px-4 py-3 text-sm">
-                                            <span className="text-white">
+                                        <li key={row.gameId} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                                            <span className="text-white min-w-0">
                                                 Table {row.number} <span className="text-gray-400">({row.players} players, hand {row.handNumber})</span>
                                             </span>
-                                            <Link to={row.url} className="text-blue-300 hover:underline" data-testid={`tournament-table-${row.number}`}>
+                                            <Link to={row.url} className="text-purple-300 font-bold hover:underline shrink-0" data-testid={`tournament-table-${row.number}`}>
                                                 Watch
                                             </Link>
                                         </li>
@@ -111,10 +114,10 @@ export default function TournamentPage() {
 
                         {hasElements(tournament.results) && (
                             <ExplorerPanel header="Finished">
-                                <ol className="divide-y divide-gray-700/50" data-testid="tournament-standings">
+                                <ol className="divide-y divide-white/10" data-testid="tournament-standings">
                                     {tournamentStandings(tournament).map(row => (
                                         <li key={`${row.place}-${row.address}`} className="flex items-center justify-between px-4 py-2 text-sm">
-                                            <span className={`min-w-0 ${row.address.toLowerCase() === me ? "text-green-300 font-semibold" : "text-white"}`}>
+                                            <span className={`min-w-0 ${row.address.toLowerCase() === me ? "text-purple-300 font-semibold" : "text-white"}`}>
                                                 {row.place}. <span className="font-mono break-all">{row.address}</span>
                                             </span>
                                             <span className="ml-3 shrink-0 text-gray-300">{row.payout !== "0" ? `$${formatUSDCToSimpleDollars(row.payout)}` : ""}</span>

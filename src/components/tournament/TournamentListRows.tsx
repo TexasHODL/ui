@@ -58,7 +58,7 @@ export const TournamentListRows: React.FC<TournamentListRowsProps> = ({ rows, ha
                 <td className="px-2 sm:px-4 py-4 text-center">
                     <Link
                         to={row.action.url}
-                        className="inline-block px-3 sm:px-4 py-2 text-white text-sm font-semibold rounded-lg bg-blue-600 hover:bg-blue-500 transition-all"
+                        className="page-button-primary"
                         aria-label={`${row.action.label} tournament ${row.tournamentId}, ${row.runners} runners`}
                     >
                         {row.action.label}

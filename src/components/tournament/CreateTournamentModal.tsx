@@ -28,7 +28,7 @@ import type { CreateTournamentParams } from "../../utils/tournamentTx";
 
 const PREVIEW_LEVELS = 8;
 
-const INPUT = "w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50";
+const CONTROL = "w-full px-3";
 
 interface CreateTournamentModalProps {
     isOpen: boolean;
@@ -89,42 +89,42 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create tournament" error={error} isProcessing={busy} widthClass="w-[40rem]" patternId="hexagons-tournament-create">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create tournament" error={error} isProcessing={busy} widthClass="w-[40rem]" className="theme-dialog" patternId="hexagons-tournament-create">
             <form onSubmit={handleSubmit} className="space-y-3" data-testid="create-tournament-form" noValidate>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <Field label="Buy-in (USDC)" error={err("buyIn")} testId="buyIn" hint="What each player pays to register.">
-                        <input data-testid="tournament-buyin-input" className={INPUT} inputMode="decimal" value={values.buyIn} onChange={set("buyIn")} />
+                        <input data-testid="tournament-buyin-input" className={CONTROL} inputMode="decimal" value={values.buyIn} onChange={set("buyIn")} />
                     </Field>
                     <Field label="Entry fee (USDC)" error={err("entryFee")} testId="entryFee" hint="Comes out of the buy-in and goes to you. 0 for none.">
-                        <input data-testid="tournament-entryfee-input" className={INPUT} inputMode="decimal" value={values.entryFee} onChange={set("entryFee")} />
+                        <input data-testid="tournament-entryfee-input" className={CONTROL} inputMode="decimal" value={values.entryFee} onChange={set("entryFee")} />
                     </Field>
                     <Field label="Starting stack (chips)" error={err("startingStack")} testId="startingStack">
-                        <input className={INPUT} inputMode="numeric" value={values.startingStack} onChange={set("startingStack")} />
+                        <input className={CONTROL} inputMode="numeric" value={values.startingStack} onChange={set("startingStack")} />
                     </Field>
                     <Field label="Seats per table" error={err("seatsPerTable")} testId="seatsPerTable" hint="2 to 9.">
-                        <input className={INPUT} inputMode="numeric" value={values.seatsPerTable} onChange={set("seatsPerTable")} />
+                        <input className={CONTROL} inputMode="numeric" value={values.seatsPerTable} onChange={set("seatsPerTable")} />
                     </Field>
                     <Field label="Minimum entrants" error={err("minEntrants")} testId="minEntrants" hint="Cancelled with refunds if fewer have registered at the start.">
-                        <input className={INPUT} inputMode="numeric" value={values.minEntrants} onChange={set("minEntrants")} />
+                        <input className={CONTROL} inputMode="numeric" value={values.minEntrants} onChange={set("minEntrants")} />
                     </Field>
                     <Field label="Maximum entrants" error={err("maxEntrants")} testId="maxEntrants" hint="Registration closes when this many have registered. Up to 180.">
-                        <input className={INPUT} inputMode="numeric" value={values.maxEntrants} onChange={set("maxEntrants")} />
+                        <input className={CONTROL} inputMode="numeric" value={values.maxEntrants} onChange={set("maxEntrants")} />
                     </Field>
                     <Field label="Start time" error={err("startTime")} testId="startTime" hint="Registration closes then, and it starts with the minimum or more.">
-                        <input data-testid="tournament-start-input" type="datetime-local" className={INPUT} value={values.startTime} onChange={set("startTime")} />
+                        <input data-testid="tournament-start-input" type="datetime-local" className={CONTROL} value={values.startTime} onChange={set("startTime")} />
                     </Field>
                     <Field label="Action timeout (seconds)" error={err("actionTimeoutSeconds")} testId="actionTimeoutSeconds" hint="Every table's action clock.">
-                        <input className={INPUT} inputMode="numeric" value={values.actionTimeoutSeconds} onChange={set("actionTimeoutSeconds")} />
+                        <input className={CONTROL} inputMode="numeric" value={values.actionTimeoutSeconds} onChange={set("actionTimeoutSeconds")} />
                     </Field>
                 </div>
 
                 <div>
-                    <BlindStructureSelect value={choice} onChange={setChoice} />
+                    <BlindStructureSelect value={choice} onChange={setChoice} className={CONTROL} />
                     {choiceUsesFormBlinds(choice) && (
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <label className="block text-white text-sm mb-1 mt-3">Starting blinds (chips)</label>
-                                <select className={INPUT} value={blindsIndex} onChange={e => setBlindsIndex(Number(e.target.value))}>
+                                <select className={CONTROL} value={blindsIndex} onChange={e => setBlindsIndex(Number(e.target.value))}>
                                     {SNG_BLINDS.map((b, i) => (
                                         <option key={b.bigBlind} value={i}>
                                             {b.smallBlind} / {b.bigBlind}
@@ -134,7 +134,7 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
                             </div>
                             <div>
                                 <label className="block text-white text-sm mb-1 mt-3">Minutes per level</label>
-                                <select className={INPUT} value={levelMinutes} onChange={e => setLevelMinutes(Number(e.target.value))}>
+                                <select className={CONTROL} value={levelMinutes} onChange={e => setLevelMinutes(Number(e.target.value))}>
                                     {[3, 5, 10, 15, 20, 30].map(m => (
                                         <option key={m} value={m}>
                                             {m} min
@@ -149,7 +149,7 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
                     {err("blindStructure") && choice !== "custom" && <p className="text-xs text-red-400 mt-1">{err("blindStructure")}</p>}
                 </div>
 
-                <div className="text-xs text-gray-400 rounded-lg border border-gray-700 p-3" data-testid="tournament-create-fee">
+                <div className="text-xs text-gray-400 rounded-lg border border-gray-700 bg-gray-900/50 p-3" data-testid="tournament-create-fee">
                     {isNullish(creationFee) ? "Creation fee: set the buy-in, starting stack and blinds to see it." : `Creating costs you ${formatUsdc(creationFee)} (10 big blinds of level 1, priced at the buy-in's chip value).`}
                 </div>
 
@@ -159,14 +159,14 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
                     </p>
                 )}
 
-                <div className="flex justify-end gap-2 pt-1">
-                    <button type="button" onClick={onClose} disabled={busy} className="px-4 py-2 rounded-lg text-sm bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50">
+                <div className="flex flex-wrap justify-end gap-2 pt-1">
+                    <button type="button" onClick={onClose} disabled={busy} className="hodl-secondary min-h-[44px] px-4 py-2 rounded-lg text-sm">
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={busy}
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-500 text-white disabled:opacity-50"
+                        className="hodl-primary min-h-[44px] px-4 py-2 rounded-lg text-sm"
                         data-testid="tournament-create-submit"
                     >
                         {busy ? "Waiting for the chain…" : "Create tournament"}

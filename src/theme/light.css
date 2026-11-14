@@ -70,6 +70,17 @@ html[data-theme="light"] .site-page :is(.hover\:bg-\[\#21172b\], .hover\:bg-\[\#
 html[data-theme="light"] .site-page :is(.bg-green-600, .bg-red-600, .bg-red-700, .bg-yellow-600, .bg-purple-600, .bg-\[\#7135a4\]).text-white {
     color: #ffffff;
 }
+html[data-theme="light"] .page-pill-full,
+html[data-theme="light"] .page-pill-starting {
+    color: #805500;
+    background: #80550014;
+    border-color: #80550040;
+}
+html[data-theme="light"] .page-pill-cancelled {
+    color: #b4233c;
+    background: #b4233c14;
+    border-color: #b4233c40;
+}
 
 html[data-theme="light"] body::before {
     background-image: linear-gradient(rgba(181, 42, 221, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(181, 42, 221, 0.06) 1px, transparent 1px);

@@ -13,6 +13,7 @@ import {
     type BlindStructureChoice
 } from "../utils/blindStructureChoice";
 import { isEmpty } from "../utils/guards";
+import styles from "./BlindStructureFields.module.css";
 
 const DEFAULT_CONTROL_CLASS =
     "w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200";
@@ -99,7 +100,7 @@ export const BlindPreviewTable: React.FC<BlindPreviewTableProps> = ({ rows, choi
                 </thead>
                 <tbody>
                     {rows.map(r => (
-                        <tr key={r.number} className={`border-t border-gray-700${r.number === 1 ? " bg-green-900/20" : ""}`}>
+                        <tr key={r.number} className={`border-t border-gray-700${r.number === 1 ? ` ${styles.current}` : ""}`}>
                             <td className="px-2 py-1">{r.number}</td>
                             <td className="px-2 py-1">{r.isBreak ? "Break" : `${Number(r.smallBlind).toLocaleString()} / ${Number(r.bigBlind).toLocaleString()}`}</td>
                             <td className="px-2 py-1">{r.isBreak || r.ante === "0" ? "\u2014" : Number(r.ante).toLocaleString()}</td>

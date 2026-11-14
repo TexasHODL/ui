@@ -24,28 +24,29 @@ export const TournamentRegisterModal: React.FC<TournamentRegisterModalProps> = (
             error={error}
             isProcessing={busy}
             widthClass="w-[28rem]"
+            className="theme-dialog"
             patternId="hexagons-tournament-register"
         >
-            <div className="text-sm text-gray-200 space-y-3" data-testid="tournament-escrow-statement">
-                <div className="flex justify-between">
-                    <span className="text-gray-400">{registering ? "Buy-in" : "Buy-in paid"}</span>
-                    <span className="text-white font-medium">{formatUsdc(card.cost.gross)}</span>
+            <div className="text-sm space-y-3" data-testid="tournament-escrow-statement">
+                <div className="flex justify-between gap-3">
+                    <span className="text-gray-400 min-w-0">{registering ? "Buy-in" : "Buy-in paid"}</span>
+                    <span className="text-white font-medium shrink-0 whitespace-nowrap">{formatUsdc(card.cost.gross)}</span>
                 </div>
                 {card.cost.entryFee > 0n && (
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Entry fee (to the creator, inside the buy-in)</span>
-                        <span>{formatUsdc(card.cost.entryFee)}</span>
+                    <div className="flex justify-between gap-3">
+                        <span className="text-gray-400 min-w-0">Entry fee (to the creator, inside the buy-in)</span>
+                        <span className="shrink-0 whitespace-nowrap">{formatUsdc(card.cost.entryFee)}</span>
                     </div>
                 )}
                 {card.cost.protocolCut > 0n && (
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Protocol fee (inside the buy-in)</span>
-                        <span>{formatUsdc(card.cost.protocolCut)}</span>
+                    <div className="flex justify-between gap-3">
+                        <span className="text-gray-400 min-w-0">Protocol fee (inside the buy-in)</span>
+                        <span className="shrink-0 whitespace-nowrap">{formatUsdc(card.cost.protocolCut)}</span>
                     </div>
                 )}
-                <div className="flex justify-between">
-                    <span className="text-gray-400">{registering ? "Held in escrow for the prize pool" : "Returned to you"}</span>
-                    <span>{formatUsdc(card.cost.net)}</span>
+                <div className="flex justify-between gap-3">
+                    <span className="text-gray-400 min-w-0">{registering ? "Held in escrow for the prize pool" : "Returned to you"}</span>
+                    <span className="shrink-0 whitespace-nowrap">{formatUsdc(card.cost.net)}</span>
                 </div>
                 <p className="text-xs text-gray-400">{registering ? statement.register : statement.unregister}</p>
                 {registering && (
@@ -54,12 +55,12 @@ export const TournamentRegisterModal: React.FC<TournamentRegisterModalProps> = (
                     </p>
                 )}
             </div>
-            <div className="flex justify-end gap-2 mt-5">
+            <div className="flex flex-wrap justify-end gap-2 mt-5">
                 <button
                     type="button"
                     onClick={onClose}
                     disabled={busy}
-                    className="px-4 py-2 rounded-lg text-sm bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+                    className="hodl-secondary min-h-[44px] px-4 py-2 rounded-lg text-sm"
                     data-testid="tournament-modal-cancel"
                 >
                     Cancel
@@ -68,7 +69,7 @@ export const TournamentRegisterModal: React.FC<TournamentRegisterModalProps> = (
                     type="button"
                     onClick={onConfirm}
                     disabled={busy}
-                    className="px-4 py-2 rounded-lg text-sm font-medium bg-green-600 hover:bg-green-500 text-white disabled:opacity-50"
+                    className="hodl-primary min-h-[44px] px-4 py-2 rounded-lg text-sm"
                     data-testid="tournament-modal-confirm"
                 >
                     {busy ? "Waiting for the chain…" : registering ? `Pay ${formatUsdc(card.cost.gross)} and register` : "Unregister"}
