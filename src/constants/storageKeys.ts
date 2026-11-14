@@ -14,8 +14,13 @@ export const STORAGE_KEYS = {
     buyInAmount: "buy_in_amount",
     /** Whether the player chose to wait for the big blind when sitting in. */
     waitForBigBlind: "wait_for_big_blind",
-    /** Currently selected network (serialized NetworkConfig). */
+    /** Currently selected network (serialized NetworkEndpoints). */
     selectedNetwork: "selectedNetwork",
+    /**
+     * Set once the one-time move off the Texas Hodl node (the previous default)
+     * onto Block52 has been considered. After this, a manual Texas Hodl selection stays.
+     */
+    selectedNetworkMigratedToBlock52: "selectedNetworkMigratedToBlock52",
     /** Bridge admin dashboard sort order. */
     bridgeSortOrder: "bridge_sort_order",
     /** Bridge admin dashboard page size. */
