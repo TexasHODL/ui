@@ -30,50 +30,48 @@ const ValidatorEarningsPanel: React.FC<ValidatorEarningsPanelProps> = ({ bonds, 
     return (
         <div className="mb-8">
             <h2 className="text-lg font-semibold text-white mb-4">Validator Earnings</h2>
-            <div className="bg-[#100c17] rounded-lg border border-white/10 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-[#0c0911]">
+            <div className="bg-[#100c17] rounded-lg border border-white/10 overflow-hidden max-w-full">
+                <table className="w-full table-fixed">
+                    <thead className="bg-[#0c0911]">
+                        <tr>
+                            <th className="w-[42%] px-2 py-3 sm:px-4 text-left text-xs font-semibold text-gray-400 align-bottom">Validator</th>
+                            <th className="w-[29%] px-2 py-3 sm:px-4 text-left text-xs font-semibold text-gray-400 align-bottom">Bonded USDC (split weight)</th>
+                            <th className="w-[29%] px-2 py-3 sm:px-4 text-left text-xs font-semibold text-gray-400 align-bottom">Protocol-Fee Earnings</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                        {isLoading ? (
                             <tr>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Validator</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Bonded USDC (split weight)</th>
-                                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 tracking-wider">Protocol-Fee Earnings</th>
+                                <td className="px-2 py-3 sm:px-4 text-gray-400 text-sm" colSpan={3}>
+                                    Loading validator bonds...
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/10">
-                            {isLoading ? (
-                                <tr>
-                                    <td className="px-6 py-4 text-gray-400 text-sm" colSpan={3}>
-                                        Loading validator bonds...
+                        ) : !hasQuery || isEmpty(bonds) ? (
+                            <tr>
+                                <td className="px-2 py-3 sm:px-4 text-gray-400 text-sm" colSpan={3}>
+                                    Validator bonded-USDC and earnings are not yet available from the chain.
+                                    <span className="ml-1 text-purple-300">Coming soon.</span>
+                                </td>
+                            </tr>
+                        ) : (
+                            bonds.map(bond => (
+                                <tr key={bond.validator} className="hover:bg-[#21172b]/50 transition-colors">
+                                    <td className="px-2 py-3 sm:px-4 overflow-hidden">
+                                        <span className="block truncate text-white font-mono text-sm">{truncateMiddle(bond.validator, 10, 8)}</span>
+                                    </td>
+                                    <td className="px-2 py-3 sm:px-4">
+                                        {/* bondedUsdc is micro-USDC (6dp) as a string; the shared formatter ceilings it to cents. */}
+                                        <span className="text-white font-mono text-sm">${formatMicroUsd(bond.bondedUsdc)}</span>
+                                    </td>
+                                    <td className="px-2 py-3 sm:px-4">
+                                        {/* No per-validator earnings query exists yet — do NOT fabricate a value. */}
+                                        <span className="text-purple-300 text-sm">Coming soon</span>
                                     </td>
                                 </tr>
-                            ) : !hasQuery || isEmpty(bonds) ? (
-                                <tr>
-                                    <td className="px-6 py-4 text-gray-400 text-sm" colSpan={3}>
-                                        Validator bonded-USDC and earnings are not yet available from the chain.
-                                        <span className="ml-1 text-purple-300">Coming soon.</span>
-                                    </td>
-                                </tr>
-                            ) : (
-                                bonds.map(bond => (
-                                    <tr key={bond.validator} className="hover:bg-[#21172b]/50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-white font-mono text-sm">{truncateMiddle(bond.validator, 10, 8)}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {/* bondedUsdc is micro-USDC (6dp) as a string; the shared formatter ceilings it to cents. */}
-                                            <span className="text-white font-mono">${formatMicroUsd(bond.bondedUsdc)}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {/* No per-validator earnings query exists yet — do NOT fabricate a value. */}
-                                            <span className="text-purple-300 text-sm">Coming soon</span>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

@@ -1,0 +1,3 @@
+.current {
+    background: color-mix(in srgb, var(--theme-accent, #be87e5) 20%, transparent);
+}
