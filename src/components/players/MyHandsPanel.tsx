@@ -16,6 +16,7 @@ import { truncateMiddle } from "../../utils/stringUtils";
 import { getCardImageUrl } from "../../utils/cardImages";
 import { hasContent, hasElements, isEmpty } from "../../utils/guards";
 import { playerProfilePath } from "../../utils/profileHub";
+import { tableUrl } from "../../utils/tableUrl";
 import type { PlayerHand } from "../../types/players";
 import styles from "../../pages/explorer/AllAccountsPage.module.css";
 
@@ -134,7 +135,7 @@ export function MyHandsPanel({ address, linkProfile = false }: MyHandsPanelProps
 }
 
 function HandRow({ hand, outcome, cards }: { hand: PlayerHand; outcome: { label: string; tone: HandOutcomeTone }; cards?: HistoryHandCards }) {
-    const replayUrl = `/table/${hand.game_id}?hand=${hand.hand_number}`;
+    const replayUrl = `${tableUrl(hand.game_id)}?hand=${hand.hand_number}`;
     const board = displayBoard(hand.community_cards, cards?.board);
     return (
         <li className="px-3 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">

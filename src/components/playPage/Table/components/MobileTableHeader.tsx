@@ -19,7 +19,10 @@ import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
 import { TopUpModal } from "../../../modals";
-import { displayTableName } from "../../../../utils/generatedTableName";
+import { tableHeading } from "../../../../utils/tableTitle";
+import { tableUrl } from "../../../../utils/tableUrl";
+import { playersLabel, type TournamentRunners } from "../../../../utils/tournamentResult";
+import BlindsButton from "../../BlindsButton";
 import { formatGameFormatDisplay, formatTableGameDisplay, isTournamentFormat } from "../../../../utils/gameFormatUtils";
 import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
@@ -51,6 +54,8 @@ export interface MobileTableHeaderProps {
     gameVariant?: GameVariant;
     gameOptions: GameOptionsDTO | null;
     tableActivePlayers: PlayerDTO[];
+    /** Runners left out of the field, on a multi-table tournament table. */
+    runners?: TournamentRunners;
 
     // Wallet data
     publicKey: string | null;
@@ -115,6 +120,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     gameVariant,
     gameOptions,
     tableActivePlayers,
+    runners,
     publicKey,
     formattedAddress,
     isBalanceLoading,
@@ -150,7 +156,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     const [tableSettingsOpen, setTableSettingsOpen] = useState(false);
     const [showQR, setShowQR] = useState(false);
     const [showTopUp, setShowTopUp] = useState(false);
-    const tableUrl = `${window.location.origin}/table/${tableId}`;
+    const shareUrl = `${window.location.origin}${tableUrl(tableId)}`;
 
     const isSNG = hasValue(gameFormat) && isTournamentFormat(gameFormat);
     const canTopUp = legalActions.some(a => a.action === NonPlayerActionType.TOP_UP);
@@ -215,7 +221,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
             <>
                 <span className={textClass}>
                     {blindLevel.isActive ? (
-                        <>
+                        <BlindsButton className="whitespace-nowrap underline decoration-dotted underline-offset-2">
                             {hasValue(blindLevel.level) && `L${blindLevel.level + 1} `}
                             {blindLevel.currentBlindsFormatted}
                             {blindLevel.hasTimer && (
@@ -227,7 +233,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                     {")"}
                                 </>
                             )}
-                        </>
+                        </BlindsButton>
                     ) : (
                         `$${formattedValues.smallBlindFormatted} / $${formattedValues.bigBlindFormatted}`
                     )}
@@ -282,7 +288,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         ←
                     </span>
                     <span className="sr-only">Back to lobby from </span>
-                    {displayTableName(tableName, tableId)}
+                    {tableHeading(tableId, tableName)}
                 </button>
                 {statusInline && <div className={`mobile-status-inline ${styles.mobileStatus}`}>{renderStatus(false)}</div>}
                 <div ref={toolsRef} className="mobile-header-tools">
@@ -356,7 +362,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                         {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay)} • ` : ""}
                                         {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
                                         <span className={`ml-1 ${styles.secondaryText}`}>
-                                            ({tableActivePlayers.length}/{gameOptions.maxPlayers} Players)
+                                            ({playersLabel(tableActivePlayers.length, gameOptions.maxPlayers, runners)})
                                         </span>
                                     </span>
                                 </div>
@@ -518,7 +524,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
             >
                 <div className="flex flex-col items-center gap-4">
                     <div className="bg-white p-4 rounded-xl">
-                        <QRCodeSVG value={tableUrl} size={240} />
+                        <QRCodeSVG value={shareUrl} size={240} />
                     </div>
                     <button
                         onClick={() => setShowQR(false)}

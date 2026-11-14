@@ -17,7 +17,7 @@ import { ModalHeader } from "../../common/ModalHeader";
 import * as React from "react";
 import { memo, useState, useMemo, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useParams } from "react-router-dom";
+import { useTableId } from "../../../hooks/game/useTableId";
 
 import { useVacantSeatData } from "../../../hooks/game/useVacantSeatData";
 import type { VacantPlayerProps } from "../../../types/index";
@@ -31,17 +31,20 @@ import { seatsAreDrawn } from "../../../utils/seatDraw";
 import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "../../../utils/vacantSeatText";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { hasTournamentStarted, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
+import { hasTournamentStarted, isRegistrationClosed, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
 
 const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo(
-    ({ left, top, index, onJoin, uiPosition }) => {
+    ({ left, top, index, onJoin, uiPosition, tournamentOver = false }) => {
         const { isUserAlreadyPlaying, canJoinSeat: checkCanJoinSeat } = useVacantSeatData();
-        const { id: tableId } = useParams<{ id: string }>();
+        const tableId = useTableId();
         const { gameOptions } = useGameOptions();
         const { gameState, gameFormat } = useGameStateContext();
-        const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState);
+        // A directed table never takes a walk-up, and a started tournament with no late
+        // registration left has nothing to say on an empty seat.
+        const seatClosed = useMemo(() => isRegistrationClosed(gameState, gameFormat, Date.now()), [gameState, gameFormat]);
+        const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState) || seatClosed;
         const cancelledBeforeStart = scheduledSngPhase({
             scheduledStartTime: gameOptions?.scheduledStartTime,
             minPlayers: gameOptions?.minPlayers ?? 2,
@@ -267,11 +270,17 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             </div>
                         </div>
                     )}
-                    <span className="vacant-seat-plus" aria-hidden="true">
-                        +
-                    </span>
-                    <span className="vacant-seat-title">{seatText.title}</span>
-                    <span className="vacant-seat-label">{seatText.subtitle}</span>
+                    {/* Once registration is over, or the tournament is over, the seat stays
+                        where it is and says nothing: no plus, no "Open Seat". */}
+                    {!tournamentOver && !seatClosed && (
+                        <>
+                            <span className="vacant-seat-plus" aria-hidden="true">
+                                +
+                            </span>
+                            <span className="vacant-seat-title">{seatText.title}</span>
+                            <span className="vacant-seat-label">{seatText.subtitle}</span>
+                        </>
+                    )}
                 </button>
 
                 {/* Buy-in modal - using portal to render at document body */}
@@ -459,7 +468,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
     },
     (prevProps, nextProps) => {
         // Custom comparison function for memo
-        return prevProps.left === nextProps.left && prevProps.top === nextProps.top && prevProps.index === nextProps.index;
+        return prevProps.left === nextProps.left && prevProps.top === nextProps.top && prevProps.index === nextProps.index && prevProps.tournamentOver === nextProps.tournamentOver;
     }
 );
 

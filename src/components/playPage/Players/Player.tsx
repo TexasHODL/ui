@@ -7,7 +7,6 @@ import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
 import { useWinnerCards } from "../../../hooks/game/useWinnerCards";
 import { usePlayerData } from "../../../hooks/player/usePlayerData";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
-import { useParams } from "react-router-dom";
 import type { PlayerProps } from "../../../types/index";
 import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { winnerCardHighlight } from "../../../utils/holeCardLayout";
@@ -26,10 +25,11 @@ import { getSeatOpacityClass } from "../../../utils/seatOpacity";
 import styles from "./PlayersCommon.module.css";
 import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
 import { NftAvatarImage } from "../../profile/NftAvatarImage";
+import { useTableId } from "../../../hooks/game/useTableId";
 
 const Player: React.FC<PlayerProps & { uiPosition?: number }> = memo(
     ({ left, top, index, currentIndex: _currentIndex, color, status: _status, uiPosition }) => {
-        const { id } = useParams<{ id: string }>();
+        const id = useTableId();
         const { gameState } = useGameStateContext();
         const { playerData, stackValue, isFolded, isAllIn, isSeated, isSittingOut, holeCards, round } = usePlayerData(index);
         const { winnerInfo, winnerBySeat } = useWinnerInfo();

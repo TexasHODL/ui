@@ -12,8 +12,11 @@
  */
 
 import React, { useState } from "react";
+import type { ResultDTO } from "@block52/poker-vm-sdk";
 import { isTournamentFormat } from "../../../../utils/gameFormatUtils";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
+import { isNullish } from "../../../../utils/guards";
+import { tournamentIdOf } from "../../../../utils/tournamentBlinds";
 import GameStartCountdown from "../../common/GameStartCountdown";
 import { SitAndGoAutoJoinModal, SitAndGoResultModal } from "../../../modals";
 import SitAndGoWaitingModal from "../../SitAndGoWaitingModal";
@@ -39,6 +42,10 @@ export interface TableModalsProps {
     isUserAlreadyPlaying: boolean;
     tableId: string | undefined;
     onAutoJoinSuccess: () => void;
+    /** The tournament record's results, on a directed table (the table itself has none). */
+    tournamentResults?: ResultDTO[];
+    /** How many players that tournament started with. */
+    tournamentSize?: number;
 
     // Sit & Go Waiting Modal
     isSitAndGoWaitingForPlayers: boolean;
@@ -69,6 +76,8 @@ export const TableModals: React.FC<TableModalsProps> = ({
     isUserAlreadyPlaying,
     tableId,
     onAutoJoinSuccess,
+    tournamentResults,
+    tournamentSize,
     isSitAndGoWaitingForPlayers,
     recentTxHash,
     handleCloseTransactionPopup,
@@ -99,7 +108,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
                 Also protect direct links to full tables from an unusable prompt.
                 Once the tournament has started, entry stays open only while
                 late registration is open (poker-vm#2731). */}
-            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isTournamentFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && spectatingTableId !== tableId && (
+            {!isWatchMode && hasOpenSeats && gameState && gameFormat && isTournamentFormat(gameFormat) && !isUserAlreadyPlaying && tableId && !registrationClosed && isNullish(tournamentIdOf(gameState)) && spectatingTableId !== tableId && (
                 <SitAndGoAutoJoinModal tableId={tableId} onJoinSuccess={onAutoJoinSuccess} onSpectate={() => setSpectatingTableId(tableId)} />
             )}
 
@@ -115,7 +124,14 @@ export const TableModals: React.FC<TableModalsProps> = ({
             {/* Only collection sends a settlement transaction. Spectating and
                 returning to the lobby are viewing/navigation actions. */}
             {gameFormat && isTournamentFormat(gameFormat) && (
-                <SitAndGoResultModal key={tableId} tableId={tableId} onClaim={handleClaimWinnings} held={holdResults} />
+                <SitAndGoResultModal
+                    key={tableId}
+                    tableId={tableId}
+                    onClaim={handleClaimWinnings}
+                    held={holdResults}
+                    tournamentResults={tournamentResults}
+                    tournamentSize={tournamentSize}
+                />
             )}
 
             {/* Tournament-winner moment (ui#874): winner, prize, winning hand and

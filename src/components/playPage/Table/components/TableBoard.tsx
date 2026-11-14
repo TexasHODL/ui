@@ -111,6 +111,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
                         key={idx}
                         className="community-card-slot w-[85px] h-[127px] aspect-square"
                         aria-hidden="true"
+                        data-testid="board-slot-empty"
                     />
                 );
             }

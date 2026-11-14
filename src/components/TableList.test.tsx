@@ -28,11 +28,23 @@ jest.mock("../hooks/game/useFindGames", () => ({ useFindGames: () => ({ games: m
 jest.mock("../hooks/wallet/useCosmosWallet", () => ({ __esModule: true, default: () => ({ address: mockAddress }) }));
 jest.mock("../hooks/game/useDeleteGame", () => ({ useDeleteGame: () => ({ deleteGame: mockDelete, isDeleting: false }) }));
 jest.mock("../hooks/game/useForceCloseGame", () => ({ useForceCloseGame: () => ({ forceCloseGame: mockForceClose, isClosing: false }) }));
+let mockTournamentCards: {
+    tournamentId: string;
+    phase: string;
+    registered: number;
+    maxEntrants: number;
+    seatsPerTable: number;
+    cost: { gross: bigint };
+    myTable?: { gameId: string; number: number };
+}[] = [];
+jest.mock("../hooks/tournament/useTournamentLobby", () => ({
+    useTournamentLobby: () => ({ cards: mockTournamentCards, isLoading: false, error: null, failedCount: 0, refresh: jest.fn() })
+}));
 jest.mock("./common", () => ({ Pagination: () => null }));
 jest.mock("./modals/DeleteTableModal", () => ({ __esModule: true, default: ({ isOpen, gameId }: { isOpen: boolean; gameId: string }) => isOpen ? <div role="dialog">Delete confirmation: {gameId}</div> : null }));
 jest.mock("./modals/ForceCloseTableModal", () => ({ __esModule: true, default: ({ isOpen }: { isOpen: boolean }) => isOpen ? <div role="dialog">Refund confirmation</div> : null }));
 
-beforeEach(() => { jest.clearAllMocks(); mockAddress = "owner"; mockSeats = {}; mockStarted = {}; });
+beforeEach(() => { jest.clearAllMocks(); mockAddress = "owner"; mockSeats = {}; mockStarted = {}; mockTournamentCards = []; });
 
 test("seated players get their seat badge and return link, distinct from ownership", () => {
     mockAddress = "player-not-owner";
@@ -406,4 +418,20 @@ test("cash rows with rake show the rate and cap; no-rake and sit-and-go rows sho
     expect(rakeCells[0]).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
     expect(rakeCells[0].closest("tr")).toHaveTextContent("My occupied table");
     expect(screen.getAllByTestId("lobby-rake-mobile").map(el => el.textContent)).toEqual(["Rake 5%"]);
+});
+
+test("a multi-table tournament is one lobby row, and a seat you have says Take my seat", () => {
+    mockTournamentCards = [{
+        tournamentId: "0xface4d5c131b7d806a87883d234dd1929a296c5e",
+        phase: "running",
+        registered: 12,
+        maxEntrants: 27,
+        seatsPerTable: 6,
+        cost: { gross: 1_000_000n },
+        myTable: { gameId: "0xface4d5c131b7d806a87883d234dd1929a296c5e-t2", number: 2 }
+    }];
+    render(<TableList />);
+    expect(screen.getByTestId("lobby-tournament-row")).toHaveTextContent("Take my seat");
+    expect(screen.getByTestId("lobby-tournament-runners")).toHaveTextContent("12/27");
+    expect(screen.getByTestId("lobby-tournament-seat")).toHaveTextContent("table 2");
 });

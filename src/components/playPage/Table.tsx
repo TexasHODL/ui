@@ -20,7 +20,13 @@ import { HexagonPattern } from "../common/Modal";
 // The table uses the approved vector artwork independently of header branding.
 const clubLogo = "/texas-hodl-logo-sharp.svg";
 
-import { useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useTableId } from "../../hooks/game/useTableId";
+import { useTournament } from "../../hooks/tournament/useTournament";
+import { tournamentIdOf } from "../../utils/tournamentBlinds";
+import { followTarget, type MyTournamentTable } from "../../utils/tournamentFollow";
+import { tableUrl } from "../../utils/tableUrl";
+import { tournamentRunners, tournamentSize } from "../../utils/tournamentResult";
 import React from "react";
 
 import { toast } from "react-toastify";
@@ -66,7 +72,7 @@ import { useGameResults } from "../../hooks/game/useGameResults"; // Game result
 import { usePlayerLegalActions } from "../../hooks/playerActions/usePlayerLegalActions";
 import { SitOutIntentProvider } from "../../context/SitOutIntentContext";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
-import { isAwaitingTournamentStart, tournamentRegistrationClosed } from "../../utils/scheduledSng";
+import { hasTournamentFinished, isAwaitingTournamentStart, tournamentRegistrationClosed } from "../../utils/scheduledSng";
 import { searchWithoutJoinSeat } from "../../utils/urlParams";
 import { describeReplayStep, latestCompletedHand } from "../../utils/replayTimeline";
 import { useReplayTimeline } from "../../hooks/game/useReplayTimeline";
@@ -643,7 +649,7 @@ const GeometryToggleButton: React.FC = () => {
 };
 
 const Table = React.memo(() => {
-    const { id } = useParams<{ id: string }>();
+    const id = useTableId();
     const [searchParams, setSearchParams] = useSearchParams();
     const isWatchMode = searchParams.get("watch") === "1";
     // Game state context and subscription
@@ -709,6 +715,17 @@ const Table = React.memo(() => {
             }
         }
     }, [id, hasWallet, hasReplayParams, replayHandParam, replayActionParam, subscribeToTable, loadHistoricalState]);
+
+    // Follow my table: when a multi-table tournament moves this wallet, go with it.
+    const navigate = useNavigate();
+    const { myTable: myTournamentTable, tournament: tournamentRecord } = useTournament(tournamentIdOf(gameState));
+    const tournamentOver = tournamentRecord?.status === "finished" || hasTournamentFinished(gameState);
+    const seatedAt = useRef<MyTournamentTable | undefined>(undefined);
+    useEffect(() => {
+        const target = followTarget(id, seatedAt.current, myTournamentTable);
+        seatedAt.current = myTournamentTable;
+        if (target) navigate(tableUrl(target));
+    }, [id, myTournamentTable, navigate]);
 
     // Card back style configuration - driven by VITE_CARD_BACK_URL env var
     // Options: "default", "block52", "custom", "legacy", or a full URL to a custom SVG
@@ -1209,8 +1226,8 @@ const Table = React.memo(() => {
     // Handler for copying table link
     const handleCopyTableLink = useCallback(async () => {
         try {
-            const tableUrl = `${window.location.origin}/table/${id}`;
-            await navigator.clipboard.writeText(tableUrl);
+            const link = `${window.location.origin}${tableUrl(id ?? "")}`;
+            await navigator.clipboard.writeText(link);
             toast.success("Table link copied to clipboard!", {
                 position: "top-right",
                 autoClose: 2000,
@@ -1407,6 +1424,7 @@ const Table = React.memo(() => {
                         gameVariant={gameVariant}
                         gameOptions={gameOptions}
                         tableActivePlayers={tableActivePlayers}
+                        runners={tournamentRunners(tournamentRecord)}
                         publicKey={publicKey}
                         formattedAddress={formattedAddress}
                         isBalanceLoading={isBalanceLoading}
@@ -1445,6 +1463,7 @@ const Table = React.memo(() => {
                         gameVariant={gameVariant}
                         gameOptions={gameOptions}
                         tableActivePlayers={tableActivePlayers}
+                        runners={tournamentRunners(tournamentRecord)}
                         publicKey={publicKey}
                         formattedAddress={formattedAddress}
                         isBalanceLoading={isBalanceLoading}
@@ -1604,6 +1623,7 @@ const Table = React.memo(() => {
                                 isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
                                 winnerInfo={winnerInfo}
                                 cardBackStyle={cardBackStyle}
+                                tournamentOver={tournamentOver}
                                 updateBalanceOnPlayerJoin={updateBalanceOnPlayerJoin}
                             />
 
@@ -1708,6 +1728,8 @@ const Table = React.memo(() => {
                         isUserAlreadyPlaying={isUserAlreadyPlaying}
                         tableId={hasContent(id) ? id : searchParams.get("modal") === "entry" ? "preview" : undefined}
                         onAutoJoinSuccess={() => window.location.reload()}
+                        tournamentResults={tournamentRecord?.results}
+                        tournamentSize={tournamentSize(tournamentRecord)}
                         isSitAndGoWaitingForPlayers={isSitAndGoWaitingForPlayers}
                         handleLeaveTableClick={handleLeaveTableClick}
                         recentTxHash={recentTxHash}

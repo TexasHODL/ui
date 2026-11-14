@@ -17,6 +17,10 @@ import { displayGameFormat } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
+import { hasContent, isEmpty, isNullish } from "../utils/guards";
+import { useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
+import { LobbyTournamentRows } from "./tournament/LobbyTournamentRows";
+import { parseTournamentGameId } from "../utils/tableUrl";
 import DeleteTableModal from "./modals/DeleteTableModal";
 import ForceCloseTableModal from "./modals/ForceCloseTableModal";
 import { Pagination } from "./common";
@@ -76,11 +80,18 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     useLobbyAutoRefresh(refetch);
     const searchIsId = isFullGameId(search);
 
-    const clubGames = useMemo(
-        () => ownedOnly ? rawGames.filter(game => !!address && game.creator?.toLowerCase() === address.toLowerCase()) :
-            (treasuryOnly && treasuryAddress && !searchIsId ? rawGames.filter(game => game.creator === treasuryAddress) : rawGames),
-        [rawGames, treasuryOnly, ownedOnly, address, searchIsId]
-    );
+    const clubGames = useMemo(() => {
+        // A tournament's directed tables are not tables to join. The tournament is one row.
+        const listed = rawGames.filter(game => isNullish(parseTournamentGameId(game.gameId)));
+        return ownedOnly ? listed.filter(game => hasContent(address) && game.creator?.toLowerCase() === address.toLowerCase()) :
+            (treasuryOnly && treasuryAddress && !searchIsId ? listed.filter(game => game.creator === treasuryAddress) : listed);
+    }, [rawGames, treasuryOnly, ownedOnly, address, searchIsId]);
+    const { cards: tournamentCards } = useTournamentLobby();
+    const tournamentRows = useMemo(() => {
+        if (format === "cash") return [];
+        const q = search.trim().toLowerCase();
+        return tournamentCards.filter(card => !hasContent(q) || card.tournamentId.toLowerCase().includes(q));
+    }, [tournamentCards, format, search]);
     // All sit-and-go / tournament tables in the club list — needed before paging so
     // Finished/Cancelled rows older than 24h can be filtered out of the lobby.
     const tournamentIds = useMemo(
@@ -232,7 +243,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     <FaRedo className="animate-spin" />
                     <p>Finding your tables…</p>
                 </div>
-            ) : games.length === 0 ? (
+            ) : isEmpty(games) && isEmpty(tournamentRows) ? (
                 <div className={styles.empty}>
                     <span className={styles.emptySuit}>♠</span>
                     <h2>{hasFilters ? "No tables match" : "The next game starts with you"}</h2>
@@ -259,6 +270,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                             </tr>
                         </thead>
                         <tbody>
+                            <LobbyTournamentRows cards={tournamentRows} />
                             {pagedGames.map(game => {
                                 const full = game.currentPlayers >= game.maxPlayers;
                                 const mySeat = mySeats[game.gameId];

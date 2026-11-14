@@ -3,7 +3,9 @@
  *
  * At a Sit & Go the seat is drawn when you join (utils/seatDraw), so an empty
  * seat is an entry point, not a seat you claim: it reads "Open Seat" and the
- * button doesn't name a seat number. Cash tables name the seat you pick.
+ * button doesn't name a seat number. Cash tables name the seat you pick. Once
+ * registration is over (a running tournament) an empty seat has no text at all:
+ * the table leaves the circle in place and says nothing (VacantPlayer).
  */
 
 export interface VacantSeatText {

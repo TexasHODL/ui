@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { FaArrowLeft, FaCopy, FaQrcode, FaHistory, FaCog, FaEllipsisH, FaShare, FaRedo } from "react-icons/fa";
+import { FaArrowLeft, FaCopy, FaQrcode, FaHistory, FaCog, FaEllipsisH, FaShare, FaRedo, FaLayerGroup } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import { Modal } from "../../../common/Modal";
 import { NetworkSelector } from "../../../NetworkSelector";
 import { ProfileAvatarButton } from "../../../profile";
-import { displayTableName } from "../../../../utils/generatedTableName";
+import { tableHeading } from "../../../../utils/tableTitle";
+import { tableUrl } from "../../../../utils/tableUrl";
+import { playersLabel, type TournamentRunners } from "../../../../utils/tournamentResult";
+import BlindsButton from "../../BlindsButton";
 import { formatGameFormatDisplay, formatTableGameDisplay, isTournamentFormat } from "../../../../utils/gameFormatUtils";
 import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
@@ -31,6 +34,8 @@ export interface TableHeaderProps {
     gameVariant: GameVariant | undefined;
     gameOptions: GameOptionsDTO | null;
     tableActivePlayers: PlayerDTO[];
+    /** Runners left out of the field, on a multi-table tournament table. */
+    runners?: TournamentRunners;
 
     // Wallet data
     publicKey: string | null;
@@ -81,6 +86,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     gameVariant,
     gameOptions,
     tableActivePlayers,
+    runners,
     publicKey,
     formattedAddress,
     isBalanceLoading,
@@ -107,8 +113,8 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     const blindLevel = useBlindLevel();
     const [showQR, setShowQR] = useState(false);
     if (isMobileLandscape) return null;
-    const tableUrl = window.location.origin + "/table/" + tableId;
-    const title = displayTableName(tableName, tableId);
+    const shareUrl = window.location.origin + tableUrl(tableId);
+    const title = tableHeading(tableId, tableName);
     const showLeave = currentPlayerData && !(gameFormat && isTournamentFormat(gameFormat));
     const rake = rakeDisplay(gameOptions?.rake, gameFormat);
 
@@ -125,9 +131,13 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         {gameFormat ? displayGameFormat(gameFormat, gameOptions?.scheduledStartTime, formatGameFormatDisplay) : "Poker"}
                         {" · "}
                         {formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)}
-                        {gameOptions && " · " + tableActivePlayers.length + "/" + gameOptions.maxPlayers + " seats"}
+                        {gameOptions && " · " + (runners ? playersLabel(tableActivePlayers.length, gameOptions.maxPlayers, runners) : tableActivePlayers.length + "/" + gameOptions.maxPlayers + " seats")}
                     </span>
                 </div>
+                <BlindsButton className={styles.toolButton}>
+                    <FaLayerGroup aria-hidden="true" />
+                    <span>Blinds</span>
+                </BlindsButton>
                 <div className={styles.roomTools}>
                     <details className={styles.walletMenu}>
                         <summary aria-label="Wallet options">
@@ -262,7 +272,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 <div className="flex flex-col items-center gap-4">
                     <p className="text-sm text-gray-400">Scan to open {title}.</p>
                     <div className="bg-white p-4 rounded-xl">
-                        <QRCodeSVG value={tableUrl} size={220} />
+                        <QRCodeSVG value={shareUrl} size={220} />
                     </div>
                     <button onClick={handleCopyTableLink} className={styles.copyTableButton}>
                         Copy table link
