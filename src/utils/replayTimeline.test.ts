@@ -17,8 +17,14 @@ describe("replayTimeline (ui#816)", () => {
             expect(actionsQuery("0xabc", 7)).toBe("action_performed.game_id='0xabc' AND action_performed.hand_number='7'");
         });
 
+        it("allows a multi-table tournament table id", () => {
+            expect(actionsQuery("0xabc-t1", 4)).toBe("action_performed.game_id='0xabc-t1' AND action_performed.hand_number='4'");
+        });
+
         it("refuses an id or hand number that could break the query", () => {
             expect(() => actionsQuery("0xabc' OR 1", 1)).toThrow("Invalid table id");
+            expect(() => actionsQuery("0xabc -t1", 1)).toThrow("Invalid table id");
+            expect(() => actionsQuery("0xabc;drop", 1)).toThrow("Invalid table id");
             expect(() => actionsQuery("0xabc", 0)).toThrow("Invalid hand number");
             expect(() => actionsQuery("0xabc", 1.5)).toThrow("Invalid hand number");
         });

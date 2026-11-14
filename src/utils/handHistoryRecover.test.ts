@@ -139,6 +139,49 @@ describe("recoverUnlistedHands", () => {
     });
 });
 
+describe("recoverUnlistedHands MTT table ids", () => {
+    it("recovers a -t1 hand and skips ids that could break the query", async () => {
+        const mtt = "0xabc-t1";
+        const malicious = ["0xabc' OR '1'='1", "0xabc -t1", "0xabc;drop"];
+        const queries: string[] = [];
+        const err = jest.spyOn(console, "error").mockImplementation(() => {});
+        const recovered = await recoverUnlistedHands({
+            address: "hero",
+            listed: [],
+            sessions: async () => ({
+                data: [mtt, ...malicious].map(game_id => session(1, 100, game_id)),
+                pagination: { limit: 100, offset: 0, total: 1 + malicious.length }
+            }),
+            gameHands: async gameId => ({
+                data: [gameHand(5, 40, gameId)],
+                pagination: { limit: 1000, offset: 0, total: 1 }
+            }),
+            rpcFor: () => ({
+                txSearch: async query => {
+                    queries.push(query);
+                    return { result: { txs: [{ height: "50" }] } };
+                },
+                abciQuery: async (_path, _data, height) => {
+                    if (height === 50) return abci(JSON.stringify({ handNumber: 6 }));
+                    return abci(JSON.stringify(chainState(5, true)));
+                }
+            }),
+            networks: [network]
+        });
+
+        expect(queries).toEqual([`hand_ended.game_id='${mtt}' AND hand_ended.hand_number='5'`]);
+        expect(recovered.hands.map(hand => hand.game_id)).toEqual([mtt]);
+        expect(recovered.hands[0].hand_number).toBe(5);
+        expect(recovered.states.get(`${mtt}#5`)?.handNumber).toBe(5);
+        expect(err.mock.calls.map(call => String(call[0]))).toEqual([
+            "Skipping a hand history id the chain query cannot express:",
+            "Skipping a hand history id the chain query cannot express:",
+            "Skipping a hand history id the chain query cannot express:"
+        ]);
+        err.mockRestore();
+    });
+});
+
 describe("loadPublicHandState", () => {
     it("uses the previous block when the end block already shows the next hand", async () => {
         const calls: number[] = [];
