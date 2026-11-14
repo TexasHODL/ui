@@ -37,7 +37,16 @@ export interface HistoryHandCards {
     seats: HistorySeatCards[];
 }
 
-export function viewerPlayedHand(state: TexasHoldemStateDTO, viewer: string): boolean {
+/**
+ * Enough of a public hand log to decide whether one wallet was dealt in.
+ * A full chain snapshot satisfies it, and so does the smaller log Playing Style reads.
+ */
+export interface PlayedHandLog {
+    previousActions?: ReadonlyArray<{ playerId?: string; action?: string }> | null;
+    winners?: ReadonlyArray<{ address?: string }> | null;
+}
+
+export function viewerPlayedHand(state: PlayedHandLog, viewer: string): boolean {
     const address = viewer.toLowerCase();
     const acted = (state.previousActions ?? []).some(action =>
         action.playerId?.toLowerCase() === address && !NON_HAND_ACTIONS.has(String(action.action))

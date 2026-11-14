@@ -11,6 +11,7 @@ import {
     type HandContributionTarget
 } from "../../utils/handContribution";
 import { mapWithConcurrency } from "../../utils/pagedFetch";
+import { countDealtHands, type DealtHandLog } from "../../utils/handsPlayed";
 import { addHandStyle, emptyPlayingStyle, styleFromSnapshot, type PlayingStyleCounts, type PlayingStyleHand } from "../../utils/playingStyle";
 
 /**
@@ -57,6 +58,11 @@ export interface PlayingStyleRead {
     pending: boolean;
     /** Requested hands whose action log could not be read. Left out of the counts. */
     unavailable: number;
+    /**
+     * Distinct hands whose log shows this player was dealt in.
+     * Same snapshots as `counts`. A missing log is not included.
+     */
+    dealt: number;
 }
 
 function useHandLogVersion(): number {
@@ -126,9 +132,10 @@ function collectContributions(network: string, player: string | undefined, hands
 }
 
 function collectStyle(network: string, player: string | undefined, hands: PlayingStyleHand[], enabled: boolean): PlayingStyleRead {
-    if (!enabled || !hasContent(player)) return { counts: emptyPlayingStyle(), pending: false, unavailable: 0 };
+    if (!enabled || !hasContent(player)) return { counts: emptyPlayingStyle(), pending: false, unavailable: 0, dealt: 0 };
     let counts = emptyPlayingStyle();
     const seen = new Set<string>();
+    const resolved: DealtHandLog[] = [];
     let unavailable = 0;
     let pending = false;
     for (const hand of hands) {
@@ -140,11 +147,13 @@ function collectStyle(network: string, player: string | undefined, hands: Playin
             pending = true;
             continue;
         }
-        const style = styleFromSnapshot(memory.get(stored), player, hand.wonAmount);
+        const snapshot = memory.get(stored);
+        resolved.push({ key, snapshot });
+        const style = styleFromSnapshot(snapshot, player, hand.wonAmount);
         if (!hasValue(style)) unavailable += 1;
         else counts = addHandStyle(counts, style);
     }
-    return { counts, pending, unavailable };
+    return { counts, pending, unavailable, dealt: countDealtHands(resolved, player) };
 }
 
 /**
