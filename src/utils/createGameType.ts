@@ -12,13 +12,16 @@ import { GameFormat } from "@block52/poker-vm-sdk";
 import { hasValue } from "./guards";
 import { isScheduledSng } from "./scheduledSng";
 
-export type CreateGameType = "cash" | "sit-and-go" | "tournament";
+export type CreateGameType = "cash" | "sit-and-go" | "tournament" | "multi-table";
 
-export const CREATE_GAME_TYPES: readonly CreateGameType[] = ["sit-and-go", "cash", "tournament"];
+export const CREATE_GAME_TYPES: readonly CreateGameType[] = ["sit-and-go", "cash", "tournament", "multi-table"];
 
 /** Coerce a raw select value into a CreateGameType, undefined for anything else. */
 export const toCreateGameType = (value: string | undefined): CreateGameType | undefined =>
-    value === "cash" || value === "sit-and-go" || value === "tournament" ? value : undefined;
+    value === "cash" || value === "sit-and-go" || value === "tournament" || value === "multi-table" ? value : undefined;
+
+/** A multi-table tournament is created with createTournament, not as a table. */
+export const isMultiTableCreateType = (type: CreateGameType): boolean => type === "multi-table";
 
 /** The label the create forms show for a type. */
 export const createGameTypeLabel = (type: CreateGameType): string => {
@@ -29,13 +32,21 @@ export const createGameTypeLabel = (type: CreateGameType): string => {
             return "Sit & Go";
         case "tournament":
             return "Tournament";
+        case "multi-table":
+            return "Multi-table tournament";
     }
 };
 
-/** The chain format a type is created as. */
+/**
+ * The chain format a table type is created as.
+ * Multi-table is not a table: callers branch on {@link isMultiTableCreateType}
+ * and never submit this value. Cash is returned so a stray read does not look
+ * like a sit-and-go.
+ */
 export const createGameTypeFormat = (type: CreateGameType): GameFormat => {
     switch (type) {
         case "cash":
+        case "multi-table":
             return GameFormat.CASH;
         case "sit-and-go":
             return GameFormat.SIT_AND_GO;
@@ -70,6 +81,9 @@ export const SCHEDULED_SIT_AND_GO_NOTE =
  * unchanged.
  */
 export const createdTableFormat = (type: CreateGameType, sitAndGoScheduleOn: boolean, startTime: number | undefined): CreatedTableFormat => {
+    if (type === "multi-table") {
+        throw new Error("A multi-table tournament is created with createTournament, not as a table");
+    }
     if (type === "tournament" || (type === "sit-and-go" && sitAndGoScheduleOn)) {
         return { format: GameFormat.TOURNAMENT, startTime };
     }

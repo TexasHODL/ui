@@ -1,16 +1,17 @@
 import { GameFormat, formatGameFormatDisplay } from "@block52/poker-vm-sdk";
-import { CREATE_GAME_TYPES, createdTableFormat, createGameTypeFormat, createGameTypeLabel, displayGameFormat, isScheduledCreateType, sitAndGoJoinTitle, sitAndGoTypeLabel, toCreateGameType } from "./createGameType";
+import { CREATE_GAME_TYPES, createdTableFormat, createGameTypeFormat, createGameTypeLabel, displayGameFormat, isMultiTableCreateType, isScheduledCreateType, sitAndGoJoinTitle, sitAndGoTypeLabel, toCreateGameType } from "./createGameType";
 
 describe("createGameType (ui#823)", () => {
     it("offers the three types a player can create", () => {
-        expect(CREATE_GAME_TYPES).toEqual(["sit-and-go", "cash", "tournament"]);
-        expect(CREATE_GAME_TYPES.map(createGameTypeLabel)).toEqual(["Sit & Go", "Cash Game", "Tournament"]);
+        expect(CREATE_GAME_TYPES).toEqual(["sit-and-go", "cash", "tournament", "multi-table"]);
+        expect(CREATE_GAME_TYPES.map(createGameTypeLabel)).toEqual(["Sit & Go", "Cash Game", "Tournament", "Multi-table tournament"]);
     });
 
     it("coerces select values and rejects anything else", () => {
         expect(toCreateGameType("tournament")).toBe("tournament");
         expect(toCreateGameType("cash")).toBe("cash");
         expect(toCreateGameType("sit-and-go")).toBe("sit-and-go");
+        expect(toCreateGameType("multi-table")).toBe("multi-table");
         expect(toCreateGameType("mtt")).toBeUndefined();
         expect(toCreateGameType(undefined)).toBeUndefined();
     });
@@ -19,6 +20,13 @@ describe("createGameType (ui#823)", () => {
         expect(createGameTypeFormat("tournament")).toBe(GameFormat.TOURNAMENT);
         expect(createGameTypeFormat("sit-and-go")).toBe(GameFormat.SIT_AND_GO);
         expect(createGameTypeFormat("cash")).toBe(GameFormat.CASH);
+    });
+
+    it("treats a multi-table tournament as its own create option, not a table", () => {
+        expect(isMultiTableCreateType("multi-table")).toBe(true);
+        expect(isMultiTableCreateType("tournament")).toBe(false);
+        expect(isScheduledCreateType("multi-table")).toBe(false);
+        expect(() => createdTableFormat("multi-table", false, undefined)).toThrow(/createTournament/);
     });
 
     it("only a Tournament carries a start time", () => {

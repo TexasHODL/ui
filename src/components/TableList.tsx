@@ -31,7 +31,8 @@ const PAGE_SIZE = 10;
 const formats: { value: LobbyFormat; label: string }[] = [
     { value: "all", label: "All games" },
     { value: "cash", label: "Cash games" },
-    { value: "tournament", label: "Sit & Go / tournaments" }
+    { value: "tournament", label: "Sit & Go" },
+    { value: "mtt", label: "Tournaments" }
 ];
 
 const formatBuyIn = (game: GameWithFormat) => {
@@ -89,7 +90,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     }, [rawGames, treasuryOnly, ownedOnly, address, searchIsId]);
     const { cards: tournamentCards, isLoading: tournamentsLoading, error: tournamentsError, failedCount: tournamentsFailed, refresh: refreshTournaments } = useTournamentLobby();
     const tournamentRows = useMemo(() => {
-        // The Sit & Go tab shows these as cards above the table. All games keeps one row each.
+        // Cards on the Tournaments tab are the multi-table list. All games keeps one row each.
         if (format !== "all") return [];
         const q = search.trim().toLowerCase();
         return tournamentCards.filter(card => !hasContent(q) || card.tournamentId.toLowerCase().includes(q));
@@ -173,7 +174,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     </button>
                 ))}
             </div>
-            <div className={styles.filters}>
+            {format !== "mtt" && <div className={styles.filters}>
                 <label className={styles.search}>
                     <FaSearch aria-hidden="true" />
                     <input
@@ -230,9 +231,9 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                         <option value="buyin">Lowest buy-in</option>
                     </select>
                 </label>
-            </div>
+            </div>}
 
-            {format === "tournament" && (
+            {format === "mtt" ? (
                 <LobbyMttSection
                     cards={tournamentCards}
                     isLoading={tournamentsLoading}
@@ -240,9 +241,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     failedCount={tournamentsFailed}
                     onRefresh={refreshTournaments}
                 />
-            )}
-
-            {error ? (
+            ) : error ? (
                 <div className={styles.empty} role="alert">
                     <h2>Tables couldn’t load</h2>
                     <p>{error.message}</p>
@@ -422,7 +421,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
             {!error && !isLoading && games.length > 0 && (
                 <Pagination currentPage={currentPage} totalItems={games.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
             )}
-            <p className={styles.footnote}>Opening a table lets you look around. Choose a seat and confirm your buy-in when you’re ready.</p>
+            {format !== "mtt" && <p className={styles.footnote}>Opening a table lets you look around. Choose a seat and confirm your buy-in when you’re ready.</p>}
             <DeleteTableModal
                 isOpen={!!deleteId}
                 onClose={() => setDeleteId(null)}

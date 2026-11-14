@@ -481,36 +481,34 @@ const openTournamentCard = {
 
 const renderLobby = () => render(<MemoryRouter><TableList /></MemoryRouter>);
 
-test("the Sit & Go tab shows multi-table tournament cards above the table list", () => {
+test("the Tournaments tab shows multi-table cards, and Sit & Go does not list them as rows", () => {
     mockTournamentCards = [openTournamentCard];
     renderLobby();
-    fireEvent.click(screen.getByRole("button", { name: "Sit & Go / tournaments" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sit & Go" }));
+    expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
+    expect(screen.getByText("My tournament")).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
     const section = screen.getByTestId("lobby-mtt-section");
-    expect(section).toHaveTextContent("Multi-table tournaments");
-    expect(within(section).getByRole("link", { name: "View all" })).toHaveAttribute("href", "/tournaments");
     expect(within(section).getByTestId("tournament-name-link")).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
     expect(within(section).getByTestId("tournament-name-link")).toHaveTextContent("Tournament 0xface4d…6c5e");
-    expect(within(section).getByRole("button", { name: "Create tournament" })).toBeInTheDocument();
-    expect(within(section).queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
-    expect(screen.getByText("My tournament")).toBeInTheDocument();
+    expect(within(section).queryByRole("button", { name: "Create tournament" })).not.toBeInTheDocument();
+    expect(within(section).queryByRole("link", { name: "View all" })).not.toBeInTheDocument();
+    expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
 
     fireEvent.click(within(section).getByRole("button", { name: /Register/ }));
     expect(screen.getByRole("dialog", { name: "Register for tournament" })).toBeInTheDocument();
 });
 
-test("the Sit & Go tab shows a compact empty state when no multi-table tournaments exist", () => {
+test("the Tournaments tab shows a compact empty state when no multi-table tournaments exist", () => {
     renderLobby();
-    fireEvent.click(screen.getByRole("button", { name: "Sit & Go / tournaments" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
 
     const empty = screen.getByTestId("lobby-mtt-empty");
     expect(empty).toHaveTextContent("No multi-table tournaments yet");
-    expect(within(empty).getByRole("button", { name: "Create tournament" })).toBeInTheDocument();
-    expect(screen.getByText("My tournament")).toBeInTheDocument();
+    expect(within(empty).queryByRole("button", { name: "Create tournament" })).not.toBeInTheDocument();
     expect(screen.queryByText("The next game starts with you")).not.toBeInTheDocument();
-
-    fireEvent.click(within(empty).getByRole("button", { name: "Create tournament" }));
-    expect(screen.getByRole("dialog", { name: "Create tournament" })).toBeInTheDocument();
 });
 
 test("cash games do not show the multi-table tournament section", () => {
