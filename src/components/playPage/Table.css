@@ -1137,10 +1137,10 @@ html.table-page-lock .app-shell {
     }
 }
 
-/* An empty seat is the same pill as a player seat: same outer size and
-   place, muted fill, and nothing drawn in it. The seat number is inside a
-   player pill, so it is only a hidden spacer here. The button chrome stays
-   clear so it does not paint the old rail bar. */
+/* An empty seat is the same size and place as a player pill: hollow, with a
+   solid light-purple outline, the seat number in a purple circle and the
+   word Empty. No avatar. The button chrome stays clear so it does not paint
+   the old rail bar. */
 .table-container button.player-seat.vacant-seat {
     appearance: none;
     margin: 0;
@@ -1163,12 +1163,16 @@ html.table-page-lock .app-shell {
     cursor: default;
 }
 .table-container .badge-container.badge-empty {
-    background: #3a3444;
-    border-color: rgba(255, 255, 255, 0.16);
+    background: transparent;
+    border: 1.5px solid rgba(214, 178, 239, 0.7);
+    box-shadow: none;
 }
-.badge-container.badge-empty .badge-number,
-.empty-seat-value-spacer {
-    visibility: hidden;
+.table-container .badge-container.badge-empty .badge-value {
+    color: var(--theme-ink, #f4eafc);
+}
+.badge-container.badge-empty .badge-number {
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    color: #fff;
 }
 
 @media (prefers-reduced-motion: reduce) {
