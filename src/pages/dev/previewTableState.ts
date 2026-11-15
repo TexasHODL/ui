@@ -72,6 +72,11 @@ export interface PreviewOptions {
      */
     bubblePrizes?: boolean;
     /**
+     * open=<n>: leave the last n seats empty. Preview only, so a cash table
+     * can be shot with seats still available to join.
+     */
+    openSeats?: number;
+    /**
      * modal=entry leaves seat 1 empty so the take-your-seat dialog opens.
      * modal=waiting seats the hero at a tournament that has not started.
      */
@@ -142,7 +147,9 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
     const bubblePrizes = params.get("prizes") === "bubble";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
+    const openParam = Number(params.get("open"));
+    const openSeats = Number.isInteger(openParam) && openParam >= 1 && openParam < seats ? openParam : undefined;
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(openSeats ? { openSeats } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -157,6 +164,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.win) params.set("win", options.winAll ? "all" : String(options.winSeat ?? 1));
     if (options.noBets) params.set("bet", "none");
     if (options.bubblePrizes) params.set("prizes", "bubble");
+    if (options.openSeats) params.set("open", String(options.openSeats));
     if (options.dialog) params.set("modal", options.dialog);
     if (options.runout) params.set("runout", options.runout);
     return params;
@@ -423,7 +431,8 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
     const previousActions: ActionDTO[] = [];
     let pot = 0n;
 
-    for (let seat = 1; seat <= options.seats; seat++) {
+    const occupied = options.openSeats ? options.seats - options.openSeats : options.seats;
+    for (let seat = 1; seat <= occupied; seat++) {
         const address = previewSeatAddress(seat, heroAddress);
         // Tournament / Sit & Go amounts are raw chips (650 per seat, level-7 blinds); cash is USDC micro-units.
         const amount = options.noBets ? "0" : String(options.format === "cash" ? 20000 * seat : 650 * seat);

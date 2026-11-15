@@ -5,9 +5,11 @@ import { ModalHeader } from "../../common/ModalHeader";
  *
  * Represents an empty seat at the poker table.
  *
- * Behavior:
- * - For users not yet seated: clicking opens the buy-in modal to join
- * - For users already seated: vacant seats are non-interactive (just visual)
+ * On a tournament table, single-table or multi-table, the empty seat is the
+ * blank pill: the same size as a player pill, opaque frost, and only a purple
+ * seat-number circle. Cash and sit & go keep the vacant place card.
+ * Clicking a seat that can still be taken opens the buy-in. A closed seat
+ * stays where it is and does not take a click.
  *
  * Props:
  * - left/top: Position on the table
@@ -28,7 +30,11 @@ import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
 import { hasElements, isNullish } from "../../../utils/guards";
 import { seatsAreDrawn } from "../../../utils/seatDraw";
+import { showsBlankSeatPill } from "../../../utils/blankSeatPill";
+import { viteEnv } from "../../../utils/viteEnv";
 import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "../../../utils/vacantSeatText";
+import Badge from "../common/Badge";
+import playerStyles from "./PlayersCommon.module.css";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { hasTournamentStarted, isRegistrationClosed, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
@@ -225,7 +231,6 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             }
         }, [joinClosed, tableId, index, onJoin, gameOptions?.minBuyIn, gameOptions?.maxBuyIn, buyInAmount, isSitAndGo, currentNetwork, seatDrawn, gameFormat]);
 
-        // Memoize container styles
         const containerStyle = useMemo(
             () => ({
                 left,
@@ -244,6 +249,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                 : vacantSeatText(index, false, canJoinThisSeat, seatDrawn),
             [isUserAlreadyPlaying, joinClosed, canJoinThisSeat, index, seatDrawn]
         );
+        const blankPill = showsBlankSeatPill(gameFormat, gameState, tableId);
 
         // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
         const handleDepositClick = useCallback(() => {
@@ -253,15 +259,22 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         return (
             <>
                 <button
-                    className="vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                    className={blankPill
+                        ? `player-seat vacant-seat absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 z-[10] ${playerStyles.secondaryText} ${playerStyles.positionTransition} ${!isUserAlreadyPlaying && canJoinThisSeat ? "cursor-pointer" : ""}`
+                        : "vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"}
                     style={containerStyle}
                     type="button"
                     disabled={isUserAlreadyPlaying || !canJoinThisSeat}
                     onClick={handleSeatClick}
-                    aria-label={!isUserAlreadyPlaying && canJoinThisSeat ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`) : `Seat ${index} unavailable`}
+                    aria-label={blankPill
+                        ? `Seat ${index}, empty`
+                        : !isUserAlreadyPlaying && canJoinThisSeat
+                            ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`)
+                            : `Seat ${index} unavailable`}
+                    data-testid={blankPill ? "empty-seat" : undefined}
                 >
                     {/* Development Mode Debug Info */}
-                    {import.meta.env.VITE_NODE_ENV === "development" && (
+                    {viteEnv.VITE_NODE_ENV === "development" && (
                         <div className="absolute top-[-50px] left-1/2 transform -translate-x-1/2 bg-gray-600 bg-opacity-80 text-white px-2 py-1 rounded text-[12px] whitespace-nowrap z-50 border border-gray-400">
                             <div className="text-gray-300">UI Pos: {uiPosition ?? "N/A"}</div>
                             <div className="text-yellow-300">Vacant Seat: {index}</div>
@@ -270,16 +283,28 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             </div>
                         </div>
                     )}
-                    {/* Once registration is over, or the tournament is over, the seat stays
-                        where it is and says nothing: no plus, no "Open Seat". */}
-                    {!tournamentOver && !seatClosed && (
+                    {blankPill ? (
                         <>
-                            <span className="vacant-seat-plus" aria-hidden="true">
-                                +
-                            </span>
-                            <span className="vacant-seat-title">{seatText.title}</span>
-                            <span className="vacant-seat-label">{seatText.subtitle}</span>
+                            <div className="player-cards flex justify-center gap-1">
+                                <div className="w-[120px] h-[80px]" />
+                            </div>
+                            <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
+                                <div className="w-full h-[55px]" />
+                                <div className="player-badge-position absolute top-[-10px] w-full">
+                                    <Badge count={index} value={0} empty />
+                                </div>
+                            </div>
                         </>
+                    ) : (
+                        !tournamentOver && !seatClosed && (
+                            <>
+                                <span className="vacant-seat-plus" aria-hidden="true">
+                                    +
+                                </span>
+                                <span className="vacant-seat-title">{seatText.title}</span>
+                                <span className="vacant-seat-label">{seatText.subtitle}</span>
+                            </>
+                        )
                     )}
                 </button>
 
