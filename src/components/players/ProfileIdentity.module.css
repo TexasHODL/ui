@@ -1,0 +1,49 @@
+/* One line beside the page title. The address ellipsizes; Copy stays put. */
+.identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+    padding: 6px 14px 6px 6px;
+    border-radius: 999px;
+    background: var(--page-surface, #100c17);
+    border: 1px solid var(--page-border, #ffffff16);
+}
+
+.address {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--theme-accent, #c296e6);
+}
+
+.copy {
+    flex-shrink: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    min-height: 44px;
+    padding: 0 2px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--theme-muted, #9e87b0);
+    cursor: pointer;
+}
+
+.copy:hover {
+    color: var(--theme-ink, #eee8f5);
+}
+
+@media (max-width: 760px) {
+    .identity {
+        width: 100%;
+    }
+}

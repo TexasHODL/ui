@@ -52,7 +52,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
     gap: 24px;
+}
+.page-heading-action {
+    min-width: 0;
+    max-width: 100%;
 }
 .page-heading h1 {
     font-size: clamp(28px, 3vw, 40px);
@@ -287,5 +292,6 @@
     }
     .page-heading-action {
         width: 100%;
+        min-width: 0;
     }
 }
