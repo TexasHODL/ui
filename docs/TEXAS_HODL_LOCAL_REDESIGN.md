@@ -11,11 +11,11 @@ This checkout is a local-only redesign workspace for the public `TexasHODL/ui` f
 
 ## Local network
 
-`.env.local` defaults the local build to the shared Texas HODL network (do not assume it is a disposable test network):
+The built-in default node is Block52 (`node1.block52.xyz`: REST `https://node1.block52.xyz`, RPC `/rpc/`, websocket `wss://node1.block52.xyz/ws`). The Texas Hodl node stays in the selector (do not assume it is a disposable test network):
 
 - RPC: `https://node.texashodl.net/rpc/`
 - WebSocket: `wss://node.texashodl.net/ws`
-- Default network selector: `Texas Hodl`
+- Selector name: `Texas Hodl`
 
 This keeps a local UI capable of seeing the same multiplayer tables as the live client. It does not change the live frontend. Taking seats, betting, creating/closing tables and wallet actions can still change shared state and involve real funds. No such actions were performed during this redesign pass.
 
@@ -43,7 +43,7 @@ yarn dev
 
 Then open `http://localhost:5173`.
 
-Texas Hodl is now the built-in default network, so removing `VITE_DEFAULT_NETWORK` from `.env.local` still gives Texas Hodl. To use Block52 instead, set `VITE_DEFAULT_NETWORK=Block52`. The network selector can also be changed in the app.
+Block52 (`node1.block52.xyz`) is the built-in default network, so removing `VITE_DEFAULT_NETWORK` from `.env.local` gives Block52. To use the Texas Hodl node instead, set `VITE_DEFAULT_NETWORK=Texas Hodl`. The network selector can also be changed in the app, and that choice is saved on the device.
 
 ## Visual work completed
 
