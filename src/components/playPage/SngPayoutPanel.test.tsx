@@ -1,4 +1,3 @@
-
 import { render, screen } from "@testing-library/react";
 import SngPayoutPanel from "./SngPayoutPanel";
 
@@ -64,5 +63,90 @@ describe("SngPayoutPanel", () => {
 
         const { container } = render(<SngPayoutPanel />);
         expect(container.firstChild).toBeNull();
+    });
+
+    it("shows the tournament prize pool and chain schedule when the table has no payouts", () => {
+        mockUseSitAndGoPayouts.mockReturnValue({
+            isSitAndGo: false,
+            prizePool: null,
+            places: []
+        });
+
+        render(
+            <SngPayoutPanel
+                tournament={{
+                    tournamentId: "0x275a",
+                    status: "finished",
+                    options: {
+                        buyIn: "2000000",
+                        startingStack: "5000",
+                        seatsPerTable: 9,
+                        minEntrants: 6,
+                        maxEntrants: 27,
+                        startTime: 1,
+                        blindStructure: { preset: "turbo" },
+                        actionTimeoutSeconds: 25
+                    },
+                    entrants: [],
+                    tables: [],
+                    level: 11,
+                    prizePool: "11200000",
+                    payouts: [
+                        { place: 1, amount: "5600000" },
+                        { place: 2, amount: "3360000" },
+                        { place: 3, amount: "2240000" }
+                    ],
+                    results: [],
+                    seq: 82
+                }}
+            />
+        );
+
+        expect(screen.getByTestId("sng-payout-pool")).toHaveTextContent("$11.20");
+        expect(screen.getByTestId("sng-payout-place-1")).toHaveTextContent("1st 50%: $5.60");
+        expect(screen.getByTestId("sng-payout-place-2")).toHaveTextContent("2nd 30%: $3.36");
+        expect(screen.getByTestId("sng-payout-place-3")).toHaveTextContent("3rd 20%: $2.24");
+    });
+
+    it("prices a percentage-only tournament schedule from the prize pool", () => {
+        mockUseSitAndGoPayouts.mockReturnValue({
+            isSitAndGo: true,
+            prizePool: null,
+            places: []
+        });
+
+        render(
+            <SngPayoutPanel
+                tournament={{
+                    tournamentId: "0x275a",
+                    status: "running",
+                    options: {
+                        buyIn: "2000000",
+                        startingStack: "5000",
+                        seatsPerTable: 9,
+                        minEntrants: 6,
+                        maxEntrants: 27,
+                        startTime: 1,
+                        blindStructure: { preset: "turbo" },
+                        actionTimeoutSeconds: 25
+                    },
+                    entrants: [],
+                    tables: [],
+                    level: 1,
+                    prizePool: "11200000",
+                    payouts: [
+                        { place: 1, percent: 50 },
+                        { place: 2, percent: 30 },
+                        { place: 3, percent: 20 }
+                    ] as never,
+                    results: [],
+                    seq: 1
+                }}
+            />
+        );
+
+        expect(screen.getByTestId("sng-payout-place-1")).toHaveTextContent("1st 50%: $5.60");
+        expect(screen.getByTestId("sng-payout-place-2")).toHaveTextContent("2nd 30%: $3.36");
+        expect(screen.getByTestId("sng-payout-place-3")).toHaveTextContent("3rd 20%: $2.24");
     });
 });
