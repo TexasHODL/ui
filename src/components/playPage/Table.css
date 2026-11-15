@@ -1144,10 +1144,9 @@ html.table-page-lock .app-shell {
     }
 }
 
-/* An empty seat is the same size and place as a player pill: frosted glass,
-   a solid light-purple outline, and only the seat number in a purple circle
-   on the left. No avatar. The button chrome stays clear so it does not paint
-   the old rail bar. */
+/* Multi-table tournament empty seat only: the same size and place as a
+   player pill, a solid light-purple outline, and only the seat number.
+   Cash and sit & go keep .vacant-seat:not(.player-seat), the place card. */
 .table-container button.player-seat.vacant-seat {
     appearance: none;
     margin: 0;
