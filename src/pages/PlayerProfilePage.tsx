@@ -23,9 +23,16 @@ import { getCosmosAddress } from "../utils/cosmos/storage";
 import { PROFILE_TAB_PARAM, viewerAddress, visibleProfileTab } from "../utils/profileHub";
 import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
 import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
+import { usePlayerTournamentEntries } from "../hooks/player/usePlayerTournamentEntries";
 import { useSessionEliminationBlocks } from "../hooks/player/useSessionEliminationBlocks";
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
 import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
+import {
+    mergeTournamentSessionRows,
+    sessionMetasWithTournamentEntries,
+    tournamentFinishPlaceLabel,
+    withTournamentHandLeaveBlocks
+} from "../utils/playerTournamentEntries";
 import {
     defaultSessionVariant,
     filterSessionRows,
@@ -92,6 +99,8 @@ export default function PlayerProfilePage() {
     const { sessions, loading: sessionsLoading } = useAllPlayerSessions(address);
     // Chain prize claims. Empty on failure, so the cards and rows stay on the indexer.
     const { claims, loading: prizesLoading } = usePlayerPrizeClaims(address);
+    // MTT entry never joins a table, so the indexer has no session for it.
+    const { entries: tournamentEntries, loading: tournamentsLoading } = usePlayerTournamentEntries(address);
     const { address: walletAddress } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
     const [searchParams] = useSearchParams();
@@ -99,11 +108,23 @@ export default function PlayerProfilePage() {
     // Same hand list as My Hands. Loaded on Stats only, so the hands tab does not fetch it twice.
     const handHistory = useMyHandHistory(tab === "stats" && hasContent(address) ? address : null, `${currentNetwork.name}|${currentNetwork.rest}`, 1000);
     const gameIds = useMemo(
-        () => uniqueGameIds([...sessions.map(session => session.game_id), ...handHistory.hands.map(hand => hand.game_id)]),
-        [sessions, handHistory.hands]
+        () =>
+            uniqueGameIds([
+                ...sessions.map(session => session.game_id),
+                ...handHistory.hands.map(hand => hand.game_id),
+                ...tournamentEntries.map(entry => entry.gameId)
+            ]),
+        [sessions, handHistory.hands, tournamentEntries]
     );
-    const { byId: gamesById, loading: gamesLoading } = useSessionGameMeta(gameIds);
-    const rows = useMemo(() => sessionRowsWithPrizes(sessions, claims), [sessions, claims]);
+    const { byId: fetchedGames, loading: gamesLoading } = useSessionGameMeta(gameIds);
+    const gamesById = useMemo(
+        () => sessionMetasWithTournamentEntries(fetchedGames, tournamentEntries, handHistory.hands),
+        [fetchedGames, tournamentEntries, handHistory.hands]
+    );
+    const rows = useMemo(
+        () => mergeTournamentSessionRows(sessionRowsWithPrizes(sessions, claims), tournamentEntries, handHistory.hands, address),
+        [sessions, claims, tournamentEntries, handHistory.hands, address]
+    );
     const gameLabels = useMemo(() => sessionLabelsByGameId(gamesById), [gamesById]);
     const gameFilterOptions = useMemo(() => sessionGameFilterOptions(Object.values(gameLabels)), [gameLabels]);
     const defaultVariant = useMemo(() => defaultSessionVariant(rows, gameLabels), [rows, gameLabels]);
@@ -114,7 +135,11 @@ export default function PlayerProfilePage() {
     }, [filteredRows, sessionsPage]);
     // Every filtered bust, not only the visible page, so the longest session does not depend on which page is open.
     const eliminationLookups = useMemo(() => eliminationLookupsFor(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
-    const eliminationBlocks = useSessionEliminationBlocks(address, eliminationLookups);
+    const chainLeaveBlocks = useSessionEliminationBlocks(address, eliminationLookups);
+    const eliminationBlocks = useMemo(
+        () => withTournamentHandLeaveBlocks(chainLeaveBlocks, tournamentEntries, handHistory.hands),
+        [chainLeaveBlocks, tournamentEntries, handHistory.hands]
+    );
     const settledWindows = useMemo(
         () =>
             filteredRows.map(row => ({
@@ -179,7 +204,7 @@ export default function PlayerProfilePage() {
                 : null,
         [profile, sessions, claims, prizesLoading]
     );
-    const historyLoading = sessionsLoading || prizesLoading;
+    const historyLoading = sessionsLoading || prizesLoading || tournamentsLoading;
 
     useEffect(() => {
         document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Texas HODL` : "Player - Texas HODL";
@@ -375,6 +400,11 @@ export default function PlayerProfilePage() {
                                                         const label = gameLabels[row.gameId];
                                                         const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
                                                         const bust = sessionBustFor(row, rows, gamesById[row.gameId], profile.player_address);
+                                                        const finishPlace = tournamentFinishPlaceLabel(
+                                                            row.gameId,
+                                                            gamesById[row.gameId],
+                                                            profile.player_address
+                                                        );
                                                         const leaveBlock = sessionLeaveBlock(row, bust, eliminationBlocks[row.gameId]);
                                                         const cashOutAmount = settledSessionCashOut(row, hasValue(bust));
                                                         const sessionKey = `${row.gameId}-${row.joinBlock}-${i}`;
@@ -452,10 +482,7 @@ export default function PlayerProfilePage() {
                                                                 </td>
                                                                 <td className="align-top px-3 py-4 text-right text-gray-300 whitespace-normal sm:whitespace-nowrap sm:px-6 sm:align-middle">
                                                                     {row.isPrize && hasContent(row.prizeTxHash) ? (
-                                                                        <Link
-                                                                            to={`/explorer/tx/${row.prizeTxHash}`}
-                                                                            className={sessionPrizeCashOutClass()}
-                                                                        >
+                                                                        <Link to={`/explorer/tx/${row.prizeTxHash}`} className={sessionPrizeCashOutClass()}>
                                                                             <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
                                                                                 Prize
                                                                             </span>
@@ -486,9 +513,18 @@ export default function PlayerProfilePage() {
                                                                             )}
                                                                         </span>
                                                                     ) : hasValue(cashOutAmount) ? (
-                                                                        <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
-                                                                            {formatUsd(cashOutAmount)}
-                                                                        </span>
+                                                                        hasContent(finishPlace) ? (
+                                                                            <span className="inline-flex items-center justify-end gap-2">
+                                                                                <span className="text-xs font-semibold text-amber-200">{finishPlace}</span>
+                                                                                <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                    {formatUsd(cashOutAmount)}
+                                                                                </span>
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                {formatUsd(cashOutAmount)}
+                                                                            </span>
+                                                                        )
                                                                     ) : (
                                                                         "—"
                                                                     )}

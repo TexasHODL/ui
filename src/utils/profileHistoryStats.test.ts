@@ -307,6 +307,17 @@ describe("handBelongsToSettledSession", () => {
         expect(handBelongsToSettledSession({ gameId: "cashA", blockHeight: 50 }, [settled])).toBe(false);
         expect(handBelongsToSettledSession({ gameId: "cashA", blockHeight: 150 }, [{ ...settled, cashOut: 0 }])).toBe(true);
     });
+
+    it("counts an MTT hand dealt on another table of the same tournament inside the settled window", () => {
+        const tournament = "0x275a79b9258009e0a1f4f4f4232cefe25262765f0a5c7c3a86040885ffec5187";
+        const mtt = { gameId: `${tournament}-t1`, joinBlock: 1_059_332, cashOut: 0 };
+        const running = { gameId: `${tournament}-t1`, joinBlock: 1_059_332 };
+        expect(handBelongsToSettledSession({ gameId: `${tournament}-t1`, blockHeight: 1_059_805 }, [mtt])).toBe(true);
+        expect(handBelongsToSettledSession({ gameId: `${tournament}-t2`, blockHeight: 1_059_700 }, [mtt])).toBe(true);
+        expect(handBelongsToSettledSession({ gameId: `${tournament}-t2`, blockHeight: 1_059_000 }, [mtt])).toBe(false);
+        expect(handBelongsToSettledSession({ gameId: "0xother-t1", blockHeight: 1_059_805 }, [mtt])).toBe(false);
+        expect(handBelongsToSettledSession({ gameId: `${tournament}-t2`, blockHeight: 1_059_805 }, [running])).toBe(false);
+    });
 });
 
 describe("handsForHistory", () => {
