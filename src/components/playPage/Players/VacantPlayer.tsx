@@ -5,11 +5,10 @@ import { ModalHeader } from "../../common/ModalHeader";
  *
  * Represents an empty seat at the poker table.
  *
- * An empty seat is the same pill as a player seat: same outer size, shape
- * and position, muted fill, and nothing inside it. The seat number lives
- * inside a player pill, so it is not drawn here, and neither is an avatar.
- * Clicking a seat that can still be taken opens the buy-in. A closed seat
- * keeps the pill and does not take a click.
+ * An empty seat is the same size and place as a player pill, hollow, with a
+ * solid light-purple outline, a purple seat-number circle and the word Empty.
+ * No avatar. Clicking a seat that can still be taken opens the buy-in. A
+ * closed seat keeps the pill and does not take a click.
  *
  * Props:
  * - left/top: Position on the table

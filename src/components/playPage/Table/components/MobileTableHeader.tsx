@@ -38,6 +38,7 @@ import styles from "./TableHeader.module.css";
 import { TableSettingsOptions } from "./TableSettingsSidebar";
 import SngPayoutPanel from "../../SngPayoutPanel";
 import { MobileDrawerShell } from "./MobileDrawerShell";
+import type { TournamentStateDTO } from "../../../../types/tournament";
 import { hasValue } from "../../../../utils/guards";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
 import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
@@ -106,6 +107,8 @@ export interface MobileTableHeaderProps {
     replayHand?: number | null;
     /** Opens the blind-structure panel; the item shows only on SNG/tournament tables. */
     onOpenBlinds?: () => void;
+    /** Multi-table tournament record from the table's existing poll, for the payout box. */
+    tournament?: TournamentStateDTO;
 }
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
@@ -149,7 +152,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     handleShareHand,
     handleOpenReplay,
     replayHand = null,
-    onOpenBlinds
+    onOpenBlinds,
+    tournament
 }) => {
     const blindLevel = useBlindLevel();
     const [menuOpen, setMenuOpen] = useState(false);
@@ -422,7 +426,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     <>
                             {/* SNG payout structure first (self-gates to Sit & Go; mobile has no footer for it). */}
                             <div className="mobile-menu-payouts empty:hidden px-4 pt-2 pb-1 [&>div]:w-full">
-                                <SngPayoutPanel />
+                                <SngPayoutPanel tournament={tournament} />
                             </div>
                             {onOpenBlinds && blindLevel.isActive && (
                                 <button className={menuRowClass} onClick={closeMenuAnd(onOpenBlinds)} data-testid="open-blinds">

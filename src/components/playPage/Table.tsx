@@ -1425,6 +1425,7 @@ const Table = React.memo(() => {
                         gameOptions={gameOptions}
                         tableActivePlayers={tableActivePlayers}
                         runners={tournamentRunners(tournamentRecord)}
+                        tournament={tournamentRecord}
                         publicKey={publicKey}
                         formattedAddress={formattedAddress}
                         isBalanceLoading={isBalanceLoading}
@@ -1664,7 +1665,7 @@ const Table = React.memo(() => {
                         </div>
                         {gameFormat && isTournamentFormat(gameFormat) && (
                             <div className="absolute right-4 bottom-3 z-20">
-                                <SngPayoutPanel />
+                                <SngPayoutPanel tournament={tournamentRecord} />
                             </div>
                         )}
                     </div>
