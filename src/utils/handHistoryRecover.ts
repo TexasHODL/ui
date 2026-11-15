@@ -13,6 +13,7 @@ import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { PlayerHand, PlayerSession, PlayerSessionsResponse } from "../types/players";
 import type { HandListItem, HandListResponse } from "../pages/explorer/types";
 import { encodeStringField1, parseAbciStringResponse } from "./abciQuery";
+import { hasElements } from "./guards";
 import { handKey } from "./handHistory";
 import { playerHandFromState, unlistedHands } from "./handHistoryCards";
 import { GAME_STATE_PUBLIC_PATH, handEndedQuery, parseGameStateJson, parseTxSearchHeight, snapshotHeights } from "./handReplay";
@@ -47,7 +48,7 @@ const SESSION_PAGE = 100;
 const GAME_HAND_PAGE = 1000;
 
 async function collectPages<T>(
-    load: (offset: number) => Promise<{ data: T[]; pagination: { total: number } }>,
+    load: (offset: number) => Promise<{ data: T[] | null; pagination: { total: number } }>,
     signal?: AbortSignal
 ): Promise<T[]> {
     const out: T[] = [];
@@ -57,7 +58,9 @@ async function collectPages<T>(
         if (signal?.aborted) return out;
         const page = await load(offset);
         total = page.pagination.total;
-        if (page.data.length === 0) break;
+        // The indexer sends `data: null` when a table has no hands. That must not
+        // abandon every later table.
+        if (!hasElements(page.data)) break;
         out.push(...page.data);
         offset += page.data.length;
     }
