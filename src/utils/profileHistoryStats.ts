@@ -34,6 +34,7 @@ import { sessionBustFor, sessionLeaveBlock } from "./sessionBust";
 import { isCashFormat, isTournamentFormat } from "@block52/poker-vm-sdk";
 import { toGameFormat } from "./gameFormatUtils";
 import type { GamePrizeMeta } from "./transactionUtils";
+import { sameTournamentSession } from "./playerTournamentEntries";
 
 /** Dollars for a cash table. Chips for a Sit & Go or tournament. */
 export type HistoryMoneyUnit = "usd" | "chips";
@@ -272,11 +273,14 @@ export interface SettledSessionWindow {
  * settled session: the latest join of that table at or before the hand's end
  * block, and that seat has a cash-out (including 0.00). An open seat is left
  * out, the same way the buy-in, cash-out, and net cards skip it.
+ *
+ * A multi-table tournament row is one table id (`<tournamentId>-t1`) and covers
+ * a hand on every `<tournamentId>-t*` table.
  */
 export function handBelongsToSettledSession(hand: { gameId: string; blockHeight: number }, sessions: SettledSessionWindow[]): boolean {
     let owner: SettledSessionWindow | undefined;
     for (const session of sessions) {
-        if (session.gameId !== hand.gameId || !isNumber(session.joinBlock) || session.joinBlock > hand.blockHeight) continue;
+        if (!sameTournamentSession(session.gameId, hand.gameId) || !isNumber(session.joinBlock) || session.joinBlock > hand.blockHeight) continue;
         if (!hasValue(owner) || session.joinBlock >= owner.joinBlock) owner = session;
     }
     return hasValue(owner) && hasValue(owner.cashOut) && Number.isFinite(owner.cashOut);
