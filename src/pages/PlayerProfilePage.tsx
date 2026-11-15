@@ -10,11 +10,12 @@ import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
 import { MyHandsPanel } from "../components/players/MyHandsPanel";
-import { ProfileHeaderAvatar } from "../components/players/ProfileHeaderAvatar";
 import { ProfileHub } from "../components/players/ProfileHub";
+import { ProfileIdentity } from "../components/players/ProfileIdentity";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
 import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandContributions";
+import { useAddressUsdcBalance } from "../hooks/player/useAddressUsdcBalance";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
@@ -23,9 +24,16 @@ import { getCosmosAddress } from "../utils/cosmos/storage";
 import { PROFILE_TAB_PARAM, viewerAddress, visibleProfileTab } from "../utils/profileHub";
 import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
 import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
+import { usePlayerTournamentEntries } from "../hooks/player/usePlayerTournamentEntries";
 import { useSessionEliminationBlocks } from "../hooks/player/useSessionEliminationBlocks";
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
 import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
+import {
+    mergeTournamentSessionRows,
+    sessionMetasWithTournamentEntries,
+    tournamentFinishPlaceLabel,
+    withTournamentHandLeaveBlocks
+} from "../utils/playerTournamentEntries";
 import {
     defaultSessionVariant,
     filterSessionRows,
@@ -38,6 +46,7 @@ import {
 import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
+import { formatProfileWalletBalance } from "../utils/addressUsdcBalance";
 import { formatHandsPlayed, handsPlayedReadFailed } from "../utils/handsPlayed";
 import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
 import {
@@ -59,7 +68,7 @@ import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
 const NO_PROFIT_HANDS: HandContributionTarget[] = [];
-// Seven volume cards keep the old two- and four-column widths. The short last row is centered.
+// Eight volume cards: two full rows of four from the md breakpoint, two per row below it.
 const VOLUME_STAT_CARD = "w-[calc(50%-0.5rem)] shrink-0 md:w-[calc(25%-0.75rem)]";
 
 const formatUsd = (micro: number): string => {
@@ -83,7 +92,6 @@ export default function PlayerProfilePage() {
     const { address } = useParams<{ address: string }>();
     const navigate = useNavigate();
     const [sessionsPage, setSessionsPage] = useState(1);
-    const [copied, setCopied] = useState(false);
 
     const [gameFilter, setGameFilter] = useState("");
     const [openSessionKey, setOpenSessionKey] = useState<string | null>(null);
@@ -92,18 +100,35 @@ export default function PlayerProfilePage() {
     const { sessions, loading: sessionsLoading } = useAllPlayerSessions(address);
     // Chain prize claims. Empty on failure, so the cards and rows stay on the indexer.
     const { claims, loading: prizesLoading } = usePlayerPrizeClaims(address);
+    // MTT entry never joins a table, so the indexer has no session for it.
+    const { entries: tournamentEntries, loading: tournamentsLoading } = usePlayerTournamentEntries(address);
     const { address: walletAddress } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
     const [searchParams] = useSearchParams();
     const tab = visibleProfileTab(viewerAddress(walletAddress, getCosmosAddress()), address, searchParams.get(PROFILE_TAB_PARAM));
+    // Same Cosmos client as the table-header USDC balance, for the address being viewed. Stats only.
+    const walletBalance = useAddressUsdcBalance(tab === "stats" ? address : undefined);
+    const identityAddress = hasValue(profile) && hasContent(profile.player_address) ? profile.player_address : address;
     // Same hand list as My Hands. Loaded on Stats only, so the hands tab does not fetch it twice.
     const handHistory = useMyHandHistory(tab === "stats" && hasContent(address) ? address : null, `${currentNetwork.name}|${currentNetwork.rest}`, 1000);
     const gameIds = useMemo(
-        () => uniqueGameIds([...sessions.map(session => session.game_id), ...handHistory.hands.map(hand => hand.game_id)]),
-        [sessions, handHistory.hands]
+        () =>
+            uniqueGameIds([
+                ...sessions.map(session => session.game_id),
+                ...handHistory.hands.map(hand => hand.game_id),
+                ...tournamentEntries.map(entry => entry.gameId)
+            ]),
+        [sessions, handHistory.hands, tournamentEntries]
     );
-    const { byId: gamesById, loading: gamesLoading } = useSessionGameMeta(gameIds);
-    const rows = useMemo(() => sessionRowsWithPrizes(sessions, claims), [sessions, claims]);
+    const { byId: fetchedGames, loading: gamesLoading } = useSessionGameMeta(gameIds);
+    const gamesById = useMemo(
+        () => sessionMetasWithTournamentEntries(fetchedGames, tournamentEntries, handHistory.hands),
+        [fetchedGames, tournamentEntries, handHistory.hands]
+    );
+    const rows = useMemo(
+        () => mergeTournamentSessionRows(sessionRowsWithPrizes(sessions, claims), tournamentEntries, handHistory.hands, address),
+        [sessions, claims, tournamentEntries, handHistory.hands, address]
+    );
     const gameLabels = useMemo(() => sessionLabelsByGameId(gamesById), [gamesById]);
     const gameFilterOptions = useMemo(() => sessionGameFilterOptions(Object.values(gameLabels)), [gameLabels]);
     const defaultVariant = useMemo(() => defaultSessionVariant(rows, gameLabels), [rows, gameLabels]);
@@ -114,7 +139,11 @@ export default function PlayerProfilePage() {
     }, [filteredRows, sessionsPage]);
     // Every filtered bust, not only the visible page, so the longest session does not depend on which page is open.
     const eliminationLookups = useMemo(() => eliminationLookupsFor(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
-    const eliminationBlocks = useSessionEliminationBlocks(address, eliminationLookups);
+    const chainLeaveBlocks = useSessionEliminationBlocks(address, eliminationLookups);
+    const eliminationBlocks = useMemo(
+        () => withTournamentHandLeaveBlocks(chainLeaveBlocks, tournamentEntries, handHistory.hands),
+        [chainLeaveBlocks, tournamentEntries, handHistory.hands]
+    );
     const settledWindows = useMemo(
         () =>
             filteredRows.map(row => ({
@@ -179,7 +208,7 @@ export default function PlayerProfilePage() {
                 : null,
         [profile, sessions, claims, prizesLoading]
     );
-    const historyLoading = sessionsLoading || prizesLoading;
+    const historyLoading = sessionsLoading || prizesLoading || tournamentsLoading;
 
     useEffect(() => {
         document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Texas HODL` : "Player - Texas HODL";
@@ -199,20 +228,12 @@ export default function PlayerProfilePage() {
         setGameFilter(current => (gameFilterOptions.some(option => option.key === current) ? current : defaultVariant));
     }, [historyLoading, gamesLoading, defaultVariant, gameFilterOptions]);
 
-    const copyAddress = () => {
-        if (!address) return;
-        navigator.clipboard.writeText(address).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-        });
-    };
-
     return (
         <div className="site-page">
             <AnimatedBackground />
 
             <div className="site-page-content">
-                <ExplorerHeader title="Player Profile" />
+                <ExplorerHeader title="Player Profile" action={hasContent(identityAddress) ? <ProfileIdentity address={identityAddress} /> : undefined} />
 
                 <button onClick={() => navigate("/players")} className="mb-4 text-sm text-gray-400 hover:text-white transition-colors">
                     ← Back to players
@@ -241,22 +262,13 @@ export default function PlayerProfilePage() {
                     </div>
                 ) : (
                     <>
-                        {/* Header */}
-                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
-                            <div className="flex items-center gap-3 min-w-0">
-                                <ProfileHeaderAvatar address={profile.player_address} />
-                                <div className="flex items-center gap-3 flex-wrap min-w-0">
-                                    <span className={`font-mono text-sm break-all ${styles.brandText}`}>{profile.player_address}</span>
-                                    <button onClick={copyAddress} className="shrink-0 text-xs text-gray-400 hover:text-white transition-colors">
-                                        {copied ? "Copied!" : "Copy"}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Volume & money */}
+                        {/* Volume & money. Wallet Balance leads; Hands Played opens the second row. */}
                         <div className="mb-6 flex flex-wrap justify-center gap-4">
-                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
+                            <StatCard
+                                className={VOLUME_STAT_CARD}
+                                label="Wallet Balance"
+                                value={formatProfileWalletBalance(walletBalance.micro, walletBalance.loading, hasContent(walletBalance.error))}
+                            />
                             <StatCard
                                 className={VOLUME_STAT_CARD}
                                 label="Net Profit"
@@ -269,6 +281,7 @@ export default function PlayerProfilePage() {
                                 label="Total Cash-Out"
                                 value={hasValue(prizeMoney) ? formatUsd(prizeMoney.totalCashOuts) : "…"}
                             />
+                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
                             <StatCard className={VOLUME_STAT_CARD} label="Sessions" value={profile.session_count.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Total Actions" value={profile.total_actions.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Rake Contributed" value={formatUsd(profile.total_rake_contributed)} />
@@ -375,6 +388,11 @@ export default function PlayerProfilePage() {
                                                         const label = gameLabels[row.gameId];
                                                         const place = sessionPrizePlaceLabel(row, gamesById[row.gameId], profile.player_address);
                                                         const bust = sessionBustFor(row, rows, gamesById[row.gameId], profile.player_address);
+                                                        const finishPlace = tournamentFinishPlaceLabel(
+                                                            row.gameId,
+                                                            gamesById[row.gameId],
+                                                            profile.player_address
+                                                        );
                                                         const leaveBlock = sessionLeaveBlock(row, bust, eliminationBlocks[row.gameId]);
                                                         const cashOutAmount = settledSessionCashOut(row, hasValue(bust));
                                                         const sessionKey = `${row.gameId}-${row.joinBlock}-${i}`;
@@ -452,10 +470,7 @@ export default function PlayerProfilePage() {
                                                                 </td>
                                                                 <td className="align-top px-3 py-4 text-right text-gray-300 whitespace-normal sm:whitespace-nowrap sm:px-6 sm:align-middle">
                                                                     {row.isPrize && hasContent(row.prizeTxHash) ? (
-                                                                        <Link
-                                                                            to={`/explorer/tx/${row.prizeTxHash}`}
-                                                                            className={sessionPrizeCashOutClass()}
-                                                                        >
+                                                                        <Link to={`/explorer/tx/${row.prizeTxHash}`} className={sessionPrizeCashOutClass()}>
                                                                             <span className="rounded bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-300">
                                                                                 Prize
                                                                             </span>
@@ -486,9 +501,18 @@ export default function PlayerProfilePage() {
                                                                             )}
                                                                         </span>
                                                                     ) : hasValue(cashOutAmount) ? (
-                                                                        <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
-                                                                            {formatUsd(cashOutAmount)}
-                                                                        </span>
+                                                                        hasContent(finishPlace) ? (
+                                                                            <span className="inline-flex items-center justify-end gap-2">
+                                                                                <span className="text-xs font-semibold text-amber-200">{finishPlace}</span>
+                                                                                <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                    {formatUsd(cashOutAmount)}
+                                                                                </span>
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className={sessionCashOutAmountClass(row.buyIn, cashOutAmount)}>
+                                                                                {formatUsd(cashOutAmount)}
+                                                                            </span>
+                                                                        )
                                                                     ) : (
                                                                         "—"
                                                                     )}

@@ -1,4 +1,3 @@
-
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { ExplorerHeader } from "./ExplorerHeader";
@@ -56,5 +55,13 @@ describe("Consistent secondary page navigation", () => {
             </MemoryRouter>
         );
         expect(screen.getByRole("link", { name: "← Players" })).toHaveAttribute("href", "/players");
+    });
+    it("renders a heading action beside the title", () => {
+        render(
+            <MemoryRouter initialEntries={["/players/test-address"]}>
+                <ExplorerHeader title="Player profile" action={<span>identity</span>} />
+            </MemoryRouter>
+        );
+        expect(screen.getByText("identity").closest(".page-heading-action")).not.toBeNull();
     });
 });

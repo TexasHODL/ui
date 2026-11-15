@@ -23,8 +23,14 @@ describe("handEndedQuery", () => {
     });
     it("rejects values that could break out of the query", () => {
         expect(() => handEndedQuery("0xabc' OR 'x'='x", 1)).toThrow();
+        expect(() => handEndedQuery(`${GAME}-t1' OR 'x'='x`, 1)).toThrow();
+        expect(() => handEndedQuery(`${GAME}-t`, 1)).toThrow();
         expect(() => handEndedQuery(GAME, 0)).toThrow();
         expect(() => handEndedQuery(GAME, 1.5)).toThrow();
+    });
+
+    it("allows a multi-table tournament table id", () => {
+        expect(handEndedQuery(`${GAME}-t1`, 27)).toBe(`hand_ended.game_id='${GAME}-t1' AND hand_ended.hand_number='27'`);
     });
 });
 
