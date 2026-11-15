@@ -5,9 +5,9 @@ import { ModalHeader } from "../../common/ModalHeader";
  *
  * Represents an empty seat at the poker table.
  *
- * On a multi-table tournament table the empty seat is the blank pill: the
- * same size as a player pill, opaque frost, and only a purple seat-number
- * circle. Cash and sit & go keep the vacant place card (plus, title, label).
+ * On a tournament table, single-table or multi-table, the empty seat is the
+ * blank pill: the same size as a player pill, opaque frost, and only a purple
+ * seat-number circle. Cash and sit & go keep the vacant place card.
  * Clicking a seat that can still be taken opens the buy-in. A closed seat
  * stays where it is and does not take a click.
  *
@@ -249,7 +249,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                 : vacantSeatText(index, false, canJoinThisSeat, seatDrawn),
             [isUserAlreadyPlaying, joinClosed, canJoinThisSeat, index, seatDrawn]
         );
-        const blankPill = showsBlankSeatPill(gameState, tableId);
+        const blankPill = showsBlankSeatPill(gameFormat, gameState, tableId);
 
         // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
         const handleDepositClick = useCallback(() => {
