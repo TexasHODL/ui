@@ -1137,8 +1137,8 @@ html.table-page-lock .app-shell {
     }
 }
 
-/* An empty seat is the same size and place as a player pill: hollow, with a
-   solid light-purple outline, the seat number in a purple circle and the
+/* An empty seat is the same size and place as a player pill: frosted glass,
+   a solid light-purple outline, the seat number in a purple circle and the
    word Empty. No avatar. The button chrome stays clear so it does not paint
    the old rail bar. */
 .table-container button.player-seat.vacant-seat {
@@ -1163,9 +1163,14 @@ html.table-page-lock .app-shell {
     cursor: default;
 }
 .table-container .badge-container.badge-empty {
-    background: transparent;
+    /* Same frosting as the seat glass on main: a translucent tint, a light
+       sheen, and a backdrop blur, so the felt shows through. The outline
+       stays a solid light purple. */
+    background: linear-gradient(145deg, #ffffff08, #ffffff02), var(--empty-seat-glass, rgba(36, 24, 49, 0.20));
     border: 1.5px solid rgba(214, 178, 239, 0.7);
-    box-shadow: none;
+    box-shadow: 0 6px 20px #0005, inset 0 1px 0 #ffffff12;
+    -webkit-backdrop-filter: blur(var(--empty-seat-blur, 3px)) saturate(130%);
+    backdrop-filter: blur(var(--empty-seat-blur, 3px)) saturate(130%);
 }
 .table-container .badge-container.badge-empty .badge-value {
     color: var(--theme-ink, #f4eafc);
