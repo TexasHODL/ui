@@ -10,11 +10,12 @@ import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
 import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
 import { MyHandsPanel } from "../components/players/MyHandsPanel";
-import { ProfileHeaderAvatar } from "../components/players/ProfileHeaderAvatar";
 import { ProfileHub } from "../components/players/ProfileHub";
+import { ProfileIdentity } from "../components/players/ProfileIdentity";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
 import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandContributions";
+import { useAddressUsdcBalance } from "../hooks/player/useAddressUsdcBalance";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
@@ -45,6 +46,7 @@ import {
 import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "../utils/sessionCashOut";
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
+import { formatProfileWalletBalance } from "../utils/addressUsdcBalance";
 import { formatHandsPlayed, handsPlayedReadFailed } from "../utils/handsPlayed";
 import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
 import {
@@ -66,7 +68,7 @@ import styles from "./explorer/AllAccountsPage.module.css";
 
 const SESSIONS_PAGE_SIZE = 20;
 const NO_PROFIT_HANDS: HandContributionTarget[] = [];
-// Seven volume cards keep the old two- and four-column widths. The short last row is centered.
+// Eight volume cards: two full rows of four from the md breakpoint, two per row below it.
 const VOLUME_STAT_CARD = "w-[calc(50%-0.5rem)] shrink-0 md:w-[calc(25%-0.75rem)]";
 
 const formatUsd = (micro: number): string => {
@@ -90,7 +92,6 @@ export default function PlayerProfilePage() {
     const { address } = useParams<{ address: string }>();
     const navigate = useNavigate();
     const [sessionsPage, setSessionsPage] = useState(1);
-    const [copied, setCopied] = useState(false);
 
     const [gameFilter, setGameFilter] = useState("");
     const [openSessionKey, setOpenSessionKey] = useState<string | null>(null);
@@ -105,6 +106,9 @@ export default function PlayerProfilePage() {
     const { currentNetwork } = useNetwork();
     const [searchParams] = useSearchParams();
     const tab = visibleProfileTab(viewerAddress(walletAddress, getCosmosAddress()), address, searchParams.get(PROFILE_TAB_PARAM));
+    // Same Cosmos client as the table-header USDC balance, for the address being viewed. Stats only.
+    const walletBalance = useAddressUsdcBalance(tab === "stats" ? address : undefined);
+    const identityAddress = hasValue(profile) && hasContent(profile.player_address) ? profile.player_address : address;
     // Same hand list as My Hands. Loaded on Stats only, so the hands tab does not fetch it twice.
     const handHistory = useMyHandHistory(tab === "stats" && hasContent(address) ? address : null, `${currentNetwork.name}|${currentNetwork.rest}`, 1000);
     const gameIds = useMemo(
@@ -224,20 +228,12 @@ export default function PlayerProfilePage() {
         setGameFilter(current => (gameFilterOptions.some(option => option.key === current) ? current : defaultVariant));
     }, [historyLoading, gamesLoading, defaultVariant, gameFilterOptions]);
 
-    const copyAddress = () => {
-        if (!address) return;
-        navigator.clipboard.writeText(address).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-        });
-    };
-
     return (
         <div className="site-page">
             <AnimatedBackground />
 
             <div className="site-page-content">
-                <ExplorerHeader title="Player Profile" />
+                <ExplorerHeader title="Player Profile" action={hasContent(identityAddress) ? <ProfileIdentity address={identityAddress} /> : undefined} />
 
                 <button onClick={() => navigate("/players")} className="mb-4 text-sm text-gray-400 hover:text-white transition-colors">
                     ← Back to players
@@ -266,22 +262,13 @@ export default function PlayerProfilePage() {
                     </div>
                 ) : (
                     <>
-                        {/* Header */}
-                        <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
-                            <div className="flex items-center gap-3 min-w-0">
-                                <ProfileHeaderAvatar address={profile.player_address} />
-                                <div className="flex items-center gap-3 flex-wrap min-w-0">
-                                    <span className={`font-mono text-sm break-all ${styles.brandText}`}>{profile.player_address}</span>
-                                    <button onClick={copyAddress} className="shrink-0 text-xs text-gray-400 hover:text-white transition-colors">
-                                        {copied ? "Copied!" : "Copy"}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Volume & money */}
+                        {/* Volume & money. Wallet Balance leads; Hands Played opens the second row. */}
                         <div className="mb-6 flex flex-wrap justify-center gap-4">
-                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
+                            <StatCard
+                                className={VOLUME_STAT_CARD}
+                                label="Wallet Balance"
+                                value={formatProfileWalletBalance(walletBalance.micro, walletBalance.loading, hasContent(walletBalance.error))}
+                            />
                             <StatCard
                                 className={VOLUME_STAT_CARD}
                                 label="Net Profit"
@@ -294,6 +281,7 @@ export default function PlayerProfilePage() {
                                 label="Total Cash-Out"
                                 value={hasValue(prizeMoney) ? formatUsd(prizeMoney.totalCashOuts) : "…"}
                             />
+                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
                             <StatCard className={VOLUME_STAT_CARD} label="Sessions" value={profile.session_count.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Total Actions" value={profile.total_actions.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Rake Contributed" value={formatUsd(profile.total_rake_contributed)} />

@@ -1,8 +1,11 @@
+import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { PageHeading } from "../common/PageHeading";
 
 interface ExplorerHeaderProps {
     title?: string;
+    /** Sits on the heading row, beside the title on a wide screen and under it on a phone. */
+    action?: ReactNode;
 }
 
 const explorerSections = [
@@ -21,7 +24,7 @@ const awardsHeading = {
 
 const headings = [...explorerSections, awardsHeading];
 
-export const ExplorerHeader = ({ title = "Block explorer" }: ExplorerHeaderProps) => {
+export const ExplorerHeader = ({ title = "Block explorer", action }: ExplorerHeaderProps) => {
     const { pathname } = useLocation();
     const section = headings.find(item => item.href === pathname);
     const explorer = pathname.startsWith("/explorer");
@@ -43,6 +46,7 @@ export const ExplorerHeader = ({ title = "Block explorer" }: ExplorerHeaderProps
                 description={description}
                 backTo={pathname.startsWith("/players/") ? "/players" : pathname.startsWith("/node/") ? "/nodes" : "/"}
                 backLabel={pathname.startsWith("/players/") ? "Players" : pathname.startsWith("/node/") ? "Network nodes" : "Lobby"}
+                action={action}
             />
             {explorer && (
                 <nav className="page-section-tabs" aria-label="Explorer sections">
