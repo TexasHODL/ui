@@ -5,11 +5,11 @@ import { ModalHeader } from "../../common/ModalHeader";
  *
  * Represents an empty seat at the poker table.
  *
- * An empty seat is the same size and place as a player pill: frosted glass,
- * a solid light-purple outline, and only a purple seat-number circle on the
- * left. No avatar and no "Empty" word. The button is named for screen readers.
+ * On a multi-table tournament table the empty seat is the blank pill: the
+ * same size as a player pill, opaque frost, and only a purple seat-number
+ * circle. Cash and sit & go keep the vacant place card (plus, title, label).
  * Clicking a seat that can still be taken opens the buy-in. A closed seat
- * keeps the pill and does not take a click.
+ * stays where it is and does not take a click.
  *
  * Props:
  * - left/top: Position on the table
@@ -30,7 +30,9 @@ import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
 import { hasElements, isNullish } from "../../../utils/guards";
 import { seatsAreDrawn } from "../../../utils/seatDraw";
-import { joinSeatButtonLabel, SEAT_DRAW_NOTE } from "../../../utils/vacantSeatText";
+import { showsBlankSeatPill } from "../../../utils/blankSeatPill";
+import { viteEnv } from "../../../utils/viteEnv";
+import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "../../../utils/vacantSeatText";
 import Badge from "../common/Badge";
 import playerStyles from "./PlayersCommon.module.css";
 import { useNetwork } from "../../../context/NetworkContext";
@@ -40,13 +42,13 @@ import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
 
 const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo(
-    ({ left, top, index, onJoin, uiPosition }) => {
+    ({ left, top, index, onJoin, uiPosition, tournamentOver = false }) => {
         const { isUserAlreadyPlaying, canJoinSeat: checkCanJoinSeat } = useVacantSeatData();
         const tableId = useTableId();
         const { gameOptions } = useGameOptions();
         const { gameState, gameFormat } = useGameStateContext();
         // A directed table never takes a walk-up, and a started tournament with no late
-        // registration left keeps the empty pill but does not open a buy-in.
+        // registration left has nothing to say on an empty seat.
         const seatClosed = useMemo(() => isRegistrationClosed(gameState, gameFormat, Date.now()), [gameState, gameFormat]);
         const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState) || seatClosed;
         const cancelledBeforeStart = scheduledSngPhase({
@@ -237,6 +239,18 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             [left, top]
         );
 
+        // Memoize seat text
+        const seatText = useMemo(
+            () => joinClosed || isUserAlreadyPlaying
+                ? {
+                    title: seatDrawn ? "Open seat" : "Seat " + index,
+                    subtitle: "Open seat"
+                }
+                : vacantSeatText(index, false, canJoinThisSeat, seatDrawn),
+            [isUserAlreadyPlaying, joinClosed, canJoinThisSeat, index, seatDrawn]
+        );
+        const blankPill = showsBlankSeatPill(gameState, tableId);
+
         // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
         const handleDepositClick = useCallback(() => {
             setShowBuyInModal(false); // Ensure buy-in modal is closed
@@ -245,16 +259,22 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         return (
             <>
                 <button
-                    className={`player-seat vacant-seat absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 z-[10] ${playerStyles.secondaryText} ${playerStyles.positionTransition} ${!isUserAlreadyPlaying && canJoinThisSeat ? "cursor-pointer" : ""}`}
+                    className={blankPill
+                        ? `player-seat vacant-seat absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 z-[10] ${playerStyles.secondaryText} ${playerStyles.positionTransition} ${!isUserAlreadyPlaying && canJoinThisSeat ? "cursor-pointer" : ""}`
+                        : "vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"}
                     style={containerStyle}
                     type="button"
                     disabled={isUserAlreadyPlaying || !canJoinThisSeat}
                     onClick={handleSeatClick}
-                    aria-label={`Seat ${index}, empty`}
-                    data-testid="empty-seat"
+                    aria-label={blankPill
+                        ? `Seat ${index}, empty`
+                        : !isUserAlreadyPlaying && canJoinThisSeat
+                            ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`)
+                            : `Seat ${index} unavailable`}
+                    data-testid={blankPill ? "empty-seat" : undefined}
                 >
                     {/* Development Mode Debug Info */}
-                    {import.meta.env.VITE_NODE_ENV === "development" && (
+                    {viteEnv.VITE_NODE_ENV === "development" && (
                         <div className="absolute top-[-50px] left-1/2 transform -translate-x-1/2 bg-gray-600 bg-opacity-80 text-white px-2 py-1 rounded text-[12px] whitespace-nowrap z-50 border border-gray-400">
                             <div className="text-gray-300">UI Pos: {uiPosition ?? "N/A"}</div>
                             <div className="text-yellow-300">Vacant Seat: {index}</div>
@@ -263,15 +283,29 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             </div>
                         </div>
                     )}
-                    <div className="player-cards flex justify-center gap-1">
-                        <div className="w-[120px] h-[80px]" />
-                    </div>
-                    <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
-                        <div className="w-full h-[55px]" />
-                        <div className="player-badge-position absolute top-[-10px] w-full">
-                            <Badge count={index} value={0} empty />
-                        </div>
-                    </div>
+                    {blankPill ? (
+                        <>
+                            <div className="player-cards flex justify-center gap-1">
+                                <div className="w-[120px] h-[80px]" />
+                            </div>
+                            <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
+                                <div className="w-full h-[55px]" />
+                                <div className="player-badge-position absolute top-[-10px] w-full">
+                                    <Badge count={index} value={0} empty />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        !tournamentOver && !seatClosed && (
+                            <>
+                                <span className="vacant-seat-plus" aria-hidden="true">
+                                    +
+                                </span>
+                                <span className="vacant-seat-title">{seatText.title}</span>
+                                <span className="vacant-seat-label">{seatText.subtitle}</span>
+                            </>
+                        )
+                    )}
                 </button>
 
                 {/* Buy-in modal - using portal to render at document body */}
@@ -459,7 +493,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
     },
     (prevProps, nextProps) => {
         // Custom comparison function for memo
-        return prevProps.left === nextProps.left && prevProps.top === nextProps.top && prevProps.index === nextProps.index;
+        return prevProps.left === nextProps.left && prevProps.top === nextProps.top && prevProps.index === nextProps.index && prevProps.tournamentOver === nextProps.tournamentOver;
     }
 );
 
