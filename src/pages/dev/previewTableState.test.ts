@@ -25,6 +25,19 @@ describe("parsePreviewSearch", () => {
         });
     });
 
+    it("finished=4 seats the first four with places and leaves the rest empty", () => {
+        const options = parsePreviewSearch(new URLSearchParams("seats=9&format=tournament&finished=4&holes=0"));
+        expect(options.finishedSeats).toBe(4);
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.players).toHaveLength(4);
+        expect(state.gameOptions.maxPlayers).toBe(9);
+        expect(state.handNumber).toBe(12);
+        expect(state.previousActions).toEqual([]);
+        expect(state.results.map(result => result.place)).toEqual([1, 2, 3, 4]);
+        expect(state.results.map(result => result.payout)).toEqual(["5600000", "3360000", "2240000", "0"]);
+    });
+
     it("prizes=bubble is a display fixture for the 25200 and 10800 prizes", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=4&format=sng&prizes=bubble"));
         expect(options.bubblePrizes).toBe(true);

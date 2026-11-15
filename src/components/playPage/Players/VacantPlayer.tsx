@@ -28,7 +28,9 @@ import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
 import { hasElements, isNullish } from "../../../utils/guards";
 import { seatsAreDrawn } from "../../../utils/seatDraw";
+import { emptySeatVariantFromSearch } from "../../../utils/emptySeatPreview";
 import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "../../../utils/vacantSeatText";
+import { EmptySeatMark } from "./EmptySeatMark";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { hasTournamentStarted, isRegistrationClosed, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
@@ -69,6 +71,8 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
 
         // Memoize seat status checks
         const canJoinThisSeat = useMemo(() => !joinClosed && checkCanJoinSeat(index), [checkCanJoinSeat, index, joinClosed]);
+        // Temporary mockup only. Absent means the seat renders exactly as it does today.
+        const emptySeatPreview = emptySeatVariantFromSearch(window.location.search);
 
         useEffect(() => {
             if (joinClosed) setShowBuyInModal(false);
@@ -253,12 +257,13 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         return (
             <>
                 <button
-                    className="vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                    className={`vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2${emptySeatPreview ? ` vacant-seat-preview vacant-seat-preview-${emptySeatPreview}${emptySeatPreview === "d" && canJoinThisSeat ? " is-joinable" : ""}` : ""}`}
                     style={containerStyle}
                     type="button"
                     disabled={isUserAlreadyPlaying || !canJoinThisSeat}
                     onClick={handleSeatClick}
                     aria-label={!isUserAlreadyPlaying && canJoinThisSeat ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`) : `Seat ${index} unavailable`}
+                    data-empty-seat={emptySeatPreview ?? undefined}
                 >
                     {/* Development Mode Debug Info */}
                     {import.meta.env.VITE_NODE_ENV === "development" && (
@@ -271,8 +276,11 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                         </div>
                     )}
                     {/* Once registration is over, or the tournament is over, the seat stays
-                        where it is and says nothing: no plus, no "Open Seat". */}
-                    {!tournamentOver && !seatClosed && (
+                        where it is and says nothing: no plus, no "Open Seat".
+                        ?emptySeat= draws a mockup in that same spot. */}
+                    {emptySeatPreview ? (
+                        <EmptySeatMark variant={emptySeatPreview} seat={index} joinable={!isUserAlreadyPlaying && canJoinThisSeat} />
+                    ) : !tournamentOver && !seatClosed && (
                         <>
                             <span className="vacant-seat-plus" aria-hidden="true">
                                 +

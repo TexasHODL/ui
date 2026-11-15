@@ -42,6 +42,9 @@ export type PreviewRunout = (typeof PREVIEW_RUNOUTS)[number];
 
 const COMMUNITY = ["AH", "KD", "QC", "JH", "TS"];
 
+/** Preview finishing places: the 50/30/20 amounts from a $11.20 pool, then unpaid. */
+const FINISHED_PLACE_PAYOUTS = ["5600000", "3360000", "2240000"];
+
 export interface PreviewOptions {
     seats: PreviewSeatCount;
     /** Single dealer seat, 1-based. Ignored visually while allDealers is set. */
@@ -71,6 +74,11 @@ export interface PreviewOptions {
      * fee, chain payouts 25200 and 10800 micro-USDC. Not a live table.
      */
     bubblePrizes?: boolean;
+    /**
+     * finished=<n>: only the first n seats are occupied, each with a finishing
+     * place. The rest of the table is empty. Preview only.
+     */
+    finishedSeats?: number;
     /**
      * modal=entry leaves seat 1 empty so the take-your-seat dialog opens.
      * modal=waiting seats the hero at a tournament that has not started.
@@ -142,7 +150,9 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const winSeat = win && !winAll && winParam !== 1 ? winParam : undefined;
     const noBets = params.get("bet") === "none";
     const bubblePrizes = params.get("prizes") === "bubble";
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
+    const finishedParam = Number(params.get("finished"));
+    const finishedSeats = Number.isInteger(finishedParam) && finishedParam >= 1 && finishedParam < seats ? finishedParam : undefined;
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(finishedSeats ? { finishedSeats } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -157,6 +167,7 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.win) params.set("win", options.winAll ? "all" : String(options.winSeat ?? 1));
     if (options.noBets) params.set("bet", "none");
     if (options.bubblePrizes) params.set("prizes", "bubble");
+    if (options.finishedSeats) params.set("finished", String(options.finishedSeats));
     if (options.dialog) params.set("modal", options.dialog);
     if (options.runout) params.set("runout", options.runout);
     return params;
@@ -423,7 +434,8 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
     const previousActions: ActionDTO[] = [];
     let pot = 0n;
 
-    for (let seat = 1; seat <= options.seats; seat++) {
+    const occupied = options.finishedSeats ?? options.seats;
+    for (let seat = 1; seat <= occupied; seat++) {
         const address = previewSeatAddress(seat, heroAddress);
         // Tournament / Sit & Go amounts are raw chips (650 per seat, level-7 blinds); cash is USDC micro-units.
         const amount = options.noBets ? "0" : String(options.format === "cash" ? 20000 * seat : 650 * seat);
@@ -437,8 +449,10 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             index: seat,
             timestamp: Date.now()
         };
+        // A finished-place fixture is between hands: nobody acted in this snapshot,
+        // so the place pill is not still "this hand".
         // No bets out: seat 1 has not acted yet, so checking stays free for the hero.
-        if (!(options.noBets && seat === 1)) previousActions.push(action);
+        if (!options.finishedSeats && !(options.noBets && seat === 1)) previousActions.push(action);
         players.push({
             address,
             seat,
@@ -446,16 +460,16 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             isSmallBlind: seat === 1,
             isBigBlind: seat === Math.min(2, options.seats),
             isDealer: seat === options.dealer,
-            holeCards: options.holeCards
-                ? (seat === 1
+            holeCards: options.finishedSeats || !options.holeCards
+                ? undefined
+                : (seat === 1
                     ? (options.holeCount === 4 ? ["AS", "KD", "QC", "JH"] : ["AS", "KD"])
                     : seat === options.winSeat || options.winAll
                       ? (options.holeCount === 4 ? PREVIEW_WIN_CARDS_4 : PREVIEW_WIN_CARDS)
-                      : (options.holeCount === 4 ? ["??", "??", "??", "??"] : ["??", "??"]))
-                : undefined,
+                      : (options.holeCount === 4 ? ["??", "??", "??", "??"] : ["??", "??"])),
             status: PlayerStatus.ACTIVE,
-            ...((seat === options.winSeat || (options.winAll && seat !== 1)) && options.holeCards ? { cardsShown: true } : {}),
-            lastAction: options.noBets && seat === 1 ? undefined : action,
+            ...((seat === options.winSeat || (options.winAll && seat !== 1)) && options.holeCards && !options.finishedSeats ? { cardsShown: true } : {}),
+            lastAction: options.finishedSeats || (options.noBets && seat === 1) ? undefined : action,
             legalActions: heroTurn && seat === 1
                 ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1, !!options.noBets))
                 : [],
@@ -493,8 +507,8 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
         totalPot: totalPot.toString(),
         nextToAct: heroTurn ? 1 : Math.min(2, options.seats),
         previousActions,
-        actionCount: options.seats,
-        handNumber: 1,
+        actionCount: options.finishedSeats ? 0 : options.seats,
+        handNumber: options.finishedSeats ? 12 : 1,
         round,
         winners: !options.win
             ? []
@@ -506,7 +520,13 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
                 name: undefined,
                 description: undefined
             })),
-        results: options.bubblePrizes
+        results: options.finishedSeats
+            ? Array.from({ length: options.finishedSeats }, (_, index) => ({
+                place: index + 1,
+                playerId: previewSeatAddress(index + 1, heroAddress),
+                payout: FINISHED_PLACE_PAYOUTS[index] ?? "0"
+            }))
+            : options.bubblePrizes
             ? [
                 { place: 1, playerId: previewSeatAddress(Math.min(2, options.seats), heroAddress), payout: "25200" },
                 { place: 2, playerId: previewSeatAddress(1, heroAddress), payout: "10800" }
