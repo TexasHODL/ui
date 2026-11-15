@@ -1169,14 +1169,13 @@ html.table-page-lock .app-shell {
     cursor: default;
 }
 .table-container .badge-container.badge-empty {
-    /* Opaque frost in the player-pill tone. Ninety percent still let the
-       rail and felt chevrons read through at 3x, so the fill is solid and
-       the frost is only the short top sheen. No diagonal glint, no
-       backdrop blur. */
-    background-color: var(--theme-surface, #140e1d);
-    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%);
+    /* See-through: one flat tint in the player-pill tone, so the rail line
+       reads through the pill while the faint felt chevrons and logo fade
+       out. No blur, no saturate, no sheen or glint: nothing smears or
+       reflects the felt. The outline stays a solid light purple. */
+    background: var(--empty-seat-tint, rgba(20, 14, 29, 0.62));
     border: 1.5px solid rgba(214, 178, 239, 0.7);
-    box-shadow: 0 4px 14px #0007;
+    box-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }

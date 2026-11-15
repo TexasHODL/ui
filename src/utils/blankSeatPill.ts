@@ -1,8 +1,8 @@
 /**
  * Which empty seat a table draws.
  *
- * A tournament table draws the blank pill: the player-pill size, an opaque
- * frost, and only the seat number. That is a single-table tournament
+ * A tournament table draws the blank pill: the player-pill size, a see-through
+ * tint, and only the seat number. That is a single-table tournament
  * (`format` tournament) and a directed multi-table table (root `tournamentId`,
  * or a `<tournamentId>-t<n>` game id). Cash and sit & go keep the vacant
  * seat place card.
