@@ -180,7 +180,8 @@ describe("BlindsPanel sidebar variant (PC)", () => {
         mockUseBlindLevel.mockReturnValue(activeInfo());
         render(<BlindsPanel hideTab variant="drawer" openSignal={1} />);
         const drawer = screen.getByTestId("blinds-drawer");
-        expect(drawer).toHaveClass("overflow-y-auto", "max-h-[100dvh]");
+        expect(drawer).toHaveClass("mobile-drawer");
+        expect(drawer.querySelector(".mobile-drawer-content")).not.toBeNull();
         expect(drawer).toHaveTextContent("Blinds");
         expect(drawer).toContainElement(screen.getByTestId("blinds-panel"));
         expect(drawer.querySelector(".settings-blinds-list-flow")).not.toBeNull();

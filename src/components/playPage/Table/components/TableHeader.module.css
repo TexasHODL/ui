@@ -1,10 +1,14 @@
-.headerRoot {
-    background: linear-gradient(to right, var(--table-bg-gradient-start), var(--table-bg-gradient-mid), var(--table-bg-gradient-end));
-    border-color: var(--table-border-color);
+/* Phone banner: the PC .roomHeader surface and hairline (below), from theme
+   tokens only. The --table-bg-gradient-* build colours no longer paint it. */
+.mobileBanner {
+    background: var(--theme-surface, #0c0811ed);
+    border-bottom: 1px solid var(--theme-line, #ffffff12);
 }
 
-.subHeaderRoot {
-    background: linear-gradient(to right, var(--table-bg-gradient-start), var(--table-bg-gradient-mid), var(--table-bg-gradient-end));
+/* Phone slim status row: the PC .roomStatus surface. */
+.mobileBannerStatus {
+    background: var(--theme-surface, #0c0811ed);
+    border-bottom: 1px solid var(--theme-line, #ffffff09);
 }
 
 .bottomGlow {

@@ -112,8 +112,8 @@ export interface MobileTableHeaderProps {
 }
 
 /** Shared row styling: every drawer item is a ≥44px tap target. */
-// PC Settings label size (text-xs = 14px, semibold); the row stays a 44px tap target.
-const menuRowClass = "w-full min-h-[44px] flex items-center gap-3 px-4 text-xs font-semibold text-left text-white transition-colors duration-150 hover:bg-white/10";
+// PC Settings rows (.settings-toggle-row tokens, Table.css): text-xs semibold, a hairline divider, a 44px tap target.
+const menuRowClass = "mobile-drawer-row text-xs font-semibold text-white";
 
 export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     tableId,
@@ -280,7 +280,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                 22px row below. */}
             <div
                 ref={rowRef}
-                className={`mobile-header-row w-full min-h-[44px] flex items-center relative z-[100] border-b-2 ${styles.headerRoot}`}
+                className={`mobile-header-row w-full min-h-[44px] flex items-center relative z-[100] ${styles.mobileBanner}`}
                 style={{
                     paddingTop: "env(safe-area-inset-top)",
                     paddingLeft: "calc(env(safe-area-inset-left) + 12px)",
@@ -344,7 +344,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
 
             {!statusInline && (
                 <div
-                    className={`mobile-status-fallback sub-header z-[1] ${styles.subHeaderRoot} ${styles.mobileStatus}`}
+                    className={`mobile-status-fallback sub-header z-[1] ${styles.mobileBannerStatus} ${styles.mobileStatus}`}
                     style={{ paddingLeft: "env(safe-area-inset-left)", paddingRight: "env(safe-area-inset-right)" }}
                 >
                     {renderStatus(true)}
@@ -361,7 +361,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     <>
                             {/* Game info (read-only) */}
                             {gameOptions && (
-                                <div className="px-4 py-2 border-b border-white/10">
+                                <div className="mobile-drawer-row">
                                     <span className={`text-xs font-semibold ${styles.brandText}`}>
                                         {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay)} • ` : ""}
                                         {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
@@ -373,7 +373,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             )}
 
                             {/* Network */}
-                            <div className="px-4 py-2 flex items-center gap-3 border-b border-white/10">
+                            <div className="mobile-drawer-row">
                                 <span className="text-xs text-gray-400">Network</span>
                                 <NetworkSelector />
                             </div>
@@ -425,7 +425,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     "table-menu-drawer",
                     <>
                             {/* SNG payout structure first (self-gates to Sit & Go; mobile has no footer for it). */}
-                            <div className="mobile-menu-payouts empty:hidden px-4 pt-2 pb-1 [&>div]:w-full">
+                            <div className="mobile-menu-payouts empty:hidden py-2 [&>div]:w-full">
                                 <SngPayoutPanel tournament={tournament} />
                             </div>
                             {onOpenBlinds && blindLevel.isActive && (
@@ -479,8 +479,8 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             )}
 
                             {/* In-game settings, inline (formerly a separate Settings panel). */}
-                        <div className="mobile-menu-settings px-4 py-2 border-t border-white/10" role="group" aria-label="Settings">
-                            <p className="text-[12px] text-gray-400 font-semibold uppercase tracking-wide mb-1">Settings</p>
+                        <div className="mobile-menu-settings pt-2" role="group" aria-label="Settings">
+                            <p className="mobile-drawer-section">Settings</p>
                             <TableSettingsOptions
                                 tableStyle={tableStyle}
                                 onTableStyleChange={onTableStyleChange}
@@ -493,7 +493,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                                 tapping an open seat, and this is what tells a first-time
                                 player that (#684). */}
                             {!isCurrentUserSeated && (
-                                <div className={`${menuRowClass} cursor-default hover:bg-transparent`}>
+                                <div className={`${menuRowClass} cursor-default`}>
                                     <span className="animate-pulse w-2 h-2 rounded-full bg-blue-400 shrink-0" />
                                     <span className="text-blue-300 text-xs">
                                         {registrationClosed ? "You’re watching" : isTableFull ? "Spectating — the table is full" : "Spectating — tap an open seat to join"}
@@ -506,7 +506,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             {/* Destructive action, isolated at the bottom of the menu */}
                             {showLeaveTable && (
                                 <button
-                                    className={`${menuRowClass} border-t border-white/10 text-red-400 hover:bg-red-500/10 ${styles.leaveTableButton}`}
+                                    className={`${menuRowClass} text-red-400 ${styles.leaveTableButton}`}
                                     onClick={closeMenuAnd(handleLeaveTableClick)}
                                 >
                                     <RxExit size={16} />
