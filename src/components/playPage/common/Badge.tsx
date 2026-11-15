@@ -42,9 +42,9 @@ type BadgeProps = {
     playerEquity?: number | null;
     onSitIn?: () => void;
     /**
-     * An empty seat. Same outer pill as a player, hollow, with the seat
-     * number in a purple circle and the word Empty. No stack, name, place
-     * or avatar.
+     * An empty seat. Same outer pill as a player: frosted, outlined, with
+     * only the seat number in a purple circle on the left. No "Empty" label,
+     * stack, name, place or avatar. A hidden spacer keeps the pill's size.
      */
     empty?: boolean;
     // Rendered just outside the pill, left of the seat number: the player's
@@ -304,7 +304,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
         return (
             <div className="badge-container badge-empty" data-testid="empty-seat-pill">
                 <div style={{ backgroundColor: "#b14cff" }} className="badge-number">{count}</div>
-                <div className="badge-value">Empty</div>
+                <div className="badge-value" aria-hidden="true"><span className="empty-seat-value-spacer">$00.00</span></div>
             </div>
         );
     }
