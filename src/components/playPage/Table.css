@@ -792,7 +792,7 @@ html.table-page-lock .app-shell {
    the same surface, border, radius, heading, padding and row dividers. They
    float below the banners (--table-banner-end, like every table dialog) and
    use theme tokens only, so light theme works and build colours do not leak. */
-.mobile-drawer-backdrop { position: fixed; inset: 0; top: var(--table-banner-end, 0px); z-index: 1999; background: #0009; }
+.mobile-drawer-backdrop { position: fixed; inset: 0; z-index: 1999; background: linear-gradient(to bottom, transparent var(--table-banner-end, 0px), #0009 var(--table-banner-end, 0px)); touch-action: none; }
 .mobile-drawer {
     position: fixed;
     z-index: 2000;
