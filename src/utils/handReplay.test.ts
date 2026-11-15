@@ -28,6 +28,8 @@ describe("handEndedQuery", () => {
     });
     it("rejects values that could break out of the query", () => {
         expect(() => handEndedQuery("0xabc' OR 'x'='x", 1)).toThrow("Invalid table id");
+        expect(() => handEndedQuery(`${GAME}-t1' OR 'x'='x`, 1)).toThrow("Invalid table id");
+        expect(() => handEndedQuery(`${GAME}-t`, 1)).toThrow("Invalid table id");
         expect(() => handEndedQuery("0xabc -t1", 1)).toThrow("Invalid table id");
         expect(() => handEndedQuery("0xabc;drop", 1)).toThrow("Invalid table id");
         expect(() => handEndedQuery(GAME, 0)).toThrow();
