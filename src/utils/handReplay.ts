@@ -31,7 +31,9 @@ export function handStartedQuery(gameId: string, handNumber: number): string {
 }
 
 function handEventQuery(event: "hand_ended" | "hand_started", gameId: string, handNumber: number): string {
-    if (!/^[A-Za-z0-9]+$/.test(gameId)) {
+    // Cash and sit-and-go ids are alphanumeric. A multi-table tournament table
+    // is `<tournamentId>-t<n>`. Anything else can break out of the quotes.
+    if (!/^[A-Za-z0-9]+(-t\d+)?$/.test(gameId)) {
         throw new Error(`Invalid table id: ${gameId}`);
     }
     if (!Number.isInteger(handNumber) || handNumber < 1) {
