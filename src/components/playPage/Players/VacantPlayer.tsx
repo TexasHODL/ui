@@ -5,10 +5,11 @@ import { ModalHeader } from "../../common/ModalHeader";
  *
  * Represents an empty seat at the poker table.
  *
- * An empty seat is the same size and place as a player pill, hollow, with a
- * solid light-purple outline, a purple seat-number circle and the word Empty.
- * No avatar. Clicking a seat that can still be taken opens the buy-in. A
- * closed seat keeps the pill and does not take a click.
+ * An empty seat is the same size and place as a player pill: frosted glass,
+ * a solid light-purple outline, and only a purple seat-number circle on the
+ * left. No avatar and no "Empty" word. The button is named for screen readers.
+ * Clicking a seat that can still be taken opens the buy-in. A closed seat
+ * keeps the pill and does not take a click.
  *
  * Props:
  * - left/top: Position on the table
@@ -249,7 +250,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                     type="button"
                     disabled={isUserAlreadyPlaying || !canJoinThisSeat}
                     onClick={handleSeatClick}
-                    aria-label={!isUserAlreadyPlaying && canJoinThisSeat ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`) : `Seat ${index}`}
+                    aria-label={`Seat ${index}, empty`}
                     data-testid="empty-seat"
                 >
                     {/* Development Mode Debug Info */}

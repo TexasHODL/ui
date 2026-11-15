@@ -77,13 +77,14 @@ describe("Badge finished places", () => {
         expect(screen.getByTestId("finished-seat-place")).toHaveTextContent("4th");
     });
 
-    it("draws an empty seat as a hollow pill with the seat number and Empty", () => {
+    it("draws an empty seat as a hollow pill with only the seat number", () => {
         const { container } = render(<Badge count={9} value={35000} empty />);
         const pill = screen.getByTestId("empty-seat-pill");
         expect(pill).toHaveClass("badge-empty");
         expect(pill.querySelector(".badge-number")).toHaveTextContent("9");
         expect(pill.querySelector(".badge-number")).toHaveStyle({ backgroundColor: "#b14cff" });
-        expect(pill.querySelector(".badge-value")).toHaveTextContent("Empty");
+        expect(screen.queryByText("Empty")).toBeNull();
+        expect(pill.querySelector(".empty-seat-value-spacer")?.parentElement).toHaveAttribute("aria-hidden", "true");
         expect(screen.queryByText("35,000")).toBeNull();
         expect(screen.queryByTestId("finished-seat-place")).toBeNull();
         expect(container.querySelector(".seat-banner-shell")).toBeNull();
