@@ -5,9 +5,11 @@ import { ModalHeader } from "../../common/ModalHeader";
  *
  * Represents an empty seat at the poker table.
  *
- * Behavior:
- * - For users not yet seated: clicking opens the buy-in modal to join
- * - For users already seated: vacant seats are non-interactive (just visual)
+ * An empty seat is the same seat widget as a player: the stack pill, the
+ * seat-number badge and the avatar circle, with a muted fill and nothing in
+ * the stack or the circle. Clicking a seat that can still be taken opens the
+ * buy-in. A closed seat (a running tournament, a full table) keeps the pill
+ * and does not take a click.
  *
  * Props:
  * - left/top: Position on the table
@@ -28,7 +30,10 @@ import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
 import { hasElements, isNullish } from "../../../utils/guards";
 import { seatsAreDrawn } from "../../../utils/seatDraw";
-import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "../../../utils/vacantSeatText";
+import { joinSeatButtonLabel, SEAT_DRAW_NOTE } from "../../../utils/vacantSeatText";
+import Badge from "../common/Badge";
+import playerStyles from "./PlayersCommon.module.css";
+import { useAvatarEdgeInset } from "./useAvatarEdgeInset";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
 import { hasTournamentStarted, isRegistrationClosed, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
@@ -36,13 +41,13 @@ import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
 
 const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo(
-    ({ left, top, index, onJoin, uiPosition, tournamentOver = false }) => {
+    ({ left, top, index, onJoin, uiPosition }) => {
         const { isUserAlreadyPlaying, canJoinSeat: checkCanJoinSeat } = useVacantSeatData();
         const tableId = useTableId();
         const { gameOptions } = useGameOptions();
         const { gameState, gameFormat } = useGameStateContext();
         // A directed table never takes a walk-up, and a started tournament with no late
-        // registration left has nothing to say on an empty seat.
+        // registration left keeps the empty pill but does not open a buy-in.
         const seatClosed = useMemo(() => isRegistrationClosed(gameState, gameFormat, Date.now()), [gameState, gameFormat]);
         const registrationClosed = tournamentRegistrationClosed(gameFormat, gameState) || seatClosed;
         const cancelledBeforeStart = scheduledSngPhase({
@@ -225,24 +230,18 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
             }
         }, [joinClosed, tableId, index, onJoin, gameOptions?.minBuyIn, gameOptions?.maxBuyIn, buyInAmount, isSitAndGo, currentNetwork, seatDrawn, gameFormat]);
 
+        const seatRef = React.useRef<HTMLButtonElement>(null);
+        // Same inward nudge a player's avatar gets when it would leave the screen.
+        const avatarInset = useAvatarEdgeInset(seatRef, `.${playerStyles.avatarChip}`, [left, top, index]);
+
         // Memoize container styles
         const containerStyle = useMemo(
             () => ({
                 left,
-                top
+                top,
+                ...(avatarInset ? { marginLeft: -avatarInset } : {})
             }),
-            [left, top]
-        );
-
-        // Memoize seat text
-        const seatText = useMemo(
-            () => joinClosed || isUserAlreadyPlaying
-                ? {
-                    title: seatDrawn ? "Open seat" : "Seat " + index,
-                    subtitle: "Open seat"
-                }
-                : vacantSeatText(index, false, canJoinThisSeat, seatDrawn),
-            [isUserAlreadyPlaying, joinClosed, canJoinThisSeat, index, seatDrawn]
+            [left, top, avatarInset]
         );
 
         // Memoized Deposit callback - always open modal; crypto payments don't need Web3 wallet
@@ -253,12 +252,14 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
         return (
             <>
                 <button
-                    className="vacant-seat absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2"
+                    ref={seatRef}
+                    className={`player-seat vacant-seat absolute flex flex-col justify-center w-[160px] h-[140px] transform -translate-x-1/2 -translate-y-1/2 z-[10] ${playerStyles.secondaryText} ${playerStyles.positionTransition} ${!isUserAlreadyPlaying && canJoinThisSeat ? "cursor-pointer" : ""}`}
                     style={containerStyle}
                     type="button"
                     disabled={isUserAlreadyPlaying || !canJoinThisSeat}
                     onClick={handleSeatClick}
-                    aria-label={!isUserAlreadyPlaying && canJoinThisSeat ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`) : `Seat ${index} unavailable`}
+                    aria-label={!isUserAlreadyPlaying && canJoinThisSeat ? (seatDrawn ? "Join a random seat" : `Join seat ${index}`) : `Seat ${index}`}
+                    data-testid="empty-seat"
                 >
                     {/* Development Mode Debug Info */}
                     {import.meta.env.VITE_NODE_ENV === "development" && (
@@ -270,17 +271,16 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
                             </div>
                         </div>
                     )}
-                    {/* Once registration is over, or the tournament is over, the seat stays
-                        where it is and says nothing: no plus, no "Open Seat". */}
-                    {!tournamentOver && !seatClosed && (
-                        <>
-                            <span className="vacant-seat-plus" aria-hidden="true">
-                                +
-                            </span>
-                            <span className="vacant-seat-title">{seatText.title}</span>
-                            <span className="vacant-seat-label">{seatText.subtitle}</span>
-                        </>
-                    )}
+                    <div className="player-cards flex justify-center gap-1">
+                        <div className="w-[120px] h-[80px]" />
+                    </div>
+                    <div className="player-details relative flex flex-col justify-end mt-[-6px] mx-1">
+                        <span className={`${playerStyles.avatarChip} vacant-seat-avatar`} aria-hidden="true" />
+                        <div className="w-full h-[55px]" />
+                        <div className="player-badge-position absolute top-[-10px] w-full">
+                            <Badge count={index} value={0} empty color="#6e6874" />
+                        </div>
+                    </div>
                 </button>
 
                 {/* Buy-in modal - using portal to render at document body */}
@@ -468,7 +468,7 @@ const VacantPlayer: React.FC<VacantPlayerProps & { uiPosition?: number }> = memo
     },
     (prevProps, nextProps) => {
         // Custom comparison function for memo
-        return prevProps.left === nextProps.left && prevProps.top === nextProps.top && prevProps.index === nextProps.index && prevProps.tournamentOver === nextProps.tournamentOver;
+        return prevProps.left === nextProps.left && prevProps.top === nextProps.top && prevProps.index === nextProps.index;
     }
 );
 

@@ -18,7 +18,7 @@
     opacity: 0.4;
     filter: none;
 }
-.table-container .vacant-seat {
+.table-container .vacant-seat:not(.player-seat) {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -61,7 +61,7 @@
     letter-spacing: 0.04em;
     font-weight: 700;
 }
-.table-container .vacant-seat:hover:not(:disabled) {
+.table-container .vacant-seat:not(.player-seat):hover:not(:disabled) {
     background: var(--empty-seat-glass-hover, rgba(48, 27, 65, 0.58));
     box-shadow: 0 8px 24px #0006, inset 0 1px 0 #ffffff20;
 }
@@ -1106,7 +1106,7 @@ html.table-page-lock .app-shell {
         transform 180ms ease;
 }
 
-.vacant-seat {
+.vacant-seat:not(.player-seat) {
     min-width: 112px;
     padding: 0.45rem 0.65rem 0.55rem;
     border: 1px dashed rgba(255, 214, 91, 0.52);
@@ -1115,8 +1115,8 @@ html.table-page-lock .app-shell {
     color: var(--theme-accent, #f3d77b);
 }
 
-.vacant-seat:hover,
-.vacant-seat:focus-visible {
+.vacant-seat:not(.player-seat):hover,
+.vacant-seat:not(.player-seat):focus-visible {
     outline: none;
     filter: brightness(1.18);
     border-color: var(--theme-ink, #f0b7ff);
@@ -1131,10 +1131,48 @@ html.table-page-lock .app-shell {
 }
 
 @media (max-width: 700px) {
-    .vacant-seat {
+    .vacant-seat:not(.player-seat) {
         min-width: 92px;
         padding: 0.35rem 0.45rem 0.45rem;
     }
+}
+
+/* An empty seat is the same widget as a player seat: same pill, number and
+   avatar slot, with a muted fill and no stack. The button chrome stays clear
+   so it does not paint the old rail bar. */
+.table-container button.player-seat.vacant-seat {
+    appearance: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    text-align: inherit;
+    gap: 0;
+    min-width: 0;
+    white-space: normal;
+}
+.table-container button.player-seat.vacant-seat:disabled {
+    opacity: 1;
+    cursor: default;
+}
+.table-container .badge-container.badge-empty {
+    background: #3a3444;
+    border-color: rgba(255, 255, 255, 0.16);
+}
+.table-container .badge-container.badge-empty .badge-value {
+    color: transparent;
+}
+.empty-seat-value-spacer {
+    visibility: hidden;
+}
+.table-container .vacant-seat-avatar {
+    background: #3c3648;
 }
 
 @media (prefers-reduced-motion: reduce) {

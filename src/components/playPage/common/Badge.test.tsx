@@ -77,6 +77,18 @@ describe("Badge finished places", () => {
         expect(screen.getByTestId("finished-seat-place")).toHaveTextContent("4th");
     });
 
+    it("draws an empty seat as the same pill with no stack or place", () => {
+        const { container } = render(<Badge count={5} value={35000} empty color="#6e6874" />);
+        const pill = screen.getByTestId("empty-seat-pill");
+        expect(pill).toHaveClass("badge-empty");
+        expect(pill).toHaveTextContent("5");
+        expect(screen.queryByText("35,000")).toBeNull();
+        expect(container.querySelector(".empty-seat-value-spacer")?.parentElement).toHaveAttribute("aria-hidden", "true");
+        expect(screen.queryByTestId("finished-seat-place")).toBeNull();
+        expect(container.querySelector(".seat-banner-shell")).toBeNull();
+        expect(container.querySelector(".badge-number")).toHaveStyle({ backgroundColor: "#6e6874" });
+    });
+
     it("leaves a seat that is still playing on the stack amount and the win% chip", () => {
         const { container } = render(<Badge count={1} value={4200} playerEquity={0} />);
         expect(container.querySelector(".badge-finished")).toBeNull();

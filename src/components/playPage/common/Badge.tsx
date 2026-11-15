@@ -41,6 +41,11 @@ type BadgeProps = {
     isSittingOut?: boolean;
     playerEquity?: number | null;
     onSitIn?: () => void;
+    /**
+     * An empty seat. Same pill and seat-number badge, with no stack, name or
+     * place. A hidden spacer keeps the pill the width of a stack amount.
+     */
+    empty?: boolean;
     // Rendered just outside the pill, left of the seat number: the player's
     // own seat puts the time bank alarm clock here (ui#19). The pill's right
     // end is where an NFT avatar sits, so nothing goes there.
@@ -51,7 +56,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     count, value, color,
     tournamentPlace, tournamentPayout, payoutInActionBanner,
     isWinner, winnerAmount, winnerHandDescription, isTurnTimerActive,
-    round, isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn, leading
+    round, isFolded, isAllIn, isSeated, isSittingOut, playerEquity, onSitIn, leading, empty
 }) => {
     // Track previous banner mode so we can detect timer→action transitions
     const prevBannerModeRef = React.useRef<string>("hidden");
@@ -293,6 +298,19 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 return null;
         }
     };
+
+    if (empty) {
+        return (
+            <div className="badge-container badge-empty" data-testid="empty-seat-pill">
+                <div style={{ backgroundColor: color }} className="badge-number">
+                    {count}
+                </div>
+                <div className="badge-value" aria-hidden="true">
+                    <span className="empty-seat-value-spacer">$00.00</span>
+                </div>
+            </div>
+        );
+    }
 
     const showEquityChip = isNullish(finished) && hasValue(playerEquity);
     const finishedClass = finished ? ` badge-finished badge-finished-${finished.tone}` : "";
