@@ -61,6 +61,9 @@ jest.mock("../hooks/player/usePlayerSessions", () => ({
 jest.mock("../hooks/player/usePlayerPrizeClaims", () => ({
     usePlayerPrizeClaims: () => ({ claims: [], loading: false, error: null })
 }));
+jest.mock("../hooks/player/usePlayerTournamentEntries", () => ({
+    usePlayerTournamentEntries: () => ({ entries: [], loading: false, error: null })
+}));
 jest.mock("../hooks/wallet/useCosmosWallet", () => ({ useCosmosWallet: () => ({ address: null }) }));
 jest.mock("../context/NetworkContext", () => ({
     useNetwork: () => ({ currentNetwork: { name: "Texas Hodl", rest: "https://node.texashodl.net", rpc: "rpc" } })
