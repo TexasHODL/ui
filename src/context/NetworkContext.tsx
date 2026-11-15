@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { STORAGE_KEYS } from "../constants/storageKeys";
+import { resolveInitialNetwork } from "../utils/networkSelection";
 import { viteEnv } from "../utils/viteEnv";
 
 /**
@@ -46,7 +47,7 @@ export interface NetworkEndpoints {
 // NETWORK STATUS (Last tested: 2026-03-23):
 // ✅ Block52 (node1.block52.xyz) - Official production node
 // ✅ Localhost - Works with `ignite chain serve`
-// ✅ Texas Hodl (node.texashodl.net) - Working, use for production testing
+// ✅ Texas Hodl (node.texashodl.net) - Selectable alternate node
 //
 // CLI TEST COMMANDS (run in terminal to verify endpoints):
 //
@@ -73,7 +74,8 @@ export interface NetworkEndpoints {
  *
  * Example ws usage:
  *   ws://localhost:8585/ws (local development)
- *   wss://node.texashodl.net/ws (production via nginx proxy)
+ *   wss://node1.block52.xyz/ws (Block52, the default, via nginx proxy)
+ *   wss://node.texashodl.net/ws (Texas Hodl, still selectable)
  */
 export const NETWORK_PRESETS: NetworkEndpoints[] = [
     // [0] ✅ Block52 - Official node (default)
@@ -94,7 +96,7 @@ export const NETWORK_PRESETS: NetworkEndpoints[] = [
         grpc: "http://localhost:9090",
         ws: "ws://localhost:8585/ws" // WebSocket server for real-time game updates (port 8585)
     },
-    // [2] ✅ Texas Hodl - Recommended for production testing
+    // [2] Texas Hodl - still listed in the selector; no longer the default
     {
         name: "Texas Hodl",
         rpc: "https://node.texashodl.net/rpc/",
@@ -123,9 +125,9 @@ export const NETWORK_PRESETS: NetworkEndpoints[] = [
     }
 ];
 
-// Texas Hodl is the built-in default network for this app. VITE_DEFAULT_NETWORK
-// can still override it (e.g. set it to "Block52" for the upstream default).
-export const BUILT_IN_DEFAULT_NETWORK_NAME = "Texas Hodl";
+// Block52 (node1.block52.xyz) is the built-in default. VITE_DEFAULT_NETWORK can
+// still name another preset for a local build (for example "Localhost" or "Texas Hodl").
+export const BUILT_IN_DEFAULT_NETWORK_NAME = "Block52";
 const BUILT_IN_DEFAULT_NETWORK = NETWORK_PRESETS.find(network => network.name === BUILT_IN_DEFAULT_NETWORK_NAME) ?? NETWORK_PRESETS[0];
 const DEFAULT_NETWORK_NAME = viteEnv.VITE_DEFAULT_NETWORK || BUILT_IN_DEFAULT_NETWORK_NAME;
 const DEFAULT_NETWORK = NETWORK_PRESETS.find(network => network.name === DEFAULT_NETWORK_NAME) || BUILT_IN_DEFAULT_NETWORK;
@@ -144,26 +146,11 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
 const DISCOVERED_NETWORKS_KEY = "discoveredNetworks";
 
 export const NetworkProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    // Initialize network from localStorage or the default network (Texas Hodl)
-    const [currentNetwork, setCurrentNetwork] = useState<NetworkEndpoints>(() => {
-        // Try to load user's saved network preference from localStorage
-        const saved = localStorage.getItem(STORAGE_KEYS.selectedNetwork);
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                // Validate that the parsed object has the ws property (for backward compatibility)
-                if (!parsed.ws) {
-                    return DEFAULT_NETWORK;
-                }
-                return parsed;
-            } catch {
-                // If localStorage is corrupted, use the default network
-                return DEFAULT_NETWORK;
-            }
-        }
-        // First time user - use the default network (Texas Hodl unless overridden)
-        return DEFAULT_NETWORK;
-    });
+    // Saved choice, or Block52 for a new visitor. A device still on the Texas Hodl
+    // node (the previous default) is moved to Block52 once; see resolveInitialNetwork.
+    const [currentNetwork, setCurrentNetwork] = useState<NetworkEndpoints>(() =>
+        resolveInitialNetwork(localStorage, DEFAULT_NETWORK, BUILT_IN_DEFAULT_NETWORK)
+    );
 
     // Initialize discovered networks from localStorage
     const [discoveredNetworks, setDiscoveredNetworks] = useState<NetworkEndpoints[]>(() => {
