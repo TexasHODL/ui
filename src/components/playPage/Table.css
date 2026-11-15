@@ -1170,14 +1170,16 @@ html.table-page-lock .app-shell {
     cursor: default;
 }
 .table-container .badge-container.badge-empty {
-    /* Same frosting as the seat glass on main: a translucent tint, a light
-       sheen, and a backdrop blur, so the felt shows through. The outline
-       stays a solid light purple. */
-    background: linear-gradient(145deg, #ffffff08, #ffffff02), var(--empty-seat-glass, rgba(36, 24, 49, 0.20));
+    /* Opaque frost in the player-pill tone. Ninety percent still let the
+       rail and felt chevrons read through at 3x, so the fill is solid and
+       the frost is only the short top sheen. No diagonal glint, no
+       backdrop blur. */
+    background-color: var(--theme-surface, #140e1d);
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%);
     border: 1.5px solid rgba(214, 178, 239, 0.7);
-    box-shadow: 0 6px 20px #0005, inset 0 1px 0 #ffffff12;
-    -webkit-backdrop-filter: blur(var(--empty-seat-blur, 3px)) saturate(130%);
-    backdrop-filter: blur(var(--empty-seat-blur, 3px)) saturate(130%);
+    box-shadow: 0 4px 14px #0007;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 .table-container .badge-container.badge-empty .badge-value {
     color: var(--theme-ink, #f4eafc);
