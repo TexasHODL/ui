@@ -25,6 +25,15 @@ describe("parsePreviewSearch", () => {
         });
     });
 
+    it("open=6 leaves the last seats empty on a 9-seat table", () => {
+        const options = parsePreviewSearch(new URLSearchParams("format=cash&seats=9&open=6"));
+        expect(options.openSeats).toBe(6);
+        expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+        const state = buildPreviewState(options, PREVIEW_HERO_ADDRESS);
+        expect(state.players.map(player => player.seat)).toEqual([1, 2, 3]);
+        expect(state.gameOptions.maxPlayers).toBe(9);
+    });
+
     it("prizes=bubble is a display fixture for the 25200 and 10800 prizes", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=4&format=sng&prizes=bubble"));
         expect(options.bubblePrizes).toBe(true);
