@@ -94,7 +94,7 @@ export const TableModals: React.FC<TableModalsProps> = ({
     const [spectatingTableId, setSpectatingTableId] = useState<string | undefined>(undefined);
     // ui#874: a finish happening live holds the results / busted modal until the
     // deciding hand (and, at the end, the tournament-winner moment) has shown.
-    const finishMoment = useTournamentFinishMoment();
+    const finishMoment = useTournamentFinishMoment(tournamentResults);
     const holdResults = holdsResultModals(finishMoment.phase);
 
     return (
