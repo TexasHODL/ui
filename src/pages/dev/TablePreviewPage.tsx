@@ -42,7 +42,6 @@ const PREVIEW_LIVE_CONNECTION: ConnectionState = { status: "live", attempt: 0 };
 
 const subscribeToTable = () => {};
 const unsubscribeFromTable = () => {};
-const sendAction = async () => {};
 const loadHistoricalState = async () => {};
 const ackAnimation = () => {};
 
@@ -114,7 +113,6 @@ const TablePreviewPage = () => {
             <GameActionsProvider
                 subscribeToTable={subscribeToTable}
                 unsubscribeFromTable={unsubscribeFromTable}
-                sendAction={sendAction}
                 loadHistoricalState={loadHistoricalState}
                 loadHistoricalStateAtHeight={async () => undefined}
             >

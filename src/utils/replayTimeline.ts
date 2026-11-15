@@ -13,12 +13,11 @@
  */
 import { TexasHoldemRound, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { hasElements, hasValue } from "./guards";
+import { assertQueryableGameId } from "./queryableGameId";
 
 /** CometBFT tx_search query for every action of hand `handNumber` of `gameId`. */
 export function actionsQuery(gameId: string, handNumber: number): string {
-    if (!/^[A-Za-z0-9]+$/.test(gameId)) {
-        throw new Error(`Invalid table id: ${gameId}`);
-    }
+    assertQueryableGameId(gameId);
     if (!Number.isInteger(handNumber) || handNumber < 1) {
         throw new Error(`Invalid hand number: ${handNumber}`);
     }
