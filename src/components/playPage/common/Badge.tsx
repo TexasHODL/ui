@@ -303,9 +303,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     if (empty) {
         return (
             <div className="badge-container badge-empty" data-testid="empty-seat-pill">
-                <div style={{ backgroundColor: "#b14cff" }} className="badge-number">
-                    {count}
-                </div>
+                <div style={{ backgroundColor: "#b14cff" }} className="badge-number">{count}</div>
                 <div className="badge-value">Empty</div>
             </div>
         );
@@ -318,9 +316,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     return (
         <div className={`badge-container${finishedClass}`} data-finished-tone={finished?.tone}>
             {leading && <div className="badge-leading">{leading}</div>}
-            <div style={{ backgroundColor: color }} className="badge-number">
-                {count}
-            </div>
+            <div style={{ backgroundColor: color }} className="badge-number">{count}</div>
             <div className="badge-value" data-testid={finished ? "finished-seat-place" : undefined}>
                 {finished ? finished.placeLabel : formattedValue}
             </div>
