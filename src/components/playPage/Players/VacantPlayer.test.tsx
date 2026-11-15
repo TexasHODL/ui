@@ -78,12 +78,16 @@ describe("VacantPlayer empty seat", () => {
         expect(screen.queryByTestId("empty-seat-pill")).toBeNull();
     });
 
-    it("draws the original place card on a single-table tournament", () => {
+    it("draws the blank number pill on a single-table tournament", () => {
         mockCtx.gameFormat = GameFormat.TOURNAMENT;
         mockTable.id = "0xscheduled";
         seat();
-        expect(screen.getByRole("button", { name: "Join a random seat" })).not.toHaveClass("player-seat");
-        expect(screen.queryByTestId("empty-seat-pill")).toBeNull();
+        const pill = screen.getByRole("button", { name: "Seat 4, empty" });
+        expect(pill).toHaveClass("player-seat");
+        expect(screen.getByTestId("empty-seat-pill")).toHaveTextContent("4");
+        expect(screen.queryByText("Empty")).toBeNull();
+        expect(pill.querySelector(".vacant-seat-plus")).toBeNull();
+        expect(pill.querySelector(".vacant-seat-title")).toBeNull();
     });
 
     it("draws the blank number pill on a multi-table tournament table", () => {

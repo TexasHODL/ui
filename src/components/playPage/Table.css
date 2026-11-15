@@ -1144,9 +1144,9 @@ html.table-page-lock .app-shell {
     }
 }
 
-/* Multi-table tournament empty seat only: the same size and place as a
-   player pill, a solid light-purple outline, and only the seat number.
-   Cash and sit & go keep .vacant-seat:not(.player-seat), the place card. */
+/* Tournament empty seat, single-table or multi-table: the same size and
+   place as a player pill, a solid light-purple outline, and only the seat
+   number. Cash and sit & go keep .vacant-seat:not(.player-seat). */
 .table-container button.player-seat.vacant-seat {
     appearance: none;
     margin: 0;
