@@ -1,6 +1,8 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { NetworkProvider, useNetwork, NETWORK_PRESETS, NetworkEndpoints } from "./NetworkContext";
+import { STORAGE_KEYS } from "../constants/storageKeys";
+import { SELECTED_NETWORK_MIGRATION_VALUE } from "../utils/networkSelection";
 
 // Helper component to access context in tests
 const TestConsumer: React.FC<{ onMount?: (ctx: ReturnType<typeof useNetwork>) => void }> = ({ onMount }) => {
@@ -91,8 +93,9 @@ describe("NetworkContext", () => {
             expect(screen.getByTestId("network-ws")).toBeInTheDocument();
         });
 
-        it("should default to Texas Hodl for a first-time user with no saved choice and no env override", () => {
+        it("should default to Block52 for a first-time user with no saved choice and no env override", () => {
             expect(localStorage.getItem("selectedNetwork")).toBeNull();
+            expect(localStorage.getItem(STORAGE_KEYS.selectedNetworkMigratedToBlock52)).toBeNull();
             expect(process.env.VITE_DEFAULT_NETWORK).toBeUndefined();
             render(
                 <NetworkProvider>
@@ -100,7 +103,13 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            expect(screen.getByTestId("network-name").textContent).toBe("Texas Hodl");
+            expect(screen.getByTestId("network-name").textContent).toBe("Block52");
+            expect(screen.getByTestId("network-ws").textContent).toBe("wss://node1.block52.xyz/ws");
+            expect(localStorage.getItem(STORAGE_KEYS.selectedNetworkMigratedToBlock52)).toBe(SELECTED_NETWORK_MIGRATION_VALUE);
+            const saved = JSON.parse(localStorage.getItem("selectedNetwork")!);
+            expect(saved.name).toBe("Block52");
+            expect(saved.rest).toBe("https://node1.block52.xyz");
+            expect(saved.rpc).toBe("https://node1.block52.xyz/rpc/");
         });
 
         it("should provide all available networks", () => {
@@ -149,8 +158,8 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            // Should fall back to the default (Texas Hodl)
-            expect(screen.getByTestId("network-name").textContent).toBe("Texas Hodl");
+            // Should fall back to the default (Block52)
+            expect(screen.getByTestId("network-name").textContent).toBe("Block52");
         });
 
         it("should reset to default if localStorage is corrupted", () => {
@@ -162,8 +171,70 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            // Should fall back to the default (Texas Hodl)
-            expect(screen.getByTestId("network-name").textContent).toBe("Texas Hodl");
+            // Should fall back to the default (Block52)
+            expect(screen.getByTestId("network-name").textContent).toBe("Block52");
+        });
+
+        it("switches a saved Texas Hodl node to Block52 once", () => {
+            const texas = NETWORK_PRESETS.find(network => network.name === "Texas Hodl")!;
+            localStorage.setItem(STORAGE_KEYS.selectedNetwork, JSON.stringify(texas));
+
+            const view = render(
+                <NetworkProvider>
+                    <NetworkSwitcher />
+                </NetworkProvider>
+            );
+
+            expect(screen.getByTestId("current-network").textContent).toBe("Block52");
+            expect(localStorage.getItem(STORAGE_KEYS.selectedNetworkMigratedToBlock52)).toBe(SELECTED_NETWORK_MIGRATION_VALUE);
+            expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.selectedNetwork)!).ws).toBe("wss://node1.block52.xyz/ws");
+
+            view.unmount();
+            localStorage.setItem(STORAGE_KEYS.selectedNetwork, JSON.stringify(texas));
+
+            render(
+                <NetworkProvider>
+                    <NetworkSwitcher />
+                </NetworkProvider>
+            );
+
+            expect(screen.getByTestId("current-network").textContent).toBe("Texas Hodl");
+            expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.selectedNetwork)!).rest).toBe("https://node.texashodl.net");
+        });
+
+        it("leaves a saved localhost choice and a saved dev node alone", () => {
+            const localhost = NETWORK_PRESETS.find(network => network.name === "Localhost")!;
+            localStorage.setItem(STORAGE_KEYS.selectedNetwork, JSON.stringify(localhost));
+
+            const view = render(
+                <NetworkProvider>
+                    <TestConsumer />
+                </NetworkProvider>
+            );
+
+            expect(screen.getByTestId("network-name").textContent).toBe("Localhost");
+            expect(localStorage.getItem(STORAGE_KEYS.selectedNetworkMigratedToBlock52)).toBe(SELECTED_NETWORK_MIGRATION_VALUE);
+            expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.selectedNetwork)!).ws).toBe("ws://localhost:8585/ws");
+            view.unmount();
+
+            localStorage.clear();
+            const dev: NetworkEndpoints = {
+                name: "Dev",
+                rpc: "http://192.168.1.20:26657",
+                rest: "http://192.168.1.20:1317",
+                grpc: "http://192.168.1.20:9090",
+                ws: "ws://192.168.1.20:8585/ws"
+            };
+            localStorage.setItem(STORAGE_KEYS.selectedNetwork, JSON.stringify(dev));
+
+            render(
+                <NetworkProvider>
+                    <TestConsumer />
+                </NetworkProvider>
+            );
+
+            expect(screen.getByTestId("network-name").textContent).toBe("Dev");
+            expect(screen.getByTestId("network-ws").textContent).toBe("ws://192.168.1.20:8585/ws");
         });
     });
 
@@ -175,16 +246,41 @@ describe("NetworkContext", () => {
                 </NetworkProvider>
             );
 
-            // Initially the default (Texas Hodl)
-            expect(screen.getByTestId("current-network").textContent).toBe("Texas Hodl");
+            // Initially the default (Block52)
+            expect(screen.getByTestId("current-network").textContent).toBe("Block52");
 
             // Switch to Localhost
             fireEvent.click(screen.getByTestId("switch-Localhost"));
             expect(screen.getByTestId("current-network").textContent).toBe("Localhost");
 
+            // Texas Hodl stays selectable
+            fireEvent.click(screen.getByTestId("switch-Texas Hodl"));
+            expect(screen.getByTestId("current-network").textContent).toBe("Texas Hodl");
+
             // Switch to Block52
             fireEvent.click(screen.getByTestId("switch-Block52"));
             expect(screen.getByTestId("current-network").textContent).toBe("Block52");
+        });
+
+        it("keeps a Texas Hodl node a new visitor picks from the selector", () => {
+            const view = render(
+                <NetworkProvider>
+                    <NetworkSwitcher />
+                </NetworkProvider>
+            );
+
+            fireEvent.click(screen.getByTestId("switch-Texas Hodl"));
+            expect(screen.getByTestId("current-network").textContent).toBe("Texas Hodl");
+            view.unmount();
+
+            render(
+                <NetworkProvider>
+                    <NetworkSwitcher />
+                </NetworkProvider>
+            );
+
+            expect(screen.getByTestId("current-network").textContent).toBe("Texas Hodl");
+            expect(JSON.parse(localStorage.getItem(STORAGE_KEYS.selectedNetwork)!).ws).toBe("wss://node.texashodl.net/ws");
         });
 
         it("should persist network selection to localStorage", () => {
