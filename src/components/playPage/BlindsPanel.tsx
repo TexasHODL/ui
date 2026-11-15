@@ -183,7 +183,7 @@ const BlindsPanel: React.FC<BlindsPanelProps> = ({ hideTab = false, openSignal =
                 <div ref={rootRef} data-testid="blinds-panel-root">
                     {isOpen && (
                         <MobileDrawerShell title="Blinds" closeLabel="Close blinds" onClose={close} testId="blinds-drawer">
-                            <div className="px-4">{body}</div>
+                            {body}
                         </MobileDrawerShell>
                     )}
                 </div>
