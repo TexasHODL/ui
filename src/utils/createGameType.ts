@@ -9,8 +9,9 @@
  * lobby and the table header agree on what to call a table.
  */
 import { GameFormat } from "@block52/poker-vm-sdk";
-import { hasValue } from "./guards";
+import { hasContent, hasValue } from "./guards";
 import { isScheduledSng } from "./scheduledSng";
+import { parseTournamentGameId } from "./tableUrl";
 
 export type CreateGameType = "cash" | "sit-and-go" | "tournament" | "multi-table";
 
@@ -93,20 +94,39 @@ export const createdTableFormat = (type: CreateGameType, sitAndGoScheduleOn: boo
     return { format: GameFormat.CASH, startTime: undefined };
 };
 
+/** Lobby, table-header, session-history, and stakes name for an unscheduled Sit & Go. */
+export const SIT_AND_GO_LABEL = "Sit & Go";
+
+/** Lobby, table-header, and session-history name for a single-table tournament. */
+export const SINGLE_TABLE_TOURNAMENT_LABEL = "Single-table tournament";
+
+/** Lobby, event-page, and stakes name for a multi-table tournament. */
+export const MULTI_TABLE_TOURNAMENT_LABEL = "Multi-table tournament";
+
 /**
  * What to call a table the lobby and the table header are showing. A sit-and-go
- * with a start time is an older **Tournament**, from before the two had separate
- * formats; everything else keeps the SDK's format display.
+ * with a start time, or a chain tournament table, is a **Single-table tournament**.
+ * An unscheduled Sit & Go is labelled {@link SIT_AND_GO_LABEL}. Cash keeps the SDK's format display.
+ * A directed multi-table table (game id `<tournamentId>-t<n>`) is a {@link MULTI_TABLE_TOURNAMENT_LABEL}.
  */
-export const displayGameFormat = (format: GameFormat | "unknown" | null | undefined, scheduledStartTime: number | undefined, fallback: (format: GameFormat | "unknown") => string): string => {
+export const displayGameFormat = (
+    format: GameFormat | "unknown" | null | undefined,
+    scheduledStartTime: number | undefined,
+    fallback: (format: GameFormat | "unknown") => string,
+    gameId?: string
+): string => {
     if (!hasValue(format)) return "";
-    if (format === GameFormat.SIT_AND_GO && isScheduledSng({ scheduledStartTime })) return "Tournament";
+    if (hasContent(gameId) && hasValue(parseTournamentGameId(gameId))) return MULTI_TABLE_TOURNAMENT_LABEL;
+    if (format === GameFormat.TOURNAMENT || (format === GameFormat.SIT_AND_GO && isScheduledSng({ scheduledStartTime }))) {
+        return SINGLE_TABLE_TOURNAMENT_LABEL;
+    }
+    if (format === GameFormat.SIT_AND_GO) return SIT_AND_GO_LABEL;
     return fallback(format);
 };
 
 /** What a fixed-buy-in table is called in the join and buy-in modals (ui#934). */
-export const sitAndGoTypeLabel = (scheduledStartTime: number | undefined): string => (isScheduledSng({ scheduledStartTime }) ? "Tournament" : "Sit & Go");
+export const sitAndGoTypeLabel = (scheduledStartTime: number | undefined): string => (isScheduledSng({ scheduledStartTime }) ? SINGLE_TABLE_TOURNAMENT_LABEL : SIT_AND_GO_LABEL);
 
-/** The join modal's heading: "Tournament" for a scheduled start, "Sit & Go Tournament" otherwise. */
+/** The join modal's heading: single-table for a scheduled start, "Sit & Go Tournament" otherwise. */
 export const sitAndGoJoinTitle = (scheduledStartTime: number | undefined): string =>
-    isScheduledSng({ scheduledStartTime }) ? "Tournament" : "Sit & Go Tournament";
+    isScheduledSng({ scheduledStartTime }) ? SINGLE_TABLE_TOURNAMENT_LABEL : "Sit & Go Tournament";

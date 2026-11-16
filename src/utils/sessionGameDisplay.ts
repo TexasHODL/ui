@@ -36,8 +36,8 @@ export interface SessionGameFilterOption {
 }
 
 /** What to call the format, in the same words as the create form. */
-function sessionFormatLabel(format: GameFormat, scheduledStartTime: number | undefined): string {
-    const displayed = displayGameFormat(format, scheduledStartTime, formatGameFormatDisplay);
+function sessionFormatLabel(format: GameFormat, scheduledStartTime: number | undefined, gameId?: string): string {
+    const displayed = displayGameFormat(format, scheduledStartTime, formatGameFormatDisplay, gameId);
     if (displayed === "Cash") return "Cash Game";
     if (displayed === "Sit And Go") return "Sit & Go";
     if (displayed === "Tournament") return "Tournament";
@@ -72,11 +72,11 @@ function sessionStakeDetail(format: GameFormat, meta: GamePrizeMeta): string | u
 }
 
 /** Title, stake line and filter key for one game. Undefined when the record has no format. */
-export function sessionGameLabel(meta: GamePrizeMeta | undefined): SessionGameLabel | undefined {
+export function sessionGameLabel(meta: GamePrizeMeta | undefined, gameId?: string): SessionGameLabel | undefined {
     if (!hasValue(meta) || !hasValue(meta.format)) return undefined;
     const format = toGameFormat(meta.format);
     if (!hasValue(format)) return undefined;
-    const formatLabel = sessionFormatLabel(format, meta.scheduledStartTime);
+    const formatLabel = sessionFormatLabel(format, meta.scheduledStartTime, gameId);
     if (!hasContent(formatLabel)) return undefined;
     const variant = toGameVariant(meta.variant);
     const variantLabel = hasValue(variant) ? formatTableGameDisplay(variant, knownBettingLimit(meta.bettingLimit)) : "";
@@ -126,14 +126,15 @@ export function sessionGameFilterOptions(labels: Array<SessionGameLabel | undefi
 function formatRank(label: string): number {
     if (label.startsWith("Cash Game")) return 0;
     if (label.startsWith("Sit & Go")) return 1;
-    if (label.startsWith("Tournament")) return 2;
-    return 3;
+    if (label.startsWith("Single-table tournament") || label.startsWith("Tournament")) return 2;
+    if (label.startsWith("Multi-table tournament")) return 3;
+    return 4;
 }
 
 export function sessionLabelsByGameId(byId: Record<string, GamePrizeMeta | undefined>): Record<string, SessionGameLabel | undefined> {
     const labels: Record<string, SessionGameLabel | undefined> = {};
     for (const [id, meta] of Object.entries(byId)) {
-        labels[id] = sessionGameLabel(meta);
+        labels[id] = sessionGameLabel(meta, id);
     }
     return labels;
 }
