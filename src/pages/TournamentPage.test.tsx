@@ -129,6 +129,12 @@ test("a registering tournament is the landing page: generated name, fees, balanc
     expect(screen.getByTestId("tournament-page-protocol-fee")).toHaveTextContent("$0.001");
     expect(screen.getByTestId("tournament-page-escrow")).toHaveTextContent("$0.009");
     expect(screen.getByTestId("tournament-page-balance")).toHaveTextContent("$1.00");
+    const balanceAmount = screen.getByTestId("tournament-page-balance-amount");
+    expect(balanceAmount).toHaveAttribute("data-balance-tone", "enough");
+    expect(balanceAmount).toHaveClass("tournament-balance-enough");
+    const actions = screen.getByTestId("tournament-registration-actions");
+    expect(actions).toHaveClass("justify-end");
+    expect(actions).toContainElement(screen.getByTestId("tournament-register"));
     expect(screen.getByTestId("tournament-page-stack")).toHaveTextContent("1,500 chips");
     expect(screen.getByTestId("tournament-escrow-statement")).toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -168,7 +174,10 @@ test("a registered player can unregister on the page, without a modal", async ()
     );
     renderPage();
     expect(screen.getByTestId("tournament-you-are-in")).toHaveTextContent("You're registered");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveAttribute("data-balance-tone", "neutral");
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
+    expect(screen.getByTestId("tournament-registration-actions")).toHaveClass("justify-end");
+    expect(screen.getByTestId("tournament-registration-actions")).toContainElement(screen.getByTestId("tournament-unregister"));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("tournament-unregister"));
     await waitFor(() => expect(mockUnregister).toHaveBeenCalledWith(ID));
@@ -188,6 +197,9 @@ test("not enough funds disables Register & pay and shows the needed amount again
     mockWallet = { ...mockWallet, balance: [{ denom: "usdc", amount: "1000" }] };
     renderPage();
     expect(screen.getByTestId("tournament-page-balance")).toHaveTextContent("$0.001");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveAttribute("data-balance-tone", "short");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveClass("tournament-balance-short");
+    expect(screen.getByTestId("tournament-registration-actions")).toHaveClass("justify-end");
     expect(screen.getByTestId("tournament-insufficient-funds")).toHaveTextContent("You need $0.01");
     expect(screen.getByTestId("tournament-insufficient-funds")).toHaveTextContent("your balance is $0.001");
     expect(screen.getByRole("link", { name: "Add funds" })).toHaveAttribute("href", "/wallet");
@@ -227,3 +239,28 @@ test("a finished tournament has no Register button", () => {
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
     expect(screen.getByTestId("tournament-standings")).toBeInTheDocument();
 });
+
+test("the balance amount is green when it covers the buy-in, and Register & pay is on the right under it", () => {
+    renderPage();
+    const amount = screen.getByTestId("tournament-page-balance-amount");
+    expect(amount).toHaveTextContent("$1.00");
+    expect(amount).toHaveAttribute("data-balance-tone", "enough");
+    expect(amount).toHaveClass("tournament-balance-enough");
+    expect(amount).not.toHaveClass("tournament-balance-short");
+    const actions = screen.getByTestId("tournament-registration-actions");
+    expect(actions).toHaveClass("justify-end");
+    expect(actions).toContainElement(screen.getByTestId("tournament-register"));
+    expect(screen.getByTestId("tournament-register")).not.toBeDisabled();
+});
+
+test("the balance amount is red when it does not cover the buy-in", () => {
+    mockWallet = { ...mockWallet, balance: [{ denom: "usdc", amount: "1000" }] };
+    renderPage();
+    const amount = screen.getByTestId("tournament-page-balance-amount");
+    expect(amount).toHaveTextContent("$0.001");
+    expect(amount).toHaveAttribute("data-balance-tone", "short");
+    expect(amount).toHaveClass("tournament-balance-short");
+    expect(amount).not.toHaveClass("tournament-balance-enough");
+    expect(screen.getByTestId("tournament-register")).toBeDisabled();
+});
+
