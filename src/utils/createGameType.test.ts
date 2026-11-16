@@ -1,5 +1,5 @@
 import { GameFormat, formatGameFormatDisplay } from "@block52/poker-vm-sdk";
-import { CREATE_GAME_TYPES, createdTableFormat, createGameTypeFormat, createGameTypeLabel, displayGameFormat, isMultiTableCreateType, isScheduledCreateType, MULTI_TABLE_TOURNAMENT_LABEL, SINGLE_TABLE_TOURNAMENT_LABEL, sitAndGoJoinTitle, sitAndGoTypeLabel, toCreateGameType } from "./createGameType";
+import { CREATE_GAME_TYPES, createdTableFormat, createGameTypeFormat, createGameTypeLabel, displayGameFormat, isMultiTableCreateType, isScheduledCreateType, MULTI_TABLE_TOURNAMENT_LABEL, SINGLE_TABLE_TOURNAMENT_LABEL, SIT_AND_GO_LABEL, sitAndGoJoinTitle, sitAndGoTypeLabel, toCreateGameType } from "./createGameType";
 
 describe("createGameType (ui#823)", () => {
     it("offers the three types a player can create", () => {
@@ -66,9 +66,10 @@ describe("createGameType (ui#823)", () => {
             expect(displayGameFormat(GameFormat.TOURNAMENT, undefined, formatGameFormatDisplay, "0xabc-t1")).toBe(MULTI_TABLE_TOURNAMENT_LABEL);
         });
 
-        it("leaves an unscheduled sit-and-go and a cash game to the SDK label", () => {
-            expect(displayGameFormat(GameFormat.SIT_AND_GO, undefined, formatGameFormatDisplay)).toBe(formatGameFormatDisplay(GameFormat.SIT_AND_GO));
-            expect(displayGameFormat(GameFormat.SIT_AND_GO, 0, formatGameFormatDisplay)).toBe(formatGameFormatDisplay(GameFormat.SIT_AND_GO));
+        it("labels an unscheduled sit-and-go Sit & Go, and leaves a cash game to the SDK label", () => {
+            expect(displayGameFormat(GameFormat.SIT_AND_GO, undefined, formatGameFormatDisplay)).toBe(SIT_AND_GO_LABEL);
+            expect(displayGameFormat(GameFormat.SIT_AND_GO, 0, formatGameFormatDisplay)).toBe(SIT_AND_GO_LABEL);
+            expect(SIT_AND_GO_LABEL).toBe("Sit & Go");
             expect(displayGameFormat(GameFormat.CASH, 1_700_000_000_000, formatGameFormatDisplay)).toBe(formatGameFormatDisplay(GameFormat.CASH));
         });
 
@@ -79,9 +80,9 @@ describe("createGameType (ui#823)", () => {
     });
 
     describe("modal labels (ui#934)", () => {
-        it("calls a scheduled sit-and-go a Tournament", () => {
-            expect(sitAndGoTypeLabel(1_700_000_000_000)).toBe("Tournament");
-            expect(sitAndGoJoinTitle(1_700_000_000_000)).toBe("Tournament");
+        it("calls a scheduled sit-and-go a single-table tournament", () => {
+            expect(sitAndGoTypeLabel(1_700_000_000_000)).toBe(SINGLE_TABLE_TOURNAMENT_LABEL);
+            expect(sitAndGoJoinTitle(1_700_000_000_000)).toBe(SINGLE_TABLE_TOURNAMENT_LABEL);
         });
 
         it("keeps Sit & Go for a table that starts when full", () => {

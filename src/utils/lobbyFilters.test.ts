@@ -38,6 +38,18 @@ describe("lobby discovery", () => {
         expect(filterLobbyGames(games, { ...options, format: "tournament" }).map(game => game.gameId)).toEqual(["sng-open"]);
         expect(filterLobbyGames(games, { ...options, format: "mtt" })).toEqual([]);
     });
+    it("puts unscheduled Sit & Gos on the Sit & Go tab and single-table tournaments on Tournaments", () => {
+        const sng = makeGame({ gameId: "sng-plain", gameFormat: GameFormat.SIT_AND_GO });
+        const scheduledSng = makeGame({
+            gameId: "sng-scheduled",
+            gameFormat: GameFormat.SIT_AND_GO,
+            scheduledStartTime: Date.now() + 3_600_000
+        });
+        const single = makeGame({ gameId: "single-table", gameFormat: GameFormat.TOURNAMENT, scheduledStartTime: Date.now() + 3_600_000 });
+        const mixed = [sng, scheduledSng, single, games[0]];
+        expect(filterLobbyGames(mixed, { ...options, format: "tournament" }).map(game => game.gameId)).toEqual(["sng-plain"]);
+        expect(filterLobbyGames(mixed, { ...options, format: "mtt" }).map(game => game.gameId).sort()).toEqual(["single-table", "sng-scheduled"]);
+    });
     it("finds names or IDs case-insensitively and handles no matches", () => {
         expect(filterLobbyGames(games, { ...options, search: "  FRIDAY  " })[0].gameId).toBe("sng-open");
         expect(filterLobbyGames(games, { ...options, search: "CASH-ACTIVE" })[0].gameId).toBe("cash-active");

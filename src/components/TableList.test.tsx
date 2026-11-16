@@ -639,7 +639,8 @@ test("the Tournaments tab search and Open seats only filter the multi-table list
     expect(screen.getByTestId("lobby-tournament-name")).toHaveTextContent("Bitcoin Roulette");
 });
 
-test("All games and Sit & Go distinguish a single-table tournament from a Sit & Go", () => {
+test("Sit & Go tab lists only Sit & Gos; Tournaments lists single-table and multi-table events", () => {
+    mockTournamentCards = [openTournamentCard];
     const added = [
         { ...base, gameId: "single-table", name: "Sunday Single", creator: "owner", gameFormat: GameFormat.TOURNAMENT, currentPlayers: 2, scheduledStartTime: Date.now() + 3_600_000, maxPlayers: 9 },
         { ...base, gameId: "scheduled-sng", name: "Night Turbo", creator: "owner", gameFormat: GameFormat.SIT_AND_GO, currentPlayers: 2, scheduledStartTime: Date.now() + 3_600_000, maxPlayers: 9 }
@@ -648,8 +649,9 @@ test("All games and Sit & Go distinguish a single-table tournament from a Sit & 
     try {
         renderLobby();
         const sng = within(screen.getByText("My tournament").closest("tr")!);
-        expect(sng.getByTestId("lobby-format")).toHaveTextContent("Sit And Go");
-        expect(sng.getByTestId("lobby-stakes")).toHaveTextContent("Tournament");
+        expect(sng.getByTestId("lobby-format")).toHaveTextContent("Sit & Go");
+        expect(sng.getByTestId("lobby-stakes")).toHaveTextContent("Sit & Go");
+        expect(sng.getByTestId("lobby-stakes")).not.toHaveTextContent("Tournament");
         expect(sng.getByTestId("lobby-stakes")).not.toHaveTextContent("Single-table");
 
         for (const name of ["Sunday Single", "Night Turbo"]) {
@@ -661,9 +663,17 @@ test("All games and Sit & Go distinguish a single-table tournament from a Sit & 
 
         fireEvent.click(screen.getByRole("button", { name: "Sit & Go" }));
         expect(screen.getByText("My tournament")).toBeInTheDocument();
-        expect(within(screen.getByText("Sunday Single").closest("tr")!).getByTestId("lobby-format")).toHaveTextContent("Single-table tournament");
-        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("lobby-format")).toHaveTextContent("Sit And Go");
+        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("lobby-format")).toHaveTextContent("Sit & Go");
+        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("lobby-stakes")).toHaveTextContent("Sit & Go");
+        expect(screen.queryByText("Sunday Single")).not.toBeInTheDocument();
+        expect(screen.queryByText("Night Turbo")).not.toBeInTheDocument();
         expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+        expect(screen.getByText("Sunday Single")).toBeInTheDocument();
+        expect(screen.getByText("Night Turbo")).toBeInTheDocument();
+        expect(screen.getByTestId("lobby-tournament-row")).toBeInTheDocument();
+        expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
     } finally {
         added.forEach(game => {
             const index = mockGames.indexOf(game);

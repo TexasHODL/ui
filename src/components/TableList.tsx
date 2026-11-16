@@ -13,7 +13,7 @@ import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/ga
 import { applyEndedLobbyRetention } from "../utils/lobbyEndedFilter";
 
 import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
-import { displayGameFormat, SINGLE_TABLE_TOURNAMENT_LABEL } from "../utils/createGameType";
+import { displayGameFormat, SINGLE_TABLE_TOURNAMENT_LABEL, SIT_AND_GO_LABEL } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
@@ -309,7 +309,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const full = game.currentPlayers >= game.maxPlayers;
                                 const mySeat = mySeats[game.gameId];
                                 const seated = !!mySeat;
-                                const formatLabel = displayGameFormat(game.gameFormat, game.scheduledStartTime, formatGameFormatDisplay);
+                                const formatLabel = displayGameFormat(game.gameFormat, game.scheduledStartTime, formatGameFormatDisplay, game.gameId);
                                 const tournament = formatLabel === "Tournament" || formatLabel === SINGLE_TABLE_TOURNAMENT_LABEL || isTournamentFormat(game.gameFormat);
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
@@ -331,9 +331,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const schedule = scheduledLabel(game, mark, lateRegOpen, progress?.lateRegEndsAtMs);
                                 const stakes = formatLabel === SINGLE_TABLE_TOURNAMENT_LABEL
                                     ? SINGLE_TABLE_TOURNAMENT_LABEL
-                                    : tournament
-                                      ? "Tournament"
-                                      : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
+                                    : formatLabel === SIT_AND_GO_LABEL
+                                      ? SIT_AND_GO_LABEL
+                                      : tournament
+                                        ? "Tournament"
+                                        : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
                                 const rake = tournament ? null : rakeDisplay(game.rake, game.gameFormat);
                                 return (
                                     <tr key={game.gameId} className={seated ? styles.seatedRow : undefined}>

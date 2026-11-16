@@ -94,6 +94,9 @@ export const createdTableFormat = (type: CreateGameType, sitAndGoScheduleOn: boo
     return { format: GameFormat.CASH, startTime: undefined };
 };
 
+/** Lobby, table-header, session-history, and stakes name for an unscheduled Sit & Go. */
+export const SIT_AND_GO_LABEL = "Sit & Go";
+
 /** Lobby, table-header, and session-history name for a single-table tournament. */
 export const SINGLE_TABLE_TOURNAMENT_LABEL = "Single-table tournament";
 
@@ -103,7 +106,7 @@ export const MULTI_TABLE_TOURNAMENT_LABEL = "Multi-table tournament";
 /**
  * What to call a table the lobby and the table header are showing. A sit-and-go
  * with a start time, or a chain tournament table, is a **Single-table tournament**.
- * An unscheduled Sit & Go and a cash game keep the SDK's format display.
+ * An unscheduled Sit & Go is labelled {@link SIT_AND_GO_LABEL}. Cash keeps the SDK's format display.
  * A directed multi-table table (game id `<tournamentId>-t<n>`) is a {@link MULTI_TABLE_TOURNAMENT_LABEL}.
  */
 export const displayGameFormat = (
@@ -117,12 +120,13 @@ export const displayGameFormat = (
     if (format === GameFormat.TOURNAMENT || (format === GameFormat.SIT_AND_GO && isScheduledSng({ scheduledStartTime }))) {
         return SINGLE_TABLE_TOURNAMENT_LABEL;
     }
+    if (format === GameFormat.SIT_AND_GO) return SIT_AND_GO_LABEL;
     return fallback(format);
 };
 
 /** What a fixed-buy-in table is called in the join and buy-in modals (ui#934). */
-export const sitAndGoTypeLabel = (scheduledStartTime: number | undefined): string => (isScheduledSng({ scheduledStartTime }) ? "Tournament" : "Sit & Go");
+export const sitAndGoTypeLabel = (scheduledStartTime: number | undefined): string => (isScheduledSng({ scheduledStartTime }) ? SINGLE_TABLE_TOURNAMENT_LABEL : SIT_AND_GO_LABEL);
 
-/** The join modal's heading: "Tournament" for a scheduled start, "Sit & Go Tournament" otherwise. */
+/** The join modal's heading: single-table for a scheduled start, "Sit & Go Tournament" otherwise. */
 export const sitAndGoJoinTitle = (scheduledStartTime: number | undefined): string =>
-    isScheduledSng({ scheduledStartTime }) ? "Tournament" : "Sit & Go Tournament";
+    isScheduledSng({ scheduledStartTime }) ? SINGLE_TABLE_TOURNAMENT_LABEL : "Sit & Go Tournament";
