@@ -11,6 +11,7 @@ import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
 import { Pagination } from "../components/common";
 import { MyHandsPanel } from "../components/players/MyHandsPanel";
 import { ProfileHub } from "../components/players/ProfileHub";
+import { ProfileActivityPanel } from "../components/players/ProfileActivityPanel";
 import { ProfileIdentity } from "../components/players/ProfileIdentity";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
@@ -247,6 +248,8 @@ export default function PlayerProfilePage() {
                     <CosmosWalletPage embedded />
                 ) : tab === "awards" ? (
                     <PlayerAwardsPage embedded />
+                ) : tab === "activity" ? (
+                    <ProfileActivityPanel address={address} />
                 ) : loading ? (
                     <div className={`backdrop-blur-md rounded-xl shadow-2xl p-8 text-center ${styles.containerCard}`}>
                         <div className={`animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4 ${styles.loadingSpinner}`}></div>

@@ -10,7 +10,7 @@ export const PROFILE_TAB_PARAM = "tab";
 /** Shown on the Profile link when there is no game wallet to open. */
 export const PROFILE_SETUP_TITLE = "Set up your wallet to open your profile";
 
-export type ProfileTab = "hands" | "wallet" | "stats" | "awards";
+export type ProfileTab = "hands" | "wallet" | "stats" | "awards" | "activity";
 
 export interface PrimaryNavItem {
     label: string;
@@ -43,18 +43,21 @@ export const profileTabPath = (address: string, tab: ProfileTab): string => {
 
 /** `?tab=` on a profile. A missing or unknown value is Stats. */
 export const parseProfileTab = (value: string | null | undefined): ProfileTab => {
-    if (value === "hands" || value === "wallet" || value === "stats" || value === "awards") return value;
+    if (value === "hands" || value === "wallet" || value === "stats" || value === "awards" || value === "activity") return value;
     return "stats";
 };
 
+/** Awards and Recent activity are public chain data, so they open on any profile. */
+export const isPublicProfileTab = (tab: ProfileTab): boolean => tab === "awards" || tab === "activity";
+
 /**
- * Hands and Wallet exist only on your own profile. Awards is the global
- * leaderboard, so it opens on any profile. Anything else on another player's
+ * Hands and Wallet exist only on your own profile. Awards and Recent activity
+ * are public, so they open on any profile. Anything else on another player's
  * profile, or a profile opened with no wallet, stays on Stats.
  */
 export const visibleProfileTab = (viewer: string | null | undefined, profile: string | null | undefined, raw: string | null | undefined): ProfileTab => {
     const tab = parseProfileTab(raw);
-    if (tab === "awards") return "awards";
+    if (isPublicProfileTab(tab)) return tab;
     if (!isOwnPlayerProfile(viewer, profile)) return "stats";
     return tab;
 };
@@ -112,17 +115,24 @@ export const isPrimaryNavCurrent = (item: PrimaryNavItem, pathname: string, _sea
 
 /**
  * Sections on a player profile. All of them stay on this page. My Hands and
- * Wallet are only offered on your own profile. Awards is on every profile.
+ * Wallet are only offered on your own profile. Awards and Recent activity
+ * are on every profile.
  */
 export const profileHubItems = (viewer: string | null | undefined, profile: string | null | undefined, active: ProfileTab): ProfileHubItem[] => {
     if (!hasContent(profile)) return [];
     const own = isOwnPlayerProfile(viewer, profile);
-    const tab = own || active === "awards" ? active : "stats";
+    const tab = own || isPublicProfileTab(active) ? active : "stats";
     const stats: ProfileHubItem = {
         id: "stats",
         label: "Stats",
         to: profileTabPath(profile, "stats"),
         current: tab === "stats"
+    };
+    const activity: ProfileHubItem = {
+        id: "activity",
+        label: "Recent activity",
+        to: profileTabPath(profile, "activity"),
+        current: tab === "activity"
     };
     const awards: ProfileHubItem = {
         id: "awards",
@@ -130,11 +140,12 @@ export const profileHubItems = (viewer: string | null | undefined, profile: stri
         to: profileTabPath(profile, "awards"),
         current: tab === "awards"
     };
-    if (!own) return [stats, awards];
+    if (!own) return [stats, activity, awards];
     return [
         { id: "hands", label: "My Hands", to: profileTabPath(profile, "hands"), current: tab === "hands" },
         { id: "wallet", label: "Wallet", to: profileTabPath(profile, "wallet"), current: tab === "wallet" },
         stats,
+        activity,
         awards
     ];
 };

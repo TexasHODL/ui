@@ -5,6 +5,7 @@ import {
     isOwnPlayerProfile,
     isPrimaryNavCurrent,
     parseProfileTab,
+    isPublicProfileTab,
     playerProfilePath,
     primaryNavItems,
     profileHubItems,
@@ -97,10 +98,14 @@ describe("profile tabs", () => {
         expect(parseProfileTab("wallet")).toBe("wallet");
         expect(parseProfileTab("stats")).toBe("stats");
         expect(parseProfileTab("awards")).toBe("awards");
+        expect(parseProfileTab("activity")).toBe("activity");
         expect(parseProfileTab(null)).toBe("stats");
         expect(parseProfileTab(undefined)).toBe("stats");
         expect(parseProfileTab("")).toBe("stats");
         expect(parseProfileTab("lobby")).toBe("stats");
+        expect(isPublicProfileTab("activity")).toBe(true);
+        expect(isPublicProfileTab("awards")).toBe(true);
+        expect(isPublicProfileTab("stats")).toBe(false);
     });
 
     it("keeps Stats on the profile path and records the other sections in the query", () => {
@@ -108,16 +113,20 @@ describe("profile tabs", () => {
         expect(profileTabPath(ME, "hands")).toBe(`${playerProfilePath(ME)}?tab=hands`);
         expect(profileTabPath(ME, "wallet")).toBe(`${playerProfilePath(ME)}?tab=wallet`);
         expect(profileTabPath(ME, "awards")).toBe(`${playerProfilePath(ME)}?tab=awards`);
+        expect(profileTabPath(ME, "activity")).toBe(`${playerProfilePath(ME)}?tab=activity`);
     });
 
     it("hides hands and wallet on someone else's profile and keeps Awards", () => {
         expect(visibleProfileTab(ME, ME, "hands")).toBe("hands");
         expect(visibleProfileTab(ME.toUpperCase(), ME, "wallet")).toBe("wallet");
         expect(visibleProfileTab(ME, ME, "awards")).toBe("awards");
+        expect(visibleProfileTab(ME, ME, "activity")).toBe("activity");
         expect(visibleProfileTab(ME, THEM, "wallet")).toBe("stats");
         expect(visibleProfileTab(ME, THEM, "awards")).toBe("awards");
+        expect(visibleProfileTab(ME, THEM, "activity")).toBe("activity");
         expect(visibleProfileTab(null, ME, "hands")).toBe("stats");
         expect(visibleProfileTab(null, ME, "awards")).toBe("awards");
+        expect(visibleProfileTab(null, ME, "activity")).toBe("activity");
         expect(visibleProfileTab(ME, ME, "nope")).toBe("stats");
     });
 
@@ -129,6 +138,13 @@ describe("profile tabs", () => {
         expect(standaloneSectionTarget("", "wallet")).toBeNull();
         expect(standaloneSectionTarget(null, "awards")).toBeNull();
     });
+});
+
+const activityItem = (address: string, current: boolean) => ({
+    id: "activity" as const,
+    label: "Recent activity",
+    to: profileTabPath(address, "activity"),
+    current
 });
 
 const awardsItem = (address: string, current: boolean) => ({
@@ -144,36 +160,48 @@ describe("profileHubItems", () => {
             { id: "hands", label: "My Hands", to: profileTabPath(ME, "hands"), current: false },
             { id: "wallet", label: "Wallet", to: profileTabPath(ME, "wallet"), current: false },
             { id: "stats", label: "Stats", to: playerProfilePath(ME), current: true },
+            activityItem(ME, false),
             awardsItem(ME, false)
         ]);
         expect(profileHubItems(ME, ME, "hands")).toEqual([
             { id: "hands", label: "My Hands", to: profileTabPath(ME, "hands"), current: true },
             { id: "wallet", label: "Wallet", to: profileTabPath(ME, "wallet"), current: false },
             { id: "stats", label: "Stats", to: playerProfilePath(ME), current: false },
+            activityItem(ME, false),
             awardsItem(ME, false)
         ]);
         expect(profileHubItems(ME, ME, "wallet").find(item => item.id === "wallet")).toMatchObject({ current: true });
         expect(profileHubItems(ME, ME, "awards").find(item => item.id === "awards")).toMatchObject({ current: true });
+        expect(profileHubItems(ME, ME, "activity").find(item => item.id === "activity")).toMatchObject({ current: true });
     });
 
     it("shows Stats and Awards for another player, and keeps Awards when the url asks for it", () => {
         expect(profileHubItems(ME, THEM, "hands")).toEqual([
             { id: "stats", label: "Stats", to: playerProfilePath(THEM), current: true },
+            activityItem(THEM, false),
             awardsItem(THEM, false)
         ]);
         expect(profileHubItems(ME, THEM, "awards")).toEqual([
             { id: "stats", label: "Stats", to: playerProfilePath(THEM), current: false },
+            activityItem(THEM, false),
             awardsItem(THEM, true)
+        ]);
+        expect(profileHubItems(ME, THEM, "activity")).toEqual([
+            { id: "stats", label: "Stats", to: playerProfilePath(THEM), current: false },
+            activityItem(THEM, true),
+            awardsItem(THEM, false)
         ]);
     });
 
     it("keeps Awards when no wallet is connected, and nothing without a profile address", () => {
         expect(profileHubItems(null, ME, "wallet")).toEqual([
             { id: "stats", label: "Stats", to: playerProfilePath(ME), current: true },
+            activityItem(ME, false),
             awardsItem(ME, false)
         ]);
         expect(profileHubItems(null, ME, "awards")).toEqual([
             { id: "stats", label: "Stats", to: playerProfilePath(ME), current: false },
+            activityItem(ME, false),
             awardsItem(ME, true)
         ]);
         expect(profileHubItems(ME, undefined, "stats")).toEqual([]);

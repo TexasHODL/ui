@@ -35,6 +35,7 @@ describe("ProfileHub", () => {
         expect(within(nav).getByRole("link", { name: "My Hands" })).toHaveAttribute("href", `/players/${ME}?tab=hands`);
         expect(within(nav).getByRole("link", { name: "Wallet" })).toHaveAttribute("href", `/players/${ME}?tab=wallet`);
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("href", `/players/${ME}`);
+        expect(within(nav).getByRole("link", { name: "Recent activity" })).toHaveAttribute("href", `/players/${ME}?tab=activity`);
         expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("href", `/players/${ME}?tab=awards`);
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("aria-current", "page");
         expect(within(nav).getByRole("link", { name: "My Hands" })).not.toHaveAttribute("aria-current");
@@ -68,6 +69,7 @@ describe("ProfileHub", () => {
         renderHub(THEM, `/players/${THEM}?tab=awards`);
         const nav = sections();
         expect(within(nav).getByRole("link", { name: "Stats" })).toHaveAttribute("href", `/players/${THEM}`);
+        expect(within(nav).getByRole("link", { name: "Recent activity" })).toHaveAttribute("href", `/players/${THEM}?tab=activity`);
         expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("href", `/players/${THEM}?tab=awards`);
         expect(within(nav).getByRole("link", { name: "Awards" })).toHaveAttribute("aria-current", "page");
         expect(within(nav).getByRole("link", { name: "Stats" })).not.toHaveAttribute("aria-current");
@@ -94,5 +96,15 @@ describe("ProfileHub", () => {
         mockAddress = ME;
         renderHub(undefined);
         expect(screen.queryByRole("navigation", { name: "Profile sections" })).not.toBeInTheDocument();
+    });
+
+    it("marks Recent activity current on your profile and on someone else's", () => {
+        mockAddress = ME;
+        renderHub(ME, `/players/${ME}?tab=activity`);
+        expect(within(sections()).getByRole("link", { name: "Recent activity" })).toHaveAttribute("aria-current", "page");
+        renderHub(THEM, `/players/${THEM}?tab=activity`);
+        const other = screen.getAllByRole("navigation", { name: "Profile sections" })[1];
+        expect(within(other).getByRole("link", { name: "Recent activity" })).toHaveAttribute("aria-current", "page");
+        expect(within(other).queryByRole("link", { name: "Wallet" })).not.toBeInTheDocument();
     });
 });

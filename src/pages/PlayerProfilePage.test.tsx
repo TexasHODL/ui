@@ -51,6 +51,7 @@ jest.mock("../components/common", () => ({ Pagination: () => null }));
 jest.mock("../components/players/MyHandsPanel", () => ({ MyHandsPanel: () => null }));
 jest.mock("../components/CosmosWalletPage", () => ({ __esModule: true, default: () => null }));
 jest.mock("./PlayerAwardsPage", () => ({ __esModule: true, default: () => null }));
+jest.mock("../components/players/ProfileActivityPanel", () => ({ ProfileActivityPanel: () => <div>Recent activity panel</div> }));
 jest.mock("../components/players/ProfileHeaderAvatar", () => ({
     ProfileHeaderAvatar: () => <span data-testid="player-avatar" />
 }));
@@ -169,5 +170,12 @@ describe("PlayerProfilePage volume cards", () => {
         expect(screen.getByRole("group", { name: "Player" })).toHaveTextContent(ADDRESS);
         expect(screen.getByText("Loading player...")).toBeInTheDocument();
         expect(screen.queryByText("Wallet Balance")).not.toBeInTheDocument();
+    });
+
+    it("opens the Recent activity tab without the stats cards", () => {
+        renderPage(`/players/${ADDRESS}?tab=activity`);
+        expect(screen.getByText("Recent activity panel")).toBeInTheDocument();
+        expect(screen.queryByText("Wallet Balance")).not.toBeInTheDocument();
+        expect(screen.queryByText("Loading player...")).not.toBeInTheDocument();
     });
 });
