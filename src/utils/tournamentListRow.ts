@@ -1,16 +1,24 @@
 import { formatMicroAsUsdc } from "../constants/currency";
 import { hasValue } from "./guards";
 import { tableUrl, tournamentUrl } from "./tableUrl";
-import type { TournamentLobbyCard } from "./tournamentLobby";
+import { lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "./tournamentLobby";
 
 /** What one multi-table tournament shows as a row of the lobby's table list. */
 export interface TournamentListRow {
     tournamentId: string;
-    /** Runners out of the most the tournament takes: "27/27". */
+    /** Field size while registering ("3/27"), or a sensible count after the start ("7 entrants"). */
     runners: string;
     /** The buy-in: "$1.00". */
     buyIn: string;
+    /** Status badge matching sit-and-go lobby wording (Registering, Started, Finished, …). */
+    status: string;
     action: { label: string; url: string };
+}
+
+/** The All-games status badge: the same words sit-and-go rows use. Finished does not name the winner (that stays on the event page). */
+export function lobbyTournamentStatus(card: TournamentLobbyCard): string {
+    if (card.phase === "cancelled") return "Cancelled: not enough players";
+    return phaseLabel(card.phase);
 }
 
 /**
@@ -22,8 +30,9 @@ export const tournamentListRow = (card: TournamentLobbyCard): TournamentListRow 
     const registering = card.phase === "open";
     return {
         tournamentId: card.tournamentId,
-        runners: `${card.registered}/${card.maxEntrants}`,
+        runners: lobbyRunnersLabel(card),
         buyIn: `$${formatMicroAsUsdc(card.cost.gross, 2)}`,
+        status: lobbyTournamentStatus(card),
         action: registering
             ? { label: "Register", url: tournamentUrl(card.tournamentId) }
             : { label: card.phase === "cancelled" ? "Cancelled" : card.phase === "full" ? "Full" : "View", url: tournamentUrl(card.tournamentId) }

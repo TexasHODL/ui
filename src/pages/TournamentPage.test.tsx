@@ -238,6 +238,9 @@ test("a finished tournament has no Register button", () => {
     renderPage();
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
     expect(screen.getByTestId("tournament-standings")).toBeInTheDocument();
+    expect(screen.getByTestId("tournament-page-status")).toHaveTextContent("Finished");
+    expect(screen.getByTestId("tournament-page-runners")).toHaveTextContent("entrant");
+    expect(screen.getByTestId("tournament-page-winner")).toHaveTextContent("poker1wi...nner");
 });
 
 test("the balance amount is green when it covers the buy-in, and Register & pay is on the right under it", () => {

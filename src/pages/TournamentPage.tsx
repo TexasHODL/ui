@@ -13,7 +13,8 @@ import { hasElements, isNullish } from "../utils/guards";
 import { displayTableName } from "../utils/generatedTableName";
 import { formatStartsAt } from "../utils/scheduledSng";
 import { tableUrl } from "../utils/tableUrl";
-import { buildTournamentCard, escrowStatement, formatUsdc, type TournamentStateDTO as LobbyTournamentState } from "../utils/tournamentLobby";
+import { truncateMiddle } from "../utils/stringUtils";
+import { buildTournamentCard, escrowStatement, formatUsdc, lobbyRunnersLabel, phaseLabel, type TournamentStateDTO as LobbyTournamentState } from "../utils/tournamentLobby";
 import { liveTournamentTables, tournamentStandings } from "../utils/tournamentTables";
 import { startCountdownText } from "../utils/tournamentStart";
 import { tournamentSize } from "../utils/tournamentResult";
@@ -159,8 +160,8 @@ export default function TournamentPage() {
                             <dl className="p-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm" data-testid="tournament-summary">
                                 <div>
                                     <dt className="text-gray-400 font-bold">Status</dt>
-                                    <dd className="text-white capitalize" data-testid="tournament-page-status">
-                                        {startingSoon ? "Starting" : tournament.status}
+                                    <dd className="text-white" data-testid="tournament-page-status">
+                                        {card ? phaseLabel(card.phase) : startingSoon ? "Starting" : tournament.status}
                                     </dd>
                                 </div>
                                 <div>
@@ -172,11 +173,21 @@ export default function TournamentPage() {
                                 <div>
                                     <dt className="text-gray-400 font-bold">Runners</dt>
                                     <dd className="text-white" data-testid="tournament-page-runners">
-                                        {tournament.status === "registering"
-                                            ? `${tournamentSize(tournament)} / ${tournament.options.maxEntrants}`
-                                            : `${playersRemaining} left of ${tournamentSize(tournament)}`}
+                                        {card
+                                            ? lobbyRunnersLabel(card)
+                                            : tournament.status === "registering"
+                                              ? `${tournamentSize(tournament)} / ${tournament.options.maxEntrants}`
+                                              : `${playersRemaining} left of ${tournamentSize(tournament)}`}
                                     </dd>
                                 </div>
+                                {card?.winnerAddress && (
+                                    <div>
+                                        <dt className="text-gray-400 font-bold">Winner</dt>
+                                        <dd className="text-white font-mono" data-testid="tournament-page-winner">
+                                            {truncateMiddle(card.winnerAddress, 8, 4)}
+                                        </dd>
+                                    </div>
+                                )}
                                 {tournament.status === "registering" ? (
                                     <div>
                                         <dt className="text-gray-400 font-bold">Starts in</dt>

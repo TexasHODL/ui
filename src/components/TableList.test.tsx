@@ -34,10 +34,15 @@ let mockTournamentCards: {
     tournamentId: string;
     phase: string;
     registered: number;
+    runnersLeft?: number;
     maxEntrants: number;
     seatsPerTable: number;
     cost: { gross: bigint };
     myTable?: { gameId: string; number: number };
+    name?: string;
+    winnerAddress?: string;
+    startsAtMs?: number;
+    minEntrants?: number;
 }[] = [];
 jest.mock("../hooks/tournament/useTournamentLobby", () => {
     const actual = jest.requireActual("../hooks/tournament/useTournamentLobby");
@@ -446,6 +451,7 @@ test("a multi-table tournament is one lobby row, and a seat you have says Take m
         tournamentId: "0xface4d5c131b7d806a87883d234dd1929a296c5e",
         phase: "running",
         registered: 12,
+        runnersLeft: 8,
         maxEntrants: 27,
         seatsPerTable: 6,
         cost: { gross: 1_000_000n },
@@ -454,7 +460,8 @@ test("a multi-table tournament is one lobby row, and a seat you have says Take m
     render(<TableList />);
     expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
     expect(screen.getByTestId("lobby-tournament-row")).toHaveTextContent("Take my seat");
-    expect(screen.getByTestId("lobby-tournament-runners")).toHaveTextContent("12/27");
+    expect(screen.getByTestId("lobby-tournament-runners")).toHaveTextContent("8 left of 12");
+    expect(screen.getByTestId("lobby-tournament-status")).toHaveTextContent("Started");
     expect(screen.getByTestId("lobby-tournament-seat")).toHaveTextContent("table 2");
 });
 
@@ -529,6 +536,61 @@ test("an All-games multi-table row shares the tournament page and Register goes 
     expect(row.getByTestId("lobby-tournament-name")).toHaveTextContent(name);
     expect(row.queryByText(/Tournament 0x/)).not.toBeInTheDocument();
     expect(row.getByRole("link", { name: `Register ${name}` })).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
+    expect(row.getByTestId("lobby-tournament-status")).toHaveTextContent("Registering");
     fireEvent.click(row.getByRole("button", { name: `Share ${name}` }));
     expect(copyToClipboard).toHaveBeenCalledWith(`${window.location.origin}/tournament/${TOURNAMENT_ID}`, "Tournament link copied");
+});
+
+test("a finished multi-table row is marked Finished with its winner and sits below joinable tables", () => {
+    mockTournamentCards = [
+        {
+            ...openTournamentCard,
+            tournamentId: "0xopen1111",
+            name: "All In",
+            startsAtMs: Date.now() + 3_600_000
+        },
+        {
+            tournamentId: "0x275a79b9258009e0a1f4f4f4232cefe25262765f0a5c7c3a86040885ffec5187",
+            phase: "finished",
+            registered: 7,
+            runnersLeft: 1,
+            maxEntrants: 27,
+            minEntrants: 6,
+            seatsPerTable: 9,
+            cost: { gross: 2_000_000n },
+            winnerAddress: "b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg",
+            name: "Bitcoin Roulette"
+        }
+    ];
+    renderLobby();
+    const rows = screen.getAllByTestId("lobby-tournament-row");
+    expect(rows).toHaveLength(2);
+    const names = rows.map(r => within(r).getByTestId("lobby-tournament-name").textContent);
+    expect(names[0]).toContain("All In");
+    expect(within(rows[0]).getByTestId("lobby-tournament-status")).toHaveTextContent("Registering");
+    expect(within(rows[1]).getByTestId("lobby-tournament-name")).toHaveTextContent("Bitcoin Roulette");
+    expect(within(rows[1]).getByTestId("lobby-tournament-status")).toHaveTextContent("Finished");
+    expect(within(rows[1]).getByTestId("lobby-tournament-status")).not.toHaveTextContent("Won by");
+    expect(within(rows[1]).getByTestId("lobby-tournament-runners")).toHaveTextContent("7 entrants");
+    expect(within(rows[1]).getByRole("link", { name: "View Bitcoin Roulette" })).toHaveAttribute(
+        "href",
+        "/tournament/0x275a79b9258009e0a1f4f4f4232cefe25262765f0a5c7c3a86040885ffec5187"
+    );
+});
+
+test("Open only hides a finished multi-table tournament from All games", () => {
+    mockTournamentCards = [{
+        tournamentId: "0xfin",
+        phase: "finished",
+        registered: 7,
+        runnersLeft: 1,
+        maxEntrants: 27,
+        seatsPerTable: 9,
+        cost: { gross: 2_000_000n },
+        name: "Bitcoin Roulette"
+    }];
+    renderLobby();
+    expect(screen.getByTestId("lobby-tournament-row")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/open seats only/i));
+    expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
 });

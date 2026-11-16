@@ -17,6 +17,7 @@ import { displayGameFormat } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
+import { filterLobbyTournamentCards, sortLobbyEntries } from "../utils/lobbyEntries";
 import { hasContent, isEmpty, isNullish } from "../utils/guards";
 import { useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
 import { LobbyMttSection } from "./tournament/LobbyMttSection";
@@ -92,9 +93,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const tournamentRows = useMemo(() => {
         // Cards on the Tournaments tab are the multi-table list. All games keeps one row each.
         if (format !== "all") return [];
-        const q = search.trim().toLowerCase();
-        return tournamentCards.filter(card => !hasContent(q) || card.tournamentId.toLowerCase().includes(q));
-    }, [tournamentCards, format, search]);
+        return filterLobbyTournamentCards(tournamentCards, { search, openOnly });
+    }, [tournamentCards, format, search, openOnly]);
     // All sit-and-go / tournament tables in the club list — needed before paging so
     // Finished/Cancelled rows older than 24h can be filtered out of the lobby.
     const tournamentIds = useMemo(
@@ -112,8 +112,20 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     }, [clubGames, format, search, openOnly, sort, startedTables]);
     // A search miss refreshes once; a full table id is also looked up directly.
     useSearchMissRecovery(search, games.length > 0, isLoading, refetch, lookupGame);
-    const currentPage = Math.min(page, Math.max(1, Math.ceil(games.length / PAGE_SIZE)));
-    const pagedGames = games.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const lobbyEntries = useMemo(
+        () =>
+            sortLobbyEntries(
+                [
+                    ...tournamentRows.map(card => ({ kind: "mtt" as const, card })),
+                    ...games.map(game => ({ kind: "game" as const, game }))
+                ],
+                { sort, progress: startedTables }
+            ),
+        [tournamentRows, games, sort, startedTables]
+    );
+    const currentPage = Math.min(page, Math.max(1, Math.ceil(lobbyEntries.length / PAGE_SIZE)));
+    const pagedEntries = lobbyEntries.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const pagedGames = pagedEntries.flatMap(entry => (entry.kind === "game" ? [entry.game] : []));
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
     const occupiedSeats = clubGames.reduce((sum, game) => sum + game.currentPlayers, 0);
     const availableSeats = clubGames.reduce((sum, game) => sum + Math.max(0, game.maxPlayers - game.currentPlayers), 0);
@@ -281,8 +293,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                             </tr>
                         </thead>
                         <tbody>
-                            <LobbyTournamentRows cards={tournamentRows} />
-                            {pagedGames.map(game => {
+                            {pagedEntries.map(entry => {
+                                if (entry.kind === "mtt") {
+                                    return <LobbyTournamentRows key={entry.card.tournamentId} cards={[entry.card]} />;
+                                }
+                                const game = entry.game;
                                 const full = game.currentPlayers >= game.maxPlayers;
                                 const mySeat = mySeats[game.gameId];
                                 const seated = !!mySeat;
@@ -419,7 +434,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                 </div>
             )}
             {!error && !isLoading && games.length > 0 && (
-                <Pagination currentPage={currentPage} totalItems={games.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
+                <Pagination currentPage={currentPage} totalItems={lobbyEntries.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
             )}
             {format !== "mtt" && <p className={styles.footnote}>Opening a table lets you look around. Choose a seat and confirm your buy-in when you’re ready.</p>}
             <DeleteTableModal

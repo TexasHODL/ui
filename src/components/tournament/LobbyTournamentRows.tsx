@@ -17,6 +17,7 @@ export const LobbyTournamentRows: React.FC<{ cards: TournamentLobbyCard[] }> = (
             const row = tournamentListRow(card);
             const action = lobbyTournamentAction(card);
             const displayName = displayTableName(card.name, card.tournamentId);
+            const joinable = action.label === "Register" || action.label === "Take my seat";
             return (
                 <tr key={card.tournamentId} data-testid="lobby-tournament-row" className={hasValue(action.seatedAt) ? styles.seatedRow : undefined}>
                     <td>
@@ -34,8 +35,11 @@ export const LobbyTournamentRows: React.FC<{ cards: TournamentLobbyCard[] }> = (
                                     {" · "}
                                     {card.seatsPerTable}-max tables
                                 </span>
+                                <span className={styles.scheduledBadge} data-testid="lobby-tournament-status">
+                                    {row.status}
+                                </span>
                                 <span className={styles.mobileFacts}>
-                                    {row.buyIn} buy-in · {row.runners} runners
+                                    {row.buyIn} buy-in · {row.runners}
                                 </span>
                             </div>
                         </div>
@@ -47,7 +51,7 @@ export const LobbyTournamentRows: React.FC<{ cards: TournamentLobbyCard[] }> = (
                     <td>
                         <div className={styles.seatCount}>
                             <strong data-testid="lobby-tournament-runners">{row.runners}</strong>
-                            <span className={styles.detail}>runners</span>
+                            <span className={styles.detail}>{card.phase === "open" || card.phase === "full" || card.phase === "starting" ? "runners" : ""}</span>
                         </div>
                     </td>
                     <td className={styles.buyInColumn}>
@@ -58,7 +62,7 @@ export const LobbyTournamentRows: React.FC<{ cards: TournamentLobbyCard[] }> = (
                             <ShareTournamentButton tournamentId={card.tournamentId} name={card.name} />
                             <a
                                 href={action.url}
-                                className={styles.actionButton}
+                                className={joinable ? styles.actionButton : styles.watchButton}
                                 aria-label={`${action.label} ${displayName}`}
                             >
                                 <span>{action.label}</span>

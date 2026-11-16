@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { tableUrl, tournamentUrl } from "../../utils/tableUrl";
 import { displayTableName } from "../../utils/generatedTableName";
 import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
-import { formatUsdc, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
+import { formatUsdc, lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
 import { ShareTournamentButton } from "./ShareTournamentButton";
 
 interface TournamentCardProps {
@@ -58,9 +58,12 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) =
                     </span>
                 </div>
             </div>
-
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Stat label="Registered" value={`${card.registered} / ${card.maxEntrants}`} testId="tournament-registered" />
+                <Stat
+                    label={card.phase === "open" || card.phase === "full" || card.phase === "starting" ? "Registered" : "Runners"}
+                    value={lobbyRunnersLabel(card)}
+                    testId="tournament-registered"
+                />
                 <Stat label="Buy-in" value={formatUsdc(card.cost.gross)} testId="tournament-buyin" />
                 <Stat
                     label={card.prizePoolIsProjected ? "Prize pool (so far)" : "Prize pool"}
