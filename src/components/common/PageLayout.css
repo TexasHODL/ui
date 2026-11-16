@@ -295,3 +295,11 @@
         min-width: 0;
     }
 }
+
+/* Tournament page: colour the wallet balance against the buy-in. */
+.tournament-balance-enough {
+    color: var(--accent-success, #55dda2);
+}
+.tournament-balance-short {
+    color: var(--accent-danger, #ff557c);
+}
