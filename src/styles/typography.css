@@ -3,7 +3,7 @@
  * The shipped defaults for the shared tokens come from src/utils/typography.ts via the Tailwind plugin (one system:
  * uppercase bold tracked buttons, Rubik 700 tabular numbers, 0.08em/700 micro-labels).
  * Each element still carries its own pre-#922 value as the var() fallback, which is
- * what applies wherever a token is reset (e.g. inside the Nouns felt). The
+ * what applies wherever a token is reset. The
  * /table-preview Typography panel overrides the tokens on <html> for local tuning:
  *
  *   --type-num-family    stack pill, bet/pot chip amount, payout lines
@@ -22,9 +22,6 @@
  *                        HODL Action 900, 0.01em (700 / 0 on some mobile layouts)
  *   --type-btn-family    dock buttons only (current: HODL Action)
  *   --type-body-weight   hand strength 500, seat-me checkbox 400
- *
- * Nouns theme: its Silkscreen pot rules use higher-specificity selectors and win, and the
- * number family is reset inside .nouns-table-felt so nothing there changes font.
  */
 :root {
     /* The shipped --type-* defaults (button, number, label, font stacks) come from
@@ -33,11 +30,6 @@
     --type-pot-label-size: var(--type-label-size, 11px);
     --type-level-size: var(--type-label-size, 10px);
     --type-place-size: var(--type-label-size, 1rem);
-}
-
-/* The Nouns felt keeps its own number fonts (Silkscreen pot, inherited elsewhere). */
-.nouns-table-felt {
-    --type-num-family: initial;
 }
 
 /* Numbers */

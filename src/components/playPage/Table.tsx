@@ -37,6 +37,7 @@ import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
 
 import "./Table.css";
+import { nextAppearanceId, readStoredAppearanceId, writeStoredAppearanceId, type TableAppearanceId } from "../../theme/tableAppearances";
 
 //// TODO get these hooks to subscribe to the wss connection
 
@@ -1089,9 +1090,12 @@ const Table = React.memo(() => {
     // Mobile opens the Blinds panel from the burger menu (the floating tab is hidden there).
     const [blindsOpenSignal, setBlindsOpenSignal] = useState(0);
     const [isMobileLandscape, setIsMobileLandscape] = useState(getViewportMode() === "mobile-landscape");
-    const envTableStyle = import.meta.env.VITE_TABLE_STYLE;
-    const defaultTableStyle: "modern" | "classic" | "nouns" = envTableStyle === "classic" || envTableStyle === "nouns" ? envTableStyle : "modern";
-    const [tableStyle, setTableStyle] = useState<"modern" | "classic" | "nouns">(defaultTableStyle);
+    const [tableStyle, setTableStyleState] = useState<TableAppearanceId>(() =>
+        readStoredAppearanceId(new Date(), import.meta.env.VITE_TABLE_STYLE)
+    );
+    const setTableStyle = useCallback((style: TableAppearanceId | ((prev: TableAppearanceId) => TableAppearanceId)) => {
+        setTableStyleState(prev => writeStoredAppearanceId(typeof style === "function" ? style(prev) : style));
+    }, []);
 
     // Update viewport mode on window resize
     useEffect(() => {
@@ -1444,7 +1448,7 @@ const Table = React.memo(() => {
                         openSettings={openSettings}
                         tableStyle={tableStyle}
                         onTableStyleChange={setTableStyle}
-                        onCycleTableStyle={() => setTableStyle(s => (s === "modern" ? "classic" : s === "classic" ? "nouns" : "modern"))}
+                        onCycleTableStyle={() => setTableStyle(s => nextAppearanceId(s))}
                         handleLobbyClick={handleLobbyClick}
                         handleCopyTableLink={handleCopyTableLink}
                         fetchAccountBalance={fetchAccountBalance}
@@ -1505,16 +1509,10 @@ const Table = React.memo(() => {
                 <div className={["table-play-row", isMobilePortrait ? "is-portrait" : "", tableLayout.viewportMode === "mobile-landscape" ? "is-landscape" : "", tableLayout.viewportMode === "mobile-landscape" && leftHandMode ? "hand-left" : ""].filter(Boolean).join(" ")}>
                 <div ref={tableContainerRef} className="table-stage flex-grow relative overflow-visible">
                     {/* Background layers */}
-                    {tableStyle !== "nouns" && <HexagonPattern patternId="hexagons-table" />}
-                    {tableStyle === "nouns" ? (
-                        <div className="nouns-background" />
-                    ) : (
-                        <>
-                            <div className="background-shimmer shimmer-animation" />
-                            <div className="background-animated-static" />
-                            <div className="background-base-static" />
-                        </>
-                    )}
+                    <HexagonPattern patternId="hexagons-table" />
+                    <div className="background-shimmer shimmer-animation" />
+                    <div className="background-animated-static" />
+                    <div className="background-base-static" />
 
                     {/*//! TABLE — zoom-wrapper applies calculated transform */}
                     <div ref={zoomWrapperRef} className={`${isMobile ? "zoom-wrapper-mobile" : "zoom-wrapper-desktop"}`} data-table-fit={tableOnly ? tableOnlyFit.scale.toFixed(3) : undefined} data-mobile-readable={tableLayout.viewportMode.startsWith("mobile") ? (isMobilePortrait ? "portrait" : "landscape") : undefined} style={{ transform: fitTransform(tableOnlyFit, tableLayout.tableTransform), ...cssVars({ "--mobile-unit": mobileCardUnit(isMobilePortrait, tableLayout.zoom, tableLayout.containerWidth, tableLayout.containerHeight), "--table-zoom": String(tableLayout.zoom) }) }}>
@@ -1541,8 +1539,8 @@ const Table = React.memo(() => {
                                 and heightened (MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_LANDSCAPE_HEIGHT_STRETCH).
                                 Zoom stays uniform. */}
                             <div className="absolute inset-0 pointer-events-none">
-                            {/* Outer rail — Ignition-style 3D depth (modern and nouns) */}
-                            {(tableStyle === "modern" || tableStyle === "nouns") && (
+                            {/* Outer rail — Ignition-style 3D depth (Texas HODL / modern) */}
+                            {tableStyle === "modern" && (
                                 <div
                                     className="absolute z-10 rounded-[290px]"
                                     style={{
@@ -1551,31 +1549,20 @@ const Table = React.memo(() => {
                                         left: "-30px",
                                         top: "-30px",
                                         borderStyle: "solid",
-                                        borderColor: tableStyle === "nouns" ? "rgba(26, 26, 46, 0.8)" : "rgba(177, 76, 255, 0.34)",
+                                        borderColor: "rgba(177, 76, 255, 0.34)",
                                         borderWidth: 10,
-                                        boxShadow:
-                                            tableStyle === "nouns"
-                                                ? "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)"
-                                                : "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)",
-                                        background:
-                                            tableStyle === "nouns"
-                                                ? "linear-gradient(180deg, rgba(26,26,46,0.4) 0%, rgba(26,26,46,0.7) 100%)"
-                                                : "linear-gradient(180deg, rgba(177,76,255,0.16) 0%, rgba(10,8,15,0.72) 100%)"
+                                        boxShadow: "0 12px 48px rgba(0,0,0,0.8), 0 4px 16px rgba(0,0,0,0.5), inset 0 3px 12px rgba(0,0,0,0.5), inset 0 -2px 6px rgba(255,255,255,0.05)",
+                                        background: "linear-gradient(180deg, rgba(177,76,255,0.16) 0%, rgba(10,8,15,0.72) 100%)"
                                     }}
                                 />
                             )}
                             {/* Table felt surface */}
                             <div
-                                className={`table-surface-shadow z-20 relative border-solid rounded-[250px] ${tableStyle === "nouns" ? "nouns-table-felt border-[3px]" : tableStyle === "classic" ? "border-[3px]" : "border-[2px]"}`}
+                                className={`table-surface-shadow z-20 relative border-solid rounded-[250px] ${tableStyle === "classic" ? "border-[3px]" : "border-[2px]"}`}
                                 style={{
                                     width: `${stageDims.tableWidth}px`,
                                     height: `${stageDims.tableHeight}px`,
-                                    borderColor:
-                                        tableStyle === "nouns"
-                                            ? "rgba(214, 60, 94, 0.4)"
-                                            : tableStyle === "classic"
-                                              ? "rgba(255, 255, 255, 0.3)"
-                                              : "rgba(255, 255, 255, 0.08)"
+                                    borderColor: tableStyle === "classic" ? "rgba(255, 255, 255, 0.3)" : "rgba(255, 255, 255, 0.08)"
                                 }}
                             />
                             </div>

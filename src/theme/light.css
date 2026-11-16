@@ -130,9 +130,6 @@ html[data-theme="light"] .table-surface-shadow {
         0 16px 40px rgba(26, 11, 46, 0.08);
 }
 
-html[data-theme="light"] .nouns-table-felt {
-    background: linear-gradient(135deg, #ffe6c4 0%, #ffd0e4 40%, #ecd4fb 100%);
-}
 
 html[data-theme="light"] .table-logo img,
 html[data-theme="light"] .table-container[data-table-theme="modern"] .table-logo img {

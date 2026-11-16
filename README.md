@@ -105,6 +105,18 @@ VITE_ACCENT_COLOR_GLOW=#fbbf24
 
 See [.env.example](.env.example) for all available configuration options.
 
+### Table appearances
+
+The Settings panel's **Table appearance** dropdown is driven by the registry in `src/theme/tableAppearances.ts`. Permanent options today are **Texas HODL** (`modern`) and **Classic** (`classic`).
+
+To add a limited-time event appearance:
+
+1. Add an entry to `TABLE_APPEARANCES` with `id`, `label`, and optional `startsAt` / `endsAt` (ISO 8601; start inclusive, end exclusive). Omit both dates for a permanent option.
+2. Add CSS under `.table-container[data-table-theme="<id>"]` in `src/components/playPage/Table.css`. Light-mode overrides go in `src/theme/light.css`.
+3. Only if the theme needs a custom logo or background layer, branch on the id in `Table.tsx` / `TableBoard.tsx`.
+
+Outside the window the option is hidden from the dropdown, and any saved selection (including the retired `nouns` appearance) falls back to Texas HODL. The player's choice is stored in `localStorage` under `texas-hodl-table-appearance`. `VITE_TABLE_STYLE` is used only when nothing is stored, and must be an available appearance id.
+
 ### NFT Avatar Discovery
 
 Configure how wallet NFTs are discovered for profile avatars:

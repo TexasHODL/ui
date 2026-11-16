@@ -11,6 +11,7 @@ import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { ThemeToggle } from "../../../ThemeToggle";
 import type { TableStyleOption } from "./MobileTableHeader";
+import { listAvailableAppearances, resolveAppearanceId } from "../../../../theme/tableAppearances";
 import {
     CHIP_STYLE_IDS,
     CHIP_STYLE_LABELS,
@@ -162,16 +163,20 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                     {appearanceLabel}
                     <select
                         aria-label={appearanceLabel}
-                        value={tableStyle}
+                        value={resolveAppearanceId(tableStyle)}
                         className={SELECT_CLASS}
                         onChange={event => {
-                            const value = event.target.value;
-                            if (value === "modern" || value === "classic" || value === "nouns") onTableStyleChange(value);
+                            const available = listAvailableAppearances();
+                            if (available.some(appearance => appearance.id === event.target.value)) {
+                                onTableStyleChange(resolveAppearanceId(event.target.value));
+                            }
                         }}
                     >
-                        <option value="modern">Texas HODL</option>
-                        <option value="classic">Classic</option>
-                        <option value="nouns">Nouns</option>
+                        {listAvailableAppearances().map(appearance => (
+                            <option key={appearance.id} value={appearance.id}>
+                                {appearance.label}
+                            </option>
+                        ))}
                     </select>
                 </label>
             )}

@@ -42,8 +42,9 @@ import type { TournamentStateDTO } from "../../../../types/tournament";
 import { hasValue } from "../../../../utils/guards";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
 import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
+import type { TableStyleOption } from "../../../../theme/tableAppearances";
 
-export type TableStyleOption = "modern" | "classic" | "nouns";
+export type { TableStyleOption };
 
 export interface MobileTableHeaderProps {
     tableId: string;
