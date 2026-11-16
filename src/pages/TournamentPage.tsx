@@ -58,6 +58,15 @@ export default function TournamentPage() {
     const showRegister = !!card && !card.isRegistered && (card.canRegister || card.registerBlockedReason === "Connect a wallet to register");
     const insufficientFunds = !!card && showRegister && card.canRegister && !wallet.isLoading && balanceMicro < card.cost.gross;
     const canPay = !!card && card.canRegister && !insufficientFunds && !actions.busy;
+    // Colour the balance only while the player is deciding whether to pay.
+    const balanceTone: "enough" | "short" | "neutral" =
+        !viewer || wallet.isLoading || !showRegister ? "neutral" : insufficientFunds ? "short" : "enough";
+    const balanceClass =
+        balanceTone === "enough"
+            ? "tournament-balance-enough font-medium"
+            : balanceTone === "short"
+              ? "tournament-balance-short font-medium"
+              : "text-white font-medium";
     const startingSoon = !!tournament && tournament.status === "registering" && now >= tournament.options.startTime;
     const statement = card ? escrowStatement(card.cost) : null;
     const actionError = actions.error ? tournamentTxError(actions.error) : null;
@@ -260,7 +269,13 @@ export default function TournamentPage() {
                                     {viewer && (
                                         <div className="flex justify-between gap-3" data-testid="tournament-page-balance">
                                             <span className="text-gray-400">Your balance</span>
-                                            <span className="text-white">{wallet.isLoading ? "Loading…" : formatUsdc(balanceMicro)}</span>
+                                            <span
+                                                className={balanceClass}
+                                                data-testid="tournament-page-balance-amount"
+                                                data-balance-tone={balanceTone}
+                                            >
+                                                {wallet.isLoading ? "Loading…" : formatUsdc(balanceMicro)}
+                                            </span>
                                         </div>
                                     )}
                                     {insufficientFunds && (
@@ -291,7 +306,7 @@ export default function TournamentPage() {
                                             )}
                                         </div>
                                     )}
-                                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                                    <div className="flex flex-wrap items-center justify-end gap-2 pt-1" data-testid="tournament-registration-actions">
                                         {showRegister && (
                                             <button
                                                 type="button"
