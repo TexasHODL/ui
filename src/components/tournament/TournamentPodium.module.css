@@ -45,6 +45,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0.35em;
     width: 100%;
     font-weight: 800;
     letter-spacing: 0.04em;
@@ -72,6 +73,27 @@
 .thirdStep {
     height: 28px;
     font-size: 0.85rem;
+}
+
+.trophy {
+    flex-shrink: 0;
+    width: 0.9em;
+    height: 0.9em;
+}
+
+.trophyGold {
+    color: #f5c542;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, #f5c542 55%, transparent));
+}
+
+.trophySilver {
+    color: #c5c9d6;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, #c5c9d6 40%, transparent));
+}
+
+.trophyBronze {
+    color: #d08a4a;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, #d08a4a 45%, transparent));
 }
 
 .avatar,

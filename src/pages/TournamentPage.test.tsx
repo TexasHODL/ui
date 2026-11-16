@@ -244,10 +244,13 @@ test("a finished tournament has no Register button", () => {
     );
     renderPage();
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
-    expect(screen.getByTestId("tournament-standings")).toBeInTheDocument();
+    expect(screen.getByTestId("tournament-podium")).toBeInTheDocument();
+    expect(screen.queryByTestId("tournament-standings")).not.toBeInTheDocument();
     expect(screen.getByTestId("tournament-page-status")).toHaveTextContent("Finished");
     expect(screen.getByTestId("tournament-page-runners")).toHaveTextContent("entrant");
     expect(screen.getByTestId("tournament-page-winner")).toHaveTextContent("poker1wi...nner");
+    expect(screen.getByText("Event details and the finishing order.")).toBeInTheDocument();
+    expect(screen.queryByText(/tables still in play/i)).not.toBeInTheDocument();
 });
 
 test("the balance amount is green when it covers the buy-in, and Register & pay is on the right under it", () => {
@@ -310,14 +313,48 @@ test("a finished tournament shows a podium, Place/Player/Prize headers, and priz
     expect(screen.getByTestId("tournament-standings-header")).toHaveTextContent("Place");
     expect(screen.getByTestId("tournament-standings-header")).toHaveTextContent("Player");
     expect(screen.getByTestId("tournament-standings-header")).toHaveTextContent("Prize");
-    const firstPrize = screen.getByTestId("tournament-standing-prize-1");
-    expect(firstPrize).toHaveTextContent("$8.00");
-    expect(firstPrize).toHaveClass("tournament-balance-enough");
-    expect(screen.getByTestId("tournament-standing-prize-2")).toHaveTextContent("$4.80");
-    expect(screen.getByTestId("tournament-standing-prize-2")).toHaveClass("tournament-balance-enough");
-    expect(screen.getByTestId("tournament-standing-prize-3")).toHaveTextContent("$3.20");
+    expect(screen.getByTestId("tournament-podium-prize-1")).toHaveTextContent("$8.00");
+    expect(screen.getByTestId("tournament-podium-prize-2")).toHaveTextContent("$4.80");
+    expect(screen.getByTestId("tournament-podium-prize-3")).toHaveTextContent("$3.20");
+    expect(screen.queryByTestId("tournament-standing-prize-1")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tournament-standing-prize-2")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tournament-standing-prize-3")).not.toBeInTheDocument();
     expect(screen.getByTestId("tournament-standing-prize-4")).toHaveTextContent("");
-    expect(screen.getByTestId("tournament-standings")).toHaveTextContent("1st");
     expect(screen.getByTestId("tournament-standings")).toHaveTextContent("4th");
+    expect(screen.getByTestId("tournament-standings")).not.toHaveTextContent("1st");
+    expect(screen.getByTestId("tournament-standings")).not.toHaveTextContent("2nd");
+    expect(screen.getByTestId("tournament-standings")).not.toHaveTextContent("3rd");
+});
+
+test("a running tournament with a recorded winner is shown as Finished, and the leftover table is the final table", () => {
+    mockTournamentInfo = info(
+        { playersRemaining: 1, level: 7 },
+        registeringTournament({
+            status: "running",
+            prizePool: "16000000",
+            results: [
+                { place: 1, playerId: "poker1winnerxxxxxx", payout: "8000000" },
+                { place: 2, playerId: "poker1runnerupxxxx", payout: "4800000" }
+            ],
+            tables: [
+                {
+                    tableId: `${ID}/t1`,
+                    ordinal: 1,
+                    players: ["poker1winnerxxxxxx"],
+                    broken: false,
+                    handNumber: 35,
+                    atBoundary: true
+                }
+            ]
+        })
+    );
+    renderPage();
+    expect(screen.getByTestId("tournament-page-status")).toHaveTextContent("Finished");
+    expect(screen.getByText("Event details and the finishing order.")).toBeInTheDocument();
+    expect(screen.queryByText(/tables still in play/i)).not.toBeInTheDocument();
+    expect(screen.getByTestId("tournament-final-table-1")).toHaveTextContent("Final table");
+    expect(screen.getByTestId("tournament-final-table-1")).not.toHaveTextContent("players");
+    expect(screen.getByTestId("tournament-table-1")).toHaveTextContent("Watch");
+    expect(screen.queryByText(/1 players/i)).not.toBeInTheDocument();
 });
 

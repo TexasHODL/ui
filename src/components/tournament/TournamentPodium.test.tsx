@@ -46,6 +46,9 @@ describe("TournamentPodium", () => {
         expect(screen.getByTestId("tournament-podium-place-1")).toHaveTextContent("1st");
         expect(screen.getByTestId("tournament-podium-place-2")).toHaveTextContent("2nd");
         expect(screen.getByTestId("tournament-podium-place-3")).toHaveTextContent("3rd");
+        expect(screen.getByTestId("tournament-podium-trophy-1")).toHaveClass("trophyGold");
+        expect(screen.getByTestId("tournament-podium-trophy-2")).toHaveClass("trophySilver");
+        expect(screen.getByTestId("tournament-podium-trophy-3")).toHaveClass("trophyBronze");
 
         expect(screen.getByRole("link", { name: truncateMiddle(FIRST, 8, 4) })).toHaveAttribute("href", `/players/${FIRST}`);
         expect(screen.getByRole("link", { name: truncateMiddle(SECOND, 8, 4) })).toHaveAttribute("href", `/players/${SECOND}`);

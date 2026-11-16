@@ -1,4 +1,5 @@
 import { FC } from "react";
+import { FaTrophy } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
 import { NftAvatarImage } from "../profile/NftAvatarImage";
@@ -71,7 +72,14 @@ const PodiumSlot: FC<{ row: TournamentStandingRow; viewer?: string }> = ({ row, 
                     {paid ? formatUsdc(BigInt(row.payout)) : ""}
                 </span>
             </div>
-            <div className={`${styles.step} ${isFirst ? styles.firstStep : row.place === 2 ? styles.secondStep : styles.thirdStep}`}>{placeLabel}</div>
+            <div className={`${styles.step} ${isFirst ? styles.firstStep : row.place === 2 ? styles.secondStep : styles.thirdStep}`}>
+                <FaTrophy
+                    className={`${styles.trophy} ${row.place === 1 ? styles.trophyGold : row.place === 2 ? styles.trophySilver : styles.trophyBronze}`}
+                    aria-hidden="true"
+                    data-testid={`tournament-podium-trophy-${row.place}`}
+                />
+                {placeLabel}
+            </div>
         </div>
     );
 };
