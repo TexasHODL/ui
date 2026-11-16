@@ -1,0 +1,209 @@
+.stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+    align-items: end;
+    gap: 10px;
+    padding: 16px 12px 8px;
+}
+
+.slot {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    text-align: center;
+    padding: 12px 8px 10px;
+    border-radius: 14px 14px 0 0;
+    background: color-mix(in srgb, var(--ui-bg-medium, #1a1224) 58%, transparent);
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #c084fc) 28%, transparent);
+    border-bottom: none;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-sizing: border-box;
+}
+
+.firstCard {
+    padding-top: 18px;
+    padding-bottom: 14px;
+    border-color: color-mix(in srgb, #f0b8ff 55%, var(--brand-primary, #c084fc));
+    box-shadow: 0 0 28px color-mix(in srgb, var(--brand-primary, #c084fc) 22%, transparent);
+}
+
+.sideCard {
+    padding-top: 10px;
+}
+
+.step {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35em;
+    width: 100%;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #fff;
+    border-radius: 0 0 12px 12px;
+    border: 1px solid color-mix(in srgb, var(--brand-primary, #c084fc) 35%, transparent);
+    border-top: none;
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--brand-primary, #c084fc) 42%, #2a1238),
+        color-mix(in srgb, #f02bc6 28%, #1a0c22)
+    );
+}
+
+.firstStep {
+    height: 56px;
+    font-size: 1.05rem;
+}
+
+.secondStep {
+    height: 40px;
+    font-size: 0.9rem;
+}
+
+.thirdStep {
+    height: 28px;
+    font-size: 0.85rem;
+}
+
+.trophy {
+    flex-shrink: 0;
+    width: 0.9em;
+    height: 0.9em;
+}
+
+.trophyGold {
+    color: #f5c542;
+    filter: drop-shadow(0 0 6px color-mix(in srgb, #f5c542 55%, transparent));
+}
+
+.trophySilver {
+    color: #c5c9d6;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, #c5c9d6 40%, transparent));
+}
+
+.trophyBronze {
+    color: #d08a4a;
+    filter: drop-shadow(0 0 5px color-mix(in srgb, #d08a4a 45%, transparent));
+}
+
+.avatar,
+.fallback {
+    flex-shrink: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid color-mix(in srgb, var(--brand-primary, #c084fc) 55%, #fff);
+    background-color: color-mix(in srgb, var(--ui-bg-medium, #1a1224) 70%, transparent);
+    box-sizing: border-box;
+}
+
+.avatarFirst {
+    width: 76px;
+    height: 76px;
+}
+
+.avatarSide {
+    width: 56px;
+    height: 56px;
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.fallback {
+    color: var(--brand-primary, #c084fc);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.address {
+    max-width: 100%;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.address:hover {
+    text-decoration: underline;
+    color: color-mix(in srgb, var(--brand-primary, #c084fc) 70%, #fff);
+}
+
+.viewer {
+    color: #d8b4fe;
+}
+
+.unpaid {
+    color: #9ca3af;
+    min-height: 1.25em;
+}
+
+@media (max-width: 480px) {
+    .stage {
+        gap: 6px;
+        padding: 12px 8px 6px;
+    }
+
+    .card {
+        padding: 8px 4px 8px;
+        gap: 4px;
+    }
+
+    .firstCard {
+        padding-top: 12px;
+    }
+
+    .avatarFirst {
+        width: 56px;
+        height: 56px;
+    }
+
+    .avatarSide {
+        width: 44px;
+        height: 44px;
+    }
+
+    .firstStep {
+        height: 44px;
+        font-size: 0.9rem;
+    }
+
+    .secondStep {
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .thirdStep {
+        height: 24px;
+        font-size: 0.75rem;
+    }
+
+    .address {
+        font-size: 0.65rem;
+    }
+
+    .fallback {
+        font-size: 0.6rem;
+    }
+}

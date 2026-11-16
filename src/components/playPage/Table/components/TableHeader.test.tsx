@@ -172,4 +172,14 @@ describe("Focused table header", () => {
         fireEvent.click(screen.getByLabelText("Table options"));
         expect((details as HTMLDetailsElement).open).toBe(true);
     });
+
+    it("shows the tournament name and table number on a rebalanced multi-table tournament table", () => {
+        const props = makeProps();
+        props.tableId = "0x7375abcd131b7d806a87883d234dd1929a296c5e01b904e293d24dbe2eada97e-t3";
+        props.tableName = undefined;
+        props.tournamentName = "Blind War";
+        render(<TableHeader {...props} />);
+        expect(screen.getByText("Blind War · Table 3")).toBeInTheDocument();
+        expect(screen.queryByText("Table 7375/3")).not.toBeInTheDocument();
+    });
 });

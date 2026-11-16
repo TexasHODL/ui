@@ -292,7 +292,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                         ←
                     </span>
                     <span className="sr-only">Back to lobby from </span>
-                    {tableHeading(tableId, tableName)}
+                    {tableHeading(tableId, tableName, tournament?.name ?? tournament?.options.name)}
                 </button>
                 {statusInline && <div className={`mobile-status-inline ${styles.mobileStatus}`}>{renderStatus(false)}</div>}
                 <div ref={toolsRef} className="mobile-header-tools">

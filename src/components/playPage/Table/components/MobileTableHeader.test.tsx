@@ -55,6 +55,8 @@ function renderHeader(
         seated?: boolean;
         legalActions?: LegalActionDTO[];
         tableName?: string;
+        tableId?: string;
+        tournament?: unknown;
         openSidebar?: boolean;
         onHistory?: () => void;
         gameOptions?: unknown;
@@ -67,8 +69,9 @@ function renderHeader(
         <SitOutIntentProvider tableId="0xtable" network={{} as never} pendingSitOut={null} legalActions={legalActions}>
             <MobileTableHeader
                 onToggleFocus={mockToggleFocus}
-                tableId="0xtable"
+                tableId={over.tableId ?? "0xtable"}
                 tableName={over.tableName}
+                tournament={over.tournament as never}
                 currentNetwork={{} as never}
                 gameFormat={over.gameFormat ?? null}
                 gameOptions={(over.gameOptions ?? null) as never}
@@ -166,6 +169,17 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         const generated = displayTableName(undefined, "0xtable");
         expect(screen.getByRole("button", { name: "Back to lobby from " + generated })).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Back to lobby from Table xtable" })).not.toBeInTheDocument();
+    });
+
+
+    it("shows the tournament name and table number on a rebalanced multi-table tournament table", () => {
+        renderHeader({
+            tableId: "0x7375abcd131b7d806a87883d234dd1929a296c5e01b904e293d24dbe2eada97e-t3",
+            tableName: undefined,
+            tournament: { name: "Blind War", options: {} }
+        });
+        expect(screen.getByRole("button", { name: "Back to lobby from Blind War · Table 3" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Back to lobby from Table 7375/3" })).not.toBeInTheDocument();
     });
 
     it("offers Leave table without opening the drawer and only opens confirmation", () => {
