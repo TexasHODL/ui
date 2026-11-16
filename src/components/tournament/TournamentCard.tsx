@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { tableUrl, tournamentUrl } from "../../utils/tableUrl";
 import { displayTableName } from "../../utils/generatedTableName";
 import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
-import { truncateMiddle } from "../../utils/stringUtils";
 import { formatUsdc, lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
 import { ShareTournamentButton } from "./ShareTournamentButton";
 
@@ -59,12 +58,6 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) =
                     </span>
                 </div>
             </div>
-            {card.phase === "finished" && card.winnerAddress && (
-                <div className="text-sm text-purple-300 font-bold" data-testid="tournament-winner">
-                    Won by {truncateMiddle(card.winnerAddress, 8, 4)}
-                </div>
-            )}
-
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <Stat
                     label={card.phase === "open" || card.phase === "full" || card.phase === "starting" ? "Registered" : "Runners"}

@@ -39,14 +39,12 @@ describe("tournamentListRow", () => {
 });
 
 describe("lobbyTournamentStatus", () => {
-    it("uses the same words as sit-and-go rows, and names the winner when finished", () => {
+    it("uses the same words as sit-and-go rows, including Finished without a winner", () => {
         expect(lobbyTournamentStatus(card({ phase: "open" }))).toBe("Registering");
         expect(lobbyTournamentStatus(card({ phase: "starting" }))).toBe("Starting");
         expect(lobbyTournamentStatus(card({ phase: "running" }))).toBe("Started");
         expect(lobbyTournamentStatus(card({ phase: "finished" }))).toBe("Finished");
-        expect(lobbyTournamentStatus(card({ phase: "finished", winnerAddress: "b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg" }))).toBe(
-            "Finished · Won by b521s8au...g4mg"
-        );
+        expect(lobbyTournamentStatus(card({ phase: "finished", winnerAddress: "b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg" }))).toBe("Finished");
         expect(lobbyTournamentStatus(card({ phase: "cancelled" }))).toBe("Cancelled: not enough players");
         expect(lobbyTournamentStatus(card({ phase: "full" }))).toBe("Full");
     });

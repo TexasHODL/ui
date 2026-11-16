@@ -1,6 +1,5 @@
 import { formatMicroAsUsdc } from "../constants/currency";
 import { hasValue } from "./guards";
-import { truncateMiddle } from "./stringUtils";
 import { tableUrl, tournamentUrl } from "./tableUrl";
 import { lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "./tournamentLobby";
 
@@ -16,14 +15,10 @@ export interface TournamentListRow {
     action: { label: string; url: string };
 }
 
-/** The All-games status badge: the shared phase label, plus a winner when the tournament is over. */
+/** The All-games status badge: the same words sit-and-go rows use. Finished does not name the winner (that stays on the event page). */
 export function lobbyTournamentStatus(card: TournamentLobbyCard): string {
     if (card.phase === "cancelled") return "Cancelled: not enough players";
-    const label = phaseLabel(card.phase);
-    if (card.phase === "finished" && hasValue(card.winnerAddress)) {
-        return `${label} · Won by ${truncateMiddle(card.winnerAddress, 8, 4)}`;
-    }
-    return label;
+    return phaseLabel(card.phase);
 }
 
 /**
