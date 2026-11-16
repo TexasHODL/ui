@@ -284,7 +284,7 @@ export default function PlayerProfilePage() {
                             <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
                             <StatCard className={VOLUME_STAT_CARD} label="Sessions" value={profile.session_count.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Total Actions" value={profile.total_actions.toLocaleString()} />
-                            <StatCard className={VOLUME_STAT_CARD} label="Rake Contributed" value={formatUsd(profile.total_rake_contributed)} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Network Fees Paid" value={formatUsd(profile.total_rake_contributed)} />
                         </div>
 
                         {/* Playing style: every variant, from the chain action logs. */}

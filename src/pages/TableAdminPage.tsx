@@ -952,7 +952,7 @@ export default function TableAdminPage() {
                                 </div>
                             )}
 
-                            {/* Rake Configuration Section - Only for Cash Games */}
+                            {/* Network fee section - only for cash games */}
                             <div className="mb-4">
                                 <div className="flex items-center gap-2 mb-3">
                                     <input
@@ -967,7 +967,7 @@ export default function TableAdminPage() {
                                         htmlFor="enableRake"
                                         className={`text-sm font-medium ${gameFormat === GameFormat.CASH ? "text-gray-300" : "text-gray-500"}`}
                                     >
-                                        Enable Rake Collection {gameFormat !== GameFormat.CASH && "(Cash games only)"}
+                                        Charge a network fee {gameFormat !== GameFormat.CASH && "(Cash games only)"}
                                     </label>
                                 </div>
 
@@ -975,7 +975,7 @@ export default function TableAdminPage() {
                                     <div className="bg-[#0c0911] rounded-lg p-4 border border-white/10">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                                             <div>
-                                                <label className="text-gray-300 text-xs mb-1 block">Rake-Free Threshold (USDC)</label>
+                                                <label className="text-gray-300 text-xs mb-1 block">No Fee Below (USDC)</label>
                                                 <input
                                                     type="number"
                                                     step="0.01"
@@ -984,12 +984,12 @@ export default function TableAdminPage() {
                                                     value={rakeFreeThreshold}
                                                     onChange={e => setRakeFreeThreshold(e.target.value)}
                                                     className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
-                                                    placeholder="0 = rake all pots"
+                                                    placeholder="0 = fee on every pot"
                                                 />
-                                                <p className="text-gray-500 text-xs mt-1">Pots below this amount are rake-free</p>
+                                                <p className="text-gray-500 text-xs mt-1">No network fee on pots below this amount</p>
                                             </div>
                                             <div>
-                                                <label className="text-gray-300 text-xs mb-1 block">Rake Percentage (%)</label>
+                                                <label className="text-gray-300 text-xs mb-1 block">Network Fee (%)</label>
                                                 <select
                                                     value={rakePercentage}
                                                     onChange={e => setRakePercentage(e.target.value)}
@@ -1006,7 +1006,7 @@ export default function TableAdminPage() {
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="text-gray-300 text-xs mb-1 block">Rake Cap (USDC)</label>
+                                                <label className="text-gray-300 text-xs mb-1 block">Network Fee Cap (USDC)</label>
                                                 <input
                                                     type="number"
                                                     step="0.01"
@@ -1017,10 +1017,10 @@ export default function TableAdminPage() {
                                                     className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                                     placeholder="e.g., 0.10"
                                                 />
-                                                <p className="text-gray-500 text-xs mt-1">Maximum rake per hand</p>
+                                                <p className="text-gray-500 text-xs mt-1">The most taken from one hand</p>
                                             </div>
                                             <div>
-                                                <label className="text-gray-300 text-xs mb-1 block">Rake Owner Address</label>
+                                                <label className="text-gray-300 text-xs mb-1 block">Fee Recipient Address</label>
                                                 <input
                                                     type="text"
                                                     aria-label="Rake owner"
