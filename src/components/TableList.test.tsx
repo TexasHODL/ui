@@ -440,10 +440,10 @@ test("cash rows with rake show the rate and cap; no-rake and sit-and-go rows sho
     render(<TableList />);
     const rakeCells = screen.getAllByTestId("lobby-rake");
     expect(rakeCells).toHaveLength(1);
-    expect(rakeCells[0]).toHaveTextContent("Rake 5% \u00b7 cap $0.10");
-    expect(rakeCells[0]).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
+    expect(rakeCells[0]).toHaveTextContent("Network fee 5% \u00b7 cap $0.10");
+    expect(rakeCells[0]).toHaveAttribute("title", "5% of each pot is taken as a network fee, capped at $0.10 per hand.");
     expect(rakeCells[0].closest("tr")).toHaveTextContent("My occupied table");
-    expect(screen.getAllByTestId("lobby-rake-mobile").map(el => el.textContent)).toEqual(["Rake 5%"]);
+    expect(screen.getAllByTestId("lobby-rake-mobile").map(el => el.textContent)).toEqual(["Network fee 5%"]);
 });
 
 test("a multi-table tournament is one lobby row, and a seat you have says Take my seat", () => {

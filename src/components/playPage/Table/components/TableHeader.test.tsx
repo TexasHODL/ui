@@ -124,8 +124,8 @@ describe("Focused table header", () => {
         props.gameOptions = { rake: { rakeFreeThreshold: "0", rakePercentage: 5, rakeCap: "100000", owner: "b521owner" } } as never;
         render(<TableHeader {...props} />);
         const rake = screen.getByTestId("header-rake");
-        expect(rake).toHaveTextContent("Rake 5% \u00b7 cap $0.10");
-        expect(rake).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
+        expect(rake).toHaveTextContent("Network fee 5% \u00b7 cap $0.10");
+        expect(rake).toHaveAttribute("title", "5% of each pot is taken as a network fee, capped at $0.10 per hand.");
         expect(rake.parentElement).toHaveTextContent("Hand #12");
     });
 

@@ -278,8 +278,8 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         const { unmount } = renderHeader({ gameOptions: { rake }, gameFormat: GameFormat.CASH });
         const fallback = document.querySelector(".mobile-status-fallback") as HTMLElement;
         const label = within(fallback).getByTestId("header-rake");
-        expect(label).toHaveTextContent(/^Rake 5%$/);
-        expect(label).toHaveAttribute("title", "5% of each pot is taken as rake, capped at $0.10 per hand.");
+        expect(label).toHaveTextContent(/^Network fee 5%$/);
+        expect(label).toHaveAttribute("title", "5% of each pot is taken as a network fee, capped at $0.10 per hand.");
         unmount();
         renderHeader();
         expect(screen.queryAllByTestId("header-rake")).toHaveLength(0);
