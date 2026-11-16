@@ -86,7 +86,7 @@ jest.mock("../hooks/player/useAddressUsdcBalance", () => ({
     useAddressUsdcBalance: (address: string | undefined) => mockUseBalance(address)
 }));
 
-const VOLUME = ["Wallet Balance", "Net Profit", "Total Buy-In", "Total Cash-Out", "Hands Played", "Sessions", "Total Actions", "Rake Contributed"];
+const VOLUME = ["Wallet Balance", "Net Profit", "Total Buy-In", "Total Cash-Out", "Hands Played", "Sessions", "Total Actions", "Network Fees Paid"];
 
 function valueOf(label: string): string {
     return screen.getByText(label).nextElementSibling?.textContent ?? "";
@@ -128,7 +128,7 @@ describe("PlayerProfilePage volume cards", () => {
         expect(valueOf("Hands Played")).toBe("480");
         expect(valueOf("Sessions")).toBe("83");
         expect(valueOf("Total Actions")).toBe("4,616");
-        expect(valueOf("Rake Contributed")).toBe("0.00");
+        expect(valueOf("Network Fees Paid")).toBe("0.00");
         expect(mockUseBalance).toHaveBeenCalledWith(ADDRESS);
     });
 
