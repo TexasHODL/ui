@@ -4,11 +4,14 @@ import {
     formatUsdc,
     openingLevelLabel,
     parseTournamentResponse,
+    lobbyRunnersLabel,
     parseTournamentState,
+    phaseLabel,
     sortTournamentCards,
     tournamentEntryCost,
     tournamentIdsFromTxSearch,
     tournamentPhase,
+    tournamentWinnerAddress,
     type TournamentRecord
 } from "./tournamentLobby";
 
@@ -258,5 +261,56 @@ describe("formatUsdc", () => {
 describe("openingLevelLabel", () => {
     it("describes the opening level", () => {
         expect(openingLevelLabel({ preset: "turbo" })).toMatch(/blinds, \d+ min levels/);
+    });
+});
+
+
+describe("results and finish detection", () => {
+    const results = [
+        { place: 2, playerId: "b521second", payout: "3000000" },
+        { place: 1, playerId: "b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg", payout: "5000000" }
+    ];
+
+    it("reads results and the winning address", () => {
+        const state = parseTournamentState(stateJson({ status: "finished", results, prizePool: "8000000" }));
+        expect(state.results).toEqual(results);
+        expect(tournamentWinnerAddress(state)).toBe("b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg");
+    });
+
+    it("treats a running tournament with a 1st-place result as finished", () => {
+        const rec = record({
+            status: "running",
+            results,
+            prizePool: "8000000",
+            entrants: [
+                { address: "b521second", status: "busted", stack: "0" },
+                { address: "b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg", status: "playing", tableId: "0xabc/t1", stack: "1500" }
+            ]
+        });
+        expect(tournamentPhase(rec.state, START + 1)).toBe("finished");
+        const card = buildTournamentCard(rec, ME, START + 1);
+        expect(card.phase).toBe("finished");
+        expect(card.winnerAddress).toBe("b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg");
+        expect(card.myTable).toBeUndefined();
+        expect(lobbyRunnersLabel(card)).toBe("2 entrants");
+    });
+});
+
+describe("phaseLabel and lobbyRunnersLabel", () => {
+    it("uses the same status words as sit-and-go lobby rows", () => {
+        expect(phaseLabel("open")).toBe("Registering");
+        expect(phaseLabel("starting")).toBe("Starting");
+        expect(phaseLabel("running")).toBe("Started");
+        expect(phaseLabel("finished")).toBe("Finished");
+        expect(phaseLabel("cancelled")).toBe("Cancelled");
+        expect(phaseLabel("full")).toBe("Full");
+    });
+
+    it("describes the field as a cap while registering and as entrants once finished", () => {
+        const base = { registered: 7, maxEntrants: 27, runnersLeft: 3 };
+        expect(lobbyRunnersLabel({ ...base, phase: "open" })).toBe("7 / 27");
+        expect(lobbyRunnersLabel({ ...base, phase: "running" })).toBe("3 left of 7");
+        expect(lobbyRunnersLabel({ ...base, phase: "finished" })).toBe("7 entrants");
+        expect(lobbyRunnersLabel({ ...base, phase: "cancelled", registered: 1, runnersLeft: 0 })).toBe("1 entrant");
     });
 });

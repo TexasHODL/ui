@@ -51,6 +51,13 @@ export interface TournamentOptionsView {
 }
 
 /** What the lobby reads of the engine's TournamentStateDTO. */
+export interface TournamentResultView {
+    place: number;
+    playerId: string;
+    /** Micro-USDC string; "0" outside the paid places. */
+    payout: string;
+}
+
 export interface TournamentStateDTO {
     tournamentId: string;
     status: TournamentStatus;
@@ -60,6 +67,8 @@ export interface TournamentStateDTO {
     entrants: TournamentEntrantView[];
     /** Micro-USDC string. "0" until the tournament starts; the lobby projects it while registering. */
     prizePool: string;
+    /** Final places when the engine has written them; place 1 is present only once the tournament is over. */
+    results?: TournamentResultView[];
 }
 
 export interface TournamentRecord {
@@ -145,8 +154,27 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         ...(name ? { name } : {}),
         options,
         entrants: raw.entrants.map(parseEntrant),
-        prizePool: requireMicro(raw.prizePool, "prizePool")
+        prizePool: requireMicro(raw.prizePool, "prizePool"),
+        ...(isNullish(raw.results) ? {} : { results: parseResults(raw.results) })
     };
+}
+
+function parseResults(raw: unknown): TournamentResultView[] {
+    if (!Array.isArray(raw)) throw new Error("tournament results must be an array");
+    return raw.map((item, index) => {
+        if (!isRecord(item)) throw new Error(`tournament results[${index}] must be an object`);
+        return {
+            place: requireInt(item.place, `results[${index}].place`),
+            playerId: requireString(item.playerId, `results[${index}].playerId`),
+            payout: isNullish(item.payout) ? "0" : requireMicro(item.payout, `results[${index}].payout`)
+        };
+    });
+}
+
+/** The address that finished 1st, once results include place 1. */
+export function tournamentWinnerAddress(state: Pick<TournamentStateDTO, "results">): string | undefined {
+    const first = state.results?.find(result => result.place === 1);
+    return first?.playerId;
 }
 
 /** Parses the Tournament query response: `{ tournament: "<TournamentStateDTO JSON>", creator }`. */
@@ -250,6 +278,10 @@ export interface TournamentLobbyCard {
     isRegistered: boolean;
     /** The viewer is playing right now: the game id of their table and its number (`<id>-t<n>`). */
     myTable?: { gameId: string; number: number };
+    /** Entrants still playing; the same as registered while registration is open. */
+    runnersLeft: number;
+    /** 1st-place address once the tournament is finished and results include a winner. */
+    winnerAddress?: string;
     canRegister: boolean;
     canUnregister: boolean;
     /** Why the viewer cannot register, for the disabled button; undefined when they can. */
@@ -264,17 +296,14 @@ function countedEntrants(entrants: TournamentEntrantView[]): TournamentEntrantVi
 }
 
 export function tournamentPhase(state: TournamentStateDTO, nowMs: number): TournamentLobbyPhase {
-    switch (state.status) {
-        case "running":
-            return "running";
-        case "finished":
-            return "finished";
-        case "cancelled":
-            return "cancelled";
-        case "registering":
-            if (nowMs >= state.options.startTime) return "starting";
-            return countedEntrants(state.entrants).length >= state.options.maxEntrants ? "full" : "open";
-    }
+    // Place 1 is written only when the tournament is over (same rule as sit-and-go
+    // hasTournamentFinished). The chain usually flips status to "finished" as well;
+    // if results arrive first, the lobby must not keep showing the event as in play.
+    if (state.status === "cancelled") return "cancelled";
+    if (state.status === "finished" || tournamentWinnerAddress(state)) return "finished";
+    if (state.status === "running") return "running";
+    if (nowMs >= state.options.startTime) return "starting";
+    return countedEntrants(state.entrants).length >= state.options.maxEntrants ? "full" : "open";
 }
 
 /** The table an entrant is playing at: its game id and number (the `n` of `<tournamentId>/t<n>`), or undefined when they are not seated. */
@@ -296,7 +325,9 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
     const mine = isNullish(viewer) ? undefined : state.entrants.find(e => e.address === viewer);
     const isRegistered = !isNullish(mine) && mine.status !== "unregistered";
     const registering = phase === "open" || phase === "full";
-    const isProjected = state.status === "registering";
+    const isProjected = state.status === "registering" && phase !== "finished";
+    const runnersLeft = state.entrants.filter(e => e.status === "playing").length;
+    const winnerAddress = tournamentWinnerAddress(state);
 
     let registerBlockedReason: string | undefined;
     if (isNullish(viewer)) registerBlockedReason = "Connect a wallet to register";
@@ -306,7 +337,7 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
 
     // Only a running tournament has a seat to take: the chain leaves the winner's status as "playing"
     // (with their table) after the finish, so the status alone would offer a seat in a finished tournament.
-    const myTable = state.status === "running" ? tablePlayedBy(mine) : undefined;
+    const myTable = phase === "running" ? tablePlayedBy(mine) : undefined;
 
     const name = state.name ?? state.options.name;
 
@@ -328,6 +359,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         blindLabel: openingLevelLabel(state.options.blindStructure),
         atRiskOfCancelling: registering && registered < state.options.minEntrants,
         isRegistered,
+        runnersLeft: registering ? registered : runnersLeft,
+        ...(isNullish(winnerAddress) ? {} : { winnerAddress }),
         ...(isNullish(myTable) ? {} : { myTable }),
         canRegister: isNullish(registerBlockedReason),
         canUnregister: registering && !isNullish(mine) && mine.status === "registered",
@@ -373,7 +406,7 @@ export function phaseLabel(phase: TournamentLobbyPhase): string {
         case "starting":
             return "Starting";
         case "running":
-            return "In play";
+            return "Started";
         case "finished":
             return "Finished";
         case "cancelled":
@@ -412,4 +445,13 @@ export function escrowStatement(cost: TournamentEntryCost): { register: string; 
         register: `You pay ${formatUsdc(cost.gross)} now. ${formatUsdc(cost.net)} of it is held in escrow for the prize pool.${feeNote}`,
         unregister: `Unregistering returns the ${formatUsdc(cost.net)} held in escrow, not the full ${formatUsdc(cost.gross)} buy-in.${feeNote} If the tournament is cancelled for too few entrants, the refund is currently the same escrowed amount.`
     };
+}
+
+/** Field size while registering ("3/27"); remaining of the field while running; "7 entrants" once finished. */
+export function lobbyRunnersLabel(card: Pick<TournamentLobbyCard, "phase" | "registered" | "maxEntrants" | "runnersLeft">): string {
+    if (card.phase === "running") return `${card.runnersLeft} left of ${card.registered}`;
+    if (card.phase === "finished" || card.phase === "cancelled") {
+        return card.registered === 1 ? "1 entrant" : `${card.registered} entrants`;
+    }
+    return `${card.registered} / ${card.maxEntrants}`;
 }
