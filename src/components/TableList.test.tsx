@@ -497,9 +497,9 @@ test("the Tournaments tab shows multi-table cards, and Sit & Go does not list th
     expect(within(section).queryByRole("link", { name: "View all" })).not.toBeInTheDocument();
     expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
 
-    fireEvent.click(within(section).getByRole("button", { name: /Register/ }));
-    expect(screen.getByRole("dialog", { name: `Register for ${displayTableName(undefined, TOURNAMENT_ID)}` })).toBeInTheDocument();
-    expect(screen.getByTestId("tournament-modal-name")).toHaveTextContent(displayTableName(undefined, TOURNAMENT_ID));
+    expect(within(section).getByTestId("tournament-register")).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
+    expect(within(section).getByTestId("tournament-register")).toHaveTextContent("Register");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(within(section).getByRole("button", { name: `Share ${displayTableName(undefined, TOURNAMENT_ID)}` })).toBeInTheDocument();
 });
 

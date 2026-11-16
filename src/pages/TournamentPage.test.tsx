@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
@@ -10,10 +9,6 @@ import type { TournamentInfo } from "../hooks/tournament/useTournament";
 
 jest.mock("../utils/clipboard", () => ({ copyToClipboard: jest.fn() }));
 jest.mock("../components/common/AnimatedBackground", () => ({ AnimatedBackground: () => null }));
-jest.mock("../components/common", () => ({
-    Modal: ({ isOpen, title, children, ariaLabel }: { isOpen: boolean; title?: string; children?: ReactNode; ariaLabel?: string }) =>
-        isOpen ? <div role="dialog" aria-label={ariaLabel || title}>{children}</div> : null
-}));
 
 const ID = "0x2d5b0fc4d40f7fc9c60965f9292d0d96d8c8353e2cbd02c6700fb08a124aa444";
 const NAME = displayTableName(undefined, ID);
@@ -21,10 +16,20 @@ const VIEWER = "poker1viewer";
 
 let mockViewer: string | undefined = VIEWER;
 let mockTournamentInfo: TournamentInfo;
+let mockBusy = false;
+let mockActionError: string | null = null;
 const mockRegister = jest.fn().mockResolvedValue(true);
 const mockUnregister = jest.fn().mockResolvedValue(true);
 const mockRefresh = jest.fn().mockResolvedValue(undefined);
 const mockClearError = jest.fn();
+const mockRefreshBalance = jest.fn().mockResolvedValue(undefined);
+let mockWallet = {
+    address: VIEWER as string | null,
+    balance: [{ denom: "usdc", amount: "1000000" }],
+    isLoading: false,
+    error: null as string | null,
+    refreshBalance: mockRefreshBalance
+};
 
 jest.mock("../utils/cosmosAccountUtils", () => ({
     getCosmosAddressSync: () => mockViewer
@@ -36,13 +41,17 @@ jest.mock("../hooks/tournament/useTournament", () => ({
 
 jest.mock("../hooks/tournament/useTournamentActions", () => ({
     useTournamentActions: () => ({
-        busy: false,
-        error: null,
+        busy: mockBusy,
+        error: mockActionError,
         clearError: mockClearError,
         register: mockRegister,
         unregister: mockUnregister,
         create: jest.fn()
     })
+}));
+
+jest.mock("../hooks/wallet/useCosmosWallet", () => ({
+    useCosmosWallet: () => mockWallet
 }));
 
 const registeringTournament = (over: Partial<TournamentStateDTO> = {}, optionOver: Partial<TournamentStateDTO["options"]> = {}): TournamentStateDTO => ({
@@ -86,6 +95,8 @@ const renderPage = () =>
         <MemoryRouter initialEntries={[`/tournament/${ID}`]}>
             <Routes>
                 <Route path="/tournament/:tournamentId" element={<TournamentPage />} />
+                <Route path="/tournament/:tournamentId/table/:n" element={<div data-testid="seated-table">At the table</div>} />
+                <Route path="/wallet" element={<div data-testid="wallet-page">Wallet</div>} />
             </Routes>
         </MemoryRouter>
     );
@@ -93,10 +104,21 @@ const renderPage = () =>
 beforeEach(() => {
     jest.clearAllMocks();
     mockViewer = VIEWER;
+    mockBusy = false;
+    mockActionError = null;
+    mockWallet = {
+        address: VIEWER,
+        balance: [{ denom: "usdc", amount: "1000000" }],
+        isLoading: false,
+        error: null,
+        refreshBalance: mockRefreshBalance
+    };
+    mockRegister.mockResolvedValue(true);
+    mockUnregister.mockResolvedValue(true);
     mockTournamentInfo = info();
 });
 
-test("a registering tournament is the landing page: generated name, details, share, and Register opens the modal", () => {
+test("a registering tournament is the landing page: generated name, fees, balance, share, and Register & pay calls the chain", async () => {
     renderPage();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(NAME);
     expect(screen.queryByText(/Tournament 0x/)).not.toBeInTheDocument();
@@ -104,14 +126,21 @@ test("a registering tournament is the landing page: generated name, details, sha
     expect(screen.getByTestId("tournament-page-runners")).toHaveTextContent("0 / 27");
     expect(screen.getByTestId("tournament-start-countdown")).toBeInTheDocument();
     expect(screen.getByTestId("tournament-page-prizepool")).toBeInTheDocument();
+    expect(screen.getByTestId("tournament-page-protocol-fee")).toHaveTextContent("$0.001");
+    expect(screen.getByTestId("tournament-page-escrow")).toHaveTextContent("$0.009");
+    expect(screen.getByTestId("tournament-page-balance")).toHaveTextContent("$1.00");
+    expect(screen.getByTestId("tournament-page-stack")).toHaveTextContent("1,500 chips");
+    expect(screen.getByTestId("tournament-escrow-statement")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: `Share ${NAME}` }));
     expect(copyToClipboard).toHaveBeenCalledWith(tournamentShareUrl(window.location.origin, ID), "Tournament link copied");
 
     fireEvent.click(screen.getByTestId("tournament-register"));
-    expect(screen.getByRole("dialog", { name: `Register for ${NAME}` })).toBeInTheDocument();
-    expect(screen.getByTestId("tournament-modal-name")).toHaveTextContent(NAME);
-    expect(mockRegister).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(mockRegister).toHaveBeenCalledWith(ID));
+    expect(await screen.findByTestId("tournament-register-success")).toHaveTextContent("You're registered");
+    expect(mockRefreshBalance).toHaveBeenCalled();
 });
 
 test("a stored name wins over the generated fallback", () => {
@@ -121,7 +150,16 @@ test("a stored name wins over the generated fallback", () => {
     expect(screen.getByRole("button", { name: "Share Sunday Major" })).toBeInTheDocument();
 });
 
-test("a registered player can unregister, and the modal shows the name", () => {
+test("while the transaction is pending, Register & pay waits on the chain", () => {
+    mockBusy = true;
+    renderPage();
+    const button = screen.getByTestId("tournament-register");
+    expect(button).toHaveTextContent("Waiting for the chain…");
+    expect(button).toBeDisabled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("a registered player can unregister on the page, without a modal", async () => {
     mockTournamentInfo = info(
         {},
         registeringTournament({
@@ -129,21 +167,43 @@ test("a registered player can unregister, and the modal shows the name", () => {
         })
     );
     renderPage();
-    expect(screen.getByTestId("tournament-you-are-in")).toHaveTextContent("You are registered");
+    expect(screen.getByTestId("tournament-you-are-in")).toHaveTextContent("You're registered");
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("tournament-unregister"));
-    expect(screen.getByRole("dialog", { name: `Unregister from ${NAME}` })).toBeInTheDocument();
-    expect(screen.getByTestId("tournament-modal-name")).toHaveTextContent(NAME);
+    await waitFor(() => expect(mockUnregister).toHaveBeenCalledWith(ID));
+    expect(await screen.findByTestId("tournament-unregister-success")).toBeInTheDocument();
+    expect(mockRefreshBalance).toHaveBeenCalled();
 });
 
-test("without a wallet, Register is disabled and the usual sign-in reason is shown", () => {
+test("without a wallet, Register & pay is disabled and the usual sign-in reason is shown", () => {
     mockViewer = undefined;
+    mockWallet = { ...mockWallet, address: null, balance: [] };
     renderPage();
     expect(screen.getByTestId("tournament-register")).toBeDisabled();
     expect(screen.getByTestId("tournament-register-blocked")).toHaveTextContent("Connect a wallet to register");
 });
 
-test("a seated player stays on the page and gets Take my seat, not an automatic redirect", () => {
+test("not enough funds disables Register & pay and shows the needed amount against the balance", () => {
+    mockWallet = { ...mockWallet, balance: [{ denom: "usdc", amount: "1000" }] };
+    renderPage();
+    expect(screen.getByTestId("tournament-page-balance")).toHaveTextContent("$0.001");
+    expect(screen.getByTestId("tournament-insufficient-funds")).toHaveTextContent("You need $0.01");
+    expect(screen.getByTestId("tournament-insufficient-funds")).toHaveTextContent("your balance is $0.001");
+    expect(screen.getByRole("link", { name: "Add funds" })).toHaveAttribute("href", "/wallet");
+    expect(screen.getByTestId("tournament-register")).toBeDisabled();
+    fireEvent.click(screen.getByTestId("tournament-register"));
+    expect(mockRegister).not.toHaveBeenCalled();
+});
+
+test("a chain rejection is shown with a short message and the raw detail", () => {
+    mockActionError = "insufficient funds: 1000usdc is less than 10000usdc";
+    renderPage();
+    expect(screen.getByTestId("tournament-action-error")).toHaveTextContent("Not enough funds in your wallet to pay the buy-in.");
+    expect(screen.getByTestId("tournament-action-error-detail")).toHaveTextContent("insufficient funds: 1000usdc is less than 10000usdc");
+});
+
+test("a seated player is sent to their table, with Take my seat as a fallback", () => {
     const tableGameId = `${ID}-t2`;
     mockTournamentInfo = info(
         { myTable: { gameId: tableGameId, tableId: `${ID}/t2`, seat: 1, tableNumber: 2, tableCount: 3 }, playersRemaining: 12, level: 0 },
@@ -154,10 +214,7 @@ test("a seated player stays on the page and gets Take my seat, not an automatic 
         })
     );
     renderPage();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(NAME);
-    const seat = screen.getByTestId("tournament-take-seat");
-    expect(seat).toHaveAttribute("href", `/tournament/${ID}/table/2`);
-    expect(screen.getByTestId("tournament-my-table")).toHaveTextContent("table 2");
+    expect(screen.getByTestId("seated-table")).toHaveTextContent("At the table");
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
 });
 

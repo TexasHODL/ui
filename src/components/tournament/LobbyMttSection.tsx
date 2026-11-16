@@ -1,16 +1,9 @@
-import React, { useCallback, useState } from "react";
+import React from "react";
 import { TournamentCard } from "./TournamentCard";
-import { TournamentRegisterModal } from "./TournamentRegisterModal";
 import { useNow } from "../../hooks/tournament/useTournamentLobby";
-import { useTournamentActions } from "../../hooks/tournament/useTournamentActions";
-import { hasElements, isEmpty, isNullish } from "../../utils/guards";
+import { hasElements, isEmpty } from "../../utils/guards";
 import type { TournamentLobbyCard } from "../../utils/tournamentLobby";
 import styles from "./LobbyMttSection.module.css";
-
-interface PendingAction {
-    card: TournamentLobbyCard;
-    mode: "register" | "unregister";
-}
 
 interface LobbyMttSectionProps {
     cards: TournamentLobbyCard[];
@@ -21,24 +14,11 @@ interface LobbyMttSectionProps {
 }
 
 /**
- * Multi-table tournaments on the lobby's Tournaments tab. The cards and the
- * register / unregister dialogs are the ones from /tournaments.
+ * Multi-table tournaments on the lobby's Tournaments tab. Register and
+ * unregister happen on the tournament's own page.
  */
 export const LobbyMttSection: React.FC<LobbyMttSectionProps> = ({ cards, isLoading, error, failedCount, onRefresh }) => {
-    const { busy, error: actionError, clearError, register, unregister } = useTournamentActions(onRefresh);
     const now = useNow(1000);
-    const [pending, setPending] = useState<PendingAction | null>(null);
-
-    const closeModals = useCallback(() => {
-        setPending(null);
-        clearError();
-    }, [clearError]);
-
-    const confirm = async () => {
-        if (isNullish(pending)) return;
-        const ok = pending.mode === "register" ? await register(pending.card.tournamentId) : await unregister(pending.card.tournamentId);
-        if (ok) setPending(null);
-    };
 
     let status: string | null = null;
     if (isLoading && isEmpty(cards)) status = "Loading tournaments…";
@@ -58,16 +38,7 @@ export const LobbyMttSection: React.FC<LobbyMttSectionProps> = ({ cards, isLoadi
                 </div>
             ) : (
                 <div className={styles.grid}>
-                    {hasElements(cards) &&
-                        cards.map(card => (
-                            <TournamentCard
-                                key={card.tournamentId}
-                                card={card}
-                                nowMs={now}
-                                onRegister={c => setPending({ card: c, mode: "register" })}
-                                onUnregister={c => setPending({ card: c, mode: "unregister" })}
-                            />
-                        ))}
+                    {hasElements(cards) && cards.map(card => <TournamentCard key={card.tournamentId} card={card} nowMs={now} />)}
                 </div>
             )}
 
@@ -76,15 +47,6 @@ export const LobbyMttSection: React.FC<LobbyMttSectionProps> = ({ cards, isLoadi
                     {failedCount} {failedCount === 1 ? "tournament" : "tournaments"} could not be read and {failedCount === 1 ? "is" : "are"} not shown.
                 </p>
             )}
-
-            <TournamentRegisterModal
-                card={pending?.card ?? null}
-                mode={pending?.mode ?? "register"}
-                busy={busy}
-                error={actionError}
-                onConfirm={confirm}
-                onClose={closeModals}
-            />
         </section>
     );
 };

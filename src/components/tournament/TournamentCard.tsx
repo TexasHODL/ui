@@ -9,8 +9,6 @@ import { ShareTournamentButton } from "./ShareTournamentButton";
 interface TournamentCardProps {
     card: TournamentLobbyCard;
     nowMs: number;
-    onRegister: (card: TournamentLobbyCard) => void;
-    onUnregister: (card: TournamentLobbyCard) => void;
 }
 
 const PILL_CLASS: Record<TournamentLobbyCard["phase"], string> = {
@@ -31,16 +29,18 @@ const Stat: React.FC<{ label: string; value: string; testId?: string }> = ({ lab
     </div>
 );
 
-/** One tournament in the lobby: the field, the clock, the money and the register / unregister action. */
-export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs, onRegister, onUnregister }) => {
+/** One tournament in the lobby: the field, the clock, the money and a link to the event page to register. */
+export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) => {
     const registering = card.phase === "open" || card.phase === "full";
     const displayName = displayTableName(card.name, card.tournamentId);
+    const eventUrl = tournamentUrl(card.tournamentId);
+    const showRegisterLink = !card.isRegistered && (card.canRegister || card.registerBlockedReason === "Connect a wallet to register");
     return (
         <div className="rounded-[14px] border border-white/10 bg-[#0c0911] p-4 flex flex-col gap-3" data-testid="tournament-card">
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <Link
-                        to={tournamentUrl(card.tournamentId)}
+                        to={eventUrl}
                         className="block truncate text-white font-semibold hover:underline"
                         title={displayName}
                         data-testid="tournament-name-link"
@@ -86,20 +86,14 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs, onR
 
             <div className="flex flex-wrap items-center gap-2">
                 {card.isRegistered && card.canUnregister ? (
-                    <button type="button" onClick={() => onUnregister(card)} className="page-button" data-testid="tournament-unregister">
+                    <Link to={eventUrl} className="page-button" data-testid="tournament-unregister">
                         Unregister
-                    </button>
-                ) : card.isRegistered ? null : (
-                    <button
-                        type="button"
-                        onClick={() => onRegister(card)}
-                        disabled={!card.canRegister}
-                        className="page-button-primary"
-                        data-testid="tournament-register"
-                    >
+                    </Link>
+                ) : showRegisterLink ? (
+                    <Link to={eventUrl} className="page-button-primary" data-testid="tournament-register">
                         Register · {formatUsdc(card.cost.gross)}
-                    </button>
-                )}
+                    </Link>
+                ) : null}
                 {card.myTable && (
                     <>
                         <Link to={tableUrl(card.myTable.gameId)} className="page-button-primary" data-testid="tournament-take-seat">
@@ -112,10 +106,10 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs, onR
                 )}
                 {card.isRegistered && !card.myTable && (
                     <span className="text-xs text-purple-300 font-bold" data-testid="tournament-you-are-in">
-                        You are registered
+                        You&apos;re registered
                     </span>
                 )}
-                {!card.canRegister && !card.isRegistered && card.registerBlockedReason && (
+                {!card.canRegister && !card.isRegistered && card.registerBlockedReason && card.registerBlockedReason !== "Connect a wallet to register" && (
                     <span className="text-xs text-gray-400 font-bold">{card.registerBlockedReason}</span>
                 )}
             </div>
