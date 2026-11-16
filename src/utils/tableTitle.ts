@@ -20,11 +20,22 @@ export const tableTitle = (tableId: string | undefined, tableName?: string): str
 };
 
 /**
- * The name shown in a Texas HODL table header. A multi-table tournament table
- * uses the short tournament id (`Table face/1`). Every other unnamed table
- * keeps its generated name.
+ * The name shown in a Texas HODL table header.
+ *
+ * A multi-table tournament table is always `{tournament name} · Table {n}`.
+ * The name comes from the tournament record when one is given, else the
+ * table's own name, else the name generated from the tournament id — never
+ * the short-id fallback (`Table 7375/1`). After rebalancing, new tables often
+ * have no name of their own, so looking the name up from the tournament
+ * (or generating it from that id) is what keeps the header correct.
+ *
+ * Every other unnamed table keeps its generated name.
  */
-export const tableHeading = (tableId: string | undefined, tableName?: string): string => {
-    if (hasContent(tableId) && parseTournamentGameId(tableId)) return tableTitle(tableId, tableName);
+export const tableHeading = (tableId: string | undefined, tableName?: string, tournamentName?: string): string => {
+    const tournament = hasContent(tableId) ? parseTournamentGameId(tableId) : undefined;
+    if (tournament) {
+        const name = displayTableName(tournamentName ?? tableName, tournament.tournamentId);
+        return `${name} · Table ${tournament.tableNumber}`;
+    }
     return displayTableName(tableName, tableId ?? "");
 };

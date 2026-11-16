@@ -4,6 +4,7 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { PageHeading } from "../components/common/PageHeading";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel } from "../components/explorer/ExplorerPanel";
 import { ShareTournamentButton } from "../components/tournament/ShareTournamentButton";
+import { TournamentPodium } from "../components/tournament/TournamentPodium";
 import { useTournament } from "../hooks/tournament/useTournament";
 import { useNow } from "../hooks/tournament/useTournamentLobby";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
@@ -19,6 +20,7 @@ import { buildTournamentCard, escrowStatement, formatUsdc, lobbyRunnersLabel, ph
 import { liveTournamentTables, tournamentStandings } from "../utils/tournamentTables";
 import { startCountdownText } from "../utils/tournamentStart";
 import { tournamentSize } from "../utils/tournamentResult";
+import { ordinalPlace } from "../utils/tournamentFinish";
 import { tournamentTxError } from "../utils/tournamentTxError";
 import { getCosmosAddressSync } from "../utils/cosmosAccountUtils";
 
@@ -60,19 +62,21 @@ export default function TournamentPage() {
     const showRegister = !!card && !card.isRegistered && (card.canRegister || card.registerBlockedReason === "Connect a wallet to register");
     const insufficientFunds = !!card && showRegister && card.canRegister && !wallet.isLoading && balanceMicro < card.cost.gross;
     const canPay = !!card && card.canRegister && !insufficientFunds && !actions.busy;
-    // Colour the balance only while the player is deciding whether to pay.
+    const startingSoon = !!tournament && tournament.status === "registering" && now >= tournament.options.startTime;
+    const statement = card ? escrowStatement(card.cost) : null;
+    const actionError = actions.error ? tournamentTxError(actions.error) : null;
+    const isRegistered = justUnregistered ? false : (!!card?.isRegistered || justRegistered);
+    const coversBuyIn = !!card && !wallet.isLoading && balanceMicro >= card.cost.gross;
+    // Green when already registered, or when the wallet covers the buy-in.
+    // Red only when the player is not registered and cannot cover it.
     const balanceTone: "enough" | "short" | "neutral" =
-        !viewer || wallet.isLoading || !showRegister ? "neutral" : insufficientFunds ? "short" : "enough";
+        !viewer || wallet.isLoading ? "neutral" : isRegistered || coversBuyIn ? "enough" : "short";
     const balanceClass =
         balanceTone === "enough"
             ? "tournament-balance-enough font-medium"
             : balanceTone === "short"
               ? "tournament-balance-short font-medium"
               : "text-white font-medium";
-    const startingSoon = !!tournament && tournament.status === "registering" && now >= tournament.options.startTime;
-    const statement = card ? escrowStatement(card.cost) : null;
-    const actionError = actions.error ? tournamentTxError(actions.error) : null;
-    const isRegistered = justUnregistered ? false : (!!card?.isRegistered || justRegistered);
 
     const headingAction = tournamentId ? (
         <div className="flex flex-wrap items-center gap-2">
@@ -370,16 +374,46 @@ export default function TournamentPage() {
 
                         {hasElements(tournament.results) && (
                             <ExplorerPanel header="Finished">
-                                <ol className="divide-y divide-white/10" data-testid="tournament-standings">
-                                    {tournamentStandings(tournament).map(row => (
-                                        <li key={`${row.place}-${row.address}`} className="flex items-center justify-between px-4 py-2 text-sm">
-                                            <span className={`min-w-0 ${row.address.toLowerCase() === viewer?.toLowerCase() ? "text-purple-300 font-semibold" : "text-white"}`}>
-                                                {row.place}. <span className="font-mono break-all">{row.address}</span>
-                                            </span>
-                                            <span className="ml-3 shrink-0 text-gray-300">{row.payout !== "0" ? formatUsdc(BigInt(row.payout)) : ""}</span>
-                                        </li>
-                                    ))}
-                                </ol>
+                                <TournamentPodium standings={tournamentStandings(tournament)} viewer={viewer} />
+                                <table className="w-full" data-testid="tournament-standings">
+                                    <thead>
+                                        <tr className="text-xs font-semibold uppercase tracking-wide text-gray-400" data-testid="tournament-standings-header">
+                                            <th scope="col" className="px-4 py-2 text-left font-semibold">
+                                                Place
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-left font-semibold">
+                                                Player
+                                            </th>
+                                            <th scope="col" className="px-4 py-2 text-right font-semibold">
+                                                Prize
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {tournamentStandings(tournament).map(row => {
+                                            const isViewer = row.address.toLowerCase() === viewer?.toLowerCase();
+                                            const paid = row.payout !== "0";
+                                            return (
+                                                <tr key={`${row.place}-${row.address}`} className="border-t border-white/10 text-sm">
+                                                    <td className={`px-4 py-2 whitespace-nowrap ${isViewer ? "text-purple-300 font-semibold" : "text-white"}`}>
+                                                        {ordinalPlace(row.place)}
+                                                    </td>
+                                                    <td className={`px-4 py-2 min-w-0 ${isViewer ? "text-purple-300 font-semibold" : "text-white"}`}>
+                                                        <span className="font-mono" title={row.address}>
+                                                            {truncateMiddle(row.address, 10, 6)}
+                                                        </span>
+                                                    </td>
+                                                    <td
+                                                        className={`px-4 py-2 text-right shrink-0 tabular-nums ${paid ? "tournament-balance-enough font-medium" : "text-gray-300"}`}
+                                                        data-testid={`tournament-standing-prize-${row.place}`}
+                                                    >
+                                                        {paid ? formatUsdc(BigInt(row.payout)) : ""}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </ExplorerPanel>
                         )}
                     </div>

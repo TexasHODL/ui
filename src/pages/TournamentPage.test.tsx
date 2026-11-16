@@ -9,6 +9,9 @@ import type { TournamentInfo } from "../hooks/tournament/useTournament";
 
 jest.mock("../utils/clipboard", () => ({ copyToClipboard: jest.fn() }));
 jest.mock("../components/common/AnimatedBackground", () => ({ AnimatedBackground: () => null }));
+jest.mock("../context/profile/ProfileAvatarContext", () => ({
+    useProfileAvatar: () => ({ getAvatarForAddress: () => null })
+}));
 
 const ID = "0x2d5b0fc4d40f7fc9c60965f9292d0d96d8c8353e2cbd02c6700fb08a124aa444";
 const NAME = displayTableName(undefined, ID);
@@ -147,6 +150,8 @@ test("a registering tournament is the landing page: generated name, fees, balanc
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await waitFor(() => expect(mockRegister).toHaveBeenCalledWith(ID));
     expect(await screen.findByTestId("tournament-register-success")).toHaveTextContent("You're registered");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveAttribute("data-balance-tone", "enough");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveClass("tournament-balance-enough");
     expect(mockRefreshBalance).toHaveBeenCalled();
 });
 
@@ -175,7 +180,8 @@ test("a registered player can unregister on the page, without a modal", async ()
     );
     renderPage();
     expect(screen.getByTestId("tournament-you-are-in")).toHaveTextContent("You're registered");
-    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveAttribute("data-balance-tone", "neutral");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveAttribute("data-balance-tone", "enough");
+    expect(screen.getByTestId("tournament-page-balance-amount")).toHaveClass("tournament-balance-enough");
     expect(screen.queryByTestId("tournament-register")).not.toBeInTheDocument();
     expect(screen.getByTestId("tournament-registration-actions")).toHaveClass("justify-end");
     expect(screen.getByTestId("tournament-registration-actions")).toContainElement(screen.getByTestId("tournament-unregister"));
@@ -266,5 +272,52 @@ test("the balance amount is red when it does not cover the buy-in", () => {
     expect(amount).toHaveClass("tournament-balance-short");
     expect(amount).not.toHaveClass("tournament-balance-enough");
     expect(screen.getByTestId("tournament-register")).toBeDisabled();
+});
+
+test("the balance amount stays green when the player is registered, even if the remaining wallet would not cover another buy-in", () => {
+    mockWallet = { ...mockWallet, balance: [{ denom: "usdc", amount: "1000" }] };
+    mockTournamentInfo = info(
+        {},
+        registeringTournament({
+            entrants: [{ address: VIEWER, status: "registered", stack: "1500" }]
+        })
+    );
+    renderPage();
+    const amount = screen.getByTestId("tournament-page-balance-amount");
+    expect(amount).toHaveAttribute("data-balance-tone", "enough");
+    expect(amount).toHaveClass("tournament-balance-enough");
+    expect(amount).not.toHaveClass("tournament-balance-short");
+});
+
+test("a finished tournament shows a podium, Place/Player/Prize headers, and prizes in green", () => {
+    mockTournamentInfo = info(
+        { playersRemaining: 0, level: 7 },
+        registeringTournament({
+            status: "finished",
+            prizePool: "16000000",
+            results: [
+                { place: 1, playerId: "poker1winnerxxxxxx", payout: "8000000" },
+                { place: 2, playerId: "poker1runnerupxxxx", payout: "4800000" },
+                { place: 3, playerId: "poker1thirdxxxxxxxx", payout: "3200000" },
+                { place: 4, playerId: "poker1bubblexxxxxxx", payout: "0" }
+            ]
+        })
+    );
+    renderPage();
+    expect(screen.getByTestId("tournament-podium")).toBeInTheDocument();
+    const places = screen.getAllByTestId(/tournament-podium-place-/);
+    expect(places.map(el => el.getAttribute("data-place"))).toEqual(["2", "1", "3"]);
+    expect(screen.getByTestId("tournament-standings-header")).toHaveTextContent("Place");
+    expect(screen.getByTestId("tournament-standings-header")).toHaveTextContent("Player");
+    expect(screen.getByTestId("tournament-standings-header")).toHaveTextContent("Prize");
+    const firstPrize = screen.getByTestId("tournament-standing-prize-1");
+    expect(firstPrize).toHaveTextContent("$8.00");
+    expect(firstPrize).toHaveClass("tournament-balance-enough");
+    expect(screen.getByTestId("tournament-standing-prize-2")).toHaveTextContent("$4.80");
+    expect(screen.getByTestId("tournament-standing-prize-2")).toHaveClass("tournament-balance-enough");
+    expect(screen.getByTestId("tournament-standing-prize-3")).toHaveTextContent("$3.20");
+    expect(screen.getByTestId("tournament-standing-prize-4")).toHaveTextContent("");
+    expect(screen.getByTestId("tournament-standings")).toHaveTextContent("1st");
+    expect(screen.getByTestId("tournament-standings")).toHaveTextContent("4th");
 });
 

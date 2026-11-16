@@ -28,6 +28,8 @@ export interface TableHeaderProps {
     tableId: string;
     /** Optional ENS-style table name (poker-vm#337); a generated name is shown when absent. */
     tableName?: string;
+    /** Multi-table tournament name from the chain record, when known. */
+    tournamentName?: string;
     isMobileLandscape: boolean;
 
     // Game data
@@ -82,6 +84,7 @@ export interface TableHeaderProps {
 export const TableHeader: React.FC<TableHeaderProps> = ({
     tableId,
     tableName,
+    tournamentName,
     isMobileLandscape,
     gameFormat,
     gameVariant,
@@ -117,7 +120,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     useDismissDetailsOnOutsidePointer(optionsRef);
     if (isMobileLandscape) return null;
     const shareUrl = window.location.origin + tableUrl(tableId);
-    const title = tableHeading(tableId, tableName);
+    const title = tableHeading(tableId, tableName, tournamentName);
     const showLeave = currentPlayerData && !(gameFormat && isTournamentFormat(gameFormat));
     const rake = rakeDisplay(gameOptions?.rake, gameFormat);
 

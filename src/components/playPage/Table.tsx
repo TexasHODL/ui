@@ -1457,6 +1457,7 @@ const Table = React.memo(() => {
                     <TableHeader
                         tableId={id || ""}
                         tableName={gameName}
+                        tournamentName={tournamentRecord?.name ?? tournamentRecord?.options.name}
                         handleOpenReplay={isReplayMode ? undefined : handleOpenReplay}
                         replayHand={replayHand}
                         isMobileLandscape={isMobileLandscape}
