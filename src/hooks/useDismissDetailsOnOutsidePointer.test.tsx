@@ -47,3 +47,37 @@ describe.each(["mouse", "touch"])("a %s press", pointerType => {
         expect(details.open).toBe(true);
     });
 });
+
+describe("Escape", () => {
+    it("closes an open menu, leaves a closed one alone, and ignores Escape while a dialog is on top", () => {
+        const { details, outside } = mount();
+        const { unmount } = renderHook(() => {
+            const ref = useRef(details);
+            useDismissDetailsOnOutsidePointer(ref);
+        });
+
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(details.open).toBe(false);
+
+        details.open = true;
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(details.open).toBe(false);
+
+        details.open = true;
+        const dialog = document.createElement("div");
+        dialog.setAttribute("role", "dialog");
+        document.body.append(dialog);
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(details.open).toBe(true);
+        dialog.remove();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(details.open).toBe(false);
+
+        details.open = true;
+        unmount();
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect(details.open).toBe(true);
+        press(outside, "mouse");
+        expect(details.open).toBe(true);
+    });
+});
