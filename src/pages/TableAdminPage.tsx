@@ -980,7 +980,7 @@ export default function TableAdminPage() {
                                                     type="number"
                                                     step="0.01"
                                                     min="0"
-                                                    aria-label="Rake-free threshold"
+                                                    aria-label="No fee below"
                                                     value={rakeFreeThreshold}
                                                     onChange={e => setRakeFreeThreshold(e.target.value)}
                                                     className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
@@ -1011,7 +1011,7 @@ export default function TableAdminPage() {
                                                     type="number"
                                                     step="0.01"
                                                     min="0"
-                                                    aria-label="Rake cap"
+                                                    aria-label="Network fee cap"
                                                     value={rakeCap}
                                                     onChange={e => setRakeCap(e.target.value)}
                                                     className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
@@ -1023,7 +1023,7 @@ export default function TableAdminPage() {
                                                 <label className="text-gray-300 text-xs mb-1 block">Fee Recipient Address</label>
                                                 <input
                                                     type="text"
-                                                    aria-label="Rake owner"
+                                                    aria-label="Fee recipient"
                                                     value={rakeOwner}
                                                     readOnly
                                                     placeholder={cosmosWallet.address || "b52..."}
