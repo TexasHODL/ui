@@ -139,4 +139,37 @@ describe("Focused table header", () => {
         render(<TableHeader {...props} />);
         expect(screen.queryByTestId("header-rake")).toBeNull();
     });
+
+    it("closes table options when pressing outside or Escape, and stays open for a press inside", () => {
+        render(<TableHeader {...makeProps()} />);
+        const details = screen.getByLabelText("Table options").closest("details");
+        expect(details).not.toBeNull();
+        if (!details) return;
+
+        const press = (el: EventTarget) => {
+            const event = new MouseEvent("pointerdown", { bubbles: true, cancelable: true });
+            el.dispatchEvent(event);
+        };
+
+        (details as HTMLDetailsElement).open = true;
+        expect((details as HTMLDetailsElement).open).toBe(true);
+
+        press(screen.getByRole("button", { name: /Invite by QR code/i }));
+        expect((details as HTMLDetailsElement).open).toBe(true);
+        press(screen.getByText("Test network"));
+        expect((details as HTMLDetailsElement).open).toBe(true);
+
+        press(screen.getByRole("button", { name: "Lobby" }));
+        expect((details as HTMLDetailsElement).open).toBe(false);
+
+        (details as HTMLDetailsElement).open = true;
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+        expect((details as HTMLDetailsElement).open).toBe(false);
+
+        (details as HTMLDetailsElement).open = true;
+        fireEvent.click(screen.getByLabelText("Table options"));
+        expect((details as HTMLDetailsElement).open).toBe(false);
+        fireEvent.click(screen.getByLabelText("Table options"));
+        expect((details as HTMLDetailsElement).open).toBe(true);
+    });
 });

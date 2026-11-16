@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { FaArrowLeft, FaCopy, FaQrcode, FaHistory, FaCog, FaEllipsisH, FaShare, FaRedo, FaLayerGroup } from "react-icons/fa";
 import { QRCodeSVG } from "qrcode.react";
 import { Modal } from "../../../common/Modal";
@@ -12,6 +12,7 @@ import { formatGameFormatDisplay, formatTableGameDisplay, isTournamentFormat } f
 import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/poker-vm-sdk";
+import { useDismissDetailsOnOutsidePointer } from "../../../../hooks/useDismissDetailsOnOutsidePointer";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { formatBlindCountdown } from "../../../../utils/blindStructure";
 import styles from "./TableHeader.module.css";
@@ -112,6 +113,8 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
 }) => {
     const blindLevel = useBlindLevel();
     const [showQR, setShowQR] = useState(false);
+    const optionsRef = useRef<HTMLDetailsElement>(null);
+    useDismissDetailsOnOutsidePointer(optionsRef);
     if (isMobileLandscape) return null;
     const shareUrl = window.location.origin + tableUrl(tableId);
     const title = tableHeading(tableId, tableName);
@@ -173,7 +176,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                         </button>
                     )}
                     <ProvablyFairButton />
-                    <details className={styles.moreMenu}>
+                    <details className={styles.moreMenu} ref={optionsRef}>
                         <summary aria-label="Table options">
                             <FaEllipsisH />
                         </summary>
