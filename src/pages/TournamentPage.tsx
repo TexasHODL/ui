@@ -10,6 +10,7 @@ import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
 import { parseMicroToBigInt } from "../constants/currency";
 import { hasElements, isNullish } from "../utils/guards";
+import { MULTI_TABLE_TOURNAMENT_LABEL } from "../utils/createGameType";
 import { displayTableName } from "../utils/generatedTableName";
 import { formatStartsAt } from "../utils/scheduledSng";
 import { tableUrl } from "../utils/tableUrl";
@@ -101,7 +102,7 @@ export default function TournamentPage() {
                 <AnimatedBackground />
                 <div className="site-page-content">
                     <Navigate to={tableUrl(card.myTable.gameId)} replace />
-                    <PageHeading title={displayName} eyebrow="TOURNAMENT" backTo="/tournaments" backLabel="Tournaments" />
+                    <PageHeading title={displayName} eyebrow={MULTI_TABLE_TOURNAMENT_LABEL} backTo="/tournaments" backLabel="Tournaments" />
                     <p className="text-sm text-purple-300 font-bold" data-testid="tournament-redirecting">
                         You&apos;re at table {card.myTable.number}. Taking you there…
                     </p>
@@ -119,7 +120,7 @@ export default function TournamentPage() {
             <div className="site-page-content">
                 <PageHeading
                     title={displayName}
-                    eyebrow="TOURNAMENT"
+                    eyebrow={MULTI_TABLE_TOURNAMENT_LABEL}
                     description="Event details, registration, and the tables still in play."
                     backTo="/tournaments"
                     backLabel="Tournaments"

@@ -13,14 +13,13 @@ import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/ga
 import { applyEndedLobbyRetention } from "../utils/lobbyEndedFilter";
 
 import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "../utils/gameFormatUtils";
-import { displayGameFormat } from "../utils/createGameType";
+import { displayGameFormat, SINGLE_TABLE_TOURNAMENT_LABEL } from "../utils/createGameType";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
 import { filterLobbyTournamentCards, sortLobbyEntries } from "../utils/lobbyEntries";
-import { hasContent, isEmpty, isNullish } from "../utils/guards";
+import { hasContent, hasElements, isEmpty, isNullish } from "../utils/guards";
 import { useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
-import { LobbyMttSection } from "./tournament/LobbyMttSection";
 import { LobbyTournamentRows } from "./tournament/LobbyTournamentRows";
 import { parseTournamentGameId } from "../utils/tableUrl";
 import DeleteTableModal from "./modals/DeleteTableModal";
@@ -91,10 +90,17 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     }, [rawGames, treasuryOnly, ownedOnly, address, searchIsId]);
     const { cards: tournamentCards, isLoading: tournamentsLoading, error: tournamentsError, failedCount: tournamentsFailed, refresh: refreshTournaments } = useTournamentLobby();
     const tournamentRows = useMemo(() => {
-        // Cards on the Tournaments tab are the multi-table list. All games keeps one row each.
-        if (format !== "all") return [];
-        return filterLobbyTournamentCards(tournamentCards, { search, openOnly });
-    }, [tournamentCards, format, search, openOnly]);
+        // All games and the Tournaments tab share these rows. Sit & Go and cash do not list them.
+        if (format !== "all" && format !== "mtt") return [];
+        return filterLobbyTournamentCards(tournamentCards, {
+            search,
+            openOnly,
+            ownedOnly,
+            viewer: address ?? undefined,
+            treasuryOnly,
+            treasuryAddress
+        });
+    }, [tournamentCards, format, search, openOnly, ownedOnly, address, treasuryOnly]);
     // All sit-and-go / tournament tables in the club list — needed before paging so
     // Finished/Cancelled rows older than 24h can be filtered out of the lobby.
     const tournamentIds = useMemo(
@@ -129,7 +135,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const mySeats = useLobbySeats(pagedGames.filter(game => game.currentPlayers > 0).map(game => game.gameId).join(","), address, rawGames);
     const occupiedSeats = clubGames.reduce((sum, game) => sum + game.currentPlayers, 0);
     const availableSeats = clubGames.reduce((sum, game) => sum + Math.max(0, game.maxPlayers - game.currentPlayers), 0);
-    const hasFilters = format !== "all" || !!search || openOnly || ownedOnly;
+    const hasSearchFilters = !!search || openOnly || ownedOnly;
+    const mttTab = format === "mtt";
+    const listError = mttTab ? tournamentsError : error?.message ?? null;
+    const listLoading = mttTab ? tournamentsLoading && isEmpty(tournamentRows) : isLoading;
+    const listEmpty = mttTab ? isEmpty(tournamentRows) : isEmpty(games) && isEmpty(tournamentRows);
     const clearFilters = () => {
         setFormat("all");
         setSearch("");
@@ -186,7 +196,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     </button>
                 ))}
             </div>
-            {format !== "mtt" && <div className={styles.filters}>
+            <div className={styles.filters}>
                 <label className={styles.search}>
                     <FaSearch aria-hidden="true" />
                     <input
@@ -243,38 +253,36 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                         <option value="buyin">Lowest buy-in</option>
                     </select>
                 </label>
-            </div>}
+            </div>
 
-            {format === "mtt" ? (
-                <LobbyMttSection
-                    cards={tournamentCards}
-                    isLoading={tournamentsLoading}
-                    error={tournamentsError}
-                    failedCount={tournamentsFailed}
-                    onRefresh={refreshTournaments}
-                />
-            ) : error ? (
+            {listError ? (
                 <div className={styles.empty} role="alert">
-                    <h2>Tables couldn’t load</h2>
-                    <p>{error.message}</p>
-                    <button className={styles.secondaryButton} onClick={() => void refetch()}>
+                    <h2>{mttTab ? "Tournaments couldn’t load" : "Tables couldn’t load"}</h2>
+                    <p>{listError}</p>
+                    <button className={styles.secondaryButton} onClick={() => void (mttTab ? refreshTournaments() : refetch())}>
                         Try again
                     </button>
                 </div>
-            ) : isLoading ? (
+            ) : listLoading ? (
                 <div className={styles.empty} role="status">
                     <FaRedo className="animate-spin" />
-                    <p>Finding your tables…</p>
+                    <p>{mttTab ? "Loading tournaments…" : "Finding your tables…"}</p>
                 </div>
-            ) : isEmpty(games) && isEmpty(tournamentRows) ? (
-                <div className={styles.empty}>
-                    <span className={styles.emptySuit}>♠</span>
-                    <h2>{hasFilters ? "No tables match" : "The next game starts with you"}</h2>
-                    <p>{hasFilters ? "Try a different search or show all games." : "Create a table and invite your friends."}</p>
-                    {hasFilters && (
-                        <button className={styles.secondaryButton} onClick={clearFilters}>
-                            Clear filters
-                        </button>
+            ) : listEmpty ? (
+                <div className={styles.empty} data-testid={mttTab ? "lobby-mtt-empty" : undefined}>
+                    {mttTab && !hasSearchFilters ? (
+                        <p>No multi-table tournaments yet</p>
+                    ) : (
+                        <>
+                            <span className={styles.emptySuit}>♠</span>
+                            <h2>{hasSearchFilters || mttTab ? (mttTab ? "No tournaments match" : "No tables match") : "The next game starts with you"}</h2>
+                            <p>{hasSearchFilters || mttTab ? "Try a different search or show all games." : "Create a table and invite your friends."}</p>
+                            {hasSearchFilters && (
+                                <button className={styles.secondaryButton} onClick={clearFilters}>
+                                    Clear filters
+                                </button>
+                            )}
+                        </>
                     )}
                 </div>
             ) : (
@@ -302,7 +310,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const mySeat = mySeats[game.gameId];
                                 const seated = !!mySeat;
                                 const formatLabel = displayGameFormat(game.gameFormat, game.scheduledStartTime, formatGameFormatDisplay);
-                                const tournament = formatLabel === "Tournament" || isTournamentFormat(game.gameFormat);
+                                const tournament = formatLabel === "Tournament" || formatLabel === SINGLE_TABLE_TOURNAMENT_LABEL || isTournamentFormat(game.gameFormat);
                                 const owner = !!address && game.creator?.toLowerCase() === address.toLowerCase();
                                 const tableName = displayTableName(game.name, game.gameId);
                                 const phase = scheduledPhase(game);
@@ -321,9 +329,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                 const watch = !seated && !showCancelled && (full || (tournamentStyle && played && !lateRegOpen));
                                 const lateRegister = lateRegOpen && !seated && !watch;
                                 const schedule = scheduledLabel(game, mark, lateRegOpen, progress?.lateRegEndsAtMs);
-                                const stakes = tournament
-                                    ? "Tournament"
-                                    : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
+                                const stakes = formatLabel === SINGLE_TABLE_TOURNAMENT_LABEL
+                                    ? SINGLE_TABLE_TOURNAMENT_LABEL
+                                    : tournament
+                                      ? "Tournament"
+                                      : "$" + formatMicroUsd(game.smallBlind) + " / $" + formatMicroUsd(game.bigBlind);
                                 const rake = tournament ? null : rakeDisplay(game.rake, game.gameFormat);
                                 return (
                                     <tr key={game.gameId} className={seated ? styles.seatedRow : undefined}>
@@ -362,7 +372,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                             </div>
                                         </td>
                                         <td className={styles.stakesColumn}>
-                                            <strong>{stakes}</strong>
+                                            <strong data-testid="lobby-stakes">{stakes}</strong>
                                             <span className={styles.detail}>{tournament ? "Fixed entry" : "Small / big blind"}</span>
                                             {rake && (
                                                 <span className={styles.detail} title={rake.title} data-testid="lobby-rake">
@@ -433,10 +443,19 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                     </table>
                 </div>
             )}
-            {!error && !isLoading && games.length > 0 && (
+            {mttTab && tournamentsFailed > 0 && !listError && (
+                <p role="status" className={styles.footnote}>
+                    {tournamentsFailed} {tournamentsFailed === 1 ? "tournament" : "tournaments"} could not be read and {tournamentsFailed === 1 ? "is" : "are"} not shown.
+                </p>
+            )}
+            {!listError && !listLoading && hasElements(lobbyEntries) && (
                 <Pagination currentPage={currentPage} totalItems={lobbyEntries.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
             )}
-            {format !== "mtt" && <p className={styles.footnote}>Opening a table lets you look around. Choose a seat and confirm your buy-in when you’re ready.</p>}
+            {mttTab ? (
+                <p className={styles.footnote}>Register for a tournament. You’ll take your seat when it starts.</p>
+            ) : (
+                <p className={styles.footnote}>Opening a table lets you look around. Choose a seat and confirm your buy-in when you’re ready.</p>
+            )}
             <DeleteTableModal
                 isOpen={!!deleteId}
                 onClose={() => setDeleteId(null)}
