@@ -42,6 +42,24 @@ describe("filterLobbyTournamentCards", () => {
         expect(filterLobbyTournamentCards([open, finished], { search: "roulette", openOnly: false }).map(c => c.tournamentId)).toEqual(["0xfin"]);
         expect(filterLobbyTournamentCards([open, finished], { search: "0xopen", openOnly: false }).map(c => c.tournamentId)).toEqual(["0xopen"]);
     });
+
+    it("My tables keeps events the viewer created or is registered in", () => {
+        const created = card({ tournamentId: "0xmine", phase: "open", creator: "alice" });
+        const registered = card({ tournamentId: "0xreg", phase: "running", creator: "bob", isRegistered: true });
+        const other = card({ tournamentId: "0xother", phase: "open", creator: "bob" });
+        expect(
+            filterLobbyTournamentCards([created, registered, other], { search: "", openOnly: false, ownedOnly: true, viewer: "alice" }).map(c => c.tournamentId)
+        ).toEqual(["0xmine", "0xreg"]);
+    });
+
+    it("treasury filter keeps events created by the treasury address", () => {
+        const ours = card({ tournamentId: "0xours", phase: "open", creator: "treasury" });
+        const other = card({ tournamentId: "0xother", phase: "open", creator: "bob" });
+        expect(filterLobbyTournamentCards([ours, other], { search: "", openOnly: false, treasuryOnly: true, treasuryAddress: "treasury" }).map(c => c.tournamentId)).toEqual([
+            "0xours"
+        ]);
+        expect(filterLobbyTournamentCards([ours, other], { search: "", openOnly: false, treasuryOnly: true }).map(c => c.tournamentId)).toEqual([]);
+    });
 });
 
 describe("sortLobbyEntries", () => {

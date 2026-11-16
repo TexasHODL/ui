@@ -43,6 +43,9 @@ let mockTournamentCards: {
     winnerAddress?: string;
     startsAtMs?: number;
     minEntrants?: number;
+    isRegistered?: boolean;
+    creator?: string;
+    atRiskOfCancelling?: boolean;
 }[] = [];
 jest.mock("../hooks/tournament/useTournamentLobby", () => {
     const actual = jest.requireActual("../hooks/tournament/useTournamentLobby");
@@ -488,26 +491,31 @@ const openTournamentCard = {
 
 const renderLobby = () => render(<MemoryRouter><TableList /></MemoryRouter>);
 
-test("the Tournaments tab shows multi-table cards, and Sit & Go does not list them as rows", () => {
+test("the Tournaments tab lists multi-table rows like Sit & Go, and Sit & Go does not list them", () => {
     mockTournamentCards = [openTournamentCard];
     renderLobby();
     fireEvent.click(screen.getByRole("button", { name: "Sit & Go" }));
     expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
     expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
     expect(screen.getByText("My tournament")).toBeInTheDocument();
+    expect(screen.getByLabelText("Search tables")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
-    const section = screen.getByTestId("lobby-mtt-section");
-    expect(within(section).getByTestId("tournament-name-link")).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
-    expect(within(section).getByTestId("tournament-name-link")).toHaveTextContent(displayTableName(undefined, TOURNAMENT_ID));
-    expect(within(section).queryByRole("button", { name: "Create tournament" })).not.toBeInTheDocument();
-    expect(within(section).queryByRole("link", { name: "View all" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Search tables")).toBeInTheDocument();
+    expect(screen.getByLabelText(/open seats only/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/my tables/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Sort tables")).toBeInTheDocument();
+    const name = displayTableName(undefined, TOURNAMENT_ID);
+    const row = within(screen.getByTestId("lobby-tournament-row"));
+    expect(row.getByTestId("lobby-tournament-name")).toHaveTextContent(name);
+    expect(row.getByTestId("lobby-format")).toHaveTextContent("Multi-table tournament");
+    expect(row.getByTestId("lobby-stakes")).toHaveTextContent("Multi-table tournament");
+    expect(row.getByText(/6-max tables/)).toBeInTheDocument();
+    expect(row.getByRole("link", { name: `Register ${name}` })).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
     expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
-
-    expect(within(section).getByTestId("tournament-register")).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
-    expect(within(section).getByTestId("tournament-register")).toHaveTextContent("Register");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(within(section).getByRole("button", { name: `Share ${displayTableName(undefined, TOURNAMENT_ID)}` })).toBeInTheDocument();
+    expect(row.getByRole("button", { name: `Share ${name}` })).toBeInTheDocument();
 });
 
 test("the Tournaments tab shows a compact empty state when no multi-table tournaments exist", () => {
@@ -535,6 +543,8 @@ test("an All-games multi-table row shares the tournament page and Register goes 
     const name = displayTableName(undefined, TOURNAMENT_ID);
     expect(row.getByTestId("lobby-tournament-name")).toHaveTextContent(name);
     expect(row.queryByText(/Tournament 0x/)).not.toBeInTheDocument();
+    expect(row.getByTestId("lobby-format")).toHaveTextContent("Multi-table tournament");
+    expect(row.getByTestId("lobby-stakes")).toHaveTextContent("Multi-table tournament");
     expect(row.getByRole("link", { name: `Register ${name}` })).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
     expect(row.getByTestId("lobby-tournament-status")).toHaveTextContent("Registering");
     fireEvent.click(row.getByRole("button", { name: `Share ${name}` }));
@@ -594,3 +604,81 @@ test("Open only hides a finished multi-table tournament from All games", () => {
     fireEvent.click(screen.getByLabelText(/open seats only/i));
     expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
 });
+
+test("a registered multi-table row says You are registered and offers View", () => {
+    mockTournamentCards = [{ ...openTournamentCard, isRegistered: true }];
+    renderLobby();
+    const row = within(screen.getByTestId("lobby-tournament-row"));
+    expect(row.getByTestId("lobby-tournament-registered")).toHaveTextContent("You're registered");
+    expect(row.getByRole("link", { name: `View ${displayTableName(undefined, TOURNAMENT_ID)}` })).toBeInTheDocument();
+});
+
+test("the Tournaments tab search and Open seats only filter the multi-table list", () => {
+    mockTournamentCards = [
+        { ...openTournamentCard, tournamentId: "0xopen1111", name: "All In" },
+        {
+            tournamentId: "0x275a79b9258009e0a1f4f4f4232cefe25262765f0a5c7c3a86040885ffec5187",
+            phase: "finished",
+            registered: 7,
+            runnersLeft: 1,
+            maxEntrants: 27,
+            seatsPerTable: 9,
+            cost: { gross: 2_000_000n },
+            name: "Bitcoin Roulette"
+        }
+    ];
+    renderLobby();
+    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+    expect(screen.getAllByTestId("lobby-tournament-row")).toHaveLength(2);
+    fireEvent.click(screen.getByLabelText(/open seats only/i));
+    expect(screen.getAllByTestId("lobby-tournament-row")).toHaveLength(1);
+    expect(screen.getByTestId("lobby-tournament-name")).toHaveTextContent("All In");
+    fireEvent.click(screen.getByLabelText(/open seats only/i));
+    fireEvent.change(screen.getByLabelText("Search tables"), { target: { value: "roulette" } });
+    expect(screen.getAllByTestId("lobby-tournament-row")).toHaveLength(1);
+    expect(screen.getByTestId("lobby-tournament-name")).toHaveTextContent("Bitcoin Roulette");
+});
+
+test("Sit & Go tab lists only Sit & Gos; Tournaments lists single-table and multi-table events", () => {
+    mockTournamentCards = [openTournamentCard];
+    const added = [
+        { ...base, gameId: "single-table", name: "Sunday Single", creator: "owner", gameFormat: GameFormat.TOURNAMENT, currentPlayers: 2, scheduledStartTime: Date.now() + 3_600_000, maxPlayers: 9 },
+        { ...base, gameId: "scheduled-sng", name: "Night Turbo", creator: "owner", gameFormat: GameFormat.SIT_AND_GO, currentPlayers: 2, scheduledStartTime: Date.now() + 3_600_000, maxPlayers: 9 }
+    ];
+    mockGames.push(...added);
+    try {
+        renderLobby();
+        const sng = within(screen.getByText("My tournament").closest("tr")!);
+        expect(sng.getByTestId("lobby-format")).toHaveTextContent("Sit & Go");
+        expect(sng.getByTestId("lobby-stakes")).toHaveTextContent("Sit & Go");
+        expect(sng.getByTestId("lobby-stakes")).not.toHaveTextContent("Tournament");
+        expect(sng.getByTestId("lobby-stakes")).not.toHaveTextContent("Single-table");
+
+        for (const name of ["Sunday Single", "Night Turbo"]) {
+            const row = within(screen.getByText(name).closest("tr")!);
+            expect(row.getByTestId("lobby-format")).toHaveTextContent("Single-table tournament");
+            expect(row.getByTestId("lobby-stakes")).toHaveTextContent("Single-table tournament");
+            expect(row.getByText(/9-seat/)).toBeInTheDocument();
+        }
+
+        fireEvent.click(screen.getByRole("button", { name: "Sit & Go" }));
+        expect(screen.getByText("My tournament")).toBeInTheDocument();
+        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("lobby-format")).toHaveTextContent("Sit & Go");
+        expect(within(screen.getByText("My tournament").closest("tr")!).getByTestId("lobby-stakes")).toHaveTextContent("Sit & Go");
+        expect(screen.queryByText("Sunday Single")).not.toBeInTheDocument();
+        expect(screen.queryByText("Night Turbo")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+        expect(screen.getByText("Sunday Single")).toBeInTheDocument();
+        expect(screen.getByText("Night Turbo")).toBeInTheDocument();
+        expect(screen.getByTestId("lobby-tournament-row")).toBeInTheDocument();
+        expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
+    } finally {
+        added.forEach(game => {
+            const index = mockGames.indexOf(game);
+            if (index >= 0) mockGames.splice(index, 1);
+        });
+    }
+});
+

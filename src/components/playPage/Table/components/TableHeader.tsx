@@ -128,7 +128,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 <div className={styles.roomIdentity}>
                     <strong>{title}</strong>
                     <span>
-                        {gameFormat ? displayGameFormat(gameFormat, gameOptions?.scheduledStartTime, formatGameFormatDisplay) : "Poker"}
+                        {gameFormat ? displayGameFormat(gameFormat, gameOptions?.scheduledStartTime, formatGameFormatDisplay, tableId) : "Poker"}
                         {" · "}
                         {formatTableGameDisplay(gameVariant, gameOptions?.bettingLimit)}
                         {gameOptions && " · " + (runners ? playersLabel(tableActivePlayers.length, gameOptions.maxPlayers, runners) : tableActivePlayers.length + "/" + gameOptions.maxPlayers + " seats")}

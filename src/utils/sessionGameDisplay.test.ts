@@ -59,9 +59,10 @@ describe("sessionGameLabel", () => {
         expect(sessionGameLabel(sitAndGo({ minBuyIn: "100000", maxBuyIn: "2000000" }))?.detail).toBe("$0.10 – $2.00 buy-in");
     });
 
-    it("calls a scheduled sit-and-go a tournament, matching the lobby", () => {
-        expect(sessionGameLabel(sitAndGo({ scheduledStartTime: 1_700_000_000_000 }))?.title).toBe("Tournament · Texas Hold'em");
-        expect(sessionGameLabel(sitAndGo({ format: "tournament", scheduledStartTime: 1_700_000_000_000 }))?.title).toBe("Tournament · Texas Hold'em");
+    it("calls a scheduled sit-and-go a single-table tournament, matching the lobby", () => {
+        expect(sessionGameLabel(sitAndGo({ scheduledStartTime: 1_700_000_000_000 }))?.title).toBe("Single-table tournament · Texas Hold'em");
+        expect(sessionGameLabel(sitAndGo({ format: "tournament", scheduledStartTime: 1_700_000_000_000 }))?.title).toBe("Single-table tournament · Texas Hold'em");
+        expect(sessionGameLabel(sitAndGo({ format: "tournament" }), "0xabc-t1")?.title).toBe("Multi-table tournament · Texas Hold'em");
     });
 
     it("leaves the variant and the stake off when the record doesn't have them", () => {
@@ -129,7 +130,7 @@ describe("session game filter", () => {
             { key: "Cash Game · Pot-Limit Omaha", label: "Cash Game · Pot-Limit Omaha" },
             { key: "Cash Game · Texas Hold'em", label: "Cash Game · Texas Hold'em" },
             { key: "Sit & Go · Texas Hold'em", label: "Sit & Go · Texas Hold'em" },
-            { key: "Tournament · Texas Hold'em", label: "Tournament · Texas Hold'em" }
+            { key: "Single-table tournament · Texas Hold'em", label: "Single-table tournament · Texas Hold'em" }
         ]);
     });
 
@@ -177,12 +178,12 @@ describe("defaultSessionVariant", () => {
     const row = (gameId: string, joinBlock: number) => ({ gameId, joinBlock });
 
     it("picks the variant with the most sessions", () => {
-        expect(defaultSessionVariant([row("cash", 10), row("tourn", 20), row("tourn", 30), row("sng", 40)], labels)).toBe("Tournament · Texas Hold'em");
+        expect(defaultSessionVariant([row("cash", 10), row("tourn", 20), row("tourn", 30), row("sng", 40)], labels)).toBe("Single-table tournament · Texas Hold'em");
     });
 
     it("breaks a tie with the most recent join", () => {
         expect(defaultSessionVariant([row("cash", 10), row("cash", 50), row("tourn", 20), row("tourn", 40)], labels)).toBe("Cash Game · Texas Hold'em");
-        expect(defaultSessionVariant([row("cash", 10), row("cash", 30), row("tourn", 20), row("tourn", 40)], labels)).toBe("Tournament · Texas Hold'em");
+        expect(defaultSessionVariant([row("cash", 10), row("cash", 30), row("tourn", 20), row("tourn", 40)], labels)).toBe("Single-table tournament · Texas Hold'em");
     });
 
     it("uses menu order when the count and the latest join are the same", () => {
