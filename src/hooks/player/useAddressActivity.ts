@@ -4,7 +4,7 @@ import { useCometRpcApiFactory, useCosmosApi } from "../../context/CosmosApiCont
 import { useNetwork } from "../../context/NetworkContext";
 import { TX_SEARCH_PAGE_SIZE } from "../../apis/Api";
 import { bridgeDepositRow, fetchBridgeDeposits } from "../../utils/bridgeDeposits";
-import { hasContent } from "../../utils/guards";
+import { hasContent, isNullish } from "../../utils/guards";
 import {
     describeTransaction,
     fetchGamePrizeMeta,
@@ -96,7 +96,7 @@ export function useAddressActivity(address: string | undefined) {
                             payouts: meta[tx.gameId]?.payouts,
                             prizeAmount: tx.transferAmount
                         });
-                        if (place == null) return tx;
+                        if (isNullish(place)) return tx;
                         return { ...tx, prizePlace: place };
                     })
                 );
