@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal } from "../common";
+import { displayTableName } from "../../utils/generatedTableName";
 import { escrowStatement, formatUsdc, type TournamentLobbyCard } from "../../utils/tournamentLobby";
 
 interface TournamentRegisterModalProps {
@@ -16,11 +17,12 @@ export const TournamentRegisterModal: React.FC<TournamentRegisterModalProps> = (
     if (!card) return null;
     const statement = escrowStatement(card.cost);
     const registering = mode === "register";
+    const displayName = displayTableName(card.name, card.tournamentId);
     return (
         <Modal
             isOpen
             onClose={onClose}
-            title={registering ? "Register for tournament" : "Unregister from tournament"}
+            title={registering ? `Register for ${displayName}` : `Unregister from ${displayName}`}
             error={error}
             isProcessing={busy}
             widthClass="w-[28rem]"
@@ -28,6 +30,9 @@ export const TournamentRegisterModal: React.FC<TournamentRegisterModalProps> = (
             patternId="hexagons-tournament-register"
         >
             <div className="text-sm space-y-3" data-testid="tournament-escrow-statement">
+                <p className="text-white font-medium" data-testid="tournament-modal-name">
+                    {displayName}
+                </p>
                 <div className="flex justify-between gap-3">
                     <span className="text-gray-400 min-w-0">{registering ? "Buy-in" : "Buy-in paid"}</span>
                     <span className="text-white font-medium shrink-0 whitespace-nowrap">{formatUsdc(card.cost.gross)}</span>

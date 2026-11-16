@@ -492,13 +492,15 @@ test("the Tournaments tab shows multi-table cards, and Sit & Go does not list th
     fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
     const section = screen.getByTestId("lobby-mtt-section");
     expect(within(section).getByTestId("tournament-name-link")).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
-    expect(within(section).getByTestId("tournament-name-link")).toHaveTextContent("Tournament 0xface4d…6c5e");
+    expect(within(section).getByTestId("tournament-name-link")).toHaveTextContent(displayTableName(undefined, TOURNAMENT_ID));
     expect(within(section).queryByRole("button", { name: "Create tournament" })).not.toBeInTheDocument();
     expect(within(section).queryByRole("link", { name: "View all" })).not.toBeInTheDocument();
     expect(screen.queryByText("My tournament")).not.toBeInTheDocument();
 
     fireEvent.click(within(section).getByRole("button", { name: /Register/ }));
-    expect(screen.getByRole("dialog", { name: "Register for tournament" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: `Register for ${displayTableName(undefined, TOURNAMENT_ID)}` })).toBeInTheDocument();
+    expect(screen.getByTestId("tournament-modal-name")).toHaveTextContent(displayTableName(undefined, TOURNAMENT_ID));
+    expect(within(section).getByRole("button", { name: `Share ${displayTableName(undefined, TOURNAMENT_ID)}` })).toBeInTheDocument();
 });
 
 test("the Tournaments tab shows a compact empty state when no multi-table tournaments exist", () => {
@@ -517,4 +519,16 @@ test("cash games do not show the multi-table tournament section", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cash games" }));
     expect(screen.queryByTestId("lobby-mtt-section")).not.toBeInTheDocument();
     expect(screen.queryByTestId("lobby-tournament-row")).not.toBeInTheDocument();
+});
+
+test("an All-games multi-table row shares the tournament page and Register goes there, not the list", () => {
+    mockTournamentCards = [openTournamentCard];
+    renderLobby();
+    const row = within(screen.getByTestId("lobby-tournament-row"));
+    const name = displayTableName(undefined, TOURNAMENT_ID);
+    expect(row.getByTestId("lobby-tournament-name")).toHaveTextContent(name);
+    expect(row.queryByText(/Tournament 0x/)).not.toBeInTheDocument();
+    expect(row.getByRole("link", { name: `Register ${name}` })).toHaveAttribute("href", `/tournament/${TOURNAMENT_ID}`);
+    fireEvent.click(row.getByRole("button", { name: `Share ${name}` }));
+    expect(copyToClipboard).toHaveBeenCalledWith(`${window.location.origin}/tournament/${TOURNAMENT_ID}`, "Tournament link copied");
 });

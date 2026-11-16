@@ -1,52 +1,96 @@
-import { useEffect } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { PageHeading } from "../components/common/PageHeading";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel } from "../components/explorer/ExplorerPanel";
+import { ShareTournamentButton } from "../components/tournament/ShareTournamentButton";
+import { TournamentRegisterModal } from "../components/tournament/TournamentRegisterModal";
 import { useTournament } from "../hooks/tournament/useTournament";
+import { useNow } from "../hooks/tournament/useTournamentLobby";
+import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { hasElements, isNullish } from "../utils/guards";
-import { formatUSDCToSimpleDollars } from "../utils/numberUtils";
-import { truncateMiddle } from "../utils/stringUtils";
+import { displayTableName } from "../utils/generatedTableName";
+import { formatStartsAt } from "../utils/scheduledSng";
 import { tableUrl } from "../utils/tableUrl";
+import { buildTournamentCard, formatUsdc, type TournamentStateDTO as LobbyTournamentState } from "../utils/tournamentLobby";
 import { liveTournamentTables, tournamentStandings } from "../utils/tournamentTables";
 import { startCountdownText } from "../utils/tournamentStart";
-import { useNow } from "../hooks/tournament/useTournamentLobby";
 import { tournamentSize } from "../utils/tournamentResult";
 import { getCosmosAddressSync } from "../utils/cosmosAccountUtils";
 
 /**
- * /tournament/:tournamentId — one multi-table tournament: where it stands and
- * where its tables are. A player who is seated is sent straight to their table.
+ * /tournament/:tournamentId — the registration landing for one multi-table
+ * tournament: event details, a shareable link, Register (the existing confirm
+ * modal), and Take my seat once the viewer is playing.
  */
 export default function TournamentPage() {
     const { tournamentId } = useParams<{ tournamentId: string }>();
-    const { tournament, isLoading, error, playersRemaining, myTable, level } = useTournament(tournamentId);
+    const { tournament, isLoading, error, playersRemaining, level, refresh } = useTournament(tournamentId);
     const now = useNow(1000);
+    const actions = useTournamentActions(refresh);
+    const [pending, setPending] = useState<"register" | "unregister" | null>(null);
+    const viewer = getCosmosAddressSync() ?? undefined;
+
+    const card = useMemo(() => {
+        if (!tournament) return null;
+        return buildTournamentCard({ state: tournament as LobbyTournamentState, creator: "" }, viewer, now);
+    }, [tournament, viewer, now]);
+
+    const displayName = tournamentId ? displayTableName(card?.name, tournamentId) : "Tournament";
 
     useEffect(() => {
-        document.title = "Tournament - Texas HODL";
+        document.title = `${displayName} - Texas HODL`;
         return () => {
             document.title = "Texas HODL";
         };
-    }, []);
+    }, [displayName]);
 
-    if (myTable) {
-        return <Navigate to={tableUrl(myTable.gameId)} replace />;
-    }
+    const showRegister = !!card && !card.isRegistered && (card.canRegister || card.registerBlockedReason === "Connect a wallet to register");
 
-    const me = getCosmosAddressSync()?.toLowerCase();
-    const title = tournamentId ? `Tournament ${truncateMiddle(tournamentId, 6, 4, "…")}` : "Tournament";
+    const headingAction = tournamentId ? (
+        <div className="flex flex-wrap items-center gap-2">
+            <ShareTournamentButton tournamentId={tournamentId} name={card?.name} />
+            {card?.myTable && (
+                <Link to={tableUrl(card.myTable.gameId)} className="page-button-primary" data-testid="tournament-take-seat">
+                    Take my seat
+                </Link>
+            )}
+            {card?.canUnregister && (
+                <button type="button" onClick={() => setPending("unregister")} className="page-button" data-testid="tournament-unregister">
+                    Unregister
+                </button>
+            )}
+            {showRegister && (
+                <button
+                    type="button"
+                    onClick={() => setPending("register")}
+                    disabled={!card.canRegister}
+                    className="page-button-primary"
+                    data-testid="tournament-register"
+                >
+                    Register · {formatUsdc(card.cost.gross)}
+                </button>
+            )}
+        </div>
+    ) : undefined;
+
+    const confirm = async () => {
+        if (!pending || !tournamentId) return;
+        const ok = pending === "register" ? await actions.register(tournamentId) : await actions.unregister(tournamentId);
+        if (ok) setPending(null);
+    };
 
     return (
         <div className="site-page">
             <AnimatedBackground />
             <div className="site-page-content">
                 <PageHeading
-                    title={title}
+                    title={displayName}
                     eyebrow="TOURNAMENT"
-                    description="Where this event stands, and the tables still in play."
+                    description="Event details, registration, and the tables still in play."
                     backTo="/tournaments"
                     backLabel="Tournaments"
+                    action={headingAction}
                 />
 
                 {isNullish(tournament) ? (
@@ -66,8 +110,14 @@ export default function TournamentPage() {
                                     <dd className="text-white capitalize">{tournament.status}</dd>
                                 </div>
                                 <div>
+                                    <dt className="text-gray-400 font-bold">Buy-in</dt>
+                                    <dd className="text-white" data-testid="tournament-page-buyin">
+                                        {card ? formatUsdc(card.cost.gross) : "—"}
+                                    </dd>
+                                </div>
+                                <div>
                                     <dt className="text-gray-400 font-bold">Runners</dt>
-                                    <dd className="text-white">
+                                    <dd className="text-white" data-testid="tournament-page-runners">
                                         {tournament.status === "registering"
                                             ? `${tournamentSize(tournament)} / ${tournament.options.maxEntrants}`
                                             : `${playersRemaining} left of ${tournamentSize(tournament)}`}
@@ -87,10 +137,40 @@ export default function TournamentPage() {
                                     </div>
                                 )}
                                 <div>
-                                    <dt className="text-gray-400 font-bold">Prize pool</dt>
-                                    <dd className="text-white">${formatUSDCToSimpleDollars(tournament.prizePool)}</dd>
+                                    <dt className="text-gray-400 font-bold">{card?.prizePoolIsProjected ? "Prize pool (so far)" : "Prize pool"}</dt>
+                                    <dd className="text-white" data-testid="tournament-page-prizepool">
+                                        {card ? formatUsdc(card.prizePoolMicro) : "—"}
+                                    </dd>
                                 </div>
+                                {card && (
+                                    <div className="col-span-2 sm:col-span-4 text-xs text-gray-400 font-bold">
+                                        Starts {formatStartsAt(card.startsAtMs, now)} · {card.seatsPerTable}-max tables · needs {card.minEntrants} to run
+                                        {card.atRiskOfCancelling && (
+                                            <span className="text-yellow-400">
+                                                {" "}
+                                                · {card.minEntrants - card.registered} more needed or it cancels
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
                             </dl>
+                            <div className="px-4 pb-4 flex flex-wrap items-center gap-2">
+                                {card?.myTable && (
+                                    <span className="text-xs text-purple-300 font-bold" data-testid="tournament-my-table">
+                                        You&apos;re at table {card.myTable.number}
+                                    </span>
+                                )}
+                                {card?.isRegistered && !card.myTable && (
+                                    <span className="text-xs text-purple-300 font-bold" data-testid="tournament-you-are-in">
+                                        You are registered
+                                    </span>
+                                )}
+                                {card && !card.canRegister && !card.isRegistered && card.registerBlockedReason && (
+                                    <span className="text-xs text-gray-400 font-bold" data-testid="tournament-register-blocked">
+                                        {card.registerBlockedReason}
+                                    </span>
+                                )}
+                            </div>
                         </ExplorerPanel>
 
                         <ExplorerPanel header="Tables">
@@ -99,7 +179,10 @@ export default function TournamentPage() {
                                     {liveTournamentTables(tournament).map(row => (
                                         <li key={row.gameId} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                                             <span className="text-white min-w-0">
-                                                Table {row.number} <span className="text-gray-400">({row.players} players, hand {row.handNumber})</span>
+                                                Table {row.number}{" "}
+                                                <span className="text-gray-400">
+                                                    ({row.players} players, hand {row.handNumber})
+                                                </span>
                                             </span>
                                             <Link to={row.url} className="text-purple-300 font-bold hover:underline shrink-0" data-testid={`tournament-table-${row.number}`}>
                                                 Watch
@@ -117,10 +200,10 @@ export default function TournamentPage() {
                                 <ol className="divide-y divide-white/10" data-testid="tournament-standings">
                                     {tournamentStandings(tournament).map(row => (
                                         <li key={`${row.place}-${row.address}`} className="flex items-center justify-between px-4 py-2 text-sm">
-                                            <span className={`min-w-0 ${row.address.toLowerCase() === me ? "text-purple-300 font-semibold" : "text-white"}`}>
+                                            <span className={`min-w-0 ${row.address.toLowerCase() === viewer?.toLowerCase() ? "text-purple-300 font-semibold" : "text-white"}`}>
                                                 {row.place}. <span className="font-mono break-all">{row.address}</span>
                                             </span>
-                                            <span className="ml-3 shrink-0 text-gray-300">{row.payout !== "0" ? `$${formatUSDCToSimpleDollars(row.payout)}` : ""}</span>
+                                            <span className="ml-3 shrink-0 text-gray-300">{row.payout !== "0" ? formatUsdc(BigInt(row.payout)) : ""}</span>
                                         </li>
                                     ))}
                                 </ol>
@@ -128,6 +211,20 @@ export default function TournamentPage() {
                         )}
                     </div>
                 )}
+
+                <TournamentRegisterModal
+                    card={pending ? card : null}
+                    mode={pending ?? "register"}
+                    busy={actions.busy}
+                    error={actions.error}
+                    onConfirm={() => void confirm()}
+                    onClose={() => {
+                        if (!actions.busy) {
+                            setPending(null);
+                            actions.clearError();
+                        }
+                    }}
+                />
             </div>
         </div>
     );

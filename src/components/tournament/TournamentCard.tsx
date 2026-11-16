@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { tableUrl, tournamentUrl } from "../../utils/tableUrl";
-import { truncateMiddle } from "../../utils/stringUtils";
+import { displayTableName } from "../../utils/generatedTableName";
 import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
 import { formatUsdc, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
+import { ShareTournamentButton } from "./ShareTournamentButton";
 
 interface TournamentCardProps {
     card: TournamentLobbyCard;
@@ -33,6 +34,7 @@ const Stat: React.FC<{ label: string; value: string; testId?: string }> = ({ lab
 /** One tournament in the lobby: the field, the clock, the money and the register / unregister action. */
 export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs, onRegister, onUnregister }) => {
     const registering = card.phase === "open" || card.phase === "full";
+    const displayName = displayTableName(card.name, card.tournamentId);
     return (
         <div className="rounded-[14px] border border-white/10 bg-[#0c0911] p-4 flex flex-col gap-3" data-testid="tournament-card">
             <div className="flex items-start justify-between gap-2">
@@ -40,18 +42,21 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs, onR
                     <Link
                         to={tournamentUrl(card.tournamentId)}
                         className="block truncate text-white font-semibold hover:underline"
-                        title={card.tournamentId}
+                        title={displayName}
                         data-testid="tournament-name-link"
                     >
-                        Tournament {truncateMiddle(card.tournamentId, 8, 4, "…")}
+                        {displayName}
                     </Link>
                     <div className="text-xs text-gray-400 font-bold">
                         {card.seatsPerTable}-max tables · {Number(card.startingStack).toLocaleString("en-US")} chips · {card.blindLabel}
                     </div>
                 </div>
-                <span className={`page-pill ${PILL_CLASS[card.phase]}`} data-testid="tournament-phase">
-                    {phaseLabel(card.phase)}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                    <ShareTournamentButton tournamentId={card.tournamentId} name={card.name} />
+                    <span className={`page-pill ${PILL_CLASS[card.phase]}`} data-testid="tournament-phase">
+                        {phaseLabel(card.phase)}
+                    </span>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
