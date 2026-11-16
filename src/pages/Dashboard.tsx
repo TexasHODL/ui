@@ -1195,12 +1195,12 @@ const Dashboard: React.FC = () => {
                                     )}
 
                                     {modalGameFormat === GameFormat.CASH && <div className="creation-span">
-                                        <label><input type="checkbox" checked={enableRake} onChange={e => setEnableRake(e.target.checked)} /> Enable Rake Collection</label>
+                                        <label><input type="checkbox" checked={enableRake} onChange={e => setEnableRake(e.target.checked)} /> Charge a network fee</label>
                                         {enableRake && <div className="space-y-3 mt-3">
-                                            <label className="block">Rake-Free Threshold (USDC)<input aria-label="Rake-free threshold" type="number" min="0" step="0.01" value={rakeThreshold} onChange={e => setRakeThreshold(Number(e.target.value))} /></label>
-                                            <label className="block">Rake Percentage (%)<select aria-label="Rake percentage" value={rakePercentage} onChange={e => setRakePercentage(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}%</option>)}</select></label>
-                                            <label className="block">Rake Cap (USDC)<input aria-label="Rake cap" type="number" min="0" step="0.01" value={rakeCap} onChange={e => setRakeCap(Number(e.target.value))} /></label>
-                                            <label className="block">Rake Owner Address<input aria-label="Rake owner" readOnly value={cosmosWallet.address ?? ""} /></label>
+                                            <label className="block">No Fee Below (USDC)<input aria-label="No fee below" type="number" min="0" step="0.01" value={rakeThreshold} onChange={e => setRakeThreshold(Number(e.target.value))} /></label>
+                                            <label className="block">Network Fee (%)<select aria-label="Network fee percentage" value={rakePercentage} onChange={e => setRakePercentage(Number(e.target.value))}>{[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>{n}%</option>)}</select></label>
+                                            <label className="block">Network Fee Cap (USDC)<input aria-label="Network fee cap" type="number" min="0" step="0.01" value={rakeCap} onChange={e => setRakeCap(Number(e.target.value))} /></label>
+                                            <label className="block">Fee Recipient Address<input aria-label="Fee recipient" readOnly value={cosmosWallet.address ?? ""} /></label>
                                         </div>}
                                     </div>}
                                     <div className="creation-fee creation-span">
@@ -1216,7 +1216,7 @@ const Dashboard: React.FC = () => {
                                         </p>
                                     )}
 
-                                    {extraOptionsInvalid && <p className="creation-span" role="alert">Enter a positive whole-number starting stack and valid non-negative fee/rake amounts.</p>}
+                                    {extraOptionsInvalid && <p className="creation-span" role="alert">Enter a positive whole-number starting stack and valid non-negative fee amounts.</p>}
                                     {createGameError && <p className="creation-span text-red-500 text-sm">{createGameError}</p>}
                                     {createTableError && <p className="creation-span text-red-500 text-sm">{createTableError.message}</p>}
                                     </>
