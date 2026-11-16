@@ -23,8 +23,8 @@ describe("tournamentListRow", () => {
         expect(tournamentListRow(card({ phase: "finished" })).action).toEqual({ label: "View", url: "/tournament/0xface4d5c" });
     });
 
-    it("sends an open tournament to the lobby to register, and says when it is full or cancelled", () => {
-        expect(tournamentListRow(card({ phase: "open" })).action).toEqual({ label: "Register", url: "/tournaments" });
+    it("sends an open tournament to its own page to register, and says when it is full or cancelled", () => {
+        expect(tournamentListRow(card({ phase: "open" })).action).toEqual({ label: "Register", url: "/tournament/0xface4d5c" });
         expect(tournamentListRow(card({ phase: "full" })).action.label).toBe("Full");
         expect(tournamentListRow(card({ phase: "cancelled" })).action.label).toBe("Cancelled");
     });
@@ -40,7 +40,7 @@ describe("lobbyTournamentAction", () => {
     });
 
     it("keeps Register and View when the viewer has no seat", () => {
-        expect(lobbyTournamentAction(card({ phase: "open" }))).toEqual({ label: "Register", url: "/tournaments" });
+        expect(lobbyTournamentAction(card({ phase: "open" }))).toEqual({ label: "Register", url: "/tournament/0xface4d5c" });
         expect(lobbyTournamentAction(card({ phase: "running" }))).toEqual({ label: "View", url: "/tournament/0xface4d5c" });
     });
 });

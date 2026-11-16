@@ -25,7 +25,7 @@ export const tournamentListRow = (card: TournamentLobbyCard): TournamentListRow 
         runners: `${card.registered}/${card.maxEntrants}`,
         buyIn: `$${formatMicroAsUsdc(card.cost.gross, 2)}`,
         action: registering
-            ? { label: "Register", url: "/tournaments" }
+            ? { label: "Register", url: tournamentUrl(card.tournamentId) }
             : { label: card.phase === "cancelled" ? "Cancelled" : card.phase === "full" ? "Full" : "View", url: tournamentUrl(card.tournamentId) }
     };
 };

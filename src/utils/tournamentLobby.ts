@@ -46,12 +46,16 @@ export interface TournamentOptionsView {
     startTime: number;
     blindStructure: BlindStructureDTO;
     actionTimeoutSeconds: number;
+    /** Optional custom name if the engine ever stores one. */
+    name?: string;
 }
 
 /** What the lobby reads of the engine's TournamentStateDTO. */
 export interface TournamentStateDTO {
     tournamentId: string;
     status: TournamentStatus;
+    /** Optional custom name if the engine ever stores one. */
+    name?: string;
     options: TournamentOptionsView;
     entrants: TournamentEntrantView[];
     /** Micro-USDC string. "0" until the tournament starts; the lobby projects it while registering. */
@@ -101,6 +105,12 @@ function parseEntrant(raw: unknown): TournamentEntrantView {
     };
 }
 
+function optionalName(value: unknown): string | undefined {
+    if (!isString(value)) return undefined;
+    const name = value.trim();
+    return name === "" ? undefined : name;
+}
+
 function parseBlindStructure(raw: unknown): BlindStructureDTO {
     if (!isRecord(raw)) throw new Error("tournament options.blindStructure must be an object");
     // The structure is the SDK's own BlindStructureDTO, written by the engine; the lobby only displays it.
@@ -125,11 +135,14 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         maxEntrants: requireInt(o.maxEntrants, "options.maxEntrants"),
         startTime: requireInt(o.startTime, "options.startTime"),
         blindStructure: parseBlindStructure(o.blindStructure),
-        actionTimeoutSeconds: requireInt(o.actionTimeoutSeconds, "options.actionTimeoutSeconds")
+        actionTimeoutSeconds: requireInt(o.actionTimeoutSeconds, "options.actionTimeoutSeconds"),
+        ...(optionalName(o.name) ? { name: optionalName(o.name) } : {})
     };
+    const name = optionalName(raw.name) ?? options.name;
     return {
         tournamentId: requireString(raw.tournamentId, "tournamentId"),
         status,
+        ...(name ? { name } : {}),
         options,
         entrants: raw.entrants.map(parseEntrant),
         prizePool: requireMicro(raw.prizePool, "prizePool")
@@ -241,6 +254,8 @@ export interface TournamentLobbyCard {
     canUnregister: boolean;
     /** Why the viewer cannot register, for the disabled button; undefined when they can. */
     registerBlockedReason?: string;
+    /** Stored custom name when the chain has one. */
+    name?: string;
 }
 
 /** Entrants that count toward the field: registered, or already playing/busted after the start. */
@@ -293,6 +308,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
     // (with their table) after the finish, so the status alone would offer a seat in a finished tournament.
     const myTable = state.status === "running" ? tablePlayedBy(mine) : undefined;
 
+    const name = state.name ?? state.options.name;
+
     return {
         tournamentId: state.tournamentId,
         creator,
@@ -314,7 +331,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         ...(isNullish(myTable) ? {} : { myTable }),
         canRegister: isNullish(registerBlockedReason),
         canUnregister: registering && !isNullish(mine) && mine.status === "registered",
-        ...(isNullish(registerBlockedReason) ? {} : { registerBlockedReason })
+        ...(isNullish(registerBlockedReason) ? {} : { registerBlockedReason }),
+        ...(isNullish(name) ? {} : { name })
     };
 }
 

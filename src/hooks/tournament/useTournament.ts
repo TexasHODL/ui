@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { getCosmosAddressSync } from "../../utils/cosmosAccountUtils";
 import { isNullish } from "../../utils/guards";
@@ -21,6 +21,8 @@ export interface TournamentInfo {
     myTable: MyTournamentTable | undefined;
     /** The tournament's blind level (0-based); undefined until loaded. */
     level: number | undefined;
+    /** Re-read the tournament (after register / unregister). */
+    refresh: () => Promise<void>;
 }
 
 const isSettled = (t: TournamentStateDTO | undefined): boolean => t?.status === "finished" || t?.status === "cancelled";
@@ -37,6 +39,18 @@ export const useTournament = (tournamentId: string | undefined): TournamentInfo 
     const [loadedFor, setLoadedFor] = useState<string | undefined>(undefined);
 
     const settled = isSettled(tournament);
+
+    const refresh = useCallback(async () => {
+        if (!tournamentId) return;
+        try {
+            const res = await api.getTournament(tournamentId);
+            setTournament(parseTournamentState(res.tournament));
+            setLoadedFor(tournamentId);
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+        }
+    }, [api, tournamentId]);
 
     useEffect(() => {
         if (!tournamentId || settled) return;
@@ -55,8 +69,10 @@ export const useTournament = (tournamentId: string | undefined): TournamentInfo 
             }
         };
 
-        read();
-        const interval = setInterval(read, TOURNAMENT_POLL_MS);
+        void read();
+        const interval = setInterval(() => {
+            void read();
+        }, TOURNAMENT_POLL_MS);
         return () => {
             cancelled = true;
             clearInterval(interval);
@@ -74,6 +90,7 @@ export const useTournament = (tournamentId: string | undefined): TournamentInfo 
         error,
         playersRemaining: progress?.playersRemaining,
         myTable: progress?.myTable,
-        level: current?.level
+        level: current?.level,
+        refresh
     };
 };

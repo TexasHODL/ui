@@ -3,24 +3,16 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { PageHeading } from "../components/common/PageHeading";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel, ExplorerReloadButton } from "../components/explorer/ExplorerPanel";
 import { TournamentCard } from "../components/tournament/TournamentCard";
-import { TournamentRegisterModal } from "../components/tournament/TournamentRegisterModal";
 import { CreateTournamentModal } from "../components/tournament/CreateTournamentModal";
 import { useNow, useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { isEmpty } from "../utils/guards";
-import type { TournamentLobbyCard } from "../utils/tournamentLobby";
-
-interface PendingAction {
-    card: TournamentLobbyCard;
-    mode: "register" | "unregister";
-}
 
 /** /tournaments: multi-table tournaments to register for, and the form to create one (ui#980). */
 export default function TournamentLobbyPage() {
     const { cards, isLoading, error, failedCount, refresh } = useTournamentLobby();
     const actions = useTournamentActions(refresh);
     const now = useNow(1000);
-    const [pending, setPending] = useState<PendingAction | null>(null);
     const [creating, setCreating] = useState(false);
     const [createdId, setCreatedId] = useState<string | null>(null);
 
@@ -31,17 +23,10 @@ export default function TournamentLobbyPage() {
         };
     }, []);
 
-    const closeModals = useCallback(() => {
-        setPending(null);
+    const closeCreate = useCallback(() => {
         setCreating(false);
         actions.clearError();
     }, [actions]);
-
-    const confirm = async () => {
-        if (!pending) return;
-        const ok = pending.mode === "register" ? await actions.register(pending.card.tournamentId) : await actions.unregister(pending.card.tournamentId);
-        if (ok) setPending(null);
-    };
 
     return (
         <div className="site-page">
@@ -74,13 +59,7 @@ export default function TournamentLobbyPage() {
                     ) : (
                         <div className="p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
                             {cards.map(card => (
-                                <TournamentCard
-                                    key={card.tournamentId}
-                                    card={card}
-                                    nowMs={now}
-                                    onRegister={c => setPending({ card: c, mode: "register" })}
-                                    onUnregister={c => setPending({ card: c, mode: "unregister" })}
-                                />
+                                <TournamentCard key={card.tournamentId} card={card} nowMs={now} />
                             ))}
                         </div>
                     )}
@@ -97,14 +76,6 @@ export default function TournamentLobbyPage() {
                 </p>
             </div>
 
-            <TournamentRegisterModal
-                card={pending?.card ?? null}
-                mode={pending?.mode ?? "register"}
-                busy={actions.busy}
-                error={actions.error}
-                onConfirm={confirm}
-                onClose={closeModals}
-            />
             <CreateTournamentModal
                 isOpen={creating}
                 busy={actions.busy}
@@ -116,7 +87,7 @@ export default function TournamentLobbyPage() {
                         setCreating(false);
                     }
                 }}
-                onClose={closeModals}
+                onClose={closeCreate}
             />
         </div>
     );

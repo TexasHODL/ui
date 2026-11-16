@@ -28,6 +28,9 @@ export const tournamentGameId = (tournamentId: string, tableNumber: number | str
 /** A tournament's own page: standings and its tables. */
 export const tournamentUrl = (tournamentId: string): string => `/tournament/${tournamentId}`;
 
+/** Absolute share link for a tournament: the current origin plus {@link tournamentUrl}. */
+export const tournamentShareUrl = (origin: string, tournamentId: string): string => `${origin}${tournamentUrl(tournamentId)}`;
+
 export const tableUrl = (gameId: string): string => {
     const tournament = parseTournamentGameId(gameId);
     return tournament ? `/tournament/${tournament.tournamentId}/table/${tournament.tableNumber}` : `/table/${gameId}`;

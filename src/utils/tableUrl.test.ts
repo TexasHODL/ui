@@ -1,4 +1,4 @@
-import { gameIdFromRoute, isTournamentTablePath, parseTournamentGameId, tableUrl, tournamentGameId, tournamentUrl } from "./tableUrl";
+import { gameIdFromRoute, isTournamentTablePath, parseTournamentGameId, tableUrl, tournamentGameId, tournamentShareUrl, tournamentUrl } from "./tableUrl";
 
 const TOURNAMENT = "0xface4d5c131b7d806a87883d234dd1929a296c5e01b904e293d24dbe2eada97e";
 
@@ -62,5 +62,11 @@ describe("isTournamentTablePath", () => {
         expect(isTournamentTablePath("/tournament/0xabc")).toBe(false);
         expect(isTournamentTablePath("/tournaments")).toBe(false);
         expect(isTournamentTablePath("/table/0xabc")).toBe(false);
+    });
+});
+
+describe("tournamentShareUrl", () => {
+    it("joins the origin and the tournament page", () => {
+        expect(tournamentShareUrl("https://play.texashodl.net", TOURNAMENT)).toBe(`https://play.texashodl.net/tournament/${TOURNAMENT}`);
     });
 });

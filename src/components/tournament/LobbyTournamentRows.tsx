@@ -1,8 +1,9 @@
 import React from "react";
 import { FaArrowRight } from "react-icons/fa";
 import styles from "../TableList.module.css";
+import { ShareTournamentButton } from "./ShareTournamentButton";
 import { hasValue } from "../../utils/guards";
-import { truncateMiddle } from "../../utils/stringUtils";
+import { displayTableName } from "../../utils/generatedTableName";
 import { lobbyTournamentAction, tournamentListRow } from "../../utils/tournamentListRow";
 import type { TournamentLobbyCard } from "../../utils/tournamentLobby";
 
@@ -15,13 +16,14 @@ export const LobbyTournamentRows: React.FC<{ cards: TournamentLobbyCard[] }> = (
         {cards.map(card => {
             const row = tournamentListRow(card);
             const action = lobbyTournamentAction(card);
+            const displayName = displayTableName(card.name, card.tournamentId);
             return (
                 <tr key={card.tournamentId} data-testid="lobby-tournament-row" className={hasValue(action.seatedAt) ? styles.seatedRow : undefined}>
                     <td>
                         <div className={styles.tableIdentity}>
                             <span className={styles.tableGlyph} aria-hidden="true">♛</span>
                             <div className={styles.identityText}>
-                                <strong>Tournament {truncateMiddle(card.tournamentId, 4, 4)}</strong>
+                                <strong data-testid="lobby-tournament-name">{displayName}</strong>
                                 {hasValue(action.seatedAt) && (
                                     <span className={styles.seatedBadge} data-testid="lobby-tournament-seat">
                                         You&apos;re at table {action.seatedAt}
@@ -53,10 +55,11 @@ export const LobbyTournamentRows: React.FC<{ cards: TournamentLobbyCard[] }> = (
                     </td>
                     <td>
                         <div className={styles.rowActions}>
+                            <ShareTournamentButton tournamentId={card.tournamentId} name={card.name} />
                             <a
                                 href={action.url}
                                 className={styles.actionButton}
-                                aria-label={`${action.label} tournament ${card.tournamentId}`}
+                                aria-label={`${action.label} ${displayName}`}
                             >
                                 <span>{action.label}</span>
                                 <FaArrowRight aria-hidden="true" />
