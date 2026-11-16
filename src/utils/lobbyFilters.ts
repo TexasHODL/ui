@@ -1,6 +1,7 @@
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { isCashFormat, isSitAndGoFormat, isTournamentFormat } from "./gameFormatUtils";
+import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay } from "./gameFormatUtils";
+import { displayGameFormat, SINGLE_TABLE_TOURNAMENT_LABEL, SIT_AND_GO_LABEL } from "./createGameType";
 import { scheduledSngPhase } from "./scheduledSng";
 
 export type LobbyFormat = "all" | "cash" | "tournament" | "mtt";
@@ -75,11 +76,21 @@ export function isOpenScheduledRegistration(
     return phase === "registering" || phase === "ready" || phase === "short";
 }
 
-/** Which tables a lobby tab lists. Multi-table tournaments are cards, not table rows. */
+/** The format name the lobby shows for this table, used so tabs match the row labels. */
+function lobbyFormatLabel(game: GameWithFormat): string {
+    return displayGameFormat(game.gameFormat, game.scheduledStartTime, formatGameFormatDisplay, game.gameId);
+}
+
+/**
+ * Which tables a lobby tab lists. The Sit & Go tab is unscheduled Sit & Gos
+ * only. The Tournaments tab is single-table tournaments (multi-table events
+ * are added separately as lobby rows).
+ */
 export function matchesLobbyFormat(game: GameWithFormat, format: LobbyFormat): boolean {
     if (format === "all") return true;
     if (format === "cash") return isCashFormat(game.gameFormat);
-    if (format === "tournament") return isTournamentFormat(game.gameFormat);
+    if (format === "tournament") return lobbyFormatLabel(game) === SIT_AND_GO_LABEL;
+    if (format === "mtt") return lobbyFormatLabel(game) === SINGLE_TABLE_TOURNAMENT_LABEL;
     return false;
 }
 

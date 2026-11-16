@@ -363,7 +363,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                             {gameOptions && (
                                 <div className="mobile-drawer-row">
                                     <span className={`text-xs font-semibold ${styles.brandText}`}>
-                                        {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay)} • ` : ""}
+                                        {gameFormat ? `${displayGameFormat(gameFormat, gameOptions.scheduledStartTime, formatGameFormatDisplay, tableId)} • ` : ""}
                                         {formatTableGameDisplay(gameVariant, gameOptions.bettingLimit)}
                                         <span className={`ml-1 ${styles.secondaryText}`}>
                                             ({playersLabel(tableActivePlayers.length, gameOptions.maxPlayers, runners)})

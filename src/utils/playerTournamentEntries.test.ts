@@ -109,10 +109,10 @@ describe("finished busted MTT row", () => {
     it("shows no payout and the finishing place, with buy-in plus entry fee", () => {
         expect(entry.gameId).toBe(`${TID}-t1`);
         expect(rows).toEqual([{ gameId: `${TID}-t1`, joinBlock: REGISTERED_AT, buyIn: 2_200_000, isPrize: false }]);
-        expect(sessionGameLabel(metas[entry.gameId])).toEqual({
-            title: "Tournament · Texas Hold'em",
+        expect(sessionGameLabel(metas[entry.gameId], entry.gameId)).toEqual({
+            title: "Multi-table tournament · Texas Hold'em",
             detail: "$2.20 buy-in",
-            filterKey: "Tournament · Texas Hold'em"
+            filterKey: "Multi-table tournament · Texas Hold'em"
         });
         expect(sessionBustFor(rows[0], rows, metas[entry.gameId], PLAYER)).toEqual({ placeLabel: "6th" });
         expect(tournamentFinishPlaceLabel(entry.gameId, metas[entry.gameId], PLAYER)).toBe("6th");

@@ -122,6 +122,7 @@ test("a registering tournament is the landing page: generated name, fees, balanc
     renderPage();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(NAME);
     expect(screen.queryByText(/Tournament 0x/)).not.toBeInTheDocument();
+    expect(screen.getByText("Multi-table tournament")).toBeInTheDocument();
     expect(screen.getByTestId("tournament-page-buyin")).toHaveTextContent("$0.01");
     expect(screen.getByTestId("tournament-page-runners")).toHaveTextContent("0 / 27");
     expect(screen.getByTestId("tournament-start-countdown")).toBeInTheDocument();

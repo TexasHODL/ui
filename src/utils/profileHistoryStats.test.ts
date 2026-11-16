@@ -107,7 +107,7 @@ describe("profileHistoryStats", () => {
         const sngStats = profileHistoryStats(sessions, hands, labels, units, "Sit & Go · Texas Hold'em");
         expect(sngStats.longestSessionBlocks).toBe(220);
 
-        const tournStats = profileHistoryStats(sessions, hands, labels, units, "Tournament · Texas Hold'em");
+        const tournStats = profileHistoryStats(sessions, hands, labels, units, "Single-table tournament · Texas Hold'em");
         expect(tournStats.longestSessionBlocks).toBe(1_520);
     });
 
@@ -131,7 +131,7 @@ describe("profileHistoryStats", () => {
         expect(sngStats.biggestPotWon).toBe(4_200);
         expect(sngStats.potUnit).toBe("chips");
 
-        const tournStats = profileHistoryStats(sessions, hands, labels, units, "Tournament · Texas Hold'em");
+        const tournStats = profileHistoryStats(sessions, hands, labels, units, "Single-table tournament · Texas Hold'em");
         expect(tournStats.biggestPotWon).toBe(24_600);
         expect(tournStats.potUnit).toBe("chips");
     });
@@ -178,7 +178,7 @@ describe("profileHistoryStats", () => {
     });
 
     it("leaves hand profit unknown when the hand list has no contribution", () => {
-        const stats = profileHistoryStats(sessions, hands, labels, units, "Tournament · Texas Hold'em");
+        const stats = profileHistoryStats(sessions, hands, labels, units, "Single-table tournament · Texas Hold'em");
         expect(stats.biggestHandProfit).toBeUndefined();
         expect(stats.profitUnit).toBeUndefined();
         expect(stats.biggestPotWon).toBe(24_600);
@@ -186,7 +186,7 @@ describe("profileHistoryStats", () => {
 
     it("picks the largest profit even when every measured hand lost money", () => {
         const measured = [hand("tourn", 1_000, 4_000), hand("tourn", 2_000, 2_500)];
-        const stats = profileHistoryStats(sessions, measured, labels, units, "Tournament · Texas Hold'em");
+        const stats = profileHistoryStats(sessions, measured, labels, units, "Single-table tournament · Texas Hold'em");
         expect(stats.biggestHandProfit).toBe(-500);
         expect(stats.profitUnit).toBe("chips");
     });

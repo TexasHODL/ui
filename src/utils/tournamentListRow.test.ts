@@ -41,12 +41,16 @@ describe("tournamentListRow", () => {
 describe("lobbyTournamentStatus", () => {
     it("uses the same words as sit-and-go rows, including Finished without a winner", () => {
         expect(lobbyTournamentStatus(card({ phase: "open" }))).toBe("Registering");
-        expect(lobbyTournamentStatus(card({ phase: "starting" }))).toBe("Starting");
+        expect(lobbyTournamentStatus(card({ phase: "starting" }))).toBe("Starting \u00b7 any moment");
         expect(lobbyTournamentStatus(card({ phase: "running" }))).toBe("Started");
         expect(lobbyTournamentStatus(card({ phase: "finished" }))).toBe("Finished");
         expect(lobbyTournamentStatus(card({ phase: "finished", winnerAddress: "b521s8aug28r6vned2xm767xhgrkg90wfef2hfg4mg" }))).toBe("Finished");
         expect(lobbyTournamentStatus(card({ phase: "cancelled" }))).toBe("Cancelled: not enough players");
         expect(lobbyTournamentStatus(card({ phase: "full" }))).toBe("Full");
+        expect(lobbyTournamentStatus(card({ phase: "open", startsAtMs: 3_600_000 }), 0)).toBe("Registering \u00b7 starts in 1:00:00");
+        expect(
+            lobbyTournamentStatus(card({ phase: "open", startsAtMs: 3_600_000, minEntrants: 4, registered: 3, atRiskOfCancelling: true }), 0)
+        ).toBe("Registering \u00b7 starts in 1:00:00 \u00b7 1 more needed or it cancels");
     });
 });
 
