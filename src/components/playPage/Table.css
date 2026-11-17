@@ -124,19 +124,24 @@
 }
 
 
-/* Seat plates: dark glass on the pill only, plus a small neon
- * dot inside the pill. The vacant MTT seat is a 160x140 hit target
- * (button.player-seat.vacant-seat); do not paint that box — the
- * default theme already keeps it transparent so only the pill shows.
+/* Seat plates: opaque dark fill on the pill only, plus a small neon
+ * LED inside the pill, vertically centred at the right end. The vacant
+ * MTT seat is a 160x140 hit target (button.player-seat.vacant-seat);
+ * do not paint that box — the default theme already keeps it
+ * transparent so only the pill shows.
+ *
+ * The fill must be opaque (no backdrop-filter, no alpha) so the
+ * shared action/timer banner, which tucks under the pill, is hidden
+ * the same way as on the default appearance.
  */
 .table-container[data-table-theme="vice-nights"] .badge-container,
 .table-container[data-table-theme="vice-nights"] .table-container .badge-container.badge-empty,
 .table-container[data-table-theme="vice-nights"] .badge-container.badge-empty {
-    background: rgba(8, 10, 28, 0.82);
-    border-color: rgba(180, 140, 255, 0.28);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    -webkit-backdrop-filter: blur(6px) saturate(120%);
-    backdrop-filter: blur(6px) saturate(120%);
+    background: #080a1c;
+    border-color: rgba(180, 140, 255, 0.45);
+    box-shadow: 0 4px 14px #0007;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 .table-container[data-table-theme="vice-nights"] button.player-seat.vacant-seat {
     background: transparent;
@@ -155,7 +160,7 @@
 .table-container[data-table-theme="vice-nights"] .badge-container::after {
     content: "";
     position: absolute;
-    top: 4px;
+    top: 50%;
     right: 6px;
     width: 7px;
     height: 7px;
@@ -164,11 +169,14 @@
     box-shadow: 0 0 6px #2de2ff, 0 0 12px rgba(45, 226, 255, 0.7);
     pointer-events: none;
     z-index: 6;
+    transform: translateY(-50%);
 }
 .table-container[data-table-theme="vice-nights"] [data-ui-pos]:nth-child(even) .badge-container::after {
     background: #ff2ec4;
     box-shadow: 0 0 6px #ff2ec4, 0 0 12px rgba(255, 46, 196, 0.7);
 }
+
+
 
 
 
