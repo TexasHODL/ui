@@ -46,10 +46,6 @@ test("a failed custom table logo falls back to the approved SVG without retrying
     setSource.mockRestore();
 });
 
-test("the nouns theme retains its own artwork", () => {
-    render(<TableBoard {...props} tableTheme="nouns" />);
-    expect(screen.queryByAltText("Texas HODL")).not.toBeInTheDocument();
-});
 test("four-seat portrait uses the clear upper board without changing cards or pot content", () => {
     const { container } = render(<TableBoard {...props} isPortrait tableSize={4} />);
     expect(container.querySelector(".community-board")).toHaveAttribute("data-portrait-four", "true");

@@ -50,7 +50,9 @@ describe("Table settings", () => {
         expect(screen.getByRole("switch", { name: "Pre-Select Check/Fold" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("switch", { name: "Turn Notification Sound" })).toHaveAttribute("aria-checked", "true");
         expect(screen.getByRole("switch", { name: "Auto Muck" })).toHaveAttribute("aria-checked", "false");
-        fireEvent.change(screen.getByRole("combobox", { name: "Table appearance" }), { target: { value: "classic" } });
+        const appearance = screen.getByRole("combobox", { name: "Table appearance" }) as HTMLSelectElement;
+        expect(Array.from(appearance.options).map(option => option.textContent)).toEqual(["Texas HODL", "Classic"]);
+        fireEvent.change(appearance, { target: { value: "classic" } });
         expect(onStyle).toHaveBeenCalledWith("classic");
         fireEvent.click(screen.getByRole("button", { name: "Close settings" }));
         expect(onClose).toHaveBeenCalledTimes(1);

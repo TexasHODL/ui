@@ -17,12 +17,12 @@ import { useGameSettings } from "../../../../context/GameSettingsContext";
 import OppositePlayerCards from "../../Card/OppositePlayerCards";
 import { TotalPotDisplay } from "./TotalPotDisplay";
 import { MainPotDisplay } from "./MainPotDisplay";
-import { NounsGlasses } from "./NounsGlasses";
+import type { TableAppearanceId } from "../../../../theme/tableAppearances";
 
 const DEFAULT_LOGO = "/texas-hodl-logo-sharp.svg";
 const COMPACT_LOGO = "/texas-hodl-logo-compact.svg";
 
-export type TableTheme = "modern" | "classic" | "nouns";
+export type TableTheme = TableAppearanceId;
 
 export interface TableBoardProps {
     // Display data
@@ -119,17 +119,17 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     }, [communityCards, cardBackStyle, winnerCards, revealedSlots, getCardImageUrl]);
 
     // Vertical (portrait) tables use the narrower stacked logo so it can fill more of the felt.
-    const useCompactLogo = Boolean(isPortrait) && clubLogo === DEFAULT_LOGO && tableTheme !== "nouns";
+    const useCompactLogo = Boolean(isPortrait) && clubLogo === DEFAULT_LOGO;
 
     return (
         <>
             {/* Club Logo */}
-            <div className={`table-logo ${tableTheme === "nouns" ? "table-logo-nouns" : ""}`} data-portrait={useCompactLogo || undefined}>
-                {tableTheme === "nouns" ? <NounsGlasses width={300} className="nouns-glasses-logo" /> : <img src={useCompactLogo ? COMPACT_LOGO : clubLogo} alt="Texas HODL" onError={(event) => {
+            <div className="table-logo" data-table-theme={tableTheme} data-portrait={useCompactLogo || undefined}>
+                <img src={useCompactLogo ? COMPACT_LOGO : clubLogo} alt="Texas HODL" onError={(event) => {
                     if (event.currentTarget.getAttribute("src") !== DEFAULT_LOGO) {
                         event.currentTarget.src = DEFAULT_LOGO;
                     }
-                }} />}
+                }} />
             </div>
 
             {/* Central Display Area */}
