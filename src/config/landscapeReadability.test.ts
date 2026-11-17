@@ -1,6 +1,6 @@
 import { landscapeCommunityCardSize, landscapeHoleCardSize, mobileCardUnit, MOBILE_HOLE_CARD_HEIGHT, MOBILE_HOLE_CARD_WIDTH, communityCardHeight } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_LANDSCAPE_9_TOP_OUTSET, MOBILE_LANDSCAPE_9_WING_OUTSET, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -162,7 +162,7 @@ describe("landscape mobile readability", () => {
         expect(parseFloat(getDeckOrigin().top)).toBeCloseTo(portraitDims.tableHeight / 2 - 140, 5);
     });
 
-    test("centres 9-seat wings between the neighbouring widgets on mobile landscape", () => {
+    test("spreads 9-seat wings and the top pair outward on mobile landscape", () => {
         const half = 48;
         const check = (width: number, height: number, coarse: boolean) => {
             window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
@@ -173,24 +173,34 @@ describe("landscape mobile readability", () => {
             const x = (seat: { left: string }) => parseFloat(seat.left);
             const y = (seat: { top: string }) => parseFloat(seat.top);
             const mid = (right: number, left: number) => (right + left) / 2;
-            expect(Math.abs(x(placed.players[1]) - mid(x(raw[2]) + half, x(raw[0]) - half))).toBeLessThanOrEqual(0.1);
-            expect(Math.abs(x(placed.players[8]) - mid(x(raw[0]) + half, x(raw[7]) - half))).toBeLessThanOrEqual(0.1);
+            expect(Math.abs(x(placed.players[1]) - (mid(x(raw[2]) + half, x(raw[0]) - half) - MOBILE_LANDSCAPE_9_WING_OUTSET))).toBeLessThanOrEqual(0.1);
+            expect(Math.abs(x(placed.players[8]) - (mid(x(raw[0]) + half, x(raw[7]) - half) + MOBILE_LANDSCAPE_9_WING_OUTSET))).toBeLessThanOrEqual(0.1);
+            expect(x(placed.players[4])).toBeCloseTo(x(raw[4]) - MOBILE_LANDSCAPE_9_TOP_OUTSET, 5);
+            expect(x(placed.players[5])).toBeCloseTo(x(raw[5]) + MOBILE_LANDSCAPE_9_TOP_OUTSET, 5);
             expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
             expect(y(placed.players[8])).toBeCloseTo(y(raw[8]), 5);
-            expect(x(placed.players[1])).toBeLessThan(x(raw[1]));
-            expect(x(placed.players[8])).toBeGreaterThan(x(raw[8]));
-            for (const index of [0, 2, 3, 4, 5, 6, 7]) {
+            expect(y(placed.players[4])).toBeCloseTo(y(raw[4]), 5);
+            expect(y(placed.players[5])).toBeCloseTo(y(raw[5]), 5);
+            expect(x(placed.players[1])).toBeLessThan(x(raw[1]) - MOBILE_LANDSCAPE_9_WING_OUTSET + 0.1);
+            expect(x(placed.players[8])).toBeGreaterThan(x(raw[8]) + MOBILE_LANDSCAPE_9_WING_OUTSET - 0.1);
+            for (const index of [0, 2, 3, 6, 7]) {
                 expect(x(placed.players[index])).toBeCloseTo(x(raw[index]), 5);
                 expect(y(placed.players[index])).toBeCloseTo(y(raw[index]), 5);
             }
             expect(y(placed.vacantPlayers[1])).toBeCloseTo(y(raw[1]), 5);
             expect(x(placed.vacantPlayers[1])).toBeCloseTo(x(placed.players[1]), 5);
             expect(x(placed.vacantPlayers[8])).toBeCloseTo(x(placed.players[8]), 5);
+            expect(x(placed.vacantPlayers[4])).toBeCloseTo(x(placed.players[4]), 5);
+            expect(x(placed.vacantPlayers[5])).toBeCloseTo(x(placed.players[5]), 5);
             const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
             expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
             expect(x(placed.holeCards[8].second) - x(placed.players[8])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.holeCards[4].first) - x(placed.players[4])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[5].second) - x(placed.players[5])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
             expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
             expect(x(placed.winAnimations[8])).toBeCloseTo(x(placed.players[8]), 0);
+            expect(x(placed.turnAnimations[4])).toBeCloseTo(x(placed.players[4]), 0);
+            expect(x(placed.winAnimations[5])).toBeCloseTo(x(placed.players[5]), 0);
         };
         check(844, 390, false);
         check(915, 412, false);

@@ -795,19 +795,32 @@ export interface PositionArrays {
 }
 
 /**
- * 9-seat mobile landscape only. Seat 2's widget is centred on the midpoint
- * between the right edge of seat 3 and the left edge of seat 1. Seat 9 is
- * centred between the right edge of seat 1 and the left edge of seat 8.
- * Every seat widget has the same width and is centred on its anchor, so
- * that midpoint is the midpoint of the neighbour anchors. Y stays put.
- * Portrait and desktop keep the spec ring.
+ * Extra table-div pixels to push 9-seat mobile-landscape wing seats (2 and 9)
+ * outward from the hero, beyond the midpoint of the neighbouring widgets.
+ */
+export const MOBILE_LANDSCAPE_9_WING_OUTSET = 48;
+
+/**
+ * Extra table-div pixels to spread the 9-seat mobile-landscape top pair
+ * (seats 5 and 6) outward from each other.
+ */
+export const MOBILE_LANDSCAPE_9_TOP_OUTSET = 28;
+
+/**
+ * 9-seat mobile landscape only. Seat 2 starts at the midpoint between
+ * the right edge of seat 3 and the left edge of seat 1, then is pushed
+ * further outward from the hero so the user has more space. Seat 9 is
+ * mirrored on the right. Seats 5 and 6 (the top pair) also spread
+ * outward a little. Y stays put. Portrait and desktop keep the spec ring.
  */
 function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
     if (getStageOrientation() !== "mobile-landscape" || tableSize !== 9) return positions;
     const anchor = positions.players.map(seat => parseFloat(seat.left));
     const dx = new Map<number, number>([
-        [1, (anchor[2] + anchor[0]) / 2 - anchor[1]],
-        [8, (anchor[0] + anchor[7]) / 2 - anchor[8]]
+        [1, (anchor[2] + anchor[0]) / 2 - anchor[1] - MOBILE_LANDSCAPE_9_WING_OUTSET],
+        [8, (anchor[0] + anchor[7]) / 2 - anchor[8] + MOBILE_LANDSCAPE_9_WING_OUTSET],
+        [4, -MOBILE_LANDSCAPE_9_TOP_OUTSET],
+        [5, MOBILE_LANDSCAPE_9_TOP_OUTSET]
     ]);
     const shift = (pos: Position, index: number): Position => {
         const delta = dx.get(index);
