@@ -124,7 +124,11 @@
 }
 
 
-/* Seat plates: dark glass + a small neon dot. Sizes, positions and layout are unchanged. */
+/* Seat plates: dark glass on the pill only, plus a small neon
+ * dot inside the pill. The vacant MTT seat is a 160x140 hit target
+ * (button.player-seat.vacant-seat); do not paint that box — the
+ * default theme already keeps it transparent so only the pill shows.
+ */
 .table-container[data-table-theme="vice-nights"] .badge-container,
 .table-container[data-table-theme="vice-nights"] .table-container .badge-container.badge-empty,
 .table-container[data-table-theme="vice-nights"] .badge-container.badge-empty {
@@ -135,14 +139,11 @@
     backdrop-filter: blur(6px) saturate(120%);
 }
 .table-container[data-table-theme="vice-nights"] button.player-seat.vacant-seat {
-    background: rgba(8, 10, 28, 0.72);
+    background: transparent;
     border: none;
-    box-shadow:
-        inset 0 0 0 1px rgba(180, 140, 255, 0.28),
-        0 6px 18px rgba(0, 0, 0, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    -webkit-backdrop-filter: blur(6px) saturate(120%);
-    backdrop-filter: blur(6px) saturate(120%);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 .table-container[data-table-theme="vice-nights"] .vacant-seat:not(.player-seat) {
     background: rgba(8, 10, 28, 0.72);
@@ -151,25 +152,25 @@
         0 6px 18px rgba(0, 0, 0, 0.45),
         inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
-.table-container[data-table-theme="vice-nights"] .player-seat::after,
-.table-container[data-table-theme="vice-nights"] .vacant-seat::after {
+.table-container[data-table-theme="vice-nights"] .badge-container::after {
     content: "";
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
+    top: 4px;
+    right: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #2de2ff;
     box-shadow: 0 0 6px #2de2ff, 0 0 12px rgba(45, 226, 255, 0.7);
     pointer-events: none;
     z-index: 6;
 }
-.table-container[data-table-theme="vice-nights"] .player-seat:nth-child(even)::after,
-.table-container[data-table-theme="vice-nights"] .vacant-seat:nth-child(even)::after {
+.table-container[data-table-theme="vice-nights"] [data-ui-pos]:nth-child(even) .badge-container::after {
     background: #ff2ec4;
     box-shadow: 0 0 6px #ff2ec4, 0 0 12px rgba(255, 46, 196, 0.7);
 }
+
+
 
 .table-container .vacant-seat:not(.player-seat) {
     display: flex;
