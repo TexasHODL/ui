@@ -21,7 +21,6 @@ import type { TableAppearanceId } from "../../../../theme/tableAppearances";
 
 const DEFAULT_LOGO = "/texas-hodl-logo-sharp.svg";
 const COMPACT_LOGO = "/texas-hodl-logo-compact.svg";
-const VICE_NIGHTS_LOGO = "/vice-nights-logo.png";
 
 export type TableTheme = TableAppearanceId;
 
@@ -123,7 +122,7 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     // Vice Nights uses its own neon wordmark in both orientations; do not swap in the compact brand logo.
     const isViceNights = tableTheme === "vice-nights";
     const useCompactLogo = Boolean(isPortrait) && clubLogo === DEFAULT_LOGO && !isViceNights;
-    const logoSrc = isViceNights ? VICE_NIGHTS_LOGO : useCompactLogo ? COMPACT_LOGO : clubLogo;
+    const logoSrc = isViceNights ? "/vice-nights-logo.svg" : (useCompactLogo ? COMPACT_LOGO : clubLogo);
 
     return (
         <>

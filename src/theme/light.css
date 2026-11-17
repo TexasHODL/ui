@@ -236,5 +236,5 @@ html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .is-po
 }
 html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .table-logo img {
     opacity: 1;
-    filter: drop-shadow(0 0 10px rgba(255, 46, 196, 0.35)) drop-shadow(0 0 12px rgba(45, 226, 255, 0.25));
+    filter: none;
 }
