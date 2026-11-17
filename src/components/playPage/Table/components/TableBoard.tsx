@@ -21,6 +21,7 @@ import type { TableAppearanceId } from "../../../../theme/tableAppearances";
 
 const DEFAULT_LOGO = "/texas-hodl-logo-sharp.svg";
 const COMPACT_LOGO = "/texas-hodl-logo-compact.svg";
+const VICE_NIGHTS_LOGO = "/vice-nights-logo.svg";
 
 export type TableTheme = TableAppearanceId;
 
@@ -119,13 +120,16 @@ export const TableBoard: React.FC<TableBoardProps> = ({
     }, [communityCards, cardBackStyle, winnerCards, revealedSlots, getCardImageUrl]);
 
     // Vertical (portrait) tables use the narrower stacked logo so it can fill more of the felt.
-    const useCompactLogo = Boolean(isPortrait) && clubLogo === DEFAULT_LOGO;
+    // Vice Nights uses its own neon wordmark in both orientations; do not swap in the compact brand logo.
+    const isViceNights = tableTheme === "vice-nights";
+    const useCompactLogo = Boolean(isPortrait) && clubLogo === DEFAULT_LOGO && !isViceNights;
+    const logoSrc = isViceNights ? VICE_NIGHTS_LOGO : useCompactLogo ? COMPACT_LOGO : clubLogo;
 
     return (
         <>
             {/* Club Logo */}
-            <div className="table-logo" data-table-theme={tableTheme} data-portrait={useCompactLogo || undefined}>
-                <img src={useCompactLogo ? COMPACT_LOGO : clubLogo} alt="Texas HODL" onError={(event) => {
+            <div className="table-logo" data-table-theme={tableTheme} data-portrait={(isViceNights ? isPortrait : useCompactLogo) || undefined}>
+                <img src={logoSrc} alt="Texas HODL" onError={(event) => {
                     if (event.currentTarget.getAttribute("src") !== DEFAULT_LOGO) {
                         event.currentTarget.src = DEFAULT_LOGO;
                     }
