@@ -21,7 +21,7 @@ import type { TableAppearanceId } from "../../../../theme/tableAppearances";
 
 const DEFAULT_LOGO = "/texas-hodl-logo-sharp.svg";
 const COMPACT_LOGO = "/texas-hodl-logo-compact.svg";
-const VICE_NIGHTS_LOGO = "/vice-nights-logo.svg";
+const VICE_NIGHTS_LOGO = "/vice-nights-logo.png";
 
 export type TableTheme = TableAppearanceId;
 

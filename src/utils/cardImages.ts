@@ -62,7 +62,7 @@ import asAS from "../assets/cards/AS.svg";
 import b52CardBackSvg from "../assets/cards/b52CardBack.svg";
 import backLegacySvg from "../assets/cards/Back.svg";
 import backCustomSvg from "../assets/cards/BackCustom.svg";
-import viceNightsCardBackSvg from "../assets/cards/viceNightsCardBack.svg";
+import viceNightsCardBackSvg from "../assets/cards/viceNightsCardBack.png";
 
 // jsDelivr CDN against the block52/cards GitHub repo — edge-cached, unlike raw.githubusercontent.com.
 const CDN_BASE = "https://cdn.jsdelivr.net/gh/block52/cards@main";

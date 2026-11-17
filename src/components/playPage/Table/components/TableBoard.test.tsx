@@ -37,7 +37,7 @@ test.each(["modern", "classic"] as const)("%s table displays the approved SVG", 
 
 test("vice-nights table uses the neon wordmark logo", () => {
     render(<TableBoard {...props} clubLogo="/texas-hodl-logo-sharp.svg" tableTheme="vice-nights" />);
-    expect(screen.getByAltText("Texas HODL")).toHaveAttribute("src", "/vice-nights-logo.svg");
+    expect(screen.getByAltText("Texas HODL")).toHaveAttribute("src", "/vice-nights-logo.png");
 });
 
 test("a failed custom table logo falls back to the approved SVG without retrying it", () => {

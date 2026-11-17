@@ -223,13 +223,18 @@ html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .backg
 }
 html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .table-surface-shadow {
     background:
-        url("../assets/table/vice-nights-skyline.svg") no-repeat right 6% top 12% / 30% auto,
-        url("../assets/table/vice-nights-palms.svg") no-repeat center center / 100% auto,
-        #060612;
+        url("../assets/table/vice-nights-felt-landscape.webp") no-repeat center center / 100% 100%,
+        #0a0a28;
     border-color: transparent !important;
-    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.65);
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.28);
+}
+html[data-theme="light"] .table-container[data-table-theme="vice-nights"] [data-mobile-readable="portrait"] .table-surface-shadow,
+html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .is-portrait .table-surface-shadow {
+    background:
+        url("../assets/table/vice-nights-felt-portrait.webp") no-repeat center top / 100% auto,
+        #0a0a28;
 }
 html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .table-logo img {
-    opacity: 0.95;
-    filter: none;
+    opacity: 1;
+    filter: drop-shadow(0 0 10px rgba(255, 46, 196, 0.35)) drop-shadow(0 0 12px rgba(45, 226, 255, 0.25));
 }
