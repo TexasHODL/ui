@@ -60,23 +60,53 @@ export const DEALER_STYLE_LABELS: Record<StyleId, string> = {
     E: "Marble"
 };
 
+/**
+ * Player-selectable card backs. Event backs use the same startsAt / endsAt
+ * window as table appearances (start inclusive, end exclusive). Outside the
+ * window the option is hidden and a saved selection falls back to the default
+ * Texas HODL back.
+ */
+export interface CardBackOption {
+    id: string;
+    label: string;
+    /** Inclusive start of the availability window (ISO 8601). */
+    startsAt?: string;
+    /** Exclusive end of the availability window (ISO 8601). */
+    endsAt?: string;
+}
+
+export const DEFAULT_CARD_BACK_ID = "default";
+
+export const CARD_BACKS: readonly CardBackOption[] = [
+    { id: "default", label: "Texas HODL" },
+    {
+        id: "vice-nights",
+        label: "Vice Nights (limited time)",
+        startsAt: "2026-11-18T00:00:00+10:00",
+        endsAt: "2026-12-03T00:00:00+10:00"
+    }
+];
+
 export interface TableStyles {
     deck: DeckId;
     chips: ChipStyleId;
     dealer: StyleId;
+    cardBack: string;
 }
 
-export const DEFAULT_TABLE_STYLES: TableStyles = { deck: "block52", chips: "C", dealer: "C" };
+export const DEFAULT_TABLE_STYLES: TableStyles = { deck: "block52", chips: "C", dealer: "C", cardBack: DEFAULT_CARD_BACK_ID };
 
 export const TABLE_STYLE_STORAGE_KEYS = {
     deck: "texas-hodl-card-deck",
     chips: "texas-hodl-chip-style",
-    dealer: "texas-hodl-dealer-style"
+    dealer: "texas-hodl-dealer-style",
+    cardBack: "texas-hodl-card-back"
 } as const;
 
 export const isDeckId = (value: unknown): value is DeckId => (DECK_IDS as readonly unknown[]).includes(value);
 export const isStyleId = (value: unknown): value is StyleId => (STYLE_IDS as readonly unknown[]).includes(value);
 export const isChipStyleId = (value: unknown): value is ChipStyleId => (CHIP_STYLE_IDS as readonly unknown[]).includes(value);
+export const isCardBackId = (value: unknown): value is string => CARD_BACKS.some(back => back.id === value);
 
 /** "../assets/decks/O/AS.svg" -> { O: { AS: url } }. */
 export const indexDeckUrls = (files: Record<string, string>): Record<string, Record<string, string>> => {
@@ -157,11 +187,59 @@ const read = <T>(key: string, valid: (v: unknown) => v is T, fallback: T): T => 
     }
 };
 
-export function readTableStyles(): TableStyles {
+
+const isUsableCardBackDate = (value: string): number | null => {
+    const time = Date.parse(value);
+    return Number.isNaN(time) ? null : time;
+};
+
+/** True when `now` is inside the card back's optional window. The default back is always available. */
+export function isCardBackAvailable(back: CardBackOption, now: Date = new Date()): boolean {
+    if (back.id === DEFAULT_CARD_BACK_ID) return true;
+    if (back.startsAt) {
+        const start = isUsableCardBackDate(back.startsAt);
+        if (start != null && now.getTime() < start) return false;
+    }
+    if (back.endsAt) {
+        const end = isUsableCardBackDate(back.endsAt);
+        if (end != null && now.getTime() >= end) return false;
+    }
+    return true;
+}
+
+export function listAvailableCardBacks(now: Date = new Date(), backs: readonly CardBackOption[] = CARD_BACKS): CardBackOption[] {
+    return backs.filter(back => isCardBackAvailable(back, now));
+}
+
+/**
+ * Returns `id` when it is a known, currently available card back;
+ * otherwise the default Texas HODL back.
+ */
+export function resolveCardBackId(
+    id: string | null | undefined,
+    now: Date = new Date(),
+    backs: readonly CardBackOption[] = CARD_BACKS
+): string {
+    const found = backs.find(back => back.id === id);
+    if (found && isCardBackAvailable(found, now)) return found.id;
+    return DEFAULT_CARD_BACK_ID;
+}
+
+export function readTableStyles(now: Date = new Date()): TableStyles {
+    const savedBack = read(TABLE_STYLE_STORAGE_KEYS.cardBack, isCardBackId, DEFAULT_TABLE_STYLES.cardBack);
+    const cardBack = resolveCardBackId(savedBack, now);
+    if (cardBack !== savedBack) {
+        try {
+            localStorage.setItem(TABLE_STYLE_STORAGE_KEYS.cardBack, cardBack);
+        } catch {
+            /* private mode or a blocked storage partition */
+        }
+    }
     return {
         deck: read(TABLE_STYLE_STORAGE_KEYS.deck, isDeckId, DEFAULT_TABLE_STYLES.deck),
         chips: read(TABLE_STYLE_STORAGE_KEYS.chips, isChipStyleId, DEFAULT_TABLE_STYLES.chips),
-        dealer: read(TABLE_STYLE_STORAGE_KEYS.dealer, isStyleId, DEFAULT_TABLE_STYLES.dealer)
+        dealer: read(TABLE_STYLE_STORAGE_KEYS.dealer, isStyleId, DEFAULT_TABLE_STYLES.dealer),
+        cardBack
     };
 }
 
@@ -173,13 +251,14 @@ export function getTableStyles(): TableStyles {
     return (snapshot ??= readTableStyles());
 }
 
-export function setTableStyle<K extends keyof TableStyles>(key: K, value: TableStyles[K]): void {
+export function setTableStyle<K extends keyof TableStyles>(key: K, value: TableStyles[K], now: Date = new Date()): void {
+    const next = key === "cardBack" ? resolveCardBackId(String(value), now) : value;
     try {
-        localStorage.setItem(TABLE_STYLE_STORAGE_KEYS[key], value);
+        localStorage.setItem(TABLE_STYLE_STORAGE_KEYS[key], next);
     } catch {
         /* private mode or a blocked storage partition */
     }
-    snapshot = { ...getTableStyles(), [key]: value };
+    snapshot = { ...getTableStyles(), [key]: next };
     listeners.forEach(listener => listener());
 }
 

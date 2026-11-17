@@ -18,6 +18,159 @@
     opacity: 0.4;
     filter: none;
 }
+/*
+ * Vice Nights (limited time): concept-art felt (palms + purple skyline),
+ * deep purple room, a double neon rail (outer hot-pink tube, inner cyan
+ * tube, dark gap between), and the concept neon wordmark. Original
+ * Texas HODL styling — no third-party marks. The rail sits outside the
+ * felt; felt size is unchanged.
+ */
+.table-container[data-table-theme="vice-nights"] {
+    background: #14061f;
+}
+.table-container[data-table-theme="vice-nights"] .background-base-static {
+    background:
+        radial-gradient(circle at 78% 22%, rgba(180, 40, 200, 0.32), transparent 36%),
+        radial-gradient(circle at 18% 82%, rgba(90, 20, 140, 0.34), transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(40, 10, 60, 0.45), transparent 55%),
+        #14061f;
+}
+.table-container[data-table-theme="vice-nights"] .background-animated-static,
+.table-container[data-table-theme="vice-nights"] .background-shimmer {
+    opacity: 0.035;
+}
+.table-container[data-table-theme="vice-nights"] .table-surface-shadow {
+    background:
+        url("../../assets/table/vice-nights-felt-landscape.webp") no-repeat center center / 100% 100%,
+        #0a0a28;
+    border-color: transparent !important;
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.28);
+    overflow: visible;
+}
+/* Portrait felt is a recomposed 1:2 scene (not a stretched landscape).
+ * Cover the top of the stadium so the skyline stays high; leftover height
+ * is dark felt (portrait tables can be taller than 1:2). */
+.table-container[data-table-theme="vice-nights"] [data-mobile-readable="portrait"] .table-surface-shadow,
+.table-container[data-table-theme="vice-nights"] .is-portrait .table-surface-shadow {
+    background:
+        url("../../assets/table/vice-nights-felt-portrait.webp") no-repeat center top / 100% auto,
+        #0a0a28;
+}
+/* Outer hot-pink tube. With border-box, a 7px border sits inside inset -36px. */
+.table-container[data-table-theme="vice-nights"] .table-surface-shadow::before {
+    content: "";
+    position: absolute;
+    inset: -36px;
+    border-radius: 286px;
+    border: 7px solid #ff2ec4;
+    background: none;
+    padding: 0;
+    -webkit-mask: none;
+    mask: none;
+    box-shadow:
+        0 0 8px #ff2ec4,
+        0 0 20px #ff2ec4,
+        0 0 40px rgba(255, 46, 196, 0.9),
+        inset 0 0 8px rgba(255, 46, 196, 0.45);
+    pointer-events: none;
+}
+/* Inner cyan tube, leaving a ~17px dark gap after the pink tube. */
+.table-container[data-table-theme="vice-nights"] .table-surface-shadow::after {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border-radius: 262px;
+    border: 6px solid #2de2ff;
+    background: none;
+    box-shadow:
+        0 0 8px #2de2ff,
+        0 0 18px #2de2ff,
+        0 0 32px rgba(45, 226, 255, 0.85),
+        inset 0 0 8px rgba(45, 226, 255, 0.4);
+    pointer-events: none;
+}
+/* Centre the wordmark on the felt, behind the pot and community cards,
+ * at a size that stays inside the rail and clear of the seats. */
+.table-container[data-table-theme="vice-nights"] .table-logo {
+    top: 50%;
+    width: 40%;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+}
+.table-container[data-table-theme="vice-nights"] .table-logo img {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    opacity: 1;
+    filter: none;
+    translate: none;
+    display: block;
+    overflow: visible;
+}
+.table-container[data-table-theme="vice-nights"] .table-logo.table-logo[data-portrait="true"] {
+    width: 62%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+.table-container[data-table-theme="vice-nights"] .table-logo.table-logo[data-portrait="true"] img {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    translate: none;
+    opacity: 1;
+    filter: none;
+    display: block;
+    overflow: visible;
+}
+
+
+/* Seat plates: dark glass + a small neon dot. Sizes, positions and layout are unchanged. */
+.table-container[data-table-theme="vice-nights"] .badge-container,
+.table-container[data-table-theme="vice-nights"] .table-container .badge-container.badge-empty,
+.table-container[data-table-theme="vice-nights"] .badge-container.badge-empty {
+    background: rgba(8, 10, 28, 0.82);
+    border-color: rgba(180, 140, 255, 0.28);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    backdrop-filter: blur(6px) saturate(120%);
+}
+.table-container[data-table-theme="vice-nights"] button.player-seat.vacant-seat {
+    background: rgba(8, 10, 28, 0.72);
+    border: none;
+    box-shadow:
+        inset 0 0 0 1px rgba(180, 140, 255, 0.28),
+        0 6px 18px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    backdrop-filter: blur(6px) saturate(120%);
+}
+.table-container[data-table-theme="vice-nights"] .vacant-seat:not(.player-seat) {
+    background: rgba(8, 10, 28, 0.72);
+    border-color: rgba(180, 140, 255, 0.28);
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.table-container[data-table-theme="vice-nights"] .player-seat::after,
+.table-container[data-table-theme="vice-nights"] .vacant-seat::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2de2ff;
+    box-shadow: 0 0 6px #2de2ff, 0 0 12px rgba(45, 226, 255, 0.7);
+    pointer-events: none;
+    z-index: 6;
+}
+.table-container[data-table-theme="vice-nights"] .player-seat:nth-child(even)::after,
+.table-container[data-table-theme="vice-nights"] .vacant-seat:nth-child(even)::after {
+    background: #ff2ec4;
+    box-shadow: 0 0 6px #ff2ec4, 0 0 12px rgba(255, 46, 196, 0.7);
+}
+
 .table-container .vacant-seat:not(.player-seat) {
     display: flex;
     flex-direction: column;

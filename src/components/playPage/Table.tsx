@@ -33,6 +33,8 @@ import { toast } from "react-toastify";
 
 import { isValidPlayerAddress } from "../../utils/addressUtils";
 import { CardBackStyle } from "../../utils/cardImages";
+import { useTableStyles } from "../../theme/useTableStyles";
+import { resolveCardBackId } from "../../theme/tableStyles";
 import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
 
@@ -728,9 +730,12 @@ const Table = React.memo(() => {
         if (target) navigate(tableUrl(target));
     }, [id, myTournamentTable, navigate]);
 
-    // Card back style configuration - driven by VITE_CARD_BACK_URL env var
-    // Options: "default", "block52", "custom", "legacy", or a full URL to a custom SVG
-    const cardBackStyle: CardBackStyle = import.meta.env.VITE_CARD_BACK_URL || "default";
+    // Card back: the player's saved choice (including limited-time event backs)
+    // when one is available, otherwise VITE_CARD_BACK_URL, then the default Texas HODL back.
+    const { cardBack } = useTableStyles();
+    const resolvedCardBack = resolveCardBackId(cardBack);
+    const envCardBack = import.meta.env.VITE_CARD_BACK_URL as string | undefined;
+    const cardBackStyle: CardBackStyle = resolvedCardBack !== "default" ? resolvedCardBack : envCardBack || "default";
 
     // Game Start Countdown
     const { gameStartTime, showCountdown, handleCountdownComplete, handleSkipCountdown } = useGameStartCountdown();

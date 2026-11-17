@@ -68,6 +68,10 @@ describe("cardImages", () => {
             expect(getCardBackUrl("custom")).toBe(BUNDLED_SVG);
         });
 
+        it("should return the Vice Nights card back when style is 'vice-nights'", () => {
+            expect(getCardBackUrl("vice-nights")).toBe(BUNDLED_SVG);
+        });
+
         it("should return custom URL when provided", () => {
             const customUrl = "https://example.com/my-card-back.svg";
             expect(getCardBackUrl(customUrl)).toBe(customUrl);
