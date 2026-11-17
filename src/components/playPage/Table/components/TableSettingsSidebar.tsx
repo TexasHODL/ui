@@ -22,6 +22,8 @@ import {
     isChipStyleId,
     isDeckId,
     isStyleId,
+    listAvailableCardBacks,
+    resolveCardBackId,
     setTableStyle
 } from "../../../../theme/tableStyles";
 import { useTableStyles } from "../../../../theme/useTableStyles";
@@ -168,7 +170,11 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                         onChange={event => {
                             const available = listAvailableAppearances();
                             if (available.some(appearance => appearance.id === event.target.value)) {
-                                onTableStyleChange(resolveAppearanceId(event.target.value));
+                                const next = resolveAppearanceId(event.target.value);
+                                onTableStyleChange(next);
+                                if (next === "vice-nights") {
+                                    setTableStyle("cardBack", resolveCardBackId("vice-nights"));
+                                }
                             }
                         }}
                     >
@@ -181,6 +187,12 @@ export const TableSettingsOptions: React.FC<TableSettingsOptionsProps> = ({
                 </label>
             )}
             <StyleSelect label="Cards" value={tableStyles.deck} options={DECK_OPTIONS} onChange={value => isDeckId(value) && setTableStyle("deck", value)} />
+            <StyleSelect
+                label="Card back"
+                value={resolveCardBackId(tableStyles.cardBack)}
+                options={listAvailableCardBacks().map(back => ({ value: back.id, label: back.label }))}
+                onChange={value => setTableStyle("cardBack", resolveCardBackId(value))}
+            />
             <StyleSelect
                 label="Chips"
                 value={tableStyles.chips}

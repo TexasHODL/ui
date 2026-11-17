@@ -210,3 +210,29 @@ html[data-theme="light"] .poker-action-dock :is(.btn-pot, .btn-all-in):disabled 
     color: #5c4574;
     opacity: 0.65;
 }
+
+/* Keep Vice Nights as a dark night table in light mode, so the event look is not washed out. */
+html[data-theme="light"] .table-container[data-table-theme="vice-nights"] {
+    background: #05060f;
+}
+html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .background-base-static {
+    background:
+        radial-gradient(circle at 78% 26%, rgba(255, 46, 196, 0.2), transparent 34%),
+        radial-gradient(circle at 16% 80%, rgba(45, 226, 255, 0.16), transparent 36%),
+        #05060f;
+}
+html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .table-surface-shadow {
+    background:
+        radial-gradient(ellipse at 50% 100%, rgba(255, 46, 196, 0.16), transparent 46%),
+        radial-gradient(ellipse at 50% 0%, rgba(45, 226, 255, 0.1), transparent 42%),
+        linear-gradient(180deg, #07091a 0%, #0a1028 55%, #0b0a1c 100%);
+    border-color: rgba(45, 226, 255, 0.28) !important;
+    box-shadow:
+        0 12px 46px rgba(0, 0, 0, 0.72),
+        inset 0 0 80px rgba(5, 8, 20, 0.7),
+        inset 0 0 36px rgba(255, 46, 196, 0.08);
+}
+html[data-theme="light"] .table-container[data-table-theme="vice-nights"] .table-logo img {
+    opacity: 0.82;
+    filter: drop-shadow(0 0 8px rgba(45, 226, 255, 0.75)) drop-shadow(0 0 16px rgba(255, 46, 196, 0.45));
+}

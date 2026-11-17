@@ -40,7 +40,13 @@ export interface TableAppearance {
  */
 export const TABLE_APPEARANCES: readonly TableAppearance[] = [
     { id: "modern", label: "Texas HODL" },
-    { id: "classic", label: "Classic" }
+    { id: "classic", label: "Classic" },
+    {
+        id: "vice-nights",
+        label: "Vice Nights (limited time)",
+        startsAt: "2026-11-18T00:00:00+10:00",
+        endsAt: "2026-12-03T00:00:00+10:00"
+    }
 ];
 
 /** Registry ids are plain strings so event themes can be added without a type change. */

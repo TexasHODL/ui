@@ -1,15 +1,20 @@
 import fs from "fs";
 import path from "path";
 import {
+    CARD_BACKS,
     CHIP_STYLE_IDS,
     CHIP_STYLE_LABELS,
     DEALER_STYLE_LABELS,
     DECK_IDS,
     DECK_LABELS,
+    DEFAULT_CARD_BACK_ID,
     DEFAULT_TABLE_STYLES,
     STYLE_IDS,
     TABLE_STYLE_STORAGE_KEYS,
     TOURNAMENT_CHIP_STYLE,
+    isCardBackAvailable,
+    listAvailableCardBacks,
+    resolveCardBackId,
     chipStyleForFormat,
     chipStyleUrl,
     dealerStyleUrl,
@@ -47,7 +52,7 @@ describe("table style choices", () => {
     });
 
     it("defaults to Block52 Classic cards, Crypto coin chips and the Clean minimal dealer button", () => {
-        expect(DEFAULT_TABLE_STYLES).toEqual({ deck: "block52", chips: "C", dealer: "C" });
+        expect(DEFAULT_TABLE_STYLES).toEqual({ deck: "block52", chips: "C", dealer: "C", cardBack: "default" });
         expect(readTableStyles()).toEqual(DEFAULT_TABLE_STYLES);
     });
 
@@ -61,9 +66,9 @@ describe("table style choices", () => {
         expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.deck)).toBe("M");
         expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.chips)).toBe("current");
         expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.dealer)).toBe("D");
-        expect(getTableStyles()).toEqual({ deck: "M", chips: "current", dealer: "D" });
+        expect(getTableStyles()).toEqual({ deck: "M", chips: "current", dealer: "D", cardBack: "default" });
         resetTableStylesForTests();
-        expect(getTableStyles()).toEqual({ deck: "M", chips: "current", dealer: "D" });
+        expect(getTableStyles()).toEqual({ deck: "M", chips: "current", dealer: "D", cardBack: "default" });
         unsubscribe();
     });
 
@@ -183,5 +188,57 @@ describe("chipStyleForFormat", () => {
             expect(chipStyleForFormat(style, true)).toBe(style);
             expect(chipStyleForFormat(style, false)).toBe(style);
         }
+    });
+});
+
+describe("event card backs", () => {
+    const viceNights = CARD_BACKS.find(back => back.id === "vice-nights");
+    if (!viceNights) throw new Error("expected vice-nights in CARD_BACKS");
+    const beforeWindow = new Date("2026-11-17T23:59:59+10:00");
+    const atStart = new Date("2026-11-18T00:00:00+10:00");
+    const duringWindow = new Date("2026-11-25T12:00:00+10:00");
+    const atEnd = new Date("2026-12-03T00:00:00+10:00");
+    const afterWindow = new Date("2026-12-03T00:00:01+10:00");
+
+    beforeEach(() => {
+        localStorage.clear();
+        resetTableStylesForTests();
+    });
+
+    it("registers Vice Nights as a windowed card back and hides it outside the window", () => {
+        expect(viceNights).toMatchObject({
+            id: "vice-nights",
+            label: "Vice Nights (limited time)",
+            startsAt: "2026-11-18T00:00:00+10:00",
+            endsAt: "2026-12-03T00:00:00+10:00"
+        });
+        expect(isCardBackAvailable(viceNights, beforeWindow)).toBe(false);
+        expect(isCardBackAvailable(viceNights, atStart)).toBe(true);
+        expect(isCardBackAvailable(viceNights, duringWindow)).toBe(true);
+        expect(isCardBackAvailable(viceNights, atEnd)).toBe(false);
+        expect(isCardBackAvailable(viceNights, afterWindow)).toBe(false);
+        expect(listAvailableCardBacks(beforeWindow).map(back => back.id)).toEqual(["default"]);
+        expect(listAvailableCardBacks(duringWindow).map(back => back.id)).toEqual(["default", "vice-nights"]);
+        expect(resolveCardBackId("vice-nights", duringWindow)).toBe("vice-nights");
+        expect(resolveCardBackId("vice-nights", beforeWindow)).toBe(DEFAULT_CARD_BACK_ID);
+        expect(resolveCardBackId("vice-nights", atEnd)).toBe(DEFAULT_CARD_BACK_ID);
+    });
+
+    it("falls back to the default card back when a saved event back leaves its window", () => {
+        localStorage.setItem(TABLE_STYLE_STORAGE_KEYS.cardBack, "vice-nights");
+        expect(readTableStyles(duringWindow).cardBack).toBe("vice-nights");
+        expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.cardBack)).toBe("vice-nights");
+        resetTableStylesForTests();
+        expect(readTableStyles(afterWindow).cardBack).toBe("default");
+        expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.cardBack)).toBe("default");
+    });
+
+    it("refuses to persist Vice Nights outside its window", () => {
+        setTableStyle("cardBack", "vice-nights", beforeWindow);
+        expect(getTableStyles().cardBack).toBe("default");
+        expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.cardBack)).toBe("default");
+        setTableStyle("cardBack", "vice-nights", duringWindow);
+        expect(getTableStyles().cardBack).toBe("vice-nights");
+        expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.cardBack)).toBe("vice-nights");
     });
 });

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="435" height="600" viewBox="0 0 435 600" role="img" aria-labelledby="vn-title vn-desc">
+  <title id="vn-title">Vice Nights card back</title>
+  <desc id="vn-desc">Dark night playing-card back with neon pink and cyan trim and a simple horizon mark. Original Texas HODL artwork; no third-party marks.</desc>
+  <defs>
+    <linearGradient id="vn-border" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2ec4"/>
+      <stop offset="0.48" stop-color="#2de2ff"/>
+      <stop offset="1" stop-color="#ff2ec4"/>
+    </linearGradient>
+    <linearGradient id="vn-border-inner" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2de2ff"/>
+      <stop offset="1" stop-color="#ff2ec4"/>
+    </linearGradient>
+    <radialGradient id="vn-glow-cyan" cx="50%" cy="18%" r="52%">
+      <stop offset="0" stop-color="#2de2ff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2de2ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vn-glow-pink" cx="50%" cy="84%" r="56%">
+      <stop offset="0" stop-color="#ff2ec4" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#ff2ec4" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="vn-neon" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2.4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="435" height="600" rx="36" fill="#07091a"/>
+  <rect width="435" height="600" rx="36" fill="url(#vn-glow-cyan)"/>
+  <rect width="435" height="600" rx="36" fill="url(#vn-glow-pink)"/>
+  <g fill="#d9fbff">
+    <circle cx="74" cy="96" r="1.3" fill-opacity="0.8"/>
+    <circle cx="128" cy="62" r="1.1" fill-opacity="0.6"/>
+    <circle cx="186" cy="88" r="0.9" fill-opacity="0.55"/>
+    <circle cx="248" cy="54" r="1.2" fill-opacity="0.75"/>
+    <circle cx="312" cy="78" r="1" fill-opacity="0.5"/>
+    <circle cx="358" cy="50" r="1.3" fill-opacity="0.7"/>
+    <circle cx="96" cy="160" r="0.9" fill-opacity="0.45"/>
+    <circle cx="340" cy="150" r="1.1" fill-opacity="0.55"/>
+    <circle cx="58" cy="460" r="1" fill-opacity="0.4"/>
+    <circle cx="378" cy="470" r="1.2" fill-opacity="0.5"/>
+    <circle cx="150" cy="520" r="0.9" fill-opacity="0.35"/>
+    <circle cx="290" cy="530" r="1" fill-opacity="0.4"/>
+  </g>
+  <rect x="18" y="18" width="399" height="564" rx="26" fill="none" stroke="url(#vn-border)" stroke-width="8"/>
+  <rect x="32" y="32" width="371" height="536" rx="20" fill="none" stroke="url(#vn-border-inner)" stroke-width="2" opacity="0.9"/>
+  <g filter="url(#vn-neon)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M86 338C158 312 276 312 349 338" stroke="#ff2ec4" stroke-width="3.2"/>
+    <path d="M90 348C164 332 272 332 345 348" stroke="#2de2ff" stroke-width="1.6" opacity="0.9"/>
+    <path d="M217 336C216 286 218 244 218 208" stroke="#2de2ff" stroke-width="3"/>
+    <path d="M218 214C186 188 154 194 148 228" stroke="#ff2ec4" stroke-width="2.4"/>
+    <path d="M218 210C198 176 166 168 150 186" stroke="#2de2ff" stroke-width="2.2"/>
+    <path d="M218 214C250 188 282 194 288 228" stroke="#ff2ec4" stroke-width="2.4"/>
+    <path d="M218 210C238 176 270 168 286 186" stroke="#2de2ff" stroke-width="2.2"/>
+    <path d="M218 222C200 222 190 236 188 252" stroke="#ff7ae0" stroke-width="1.8"/>
+    <path d="M218 222C236 222 246 236 248 252" stroke="#ff7ae0" stroke-width="1.8"/>
+  </g>
+</svg>

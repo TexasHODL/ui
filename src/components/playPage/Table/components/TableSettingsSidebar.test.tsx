@@ -35,6 +35,11 @@ jest.mock("../../../../config/stageGeometry", () => ({
 describe("Table settings", () => {
     beforeEach(() => {
         (getViewportMode as jest.Mock).mockReturnValue("desktop");
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date("2026-11-17T12:00:00+10:00"));
+    });
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     it("keeps hidden settings out of the keyboard and screen-reader flow", () => {
@@ -52,6 +57,7 @@ describe("Table settings", () => {
         expect(screen.getByRole("switch", { name: "Auto Muck" })).toHaveAttribute("aria-checked", "false");
         const appearance = screen.getByRole("combobox", { name: "Table appearance" }) as HTMLSelectElement;
         expect(Array.from(appearance.options).map(option => option.textContent)).toEqual(["Texas HODL", "Classic"]);
+        expect(Array.from((screen.getByRole("combobox", { name: "Card back" }) as HTMLSelectElement).options).map(option => option.textContent)).toEqual(["Texas HODL"]);
         fireEvent.change(appearance, { target: { value: "classic" } });
         expect(onStyle).toHaveBeenCalledWith("classic");
         fireEvent.click(screen.getByRole("button", { name: "Close settings" }));
@@ -77,7 +83,7 @@ describe("Table settings", () => {
         const optionLabels = (name: string) =>
             Array.from((screen.getByRole("combobox", { name }) as HTMLSelectElement).options).map(option => option.textContent);
 
-        it("shows three dropdowns with the offered names and the defaults selected", () => {
+        it("shows the card, chip, dealer and card-back dropdowns with the offered names and the defaults selected", () => {
             render(<TableSettingsSidebar isOpen />);
             expect(optionLabels("Cards")).toEqual([
                 "Block52 Classic", "Minimal Modern", "Brand Night", "HODL Watermark", "Bright Plum", "Spectrum Pastel",
@@ -88,6 +94,20 @@ describe("Table settings", () => {
             expect(screen.getByRole("combobox", { name: "Cards" })).toHaveValue("block52");
             expect(screen.getByRole("combobox", { name: "Chips" })).toHaveValue("C");
             expect(screen.getByRole("combobox", { name: "Dealer button" })).toHaveValue("C");
+            expect(optionLabels("Card back")).toEqual(["Texas HODL"]);
+            expect(screen.getByRole("combobox", { name: "Card back" })).toHaveValue("default");
+        });
+
+        it("lists Vice Nights in appearance and card back once its window opens", () => {
+            jest.setSystemTime(new Date("2026-11-19T12:00:00+10:00"));
+            const onStyle = jest.fn();
+            render(<TableSettingsSidebar isOpen tableStyle="modern" onTableStyleChange={onStyle} />);
+            expect(optionLabels("Table appearance")).toEqual(["Texas HODL", "Classic", "Vice Nights (limited time)"]);
+            expect(optionLabels("Card back")).toEqual(["Texas HODL", "Vice Nights (limited time)"]);
+            fireEvent.change(screen.getByRole("combobox", { name: "Table appearance" }), { target: { value: "vice-nights" } });
+            expect(onStyle).toHaveBeenCalledWith("vice-nights");
+            expect(localStorage.getItem(TABLE_STYLE_STORAGE_KEYS.cardBack)).toBe("vice-nights");
+            expect(screen.getByRole("combobox", { name: "Card back" })).toHaveValue("vice-nights");
         });
 
         it("saves a choice and applies it live to chips and the dealer button already on the table", () => {
