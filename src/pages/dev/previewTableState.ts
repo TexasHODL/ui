@@ -87,6 +87,10 @@ export interface PreviewOptions {
      * decided board (winner 100%).
      */
     runout?: PreviewRunout;
+    /** nft=0 hides fixture NFT avatar chips on the seat pills. On by default. */
+    nft: boolean;
+    /** timebank=0 hides the hero time-bank clock fixture. On by default. */
+    timeBank: boolean;
 }
 
 const isSeatCount = (value: number): value is PreviewSeatCount =>
@@ -107,6 +111,9 @@ const isBoardCount = (value: number): value is PreviewBoardCount =>
  * prizes=bubble installs the Bitcoin Bubble prize fixture (25200 / 10800 micro-USDC).
  * modal=entry|waiting shows the tournament take-your-seat or waiting dialog.
  * runout=reveal|flop|turn|river paints a tournament all-in runout (ui#210).
+ * nft=0|1 (default on) puts fixture NFT avatar chips on every occupied seat.
+ * timebank=0|1 (default on) gives the table a 45s time bank; the clock badge
+ * is on the hero pill only, as on a live table, and is ready when buttons=actions.
  * dealer=all and actions=all are preview-only: the snapshot still has one
  * dealer and one newest action. buttons=actions|muck writes seat 1's legal actions.
  */
@@ -149,7 +156,9 @@ export const parsePreviewSearch = (params: URLSearchParams): PreviewOptions => {
     const bubblePrizes = params.get("prizes") === "bubble";
     const openParam = Number(params.get("open"));
     const openSeats = Number.isInteger(openParam) && openParam >= 1 && openParam < seats ? openParam : undefined;
-    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(openSeats ? { openSeats } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
+    const nft = params.get("nft") !== "0" && params.get("nft") !== "false";
+    const timeBank = params.get("timebank") !== "0" && params.get("timebank") !== "false";
+    return { seats, dealer, allDealers, allActions, buttons, holeCards, holeCount, board, format, win, nft, timeBank, ...(winSeat ? { winSeat } : {}), ...(winAll ? { winAll } : {}), ...(noBets ? { noBets } : {}), ...(bubblePrizes ? { bubblePrizes } : {}), ...(openSeats ? { openSeats } : {}), ...(dialog ? { dialog } : {}), ...(runout ? { runout } : {}) };
 };
 
 export const previewSearchParams = (options: PreviewOptions): URLSearchParams => {
@@ -167,6 +176,8 @@ export const previewSearchParams = (options: PreviewOptions): URLSearchParams =>
     if (options.openSeats) params.set("open", String(options.openSeats));
     if (options.dialog) params.set("modal", options.dialog);
     if (options.runout) params.set("runout", options.runout);
+    if (!options.nft) params.set("nft", "0");
+    if (!options.timeBank) params.set("timebank", "0");
     return params;
 };
 
@@ -176,6 +187,44 @@ const roundForBoard = (board: PreviewBoardCount): TexasHoldemRound => {
     if (board === 4) return TexasHoldemRound.TURN;
     return TexasHoldemRound.RIVER;
 };
+
+
+/** Fixture time-bank grant, in milliseconds (shown as 45s when the clock is ready). */
+export const PREVIEW_TIME_BANK_MS = 45_000;
+
+export const previewTimeBankAction = (index: number): LegalActionDTO => ({
+    action: NonPlayerActionType.TIME_BANK,
+    min: undefined,
+    max: undefined,
+    index
+});
+
+/**
+ * Distinct circular PFP art per seat, as data: URLs. The live avatar allow-list
+ * rejects relative paths, so these stay self-contained in the preview fixture.
+ */
+const PREVIEW_NFT_ART: readonly { bg: string; draw: string }[] = [
+    { bg: "#e23d6d", draw: '<circle cx="32" cy="26" r="12" fill="#f4c7a8"/><path d="M16 28c4-16 28-16 32 0" fill="#2a1a14"/><circle cx="27" cy="26" r="2" fill="#2a1a14"/><circle cx="37" cy="26" r="2" fill="#2a1a14"/><path d="M28 32c3 3 5 3 8 0" fill="none" stroke="#b56a5a" stroke-width="1.6" stroke-linecap="round"/><rect x="18" y="40" width="28" height="24" rx="8" fill="#5b2c8a"/>' },
+    { bg: "#c48a3a", draw: '<ellipse cx="18" cy="22" rx="11" ry="15" fill="#6b3e1f"/><ellipse cx="46" cy="22" rx="11" ry="15" fill="#6b3e1f"/><circle cx="32" cy="36" r="20" fill="#e8c89a"/><ellipse cx="32" cy="42" rx="10" ry="8" fill="#3a2414"/><circle cx="24" cy="32" r="3" fill="#1a120c"/><circle cx="40" cy="32" r="3" fill="#1a120c"/><circle cx="32" cy="39" r="2.2" fill="#111"/>' },
+    { bg: "#1f6feb", draw: '<circle cx="32" cy="28" r="13" fill="#e8b894"/><path d="M18 26c3-14 23-14 28 0" fill="#111"/><rect x="20" y="24" width="24" height="8" rx="4" fill="#111"/><rect x="22" y="26" width="8" height="4" rx="2" fill="#7ec8ff"/><rect x="34" y="26" width="8" height="4" rx="2" fill="#7ec8ff"/><path d="M28 34c3 2 5 2 8 0" fill="none" stroke="#8a4a3a" stroke-width="1.6" stroke-linecap="round"/><rect x="16" y="42" width="32" height="22" rx="6" fill="#0b3a82"/>' },
+    { bg: "#1aa05a", draw: '<circle cx="32" cy="30" r="16" fill="#b6f27a"/><ellipse cx="22" cy="14" rx="5" ry="10" fill="#8ed14a"/><ellipse cx="42" cy="14" rx="5" ry="10" fill="#8ed14a"/><ellipse cx="26" cy="28" rx="3" ry="5" fill="#143318"/><ellipse cx="38" cy="28" rx="3" ry="5" fill="#143318"/><ellipse cx="32" cy="38" rx="5" ry="3" fill="#143318"/>' },
+    { bg: "#f0c14a", draw: '<circle cx="32" cy="30" r="13" fill="#f3d2b0"/><path d="M14 26 L32 8 L50 26" fill="#f5c542" stroke="#c49212" stroke-width="2" stroke-linejoin="round"/><circle cx="27" cy="30" r="2" fill="#2a1a14"/><circle cx="37" cy="30" r="2" fill="#2a1a14"/><path d="M27 36c3 3 7 3 10 0" fill="none" stroke="#b56a5a" stroke-width="1.6" stroke-linecap="round"/><rect x="18" y="44" width="28" height="20" rx="6" fill="#7a2f1a"/>' },
+    { bg: "#6b2ad1", draw: '<circle cx="32" cy="28" r="12" fill="#f0c3b0"/><path d="M16 30c2-20 30-20 32 0-8-8-24-8-32 0z" fill="#c44ad1"/><circle cx="27" cy="28" r="2" fill="#2a1a14"/><circle cx="37" cy="28" r="2" fill="#2a1a14"/><path d="M28 34c3 3 5 3 8 0" fill="none" stroke="#b56a5a" stroke-width="1.6" stroke-linecap="round"/><rect x="18" y="42" width="28" height="22" rx="8" fill="#24104a"/>' },
+    { bg: "#4a5568", draw: '<rect x="16" y="14" width="32" height="28" rx="6" fill="#cbd5e1"/><rect x="20" y="20" width="10" height="8" rx="2" fill="#38bdf8"/><rect x="34" y="20" width="10" height="8" rx="2" fill="#38bdf8"/><rect x="26" y="32" width="12" height="4" rx="1" fill="#64748b"/><rect x="22" y="42" width="20" height="18" rx="3" fill="#94a3b8"/><circle cx="32" cy="10" r="4" fill="#f59e0b"/>' },
+    { bg: "#fb923c", draw: '<ellipse cx="18" cy="18" rx="8" ry="12" fill="#fb7185"/><ellipse cx="46" cy="18" rx="8" ry="12" fill="#fb7185"/><circle cx="32" cy="34" r="18" fill="#fda4af"/><circle cx="24" cy="32" r="3" fill="#1a120c"/><circle cx="40" cy="32" r="3" fill="#1a120c"/><ellipse cx="32" cy="40" rx="4" ry="2.5" fill="#9f1239"/><path d="M28 24c2-3 6-3 8 0" fill="none" stroke="#9f1239" stroke-width="1.4"/>' },
+    { bg: "#0f766e", draw: '<ellipse cx="32" cy="22" rx="18" ry="8" fill="#78350f"/><rect x="14" y="18" width="36" height="8" fill="#92400e"/><circle cx="32" cy="36" r="13" fill="#f3c7a8"/><circle cx="27" cy="35" r="2" fill="#2a1a14"/><circle cx="37" cy="35" r="2" fill="#2a1a14"/><path d="M28 40c3 3 5 3 8 0" fill="none" stroke="#b56a5a" stroke-width="1.6" stroke-linecap="round"/><rect x="18" y="48" width="28" height="16" rx="4" fill="#134e4a"/>' }
+];
+
+export const previewSeatAvatar = (seat: number): string => {
+    const art = PREVIEW_NFT_ART[(Math.max(1, seat) - 1) % PREVIEW_NFT_ART.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="32" fill="${art.bg}"/>${art.draw}</svg>`;
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+};
+
+const previewPlayerLook = (seat: number, options: PreviewOptions): Pick<PlayerDTO, "avatar" | "timeBankRemainingMs"> => ({
+    ...(options.nft ? { avatar: previewSeatAvatar(seat) } : {}),
+    ...(options.timeBank ? { timeBankRemainingMs: PREVIEW_TIME_BANK_MS } : {})
+});
 
 /** Distinct address per seat so chip ownership and the hero's face cards resolve. */
 export const previewSeatAddress = (seat: number, heroAddress: string): string => {
@@ -303,7 +352,8 @@ const buildPreviewDialogState = (options: PreviewOptions, heroAddress: string): 
         legalActions: [],
         sumOfBets: "0",
         timeout: 30,
-        signature: ""
+        signature: "",
+        ...previewPlayerLook(seat, options)
     }));
     const scheduledStartTime = Date.now() + (options.dialog === "waiting" ? 49_000 : 47 * 60_000);
     return {
@@ -317,6 +367,7 @@ const buildPreviewDialogState = (options: PreviewOptions, heroAddress: string): 
             nextSmallBlind: "15",
             nextBigBlind: "30",
             timeout: 30,
+            ...(options.timeBank ? { timeBankMs: PREVIEW_TIME_BANK_MS } : {}),
             startingStack: "5000",
             entryFee: "200000",
             protocolFeeBps: 1000,
@@ -358,7 +409,8 @@ const RUNOUT_BEAT: Record<PreviewRunout, { round: TexasHoldemRound; cards: numbe
  * The last caller is still ACTIVE, the other live seats are all-in with the
  * hand tabled, betting is closed, and a folded seat stays out.
  */
-const buildPreviewRunoutState = (beat: PreviewRunout, heroAddress: string): TexasHoldemStateDTO => {
+const buildPreviewRunoutState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
+    const beat = options.runout as PreviewRunout;
     const street = RUNOUT_BEAT[beat];
     const hands: Record<number, { cards: string[]; status: PlayerStatus; stack: string; cardsShown?: boolean }> = {
         1: { cards: ["AH", "AD"], status: PlayerStatus.ACTIVE, stack: "12000" },
@@ -382,7 +434,8 @@ const buildPreviewRunoutState = (beat: PreviewRunout, heroAddress: string): Texa
             legalActions: [],
             sumOfBets: "0",
             timeout: 30,
-            signature: ""
+            signature: "",
+            ...previewPlayerLook(seat, options)
         };
     });
     return {
@@ -394,6 +447,7 @@ const buildPreviewRunoutState = (beat: PreviewRunout, heroAddress: string): Texa
             smallBlind: "100",
             bigBlind: "200",
             timeout: 30,
+            ...(options.timeBank ? { timeBankMs: PREVIEW_TIME_BANK_MS } : {}),
             blindLevel: 3,
             nextSmallBlind: "150",
             nextBigBlind: "300",
@@ -423,7 +477,7 @@ const buildPreviewRunoutState = (beat: PreviewRunout, heroAddress: string): Texa
 
 export const buildPreviewState = (options: PreviewOptions, heroAddress: string): TexasHoldemStateDTO => {
     if (options.dialog) return buildPreviewDialogState(options, heroAddress);
-    if (options.runout) return buildPreviewRunoutState(options.runout, heroAddress);
+    if (options.runout) return buildPreviewRunoutState(options, heroAddress);
     // win=<seat> (not the hero) tables the winner's hand, which needs showdown.
     const round = options.buttons === "muck" || ((options.winSeat || options.winAll) && options.holeCards) ? TexasHoldemRound.SHOWDOWN : roundForBoard(options.board);
     const heroTurn = previewIsHeroTurn(options);
@@ -466,11 +520,15 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             ...((seat === options.winSeat || (options.winAll && seat !== 1)) && options.holeCards ? { cardsShown: true } : {}),
             lastAction: options.noBets && seat === 1 ? undefined : action,
             legalActions: heroTurn && seat === 1
-                ? (options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1, !!options.noBets))
+                ? [
+                    ...(options.buttons === "muck" ? previewHeroShowdownActions(options.seats + 1) : previewHeroLegalActions(options.seats + 1, !!options.noBets)),
+                    ...(options.timeBank && options.buttons === "actions" ? [previewTimeBankAction(options.seats + 1)] : [])
+                ]
                 : [],
             sumOfBets: amount,
             timeout: 30,
-            signature: ""
+            signature: "",
+            ...previewPlayerLook(seat, options)
         });
     }
 
@@ -489,6 +547,7 @@ export const buildPreviewState = (options: PreviewOptions, heroAddress: string):
             smallBlind: options.format === "cash" ? "10000000" : "650",
             bigBlind: options.format === "cash" ? "20000000" : "1300",
             timeout: 30,
+            ...(options.timeBank ? { timeBankMs: PREVIEW_TIME_BANK_MS } : {}),
             // Level 7 of a tournament / Sit & Go: the blind clock needs the next level.
             ...(options.format === "cash" ? {} : { blindLevel: 7, nextSmallBlind: "800", nextBigBlind: "1600", blindLevelDuration: 10, levelStartTime: Date.now() })
         },

@@ -253,6 +253,22 @@ const PreviewPanel = ({ options, onChange }: PreviewPanelProps) => {
                     {count}
                 </button>
             ))}
+            <button
+                type="button"
+                aria-pressed={options.nft}
+                onClick={() => onChange({ nft: !options.nft })}
+                style={buttonStyle(options.nft)}
+            >
+                NFTs
+            </button>
+            <button
+                type="button"
+                aria-pressed={options.timeBank}
+                onClick={() => onChange({ timeBank: !options.timeBank })}
+                style={buttonStyle(options.timeBank)}
+            >
+                Time bank
+            </button>
         </div>
     );
 };
