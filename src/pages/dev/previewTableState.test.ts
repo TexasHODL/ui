@@ -1,12 +1,15 @@
-import { PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
+import { NonPlayerActionType, PlayerActionType, PlayerStatus, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import {
     PREVIEW_HERO_ADDRESS,
     PREVIEW_SEAT_ACTIONS,
+    PREVIEW_TIME_BANK_MS,
     buildPreviewState,
     parsePreviewSearch,
     previewHeroLegalActions,
     previewHeroShowdownActions,
-    previewSearchParams
+    previewSearchParams,
+    previewSeatAvatar,
+    previewTimeBankAction
 } from "./previewTableState";
 
 describe("parsePreviewSearch", () => {
@@ -21,7 +24,9 @@ describe("parsePreviewSearch", () => {
             holeCount: 2,
             board: 5,
             format: "cash",
-            win: false
+            win: false,
+            nft: true,
+            timeBank: true
         });
     });
 
@@ -129,11 +134,15 @@ describe("parsePreviewSearch", () => {
         expect(state.nextToAct).toBe(1);
         const hero = state.players[0];
         expect(hero.seat).toBe(1);
-        expect(hero.legalActions).toEqual(previewHeroLegalActions(7));
+        expect(hero.legalActions).toEqual([
+            ...previewHeroLegalActions(7),
+            previewTimeBankAction(7)
+        ]);
         expect(hero.legalActions.map(action => action.action)).toEqual([
             PlayerActionType.FOLD,
             PlayerActionType.CALL,
-            PlayerActionType.RAISE
+            PlayerActionType.RAISE,
+            NonPlayerActionType.TIME_BANK
         ]);
         const raise = hero.legalActions.find(action => action.action === PlayerActionType.RAISE);
         expect(raise?.min).not.toBe(raise?.max);
@@ -214,6 +223,28 @@ describe("buildPreviewState", () => {
     it("round-trips through the query string", () => {
         const options = parsePreviewSearch(new URLSearchParams("seats=2&dealer=2&holes=0&board=3"));
         expect(parsePreviewSearch(previewSearchParams(options))).toEqual(options);
+    });
+
+    it("nft and timebank default on, and nft=0&timebank=0 turn them off", () => {
+        const on = buildPreviewState(parsePreviewSearch(new URLSearchParams("seats=6")), PREVIEW_HERO_ADDRESS);
+        expect(on.gameOptions.timeBankMs).toBe(PREVIEW_TIME_BANK_MS);
+        expect(on.players.every(player => player.timeBankRemainingMs === PREVIEW_TIME_BANK_MS)).toBe(true);
+        expect(on.players.map(player => player.avatar)).toEqual([1, 2, 3, 4, 5, 6].map(previewSeatAvatar));
+        expect(on.players[0].avatar?.startsWith("data:image/svg+xml")).toBe(true);
+        expect(on.players[0].legalActions.some(action => action.action === NonPlayerActionType.TIME_BANK)).toBe(false);
+
+        const acting = buildPreviewState(parsePreviewSearch(new URLSearchParams("seats=6&buttons=actions")), PREVIEW_HERO_ADDRESS);
+        expect(acting.players[0].legalActions).toContainEqual(previewTimeBankAction(7));
+
+        const off = parsePreviewSearch(new URLSearchParams("seats=6&nft=0&timebank=0"));
+        expect(off.nft).toBe(false);
+        expect(off.timeBank).toBe(false);
+        expect(previewSearchParams(off).get("nft")).toBe("0");
+        expect(previewSearchParams(off).get("timebank")).toBe("0");
+        expect(parsePreviewSearch(previewSearchParams(off))).toEqual(off);
+        const bare = buildPreviewState(off, PREVIEW_HERO_ADDRESS);
+        expect(bare.gameOptions.timeBankMs).toBeUndefined();
+        expect(bare.players.every(player => !player.avatar && player.timeBankRemainingMs === undefined)).toBe(true);
     });
 
     it("reads buttons=preaction|muck: muck is seat 1's showdown turn, preaction is another seat's turn", () => {

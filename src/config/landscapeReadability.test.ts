@@ -1,6 +1,6 @@
 import { landscapeCommunityCardSize, landscapeHoleCardSize, mobileCardUnit, MOBILE_HOLE_CARD_HEIGHT, MOBILE_HOLE_CARD_WIDTH, communityCardHeight } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, withBetSpots, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_LANDSCAPE_9_TOP_OUTSET, MOBILE_LANDSCAPE_9_WING_OUTSET, DESKTOP_9_OUTSET, TABLET_LANDSCAPE_9_WING_OUTSET, TABLET_LANDSCAPE_9_SIDE_OUTSET, TABLET_LANDSCAPE_9_TOP_OUTSET, TABLET_LANDSCAPE_9_TOP_LIFT, PORTRAIT_9_LEFT_ARC_OUTSET, PORTRAIT_9_LEFT_SIDE_OUTSET, portraitNineLeftOutset, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -162,7 +162,7 @@ describe("landscape mobile readability", () => {
         expect(parseFloat(getDeckOrigin().top)).toBeCloseTo(portraitDims.tableHeight / 2 - 140, 5);
     });
 
-    test("centres 9-seat wings between the neighbouring widgets on mobile landscape", () => {
+    test("spreads 9-seat wings and the top pair outward on mobile landscape", () => {
         const half = 48;
         const check = (width: number, height: number, coarse: boolean) => {
             window.matchMedia = (query: string) => ({ matches: coarse && query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
@@ -173,24 +173,34 @@ describe("landscape mobile readability", () => {
             const x = (seat: { left: string }) => parseFloat(seat.left);
             const y = (seat: { top: string }) => parseFloat(seat.top);
             const mid = (right: number, left: number) => (right + left) / 2;
-            expect(Math.abs(x(placed.players[1]) - mid(x(raw[2]) + half, x(raw[0]) - half))).toBeLessThanOrEqual(0.1);
-            expect(Math.abs(x(placed.players[8]) - mid(x(raw[0]) + half, x(raw[7]) - half))).toBeLessThanOrEqual(0.1);
+            expect(Math.abs(x(placed.players[1]) - (mid(x(raw[2]) + half, x(raw[0]) - half) - MOBILE_LANDSCAPE_9_WING_OUTSET))).toBeLessThanOrEqual(0.1);
+            expect(Math.abs(x(placed.players[8]) - (mid(x(raw[0]) + half, x(raw[7]) - half) + MOBILE_LANDSCAPE_9_WING_OUTSET))).toBeLessThanOrEqual(0.1);
+            expect(x(placed.players[4])).toBeCloseTo(x(raw[4]) - MOBILE_LANDSCAPE_9_TOP_OUTSET, 5);
+            expect(x(placed.players[5])).toBeCloseTo(x(raw[5]) + MOBILE_LANDSCAPE_9_TOP_OUTSET, 5);
             expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
             expect(y(placed.players[8])).toBeCloseTo(y(raw[8]), 5);
-            expect(x(placed.players[1])).toBeLessThan(x(raw[1]));
-            expect(x(placed.players[8])).toBeGreaterThan(x(raw[8]));
-            for (const index of [0, 2, 3, 4, 5, 6, 7]) {
+            expect(y(placed.players[4])).toBeCloseTo(y(raw[4]), 5);
+            expect(y(placed.players[5])).toBeCloseTo(y(raw[5]), 5);
+            expect(x(placed.players[1])).toBeLessThan(x(raw[1]) - MOBILE_LANDSCAPE_9_WING_OUTSET + 0.1);
+            expect(x(placed.players[8])).toBeGreaterThan(x(raw[8]) + MOBILE_LANDSCAPE_9_WING_OUTSET - 0.1);
+            for (const index of [0, 2, 3, 6, 7]) {
                 expect(x(placed.players[index])).toBeCloseTo(x(raw[index]), 5);
                 expect(y(placed.players[index])).toBeCloseTo(y(raw[index]), 5);
             }
             expect(y(placed.vacantPlayers[1])).toBeCloseTo(y(raw[1]), 5);
             expect(x(placed.vacantPlayers[1])).toBeCloseTo(x(placed.players[1]), 5);
             expect(x(placed.vacantPlayers[8])).toBeCloseTo(x(placed.players[8]), 5);
+            expect(x(placed.vacantPlayers[4])).toBeCloseTo(x(placed.players[4]), 5);
+            expect(x(placed.vacantPlayers[5])).toBeCloseTo(x(placed.players[5]), 5);
             const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
             expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
             expect(x(placed.holeCards[8].second) - x(placed.players[8])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.holeCards[4].first) - x(placed.players[4])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[5].second) - x(placed.players[5])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
             expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
             expect(x(placed.winAnimations[8])).toBeCloseTo(x(placed.players[8]), 0);
+            expect(x(placed.turnAnimations[4])).toBeCloseTo(x(placed.players[4]), 0);
+            expect(x(placed.winAnimations[5])).toBeCloseTo(x(placed.players[5]), 0);
         };
         check(844, 390, false);
         check(915, 412, false);
@@ -198,13 +208,201 @@ describe("landscape mobile readability", () => {
 
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 844 });
-        const portrait = getAllPositions(9).players.map(seat => seat.left);
-        expect(portrait).toEqual(getSeatPositions(9).map(seat => seat.left));
+        const portraitRaw = getSeatPositions(9);
+        const portraitPlaced = getAllPositions(9);
+        expect(parseFloat(portraitPlaced.players[1].left)).toBeCloseTo(parseFloat(portraitRaw[1].left) - PORTRAIT_9_LEFT_ARC_OUTSET, 5);
+        expect(parseFloat(portraitPlaced.players[2].left)).toBeCloseTo(parseFloat(portraitRaw[2].left) - PORTRAIT_9_LEFT_SIDE_OUTSET, 5);
+        expect(parseFloat(portraitPlaced.players[3].left)).toBeCloseTo(parseFloat(portraitRaw[3].left) - PORTRAIT_9_LEFT_SIDE_OUTSET, 5);
+        for (const index of [0, 4, 5, 6, 7, 8]) {
+            expect(portraitPlaced.players[index].left).toBe(portraitRaw[index].left);
+            expect(portraitPlaced.players[index].top).toBe(portraitRaw[index].top);
+        }
+        expect(portraitPlaced.players[1].top).toBe(portraitRaw[1].top);
+        expect(portraitPlaced.players[2].top).toBe(portraitRaw[2].top);
+        expect(portraitPlaced.players[3].top).toBe(portraitRaw[3].top);
 
         window.matchMedia = (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
+        const desktopRaw = getSeatPositions(9);
+        const desktopPlaced = getAllPositions(9);
+        expect(parseFloat(desktopPlaced.players[1].left)).toBeCloseTo(parseFloat(desktopRaw[1].left) - DESKTOP_9_OUTSET, 5);
+        expect(parseFloat(desktopPlaced.players[8].left)).toBeCloseTo(parseFloat(desktopRaw[8].left) + DESKTOP_9_OUTSET, 5);
+        expect(parseFloat(desktopPlaced.players[4].left)).toBeCloseTo(parseFloat(desktopRaw[4].left) - DESKTOP_9_OUTSET, 5);
+        expect(parseFloat(desktopPlaced.players[5].left)).toBeCloseTo(parseFloat(desktopRaw[5].left) + DESKTOP_9_OUTSET, 5);
+        for (const index of [0, 2, 3, 6, 7]) {
+            expect(desktopPlaced.players[index].left).toBe(desktopRaw[index].left);
+            expect(desktopPlaced.players[index].top).toBe(desktopRaw[index].top);
+        }
+        expect(desktopPlaced.players[1].top).toBe(desktopRaw[1].top);
+        expect(desktopPlaced.players[8].top).toBe(desktopRaw[8].top);
+        expect(desktopPlaced.players[4].top).toBe(desktopRaw[4].top);
+        expect(desktopPlaced.players[5].top).toBe(desktopRaw[5].top);
+    });
+
+    test("spreads 9-seat wings and the top pair outward on desktop only", () => {
+        const finePointer = (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const check = (width: number, height: number) => {
+            window.matchMedia = finePointer;
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const raw = getSeatPositions(9);
+            const placed = getAllPositions(9);
+            const x = (seat: { left: string }) => parseFloat(seat.left);
+            const y = (seat: { top: string }) => parseFloat(seat.top);
+            expect(x(placed.players[1])).toBeCloseTo(x(raw[1]) - DESKTOP_9_OUTSET, 5);
+            expect(x(placed.players[8])).toBeCloseTo(x(raw[8]) + DESKTOP_9_OUTSET, 5);
+            expect(x(placed.players[4])).toBeCloseTo(x(raw[4]) - DESKTOP_9_OUTSET, 5);
+            expect(x(placed.players[5])).toBeCloseTo(x(raw[5]) + DESKTOP_9_OUTSET, 5);
+            expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
+            expect(y(placed.players[8])).toBeCloseTo(y(raw[8]), 5);
+            expect(y(placed.players[4])).toBeCloseTo(y(raw[4]), 5);
+            expect(y(placed.players[5])).toBeCloseTo(y(raw[5]), 5);
+            for (const index of [0, 2, 3, 6, 7]) {
+                expect(x(placed.players[index])).toBeCloseTo(x(raw[index]), 5);
+                expect(y(placed.players[index])).toBeCloseTo(y(raw[index]), 5);
+            }
+            expect(x(placed.vacantPlayers[1])).toBeCloseTo(x(placed.players[1]), 5);
+            expect(x(placed.vacantPlayers[8])).toBeCloseTo(x(placed.players[8]), 5);
+            expect(x(placed.vacantPlayers[4])).toBeCloseTo(x(placed.players[4]), 5);
+            expect(x(placed.vacantPlayers[5])).toBeCloseTo(x(placed.players[5]), 5);
+            const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
+            expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[8].second) - x(placed.players[8])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.holeCards[4].first) - x(placed.players[4])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[5].second) - x(placed.players[5])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
+            expect(x(placed.winAnimations[8])).toBeCloseTo(x(placed.players[8]), 0);
+        };
+        // Keep a clear chip-follows-seat check via tablet (same landscape ring, no desktop outset).
+        check(1280, 720);
+        const tabletWidth = 1024;
+        const tabletHeight = 650;
+        window.matchMedia = finePointer;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: tabletWidth });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: tabletHeight });
+        const tablet = getAllPositions(9);
+        check(1280, 720);
+        const desktop = (() => {
+            window.matchMedia = finePointer;
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: 720 });
+            return getAllPositions(9);
+        })();
+        const x = (seat: { left: string }) => parseFloat(seat.left);
+        // Tablet landscape now has its own 9-seat spread. Recover the
+        // unshifted ring by adding those outsets back, then check that
+        // desktop chips travelled with the desktop outset only.
+        expect(x(desktop.chips[1])).toBeCloseTo(x(tablet.chips[1]) - DESKTOP_9_OUTSET + TABLET_LANDSCAPE_9_WING_OUTSET, 5);
+        expect(x(desktop.chips[8])).toBeCloseTo(x(tablet.chips[8]) + DESKTOP_9_OUTSET - TABLET_LANDSCAPE_9_WING_OUTSET, 5);
+        expect(x(desktop.chips[4])).toBeCloseTo(x(tablet.chips[4]) - DESKTOP_9_OUTSET + TABLET_LANDSCAPE_9_TOP_OUTSET, 5);
+        expect(x(desktop.chips[5])).toBeCloseTo(x(tablet.chips[5]) + DESKTOP_9_OUTSET - TABLET_LANDSCAPE_9_TOP_OUTSET, 5);
+        check(1920, 1080);
+        check(1440, 900);
+    });
+
+    test("spreads 9-seat tablet-landscape seats toward the edges", () => {
+        const finePointer = (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const check = (width: number, height: number) => {
+            window.matchMedia = finePointer;
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const raw = getSeatPositions(9);
+            const placed = getAllPositions(9);
+            const x = (seat: { left: string }) => parseFloat(seat.left);
+            const y = (seat: { top: string }) => parseFloat(seat.top);
+            expect(x(placed.players[1])).toBeCloseTo(x(raw[1]) - TABLET_LANDSCAPE_9_WING_OUTSET, 5);
+            expect(x(placed.players[8])).toBeCloseTo(x(raw[8]) + TABLET_LANDSCAPE_9_WING_OUTSET, 5);
+            expect(x(placed.players[2])).toBeCloseTo(x(raw[2]) - TABLET_LANDSCAPE_9_SIDE_OUTSET, 5);
+            expect(x(placed.players[3])).toBeCloseTo(x(raw[3]) - TABLET_LANDSCAPE_9_SIDE_OUTSET, 5);
+            expect(x(placed.players[6])).toBeCloseTo(x(raw[6]) + TABLET_LANDSCAPE_9_SIDE_OUTSET, 5);
+            expect(x(placed.players[7])).toBeCloseTo(x(raw[7]) + TABLET_LANDSCAPE_9_SIDE_OUTSET, 5);
+            expect(x(placed.players[4])).toBeCloseTo(x(raw[4]) - TABLET_LANDSCAPE_9_TOP_OUTSET, 5);
+            expect(x(placed.players[5])).toBeCloseTo(x(raw[5]) + TABLET_LANDSCAPE_9_TOP_OUTSET, 5);
+            expect(y(placed.players[4])).toBeCloseTo(y(raw[4]) - TABLET_LANDSCAPE_9_TOP_LIFT, 5);
+            expect(y(placed.players[5])).toBeCloseTo(y(raw[5]) - TABLET_LANDSCAPE_9_TOP_LIFT, 5);
+            expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
+            expect(y(placed.players[2])).toBeCloseTo(y(raw[2]), 5);
+            expect(y(placed.players[3])).toBeCloseTo(y(raw[3]), 5);
+            expect(y(placed.players[6])).toBeCloseTo(y(raw[6]), 5);
+            expect(y(placed.players[7])).toBeCloseTo(y(raw[7]), 5);
+            expect(y(placed.players[8])).toBeCloseTo(y(raw[8]), 5);
+            expect(x(placed.players[0])).toBeCloseTo(x(raw[0]), 5);
+            expect(y(placed.players[0])).toBeCloseTo(y(raw[0]), 5);
+            // Vacancy, hole cards and animations travel with the seat.
+            for (const index of [1, 2, 3, 4, 5, 6, 7, 8]) {
+                expect(x(placed.vacantPlayers[index])).toBeCloseTo(x(placed.players[index]), 5);
+                expect(y(placed.vacantPlayers[index])).toBeCloseTo(y(placed.players[index]), 5);
+            }
+            // Chip travel is checked against the desktop spread test, which recovers the unshifted ring from these tablet outsets.
+            const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
+            expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[2].first) - x(placed.players[2])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[3].first) - x(placed.players[3])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[6].first) - x(placed.players[6])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[7].second) - x(placed.players[7])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
+            expect(x(placed.winAnimations[7])).toBeCloseTo(x(placed.players[7]), 0);
+            expect(y(placed.turnAnimations[4]) - y(placed.players[4])).toBeCloseTo(y(placed.turnAnimations[1]) - y(placed.players[1]), 0);
+            expect(y(placed.winAnimations[5])).toBeCloseTo(y(placed.players[5]), 0);
+        };
+        check(1024, 768);
+        check(1024, 650);
+        check(1024, 773);
+        // Portrait tablets and desktop keep their own rings.
+        window.matchMedia = finePointer;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 768 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 1024 });
         expect(getAllPositions(9).players.map(seat => seat.left)).toEqual(getSeatPositions(9).map(seat => seat.left));
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 720 });
+        const desktop = getAllPositions(9);
+        const desktopRaw = getSeatPositions(9);
+        expect(parseFloat(desktop.players[1].left)).toBeCloseTo(parseFloat(desktopRaw[1].left) - DESKTOP_9_OUTSET, 5);
+        expect(desktop.players[2].left).toBe(desktopRaw[2].left);
+        expect(desktop.players[4].top).toBe(desktopRaw[4].top);
+    });
+
+    test("pulls 9-seat portrait left-column seats toward the screen edge", () => {
+        window.matchMedia = (query: string) => ({ matches: query.includes("coarse"), media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const check = (width: number, height: number) => {
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const raw = getSeatPositions(9);
+            const placed = getAllPositions(9);
+            const x = (seat: { left: string }) => parseFloat(seat.left);
+            const y = (seat: { top: string }) => parseFloat(seat.top);
+            expect(x(placed.players[1])).toBeCloseTo(x(raw[1]) - PORTRAIT_9_LEFT_ARC_OUTSET, 5);
+            expect(x(placed.players[2])).toBeCloseTo(x(raw[2]) - PORTRAIT_9_LEFT_SIDE_OUTSET, 5);
+            expect(x(placed.players[3])).toBeCloseTo(x(raw[3]) - PORTRAIT_9_LEFT_SIDE_OUTSET, 5);
+            expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
+            expect(y(placed.players[2])).toBeCloseTo(y(raw[2]), 5);
+            expect(y(placed.players[3])).toBeCloseTo(y(raw[3]), 5);
+            for (const index of [0, 4, 5, 6, 7, 8]) {
+                expect(x(placed.players[index])).toBeCloseTo(x(raw[index]), 5);
+                expect(y(placed.players[index])).toBeCloseTo(y(raw[index]), 5);
+            }
+            expect(x(placed.vacantPlayers[1])).toBeCloseTo(x(placed.players[1]), 5);
+            expect(x(placed.vacantPlayers[2])).toBeCloseTo(x(placed.players[2]), 5);
+            expect(x(placed.vacantPlayers[3])).toBeCloseTo(x(placed.players[3]), 5);
+            const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
+            expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[2].first) - x(placed.players[2])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[3].first) - x(placed.players[3])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
+            expect(x(placed.winAnimations[2])).toBeCloseTo(x(placed.players[2]), 0);
+            // Live layout runs withBetSpots after the rail placer, which would
+            // otherwise re-centre piles on the shifted seat x (off the felt).
+            const spotted = withBetSpots(placed, true);
+            for (const index of [1, 2, 3]) {
+                expect(parseFloat(spotted.chips[index].left)).toBe(Math.round(x(placed.players[index]) + portraitNineLeftOutset(index)));
+            }
+            for (const index of [0, 4, 5, 6, 7, 8]) {
+                expect(parseFloat(spotted.chips[index].left)).toBe(x(placed.players[index]));
+            }
+        };
+        check(412, 924);
+        check(390, 844);
     });
 
     test.each([
@@ -415,7 +613,7 @@ describe("landscape mobile readability", () => {
         for (const index of [1, 2, 3, 6, 7]) {
             const seatX = parseFloat(portrait.players[index].left);
             const chipX = parseFloat(portrait.chips[index].left);
-            expect(chipX).toBe(Math.round(seatX));
+            expect(chipX).toBe(Math.round(seatX + portraitNineLeftOutset(index)));
         }
         const seat6X = parseFloat(portrait.players[5].left);
         const chip6X = parseFloat(portrait.chips[5].left);
@@ -774,7 +972,8 @@ describe("landscape mobile readability", () => {
                 if (centred) expect(bet.x).toBe(Math.round(bet.seatX));
                 if (index === 4 || index === 5) expect(mobileFeltContains(bet.x, bet.y, 1, 0)).toBe(true);
             };
-            expectBanner(3, 4, true);
+            expectBanner(3, 4, false);
+            expect(bannerAir(3).x).toBe(Math.round(bannerAir(3).seatX + portraitNineLeftOutset(3)));
             expectBanner(6, 6, true);
             const topLeft = bannerAir(4);
             const topRight = bannerAir(5);
@@ -802,7 +1001,7 @@ describe("landscape mobile readability", () => {
                 const floor = index === 1 && width === 375 ? 0.5 : modelGap - 1.5;
                 expect(gap).toBeGreaterThan(floor);
                 expect(gap).toBeLessThan(modelGap + 1.5);
-                expect(chipX).toBe(Math.round(seatX));
+                expect(chipX).toBe(Math.round(seatX + portraitNineLeftOutset(index)));
             });
         }
         const portrait = place(390, 844);

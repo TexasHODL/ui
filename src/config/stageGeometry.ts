@@ -222,6 +222,12 @@ export function isTabletPortrait(mode: ViewportMode | string = getViewportMode()
     return typeof window !== "undefined" && window.innerHeight > window.innerWidth;
 }
 
+/** Landscape iPad / tablet window (e.g. 1024×768). Portrait tablets use the portrait stage. */
+export function isTabletLandscape(mode: ViewportMode | string = getViewportMode()): boolean {
+    if (mode !== "tablet") return false;
+    return typeof window !== "undefined" && window.innerWidth > window.innerHeight;
+}
+
 /** Spread used by the width cap. Inlined so the cap does not call getStageDims. */
 function spreadForWidthCap(sx: number, sy: number): [number, number] {
     const dx = sx - TABLE_CENTER_X;
@@ -795,19 +801,89 @@ export interface PositionArrays {
 }
 
 /**
- * 9-seat mobile landscape only. Seat 2's widget is centred on the midpoint
- * between the right edge of seat 3 and the left edge of seat 1. Seat 9 is
- * centred between the right edge of seat 1 and the left edge of seat 8.
- * Every seat widget has the same width and is centred on its anchor, so
- * that midpoint is the midpoint of the neighbour anchors. Y stays put.
- * Portrait and desktop keep the spec ring.
+ * Extra table-div pixels to push 9-seat mobile-landscape wing seats (2 and 9)
+ * outward from the hero, beyond the midpoint of the neighbouring widgets.
+ */
+export const MOBILE_LANDSCAPE_9_WING_OUTSET = 48;
+
+/**
+ * Extra table-div pixels to spread the 9-seat mobile-landscape top pair
+ * (seats 5 and 6) outward from each other.
+ */
+export const MOBILE_LANDSCAPE_9_TOP_OUTSET = 28;
+
+/**
+ * Table-div pixels that move 9-seat desktop wings (2 and 9) and the top
+ * pair (5 and 6) outward. 32.3 table-div px is 20 CSS px at a 1280×720
+ * desktop preview window (zoom ≈ 0.6188). Y stays put. Phone landscape
+ * and portrait are unchanged.
+ */
+export const DESKTOP_9_OUTSET = 32.3;
+
+/**
+ * Table-div pixels that pull 9-seat portrait seats 3 and 4 (the straight
+ * left rail) toward the screen edge. 25.4 table-div px is 5 CSS px of
+ * remaining margin at 412×924 (Pixel 10, zoom ≈ 0.5556) and about 6 CSS
+ * px at 390×844. Seat 2 on the lower arc starts further in, so it uses
+ * {@link PORTRAIT_9_LEFT_ARC_OUTSET}. Y is unchanged. Desktop and
+ * landscape rings are not touched.
+ */
+export const PORTRAIT_9_LEFT_SIDE_OUTSET = 25.4;
+
+/** Extra table-div pixels for 9-seat portrait seat 2, so its pill and
+ *  card fan reach the same 5–6px left margin as seats 3 and 4. */
+export const PORTRAIT_9_LEFT_ARC_OUTSET = 38.4;
+
+/** Outset applied to a 9-seat portrait left-column seat (0-based index). */
+export const portraitNineLeftOutset = (index: number): number => {
+    if (index === 1) return PORTRAIT_9_LEFT_ARC_OUTSET;
+    if (index === 2 || index === 3) return PORTRAIT_9_LEFT_SIDE_OUTSET;
+    return 0;
+};
+
+/**
+ * Table-div pixels that move 9-seat tablet-landscape wings (2 and 9)
+ * away from the hero. 33.5 table-div px is about 23 CSS px at a
+ * 1024×768 iPad Mini landscape window (zoom ≈ 0.6867).
+ */
+export const TABLET_LANDSCAPE_9_WING_OUTSET = 33.5;
+
+/**
+ * Table-div pixels that move 9-seat tablet-landscape side columns
+ * (3 and 4 left, 7 and 8 right) toward the screen edges. 29.1
+ * table-div px is 20 CSS px at 1024×768.
+ */
+export const TABLET_LANDSCAPE_9_SIDE_OUTSET = 29.1;
+
+/**
+ * Table-div pixels that spread 9-seat tablet-landscape top seats 5
+ * and 6 apart (each moves this far). 14.6 table-div px is 10 CSS px
+ * at 1024×768, so they end up 20 CSS px further apart.
+ */
+export const TABLET_LANDSCAPE_9_TOP_OUTSET = 14.6;
+
+/**
+ * Table-div pixels that lift 9-seat tablet-landscape seats 5 and 6.
+ * 14.6 table-div px is 10 CSS px at 1024×768, which keeps the hole
+ * cards clear of the real table header (the room status bar).
+ */
+export const TABLET_LANDSCAPE_9_TOP_LIFT = 14.6;
+
+/**
+ * 9-seat mobile landscape only. Seat 2 starts at the midpoint between
+ * the right edge of seat 3 and the left edge of seat 1, then is pushed
+ * further outward from the hero so the user has more space. Seat 9 is
+ * mirrored on the right. Seats 5 and 6 (the top pair) also spread
+ * outward a little. Y stays put. Portrait and desktop keep the spec ring.
  */
 function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
     if (getStageOrientation() !== "mobile-landscape" || tableSize !== 9) return positions;
     const anchor = positions.players.map(seat => parseFloat(seat.left));
     const dx = new Map<number, number>([
-        [1, (anchor[2] + anchor[0]) / 2 - anchor[1]],
-        [8, (anchor[0] + anchor[7]) / 2 - anchor[8]]
+        [1, (anchor[2] + anchor[0]) / 2 - anchor[1] - MOBILE_LANDSCAPE_9_WING_OUTSET],
+        [8, (anchor[0] + anchor[7]) / 2 - anchor[8] + MOBILE_LANDSCAPE_9_WING_OUTSET],
+        [4, -MOBILE_LANDSCAPE_9_TOP_OUTSET],
+        [5, MOBILE_LANDSCAPE_9_TOP_OUTSET]
     ]);
     const shift = (pos: Position, index: number): Position => {
         const delta = dx.get(index);
@@ -835,10 +911,143 @@ function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: Ta
     };
 }
 
+/**
+ * 9-seat mobile portrait only. Move seats 2, 3 and 4 left so the pill,
+ * seat-number badge and card fan sit about 5 CSS px from the screen
+ * edge at 412×924. Chips stay put here so the rail placer can keep
+ * them on the felt. Right-side seats are not moved (the bet slider
+ * is on that side). Y is unchanged.
+ */
+function spreadPortraitNineLeftSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
+    if (getViewportMode() !== "mobile-portrait" || tableSize !== 9) return positions;
+    const dx = new Map<number, number>([
+        [1, -PORTRAIT_9_LEFT_ARC_OUTSET],
+        [2, -PORTRAIT_9_LEFT_SIDE_OUTSET],
+        [3, -PORTRAIT_9_LEFT_SIDE_OUTSET]
+    ]);
+    const shift = (pos: Position, index: number): Position => {
+        const delta = dx.get(index);
+        if (!delta) return pos;
+        const left = Math.round((parseFloat(pos.left) + delta) * 10) / 10;
+        return { ...pos, left: `${left}px` };
+    };
+    const shiftAll = (list: Position[]) => list.map(shift);
+    return {
+        ...positions,
+        players: shiftAll(positions.players),
+        vacantPlayers: shiftAll(positions.vacantPlayers),
+        turnAnimations: shiftAll(positions.turnAnimations),
+        winAnimations: shiftAll(positions.winAnimations),
+        holeCards: positions.holeCards.map((slot, index) => ({
+            first: shift(slot.first, index),
+            second: shift(slot.second, index)
+        }))
+    };
+}
+
+/**
+ * 9-seat desktop only. Move seats 2 and 5 left, and 6 and 9 right, by
+ * {@link DESKTOP_9_OUTSET} table-div pixels (20 CSS px at 1280×720).
+ * Chips, hole cards, and animations travel with their seats. Y is unchanged.
+ */
+function spreadDesktopNineSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
+    if (getViewportMode() !== "desktop" || tableSize !== 9) return positions;
+    const dx = new Map<number, number>([
+        [1, -DESKTOP_9_OUTSET],
+        [8, DESKTOP_9_OUTSET],
+        [4, -DESKTOP_9_OUTSET],
+        [5, DESKTOP_9_OUTSET]
+    ]);
+    const shift = (pos: Position, index: number): Position => {
+        const delta = dx.get(index);
+        if (!delta) return pos;
+        const left = Math.round((parseFloat(pos.left) + delta) * 10) / 10;
+        return { ...pos, left: `${left}px` };
+    };
+    const shiftAll = (list: Position[]) => list.map(shift);
+    return {
+        ...positions,
+        players: shiftAll(positions.players),
+        vacantPlayers: shiftAll(positions.vacantPlayers),
+        turnAnimations: shiftAll(positions.turnAnimations),
+        winAnimations: shiftAll(positions.winAnimations),
+        holeCards: positions.holeCards.map((slot, index) => ({
+            first: shift(slot.first, index),
+            second: shift(slot.second, index)
+        })),
+        chips: positions.chips.map((chip, index) => {
+            const delta = dx.get(index);
+            if (!delta) return chip;
+            const left = Math.round((parseFloat(chip.left) + delta) * 10) / 10;
+            return { ...chip, left: `${left}px` };
+        })
+    };
+}
+
+/**
+ * 9-seat tablet landscape only (e.g. 1024×768). Move seats 2 and 9
+ * away from the hero, 3/4 left and 7/8 right toward the screen edges,
+ * and 5/6 further apart and a little up. Chips, hole cards, and
+ * animations travel with their seats. Desktop, phone landscape, and
+ * portrait are unchanged.
+ */
+function spreadTabletLandscapeNineSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
+    if (!isTabletLandscape() || tableSize !== 9) return positions;
+    const dx = new Map<number, number>([
+        [1, -TABLET_LANDSCAPE_9_WING_OUTSET],
+        [2, -TABLET_LANDSCAPE_9_SIDE_OUTSET],
+        [3, -TABLET_LANDSCAPE_9_SIDE_OUTSET],
+        [4, -TABLET_LANDSCAPE_9_TOP_OUTSET],
+        [5, TABLET_LANDSCAPE_9_TOP_OUTSET],
+        [6, TABLET_LANDSCAPE_9_SIDE_OUTSET],
+        [7, TABLET_LANDSCAPE_9_SIDE_OUTSET],
+        [8, TABLET_LANDSCAPE_9_WING_OUTSET]
+    ]);
+    const dy = new Map<number, number>([
+        [4, -TABLET_LANDSCAPE_9_TOP_LIFT],
+        [5, -TABLET_LANDSCAPE_9_TOP_LIFT]
+    ]);
+    const shift = (pos: Position | ChipPosition, index: number): typeof pos => {
+        const x = dx.get(index);
+        const y = dy.get(index);
+        if (!x && !y) return pos;
+        const next = { ...pos };
+        if (x) {
+            const left = Math.round((parseFloat(pos.left) + x) * 10) / 10;
+            next.left = `${left}px`;
+        }
+        if (y) {
+            if ("top" in pos && pos.top != null) {
+                const top = Math.round((parseFloat(pos.top) + y) * 10) / 10;
+                (next as Position).top = `${top}px`;
+            }
+            if ("bottom" in pos && (pos as ChipPosition).bottom != null) {
+                // y is table-div dy (negative = up). bottom grows as the point moves up.
+                const bottom = Math.round((parseFloat((pos as ChipPosition).bottom) - y) * 10) / 10;
+                (next as ChipPosition).bottom = `${bottom}px`;
+            }
+        }
+        return next;
+    };
+    const shiftAll = <T extends Position | ChipPosition>(list: T[]) => list.map(shift) as T[];
+    return {
+        ...positions,
+        players: shiftAll(positions.players),
+        vacantPlayers: shiftAll(positions.vacantPlayers),
+        turnAnimations: shiftAll(positions.turnAnimations),
+        winAnimations: shiftAll(positions.winAnimations),
+        holeCards: positions.holeCards.map((slot, index) => ({
+            first: shift(slot.first, index) as Position,
+            second: shift(slot.second, index) as Position
+        })),
+        chips: positions.chips.map((chip, index) => shift(chip, index) as ChipPosition)
+    };
+}
+
 /** Get all position arrays for a given table size, with offsets applied */
 export function getAllPositions(tableSize: TableSize): PositionArrays {
     notePortraitSize(tableSize);
-    return centerMobileLandscapeWingSeats({
+    return spreadTabletLandscapeNineSeats(spreadDesktopNineSeats(spreadPortraitNineLeftSeats(centerMobileLandscapeWingSeats({
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
         chips: applyChipOffsets(getChipPositions(tableSize), tableSize),
@@ -848,7 +1057,7 @@ export function getAllPositions(tableSize: TableSize): PositionArrays {
         winAnimations: applyPositionOffsets(getWinAnimationPositions(tableSize), tableSize, "winAnimations"),
         holeCards: applyHoleCardOffsets(getHoleCardSlotPositions(tableSize), tableSize),
         deck: getDeckOrigin()
-    }, tableSize);
+    }, tableSize), tableSize), tableSize), tableSize);
 }
 
 // ─── Bet chips and dealer button beside them ─────────────────────────
@@ -957,7 +1166,18 @@ export function dealerSideFor(side: BetSide | undefined): "left" | "right" {
 export function withBetSpots(positions: PositionArrays, mobile: boolean, unitStage = 1, board?: BetObstacle[]): PositionArrays {
     const dims = getStageDims();
     const keepOut = board ?? [desktopBoardKeepOut(dims.tableWidth, dims.tableHeight)];
-    return { ...positions, chips: placeBetSpots(positions.players, seatEnvelope(mobile, unitStage), dims.tableWidth, dims.tableHeight, keepOut) };
+    let chips = placeBetSpots(positions.players, seatEnvelope(mobile, unitStage), dims.tableWidth, dims.tableHeight, keepOut);
+    // 9-seat portrait left-column seats sit past the rail so the pills can
+    // reach the screen edge. Keep their bet piles at the unshifted x, on the felt.
+    if (mobile && getViewportMode() === "mobile-portrait" && positions.players.length === 9) {
+        chips = chips.map((chip, index) => {
+            const outset = portraitNineLeftOutset(index);
+            if (!outset) return chip;
+            const left = Math.round(parseFloat(chip.left) + outset);
+            return { ...chip, left: `${left}px` };
+        });
+    }
+    return { ...positions, chips };
 }
 
 /** Desktop community-card row and the pot pill above it, in table-div pixels.
