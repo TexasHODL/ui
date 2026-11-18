@@ -13,6 +13,7 @@ import { bigBlindInStackUnits, formatSeatStack } from "../../../utils/numberUtil
 import { useStacksInBigBlinds } from "../../../context/GameSettingsContext";
 import ProgressBar from "./ProgressBar";
 import { FitText } from "./FitText";
+import { BannerMarquee } from "./BannerMarquee";
 import { colors } from "../../../utils/colorConfig";
 import "./Badge.css";
 
@@ -213,9 +214,11 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                 if (!hasValue(finished) || !hasValue(finished.payoutMicro)) return null;
                 return (
                     <div className="action-display-content">
-                        <span className="finished-seat-banner-payout" data-testid="finished-seat-payout-banner">
-                            Won <PrizeAmount micro={finished.payoutMicro} />
-                        </span>
+                        <BannerMarquee>
+                            <span className="finished-seat-banner-payout" data-testid="finished-seat-payout-banner">
+                                Won <PrizeAmount micro={finished.payoutMicro} />
+                            </span>
+                        </BannerMarquee>
                     </div>
                 );
             }
@@ -237,23 +240,27 @@ const Badge: React.FC<BadgeProps> = React.memo(({
             case "action":
                 return (
                     <div className={`action-display-content ${isTextHiding ? "action-display-content-hide" : ""}`}>
-                        <span className="action-display-text">
-                            {actionDisplay.action}
-                        </span>
-                        {actionDisplay.amount && (
-                            <span className="action-display-amount">
-                                {actionDisplay.amount}
+                        <BannerMarquee>
+                            <span className="action-display-text">
+                                {actionDisplay.action}
                             </span>
-                        )}
+                            {actionDisplay.amount && (
+                                <span className="action-display-amount">
+                                    {actionDisplay.amount}
+                                </span>
+                            )}
+                        </BannerMarquee>
                     </div>
                 );
 
             case "seat-join":
                 return (
                     <div className={`action-display-content ${isTextHiding ? "action-display-content-hide" : ""}`}>
-                        <span className="action-display-text">
-                            YOUR SEAT
-                        </span>
+                        <BannerMarquee>
+                            <span className="action-display-text">
+                                YOUR SEAT
+                            </span>
+                        </BannerMarquee>
                     </div>
                 );
 
@@ -264,7 +271,7 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                         {round !== "showdown" && <ProgressBar index={count} />}
                         {isSeated && (
                             <span className="seat-banner-text font-bold animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center">
-                                SEATED
+                                <BannerMarquee>SEATED</BannerMarquee>
                             </span>
                         )}
                         {isSittingOut && (
@@ -277,18 +284,18 @@ const Badge: React.FC<BadgeProps> = React.memo(({
                                 </button>
                             ) : (
                                 <span className="seat-banner-text font-bold animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center">
-                                    SITTING OUT
+                                    <BannerMarquee>SITTING OUT</BannerMarquee>
                                 </span>
                             )
                         )}
                         {isFolded && (
                             <span className="seat-banner-text animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center">
-                                FOLD
+                                <BannerMarquee>FOLD</BannerMarquee>
                             </span>
                         )}
                         {isAllIn && (
                             <span className="seat-banner-text animate-progress delay-2000 flex items-center w-full h-2 mb-2 mt-auto gap-2 justify-center">
-                                ALL IN
+                                <BannerMarquee>ALL IN</BannerMarquee>
                             </span>
                         )}
                     </>
