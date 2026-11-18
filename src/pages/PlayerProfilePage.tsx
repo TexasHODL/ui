@@ -57,6 +57,7 @@ import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../uti
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
 import { formatProfileWalletBalance } from "../utils/addressUsdcBalance";
 import { formatHandsPlayed, handsPlayedReadFailed } from "../utils/handsPlayed";
+import { profileHistoryHandsPending, profileStyleCardsPending } from "../utils/profileStatsLoading";
 import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
 import {
     formatHistoryAmount,
@@ -209,12 +210,18 @@ export default function PlayerProfilePage() {
     const contributions = useHandContributions(address, profitHands ?? NO_PROFIT_HANDS, hasValue(profitHands));
     // Every finished hand, every variant, including an open session. Same snapshot cache as the profit card.
     const styleSelection = useMemo(() => playingStyleHands(listedHands), [listedHands]);
-    const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error) && recovered.searched);
-    const stylePending =
-        tab === "stats" &&
-        hasContent(address) &&
-        !hasContent(handHistory.error) &&
-        (!handHistory.complete || recovered.recovering || !recovered.searched || styleRead.pending);
+    // Start style logs as soon as the indexer list is available. Recovery of
+    // omitted MTT hands can take minutes and must not hold these cards on "…".
+    const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error));
+    const stylePending = profileStyleCardsPending({
+        onStatsTab: tab === "stats",
+        hasAddress: hasContent(address),
+        handListFailed: hasContent(handHistory.error),
+        handListComplete: handHistory.complete,
+        styleLogsPending: styleRead.pending,
+        recoveredSearched: recovered.searched,
+        styleDealt: styleRead.dealt
+    });
     const styleDisplay = formatPlayingStyle(styleRead.counts, stylePending);
     // Chain count from the Playing Style logs. Ellipsis until those finish, so the indexer's total_hands never flashes first.
     const handsPlayedLabel = formatHandsPlayed({
@@ -239,11 +246,12 @@ export default function PlayerProfilePage() {
             ),
         [rows, gamesById, address, eliminationBlocks, historyHands, gameLabels, gameFilter]
     );
-    const handsPending =
-        tab === "stats" &&
-        hasContent(address) &&
-        !hasContent(handHistory.error) &&
-        (!handHistory.complete || recovered.recovering || !recovered.searched);
+    const handsPending = profileHistoryHandsPending({
+        onStatsTab: tab === "stats",
+        hasAddress: hasContent(address),
+        handListFailed: hasContent(handHistory.error),
+        handListComplete: handHistory.complete
+    });
     const moneyLoading = handsPending || handHistory.loading || gamesLoading;
     const profitLoading = moneyLoading || contributions.pending;
     const profitNote = profitLoading ? undefined : handContributionNote(contributions.unavailable, hasValue(profitHands) ? profitHands.length : 0);

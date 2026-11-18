@@ -170,7 +170,8 @@ describe("recoverUnlistedHands MTT table ids", () => {
             networks: [network]
         });
 
-        expect(queries).toEqual([`hand_ended.game_id='${mtt}' AND hand_ended.hand_number='5'`]);
+        // Known indexer height 40 already shows hand 5, so tx_search is not needed.
+        expect(queries).toEqual([]);
         expect(recovered.hands.map(hand => hand.game_id)).toEqual([mtt]);
         expect(recovered.hands[0].hand_number).toBe(5);
         expect(recovered.states.get(`${mtt}#5`)?.handNumber).toBe(5);
@@ -211,7 +212,7 @@ describe("recoverUnlistedHands MTT table ids", () => {
             networks: [network]
         });
 
-        expect(queries).toEqual([`hand_ended.game_id='${mtt}' AND hand_ended.hand_number='5'`]);
+        expect(queries).toEqual([]);
         expect(recovered.hands.map(hand => hand.game_id)).toEqual([mtt]);
         err.mockRestore();
     });
@@ -304,12 +305,39 @@ describe("recoverUnlistedHands extra tournament tables", () => {
             networks: [network]
         });
         err.mockRestore();
-        expect(searched.sort()).toEqual([
-            `hand_ended.game_id='${t1}' AND hand_ended.hand_number='1'`,
-            `hand_ended.game_id='${t1}' AND hand_ended.hand_number='2'`
-        ]);
+        // Hand 1's endedHands height (10 / 9) already shows that hand, so tx_search is skipped.
+        // Hand 2's indexer height 40 does not, so it falls back to tx_search (height 20).
+        expect(searched).toEqual([`hand_ended.game_id='${t1}' AND hand_ended.hand_number='2'`]);
         expect(recovered.hands.map(hand => hand.hand_number).sort((a, b) => a - b)).toEqual([1, 2]);
         expect(recovered.hands.every(hand => hand.game_id === t1)).toBe(true);
+    });
+
+    it("uses a known end height and does not tx_search when that snapshot is the hand", async () => {
+        const mtt = "0xabc-t1";
+        const searched: string[] = [];
+        const err = jest.spyOn(console, "error").mockImplementation(() => {});
+        const recovered = await recoverUnlistedHands({
+            address: "hero",
+            listed: [],
+            sessions: async () => ({ data: [], pagination: { limit: 100, offset: 0, total: 0 } }),
+            gameHands: async () => ({ data: [gameHand(5, 50, mtt)], pagination: { limit: 1000, offset: 0, total: 1 } }),
+            extraGameIds: [mtt],
+            rpcFor: () => ({
+                txSearch: async query => {
+                    searched.push(query);
+                    return { result: { txs: [{ height: "50" }] } };
+                },
+                abciQuery: async (_path, _data, height) => {
+                    if (height === 50) return abci(JSON.stringify({ handNumber: 6 }));
+                    return abci(JSON.stringify(chainState(5, true)));
+                }
+            }),
+            networks: [network]
+        });
+        err.mockRestore();
+        expect(searched).toEqual([]);
+        expect(recovered.hands).toHaveLength(1);
+        expect(recovered.hands[0]).toMatchObject({ game_id: mtt, hand_number: 5, block_height: 50 });
     });
 
     it("derives won_amount from the next hand when winners[] is empty", async () => {

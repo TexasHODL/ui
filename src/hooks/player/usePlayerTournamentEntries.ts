@@ -41,6 +41,10 @@ interface EntryState {
     error: string | null;
 }
 
+const EMPTY_ENTRIES: PlayerTournamentEntry[] = [];
+const EMPTY_REGISTRATIONS: TournamentRegistration[] = [];
+const EMPTY_UNREGISTRATIONS: TournamentUnregistration[] = [];
+
 /**
  * Multi-table tournaments one player registered for, from the configured node.
  *
@@ -126,9 +130,9 @@ export function usePlayerTournamentEntries(address: string | undefined): UsePlay
 
     const ready = hasValue(state) && state.address === player;
     return {
-        entries: ready ? state.entries : [],
-        registrations: ready ? state.registrations : [],
-        unregistrations: ready ? state.unregistrations : [],
+        entries: ready ? state.entries : EMPTY_ENTRIES,
+        registrations: ready ? state.registrations : EMPTY_REGISTRATIONS,
+        unregistrations: ready ? state.unregistrations : EMPTY_UNREGISTRATIONS,
         loading: hasContent(player) && (!ready || loading),
         error: ready ? state.error : null,
         refetch: fetchEntries
