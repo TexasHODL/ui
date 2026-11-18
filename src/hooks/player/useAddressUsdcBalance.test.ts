@@ -26,7 +26,7 @@ describe("useAddressUsdcBalance", () => {
     it("does not query without an address", () => {
         const { result } = renderHook(() => useAddressUsdcBalance(undefined));
         expect(getBalance).not.toHaveBeenCalled();
-        expect(result.current).toEqual({ micro: null, loading: false, error: null });
+        expect(result.current).toEqual({ micro: null, loading: false, error: null, refetch: expect.any(Function) });
     });
 
     it("reads the address usdc balance from the cosmos client", async () => {
@@ -80,7 +80,7 @@ describe("useAddressUsdcBalance", () => {
         await waitFor(() => expect(result.current.micro).toBe("1"));
 
         rerender({ address: undefined });
-        await waitFor(() => expect(result.current).toEqual({ micro: null, loading: false, error: null }));
+        await waitFor(() => expect(result.current).toEqual({ micro: null, loading: false, error: null, refetch: expect.any(Function) }));
 
         getBalance.mockResolvedValueOnce(2n);
         mockNetwork = { ...mockBaseNetwork, rest: "https://other.example" };

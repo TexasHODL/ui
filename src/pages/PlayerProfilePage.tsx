@@ -26,9 +26,11 @@ import { PROFILE_TAB_PARAM, viewerAddress, visibleProfileTab } from "../utils/pr
 import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
 import { usePlayerPrizeClaims } from "../hooks/player/usePlayerPrizeClaims";
 import { usePlayerTournamentEntries } from "../hooks/player/usePlayerTournamentEntries";
+import { useVisibleRefresh } from "../hooks/useVisibleRefresh";
 import { useSessionEliminationBlocks } from "../hooks/player/useSessionEliminationBlocks";
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
-import { profileMoneyWithPrizes, sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
+import { sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
+import { profileMoneyWithAllVariants } from "../utils/profileStatsMoney";
 import {
     mergeTournamentSessionRows,
     sessionMetasWithTournamentEntries,
@@ -97,12 +99,18 @@ export default function PlayerProfilePage() {
     const [gameFilter, setGameFilter] = useState("");
     const [openSessionKey, setOpenSessionKey] = useState<string | null>(null);
 
-    const { profile, loading, error } = usePlayerProfile(address);
-    const { sessions, loading: sessionsLoading } = useAllPlayerSessions(address);
+    const { profile, loading, error, refetch: refetchProfile } = usePlayerProfile(address);
+    const { sessions, loading: sessionsLoading, refetch: refetchSessions } = useAllPlayerSessions(address);
     // Chain prize claims. Empty on failure, so the cards and rows stay on the indexer.
-    const { claims, loading: prizesLoading } = usePlayerPrizeClaims(address);
+    const { claims, loading: prizesLoading, refetch: refetchClaims } = usePlayerPrizeClaims(address);
     // MTT entry never joins a table, so the indexer has no session for it.
-    const { entries: tournamentEntries, loading: tournamentsLoading } = usePlayerTournamentEntries(address);
+    const {
+        entries: tournamentEntries,
+        registrations: tournamentRegistrations,
+        unregistrations: tournamentUnregistrations,
+        loading: tournamentsLoading,
+        refetch: refetchTournaments
+    } = usePlayerTournamentEntries(address);
     const { address: walletAddress } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
     const [searchParams] = useSearchParams();
@@ -202,14 +210,31 @@ export default function PlayerProfilePage() {
     const variantTotals = useMemo(() => variantMoneyFromRows(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
     const openSessionsNote = openSessionTotalsNote(variantTotals.excludedOpen);
     const netClass = hasValue(variantTotals.netProfit) ? historyNetClass(variantTotals.netProfit) : "";
-    const prizeMoney = useMemo(
+    const statsMoney = useMemo(
         () =>
-            hasValue(profile) && !prizesLoading
-                ? profileMoneyWithPrizes({ totalCashOuts: profile.total_cash_outs, netProfit: profile.net_profit }, sessions, claims)
+            hasValue(profile) && !prizesLoading && !tournamentsLoading
+                ? profileMoneyWithAllVariants(
+                      { totalBuyIns: profile.total_buy_ins, totalCashOuts: profile.total_cash_outs, netProfit: profile.net_profit },
+                      sessions,
+                      claims,
+                      tournamentEntries,
+                      tournamentRegistrations,
+                      tournamentUnregistrations,
+                      address
+                  )
                 : null,
-        [profile, sessions, claims, prizesLoading]
+        [profile, prizesLoading, tournamentsLoading, sessions, claims, tournamentEntries, tournamentRegistrations, tournamentUnregistrations, address]
     );
     const historyLoading = sessionsLoading || prizesLoading || tournamentsLoading;
+
+    useVisibleRefresh(() => {
+        refetchProfile({ silent: true });
+        refetchSessions({ silent: true });
+        refetchClaims({ silent: true });
+        refetchTournaments({ silent: true });
+        // Hands Played walks the chain logs; a focus must not start that over.
+        if (tab === "stats") walletBalance.refetch({ silent: true });
+    });
 
     useEffect(() => {
         document.title = address ? `Player ${truncateMiddle(address, 8, 6)} - Texas HODL` : "Player - Texas HODL";
@@ -275,14 +300,18 @@ export default function PlayerProfilePage() {
                             <StatCard
                                 className={VOLUME_STAT_CARD}
                                 label="Net Profit"
-                                value={hasValue(prizeMoney) ? formatUsd(prizeMoney.netProfit) : "…"}
-                                valueClass={hasValue(prizeMoney) && prizeMoney.netProfit < 0 ? "text-red-400" : "text-green-400"}
+                                value={hasValue(statsMoney) ? formatUsd(statsMoney.netProfit) : "…"}
+                                valueClass={hasValue(statsMoney) && statsMoney.netProfit < 0 ? "text-red-400" : "text-green-400"}
                             />
-                            <StatCard className={VOLUME_STAT_CARD} label="Total Buy-In" value={formatUsd(profile.total_buy_ins)} />
+                            <StatCard
+                                className={VOLUME_STAT_CARD}
+                                label="Total Buy-In"
+                                value={hasValue(statsMoney) ? formatUsd(statsMoney.totalBuyIns) : "…"}
+                            />
                             <StatCard
                                 className={VOLUME_STAT_CARD}
                                 label="Total Cash-Out"
-                                value={hasValue(prizeMoney) ? formatUsd(prizeMoney.totalCashOuts) : "…"}
+                                value={hasValue(statsMoney) ? formatUsd(statsMoney.totalCashOuts) : "…"}
                             />
                             <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
                             <StatCard className={VOLUME_STAT_CARD} label="Sessions" value={profile.session_count.toLocaleString()} />

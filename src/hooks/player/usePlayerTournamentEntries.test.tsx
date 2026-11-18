@@ -49,12 +49,16 @@ beforeEach(() => {
 });
 
 test("reads registrations and each tournament from the configured node", async () => {
-    mockApi.getAllTransactionsMatching.mockResolvedValue(search);
+    mockApi.getAllTransactionsMatching.mockImplementation((query: string) => {
+        if (query.startsWith("tournament_unregistered")) return Promise.resolve({ tx_responses: [] });
+        return Promise.resolve(search);
+    });
     mockApi.getTournament.mockResolvedValue(tournament);
     const { result } = renderHook(() => usePlayerTournamentEntries(PLAYER));
     expect(result.current.loading).toBe(true);
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(mockApi.getAllTransactionsMatching).toHaveBeenCalledWith(`tournament_registered.player='${PLAYER}'`);
+    expect(mockApi.getAllTransactionsMatching).toHaveBeenCalledWith(`tournament_unregistered.player='${PLAYER}'`);
     expect(mockApi.getTournament).toHaveBeenCalledWith(TID);
     expect(result.current.entries).toEqual([
         {
@@ -66,7 +70,55 @@ test("reads registrations and each tournament from the configured node", async (
             results: [{ place: 6, playerId: PLAYER, payout: "0" }]
         }
     ]);
+    expect(result.current.registrations).toHaveLength(1);
+    expect(result.current.unregistrations).toEqual([]);
     expect(result.current.error).toBeNull();
+    expect(result.current.refetch).toEqual(expect.any(Function));
+});
+
+test("attaches an unregister refund to an open entry", async () => {
+    const unreg = {
+        tx_responses: [
+            {
+                code: 0,
+                height: "1091316",
+                txhash: "UNREG",
+                events: [
+                    {
+                        type: "tournament_unregistered",
+                        attributes: [
+                            { key: "tournament_id", value: TID },
+                            { key: "player", value: PLAYER },
+                            { key: "refund", value: "1600000" }
+                        ]
+                    }
+                ]
+            }
+        ]
+    };
+    const openTournament = {
+        tournament: JSON.stringify({
+            tournamentId: TID,
+            status: "registered",
+            level: 0,
+            options: { buyIn: "2000000", entryFee: "200000", blindStructure: { levels: [] } },
+            entrants: [],
+            tables: [{ tableId: `${TID}/t1`, ordinal: 1 }],
+            results: [],
+            prizePool: "0",
+            payouts: [],
+            seq: 1
+        })
+    };
+    mockApi.getAllTransactionsMatching.mockImplementation((query: string) => {
+        if (query.startsWith("tournament_unregistered")) return Promise.resolve(unreg);
+        return Promise.resolve(search);
+    });
+    mockApi.getTournament.mockResolvedValue(openTournament);
+    const { result } = renderHook(() => usePlayerTournamentEntries(PLAYER));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.entries[0]).toMatchObject({ refund: 1_600_000, unregisterHeight: 1_091_316, status: "registered" });
+    expect(result.current.unregistrations).toEqual([{ tournamentId: TID, height: 1_091_316, txhash: "UNREG", refund: 1_600_000 }]);
 });
 
 test("a failed registration query leaves entries empty", async () => {

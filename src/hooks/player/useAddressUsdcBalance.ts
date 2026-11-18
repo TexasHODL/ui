@@ -1,13 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNetwork } from "../../context/NetworkContext";
 import { fetchAddressUsdcMicro } from "../../utils/addressUsdcBalance";
 import { hasContent } from "../../utils/guards";
+import type { SilentRefetchOptions } from "./usePlayerTournamentEntries";
 
 export interface AddressUsdcBalance {
     /** Micro-USDC once the bank read succeeds. Null while loading or after an error. */
     micro: string | null;
     loading: boolean;
     error: string | null;
+    refetch: (options?: SilentRefetchOptions) => void;
 }
 
 /**
@@ -20,39 +22,45 @@ export function useAddressUsdcBalance(address: string | undefined): AddressUsdcB
     const [micro, setMicro] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(hasContent(address));
     const [error, setError] = useState<string | null>(null);
+    const requestId = useRef(0);
+
+    const fetchBalance = useCallback(
+        async (options?: SilentRefetchOptions) => {
+            const id = ++requestId.current;
+            if (!hasContent(address)) {
+                setMicro(null);
+                setLoading(false);
+                setError(null);
+                return;
+            }
+            const silent = options?.silent === true;
+            if (!silent) {
+                setLoading(true);
+                setMicro(null);
+            }
+            setError(null);
+            try {
+                const value = await fetchAddressUsdcMicro(currentNetwork, address);
+                if (id !== requestId.current) return;
+                setMicro(value);
+            } catch (err) {
+                if (id !== requestId.current) return;
+                console.error("Failed to fetch wallet balance:", err);
+                if (!silent) setMicro(null);
+                setError(err instanceof Error ? err.message : "Failed to fetch wallet balance");
+            } finally {
+                if (id === requestId.current) setLoading(false);
+            }
+        },
+        [address, currentNetwork]
+    );
 
     useEffect(() => {
-        if (!hasContent(address)) {
-            setMicro(null);
-            setLoading(false);
-            setError(null);
-            return;
-        }
-
-        let cancelled = false;
-        setLoading(true);
-        setError(null);
-        setMicro(null);
-
-        fetchAddressUsdcMicro(currentNetwork, address)
-            .then(value => {
-                if (cancelled) return;
-                setMicro(value);
-            })
-            .catch(err => {
-                if (cancelled) return;
-                console.error("Failed to fetch wallet balance:", err);
-                setMicro(null);
-                setError(err instanceof Error ? err.message : "Failed to fetch wallet balance");
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-
+        void fetchBalance();
         return () => {
-            cancelled = true;
+            requestId.current += 1;
         };
-    }, [address, currentNetwork]);
+    }, [fetchBalance]);
 
-    return { micro, loading, error };
+    return { micro, loading, error, refetch: fetchBalance };
 }

@@ -1,14 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 import { hasContent } from "../../utils/guards";
 import { fetchAllPages } from "../../utils/pagedFetch";
 import type { PlayerSession } from "../../types/players";
+import type { SilentRefetchOptions } from "./usePlayerTournamentEntries";
 
 interface UsePlayerSessionsResult {
     sessions: PlayerSession[];
     total: number;
     loading: boolean;
     error: string | null;
+    refetch: (options?: SilentRefetchOptions) => void;
 }
 
 /** Fetches a page of a player's session history from the indexer (ui#589). */
@@ -46,7 +48,7 @@ export function usePlayerSessions(address: string | undefined, limit: number, of
         fetchSessions();
     }, [fetchSessions]);
 
-    return { sessions, total, loading, error };
+    return { sessions, total, loading, error, refetch: fetchSessions };
 }
 
 /**
@@ -59,35 +61,42 @@ export function useAllPlayerSessions(address: string | undefined): UsePlayerSess
     const [sessions, setSessions] = useState<PlayerSession[]>([]);
     const [loading, setLoading] = useState<boolean>(hasContent(address));
     const [error, setError] = useState<string | null>(null);
+    const requestId = useRef(0);
 
-    useEffect(() => {
-        if (!hasContent(address)) {
-            setSessions([]);
-            setLoading(false);
+    const fetchSessions = useCallback(
+        async (options?: SilentRefetchOptions) => {
+            const id = ++requestId.current;
+            if (!hasContent(address)) {
+                setSessions([]);
+                setLoading(false);
+                setError(null);
+                return;
+            }
+            const silent = options?.silent === true;
+            if (!silent) setLoading(true);
             setError(null);
-            return;
-        }
-        let cancelled = false;
-        setLoading(true);
-        setError(null);
-        fetchAllPages((limit, offset) => indexerApi.getPlayerSessions(address, limit, offset))
-            .then(rows => {
-                if (cancelled) return;
+            try {
+                const rows = await fetchAllPages((limit, offset) => indexerApi.getPlayerSessions(address, limit, offset));
+                if (id !== requestId.current) return;
                 setSessions(rows);
-            })
-            .catch(err => {
-                if (cancelled) return;
+            } catch (err) {
+                if (id !== requestId.current) return;
                 console.error("Failed to fetch player sessions:", err);
                 setError(err instanceof Error ? err.message : "Failed to fetch player sessions");
-                setSessions([]);
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [indexerApi, address]);
+                if (!silent) setSessions([]);
+            } finally {
+                if (id === requestId.current) setLoading(false);
+            }
+        },
+        [indexerApi, address]
+    );
 
-    return { sessions, total: sessions.length, loading, error };
+    useEffect(() => {
+        void fetchSessions();
+        return () => {
+            requestId.current += 1;
+        };
+    }, [fetchSessions]);
+
+    return { sessions, total: sessions.length, loading, error, refetch: fetchSessions };
 }
