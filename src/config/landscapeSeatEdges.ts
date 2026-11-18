@@ -1,5 +1,5 @@
 import { landscapeCommunityCardSize, landscapeHoleCardSize } from "./mobileCardSizing";
-import { getStageDims, type PositionArrays, type TableSize } from "./stageGeometry";
+import { getStageDims, getViewportMode, portraitNineLeftOutset, type PositionArrays, type TableSize } from "./stageGeometry";
 
 interface KeepOut {
     x: number;
@@ -1301,7 +1301,10 @@ export function placeMobileRailMarkers(
                 const point = chipCenters[index];
                 const seat = seatBoxes[index];
                 if (!point || !seat) return;
-                point.x = Math.round(seat.x);
+                // Left-column seats may have been shifted past the rail.
+                // Keep the pile on the felt at the unshifted seat x.
+                const leftOutset = getViewportMode() === "mobile-portrait" ? portraitNineLeftOutset(index) : 0;
+                point.x = Math.round(seat.x + leftOutset);
                 remember(index, point.x, point.y);
             });
             // On a short phone the centred seat 6 pile runs into seat 7's
