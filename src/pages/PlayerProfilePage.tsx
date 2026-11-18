@@ -1,5 +1,5 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 
 import { truncateMiddle } from "../utils/stringUtils";
@@ -19,8 +19,10 @@ import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandCo
 import { useAddressUsdcBalance } from "../hooks/player/useAddressUsdcBalance";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
+import { useRecoveredHands } from "../hooks/player/useRecoveredHands";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
-import { useNetwork } from "../context/NetworkContext";
+import { NETWORK_PRESETS, useNetwork } from "../context/NetworkContext";
+import { useCosmosApi } from "../context/CosmosApiContext";
 import { getCosmosAddress } from "../utils/cosmos/storage";
 import { PROFILE_TAB_PARAM, viewerAddress, visibleProfileTab } from "../utils/profileHub";
 import { useAllPlayerSessions } from "../hooks/player/usePlayerSessions";
@@ -34,9 +36,13 @@ import { profileMoneyWithAllVariants } from "../utils/profileStatsMoney";
 import {
     mergeTournamentSessionRows,
     sessionMetasWithTournamentEntries,
+    tableGameIdsOf,
     tournamentFinishPlaceLabel,
     withTournamentHandLeaveBlocks
 } from "../utils/playerTournamentEntries";
+import { mergeHistoryHands } from "../utils/handHistoryCards";
+import { endedHandsFromTxSearch } from "../utils/handHistoryRecover";
+import { handEndedTableQuery, historyNetworks } from "../utils/handReplay";
 import {
     defaultSessionVariant,
     filterSessionRows,
@@ -113,6 +119,7 @@ export default function PlayerProfilePage() {
     } = usePlayerTournamentEntries(address);
     const { address: walletAddress } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
+    const cosmosApi = useCosmosApi();
     const [searchParams] = useSearchParams();
     const tab = visibleProfileTab(viewerAddress(walletAddress, getCosmosAddress()), address, searchParams.get(PROFILE_TAB_PARAM));
     // Same Cosmos client as the table-header USDC balance, for the address being viewed. Stats only.
@@ -120,23 +127,48 @@ export default function PlayerProfilePage() {
     const identityAddress = hasValue(profile) && hasContent(profile.player_address) ? profile.player_address : address;
     // Same hand list as My Hands. Loaded on Stats only, so the hands tab does not fetch it twice.
     const handHistory = useMyHandHistory(tab === "stats" && hasContent(address) ? address : null, `${currentNetwork.name}|${currentNetwork.rest}`, 1000);
+    const extraGameIds = useMemo(() => [...new Set(tournamentEntries.flatMap(tableGameIdsOf))], [tournamentEntries]);
+    const historyNodes = useMemo(() => historyNetworks(currentNetwork, NETWORK_PRESETS), [currentNetwork]);
+    const endedHands = useCallback(
+        async (gameId: string) => {
+            try {
+                return endedHandsFromTxSearch(await cosmosApi.getAllTransactionsMatching(handEndedTableQuery(gameId)), gameId);
+            } catch (err) {
+                console.error("Failed to list tournament hand_ended events:", err);
+                return [];
+            }
+        },
+        [cosmosApi]
+    );
+    const recovered = useRecoveredHands(
+        tab === "stats" && hasContent(address) ? address : null,
+        handHistory.hands,
+        handHistory.complete && !hasContent(handHistory.error),
+        historyNodes,
+        { extraGameIds, endedHands }
+    );
+    const listedHands = useMemo(
+        () => mergeHistoryHands(hasContent(handHistory.error) ? [] : handHistory.hands, recovered.hands),
+        [handHistory.error, handHistory.hands, recovered.hands]
+    );
     const gameIds = useMemo(
         () =>
             uniqueGameIds([
                 ...sessions.map(session => session.game_id),
-                ...handHistory.hands.map(hand => hand.game_id),
-                ...tournamentEntries.map(entry => entry.gameId)
+                ...listedHands.map(hand => hand.game_id),
+                ...tournamentEntries.map(entry => entry.gameId),
+                ...extraGameIds
             ]),
-        [sessions, handHistory.hands, tournamentEntries]
+        [sessions, listedHands, tournamentEntries, extraGameIds]
     );
     const { byId: fetchedGames, loading: gamesLoading } = useSessionGameMeta(gameIds);
     const gamesById = useMemo(
-        () => sessionMetasWithTournamentEntries(fetchedGames, tournamentEntries, handHistory.hands),
-        [fetchedGames, tournamentEntries, handHistory.hands]
+        () => sessionMetasWithTournamentEntries(fetchedGames, tournamentEntries, listedHands),
+        [fetchedGames, tournamentEntries, listedHands]
     );
     const rows = useMemo(
-        () => mergeTournamentSessionRows(sessionRowsWithPrizes(sessions, claims), tournamentEntries, handHistory.hands, address),
-        [sessions, claims, tournamentEntries, handHistory.hands, address]
+        () => mergeTournamentSessionRows(sessionRowsWithPrizes(sessions, claims), tournamentEntries, listedHands, address),
+        [sessions, claims, tournamentEntries, listedHands, address]
     );
     const gameLabels = useMemo(() => sessionLabelsByGameId(gamesById), [gamesById]);
     const gameFilterOptions = useMemo(() => sessionGameFilterOptions(Object.values(gameLabels)), [gameLabels]);
@@ -150,8 +182,8 @@ export default function PlayerProfilePage() {
     const eliminationLookups = useMemo(() => eliminationLookupsFor(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
     const chainLeaveBlocks = useSessionEliminationBlocks(address, eliminationLookups);
     const eliminationBlocks = useMemo(
-        () => withTournamentHandLeaveBlocks(chainLeaveBlocks, tournamentEntries, handHistory.hands),
-        [chainLeaveBlocks, tournamentEntries, handHistory.hands]
+        () => withTournamentHandLeaveBlocks(chainLeaveBlocks, tournamentEntries, listedHands),
+        [chainLeaveBlocks, tournamentEntries, listedHands]
     );
     const settledWindows = useMemo(
         () =>
@@ -163,8 +195,8 @@ export default function PlayerProfilePage() {
         [filteredRows, address, rows, gamesById]
     );
     const settledHands = useMemo(
-        () => handHistory.hands.filter(hand => handBelongsToSettledSession({ gameId: hand.game_id, blockHeight: hand.block_height }, settledWindows)),
-        [handHistory.hands, settledWindows]
+        () => listedHands.filter(hand => handBelongsToSettledSession({ gameId: hand.game_id, blockHeight: hand.block_height }, settledWindows)),
+        [listedHands, settledWindows]
     );
     // Chain action logs for settled hands in this variant, once those tables share a money unit.
     const profitHands = useMemo(
@@ -176,9 +208,13 @@ export default function PlayerProfilePage() {
     );
     const contributions = useHandContributions(address, profitHands ?? NO_PROFIT_HANDS, hasValue(profitHands));
     // Every finished hand, every variant, including an open session. Same snapshot cache as the profit card.
-    const styleSelection = useMemo(() => playingStyleHands(hasContent(handHistory.error) ? [] : handHistory.hands), [handHistory.error, handHistory.hands]);
-    const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error));
-    const stylePending = tab === "stats" && hasContent(address) && !hasContent(handHistory.error) && (!handHistory.complete || styleRead.pending);
+    const styleSelection = useMemo(() => playingStyleHands(listedHands), [listedHands]);
+    const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error) && recovered.searched);
+    const stylePending =
+        tab === "stats" &&
+        hasContent(address) &&
+        !hasContent(handHistory.error) &&
+        (!handHistory.complete || recovered.recovering || !recovered.searched || styleRead.pending);
     const styleDisplay = formatPlayingStyle(styleRead.counts, stylePending);
     // Chain count from the Playing Style logs. Ellipsis until those finish, so the indexer's total_hands never flashes first.
     const handsPlayedLabel = formatHandsPlayed({
@@ -203,7 +239,11 @@ export default function PlayerProfilePage() {
             ),
         [rows, gamesById, address, eliminationBlocks, historyHands, gameLabels, gameFilter]
     );
-    const handsPending = tab === "stats" && hasContent(address) && !handHistory.complete && !hasContent(handHistory.error);
+    const handsPending =
+        tab === "stats" &&
+        hasContent(address) &&
+        !hasContent(handHistory.error) &&
+        (!handHistory.complete || recovered.recovering || !recovered.searched);
     const moneyLoading = handsPending || handHistory.loading || gamesLoading;
     const profitLoading = moneyLoading || contributions.pending;
     const profitNote = profitLoading ? undefined : handContributionNote(contributions.unavailable, hasValue(profitHands) ? profitHands.length : 0);

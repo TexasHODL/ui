@@ -62,6 +62,8 @@ export interface PlayerTournamentEntry {
     buyIn: number;
     /** `<tournamentId>-t<first table>`. */
     gameId: string;
+    /** Every `<tournamentId>-t*` table from the tournament record. */
+    tableGameIds?: string[];
     status: TournamentStateDTO["status"];
     results: GameResultPlace[];
     /** Unregister refund, micro-USDC, when they left before the start. */
@@ -176,8 +178,8 @@ export function registrationBuyIn(
     return Number.isSafeInteger(total) ? total : undefined;
 }
 
-/** Game id of the first table (lowest ordinal). `t1` when the tournament has no table yet. */
-export function firstTournamentTableGameId(tournamentId: string, tables: Array<{ tableId?: string; ordinal?: number }>): string {
+/** Every table of a tournament (`<id>-t1`, `<id>-t2`, â€¦). `t1` when the record lists none yet. */
+export function tournamentTableGameIds(tournamentId: string, tables: Array<{ tableId?: string; ordinal?: number }>): string[] {
     const candidates: Array<{ ordinal: number; gameId: string }> = [];
     for (const table of tables) {
         if (!isString(table.tableId) || !hasContent(table.tableId) || !isNumber(table.ordinal)) continue;
@@ -187,9 +189,27 @@ export function firstTournamentTableGameId(tournamentId: string, tables: Array<{
             continue;
         }
     }
-    if (isEmpty(candidates)) return tournamentGameId(tournamentId, 1);
+    if (isEmpty(candidates)) return [tournamentGameId(tournamentId, 1)];
     candidates.sort((a, b) => a.ordinal - b.ordinal || a.gameId.localeCompare(b.gameId));
-    return candidates[0].gameId;
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const candidate of candidates) {
+        const key = candidate.gameId.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        ids.push(candidate.gameId);
+    }
+    return ids;
+}
+
+/** Game id of the first table (lowest ordinal). `t1` when the tournament has no table yet. */
+export function firstTournamentTableGameId(tournamentId: string, tables: Array<{ tableId?: string; ordinal?: number }>): string {
+    return tournamentTableGameIds(tournamentId, tables)[0];
+}
+
+/** Tables to walk for this entry. Falls back to the first-table id when the record listed none. */
+export function tableGameIdsOf(entry: Pick<PlayerTournamentEntry, "gameId" | "tableGameIds">): string[] {
+    return hasElements(entry.tableGameIds) ? entry.tableGameIds : [entry.gameId];
 }
 
 function resultPlaces(results: TournamentStateDTO["results"] | undefined): GameResultPlace[] {
@@ -233,6 +253,7 @@ export function tournamentEntryFromRegistration(
         registerHeight: registration.height,
         buyIn,
         gameId: firstTournamentTableGameId(state.tournamentId, state.tables),
+        tableGameIds: tournamentTableGameIds(state.tournamentId, state.tables),
         status: state.status,
         results: resultPlaces(state.results)
     };

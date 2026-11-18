@@ -8,7 +8,8 @@ import {
     mergeHistoryHands,
     playerHandFromState,
     unlistedHands,
-    viewerPlayedHand
+    viewerPlayedHand,
+    wonAmountFromSnapshots
 } from "./handHistoryCards";
 
 const state = {
@@ -126,4 +127,99 @@ const handRow = (hand_number: number): PlayerHand => ({
     block_height: 10,
     community_cards: [],
     winner_count: 0
+});
+
+describe("wonAmountFromSnapshots", () => {
+    const hero = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
+
+    it("uses winners[] when the end snapshot still has them", () => {
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [{ address: hero, amount: "600" }, { address: "other", amount: "100" }],
+            previousActions: [{ playerId: hero, action: "call", amount: "200" }],
+            players: [{ address: hero, stack: "0" }]
+        })).toBe(600);
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [{ address: "other", amount: "900" }],
+            previousActions: [{ playerId: hero, action: "fold", amount: "" }],
+            players: [{ address: hero, stack: "5000" }]
+        })).toBe(0);
+    });
+
+    it("derives the pot share from the next hand's starting stack when winners[] is empty", () => {
+        // 14 Nov MTT hand 39: shoved 1445, next hand stack 3190.
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [],
+            previousActions: [{ playerId: hero, action: "all-in", amount: "1445" }],
+            players: [{ address: hero, stack: "0", sumOfBets: "1445" }]
+        }, {
+            players: [{ address: hero, stack: "3190", sumOfBets: "0" }]
+        })).toBe(3190);
+
+        // 14 Nov MTT hand 2: won the 110 pot; start 4980, end stack 4940, contrib 40.
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [],
+            previousActions: [
+                { playerId: hero, action: "call", amount: "20" },
+                { playerId: hero, action: "bet", amount: "20" }
+            ],
+            players: [{ address: hero, stack: "4940" }]
+        }, {
+            players: [{ address: hero, stack: "5050" }]
+        })).toBe(110);
+
+        // 16 Nov MTT t2 hand 8: next hand already posted the 80 big blind.
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [],
+            previousActions: [
+                { playerId: hero, action: "call", amount: "60" },
+                { playerId: hero, action: "call", amount: "120" },
+                { playerId: hero, action: "call", amount: "300" }
+            ],
+            players: [{ address: hero, stack: "4280", sumOfBets: "0" }]
+        }, {
+            players: [{ address: hero, stack: "5760", sumOfBets: "80" }]
+        })).toBe(1560);
+    });
+
+    it("is 0 when the player folded or left the table without a recorded pot", () => {
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [],
+            previousActions: [
+                { playerId: hero, action: "post-big-blind", amount: "40" },
+                { playerId: hero, action: "fold", amount: "" }
+            ],
+            players: [{ address: hero, stack: "4900" }]
+        }, {
+            players: [{ address: hero, stack: "4900" }]
+        })).toBe(0);
+
+        expect(wonAmountFromSnapshots(hero, {
+            winners: [],
+            previousActions: [{ playerId: hero, action: "all-in", amount: "1830" }],
+            players: [{ address: hero, stack: "0" }]
+        }, {
+            players: [{ address: "other", stack: "9000" }]
+        })).toBe(0);
+    });
+
+    it("builds a recovered row with the derived won_amount and does not duplicate an indexer hand", () => {
+        const end = {
+            handNumber: 39,
+            communityCards: ["AH"],
+            winners: [],
+            previousActions: [{ playerId: "hero", seat: 6, action: "all-in", amount: "1445" }],
+            players: [{ seat: 6, address: "hero", status: "all-in", stack: "0" }]
+        } as unknown as TexasHoldemStateDTO;
+        const next = {
+            handNumber: 40,
+            winners: [],
+            previousActions: [],
+            players: [{ seat: 6, address: "hero", status: "active", stack: "3190", sumOfBets: "0" }]
+        } as unknown as TexasHoldemStateDTO;
+        const recovered = playerHandFromState("0xabc-t1", end, "hero", 1059931, next);
+        expect(recovered).toMatchObject({ game_id: "0xabc-t1", hand_number: 39, won_amount: 3190, block_height: 1059931 });
+        const indexed = [{ ...recovered!, won_amount: 0, community_cards: [] }];
+        expect(mergeHistoryHands(indexed, [recovered!]).map(hand => hand.won_amount)).toEqual([0]);
+        expect(mergeHistoryHands([], [recovered!]).map(hand => hand.won_amount)).toEqual([3190]);
+    });
 });

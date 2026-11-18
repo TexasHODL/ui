@@ -19,11 +19,18 @@ interface UseRecoveredHandsResult {
  * Hands the indexer omitted for this wallet, once its own list has finished
  * loading. A new wallet or network drops the previous result immediately.
  */
+export interface RecoverHandsOptions {
+    /** Extra tables to search, such as every `<tournamentId>-t*` from getTournament. */
+    extraGameIds?: readonly string[];
+    endedHands?: (gameId: string) => Promise<Array<Pick<PlayerHand, "game_id" | "hand_number" | "block_height">>>;
+}
+
 export function useRecoveredHands(
     address: string | null,
     listed: PlayerHand[],
     listedComplete: boolean,
-    networks: NetworkEndpoints[]
+    networks: NetworkEndpoints[],
+    options?: RecoverHandsOptions
 ): UseRecoveredHandsResult {
     const indexerApi = useIndexerApi();
     const rpcFor = useCometRpcApiFactory();
@@ -36,13 +43,16 @@ export function useRecoveredHands(
 
     const listedKey = useMemo(() => listed.map(handKey).join("\n"), [listed]);
     const networksKey = networks.map(network => network.rpc).join("|");
+    const extraGameIds = options?.extraGameIds ?? [];
+    const extraKey = extraGameIds.join("\n");
+    const endedHands = options?.endedHands;
 
     useEffect(() => {
         setHands([]);
         setStates(new Map());
         setRecovering(false);
         setSearched(false);
-    }, [address, networksKey]);
+    }, [address, networksKey, extraKey]);
 
     useEffect(() => {
         if (!address || !listedComplete) return;
@@ -56,6 +66,8 @@ export function useRecoveredHands(
             gameHands: (gameId, offset) => indexerApi.getHands(gameId, offset, historyGameHandPageSize),
             rpcFor,
             networks,
+            extraGameIds,
+            endedHands,
             signal: controller.signal
         })
             .then(recovered => {
@@ -75,7 +87,7 @@ export function useRecoveredHands(
             cancelled = true;
             controller.abort();
         };
-    }, [address, listedComplete, listedKey, networksKey, networks, indexerApi, rpcFor]);
+    }, [address, listedComplete, listedKey, networksKey, networks, extraKey, extraGameIds, endedHands, indexerApi, rpcFor]);
 
     return { hands, states, recovering, searched };
 }

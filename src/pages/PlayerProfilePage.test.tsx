@@ -96,7 +96,14 @@ jest.mock("../hooks/player/usePlayerTournamentEntries", () => ({
 }));
 jest.mock("../hooks/wallet/useCosmosWallet", () => ({ useCosmosWallet: () => ({ address: null }) }));
 jest.mock("../context/NetworkContext", () => ({
+    NETWORK_PRESETS: [],
     useNetwork: () => ({ currentNetwork: { name: "Texas Hodl", rest: "https://node.texashodl.net", rpc: "rpc" } })
+}));
+jest.mock("../context/CosmosApiContext", () => ({
+    useCosmosApi: () => ({ getAllTransactionsMatching: async () => ({ tx_responses: [] }) })
+}));
+jest.mock("../hooks/player/useRecoveredHands", () => ({
+    useRecoveredHands: () => ({ hands: [], states: new Map(), recovering: false, searched: true })
 }));
 jest.mock("../hooks/player/useMyHandHistory", () => ({
     useMyHandHistory: () => ({ hands: [], error: "", complete: true, loading: false, reload: mockReloadHands })

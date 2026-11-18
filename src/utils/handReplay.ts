@@ -26,6 +26,12 @@ export function handEndedQuery(gameId: string, handNumber: number): string {
     return handEventQuery("hand_ended", gameId, handNumber);
 }
 
+/** All `hand_ended` events for one table. `gameId` must be a queryable id. */
+export function handEndedTableQuery(gameId: string): string {
+    assertQueryableGameId(gameId);
+    return `hand_ended.game_id='${gameId}'`;
+}
+
 /** CometBFT tx_search query for the block where hand `handNumber` of `gameId` started. */
 export function handStartedQuery(gameId: string, handNumber: number): string {
     return handEventQuery("hand_started", gameId, handNumber);
