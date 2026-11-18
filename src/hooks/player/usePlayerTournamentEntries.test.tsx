@@ -129,3 +129,13 @@ test("a failed registration query leaves entries empty", async () => {
     expect(result.current.entries).toEqual([]);
     expect(result.current.error).toBe("offline");
 });
+
+test("returns a stable empty entry list while registrations are still loading", () => {
+    mockApi.getAllTransactionsMatching.mockReturnValue(new Promise(() => undefined));
+    const { result, rerender } = renderHook(() => usePlayerTournamentEntries(PLAYER));
+    expect(result.current.loading).toBe(true);
+    const first = result.current.entries;
+    expect(first).toEqual([]);
+    rerender();
+    expect(result.current.entries).toBe(first);
+});

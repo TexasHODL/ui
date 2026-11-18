@@ -25,6 +25,8 @@ export interface RecoverHandsOptions {
     endedHands?: (gameId: string) => Promise<Array<Pick<PlayerHand, "game_id" | "hand_number" | "block_height">>>;
 }
 
+const NO_EXTRA_GAME_IDS: readonly string[] = [];
+
 export function useRecoveredHands(
     address: string | null,
     listed: PlayerHand[],
@@ -43,9 +45,21 @@ export function useRecoveredHands(
 
     const listedKey = useMemo(() => listed.map(handKey).join("\n"), [listed]);
     const networksKey = networks.map(network => network.rpc).join("|");
-    const extraGameIds = options?.extraGameIds ?? [];
+    const extraGameIds = options?.extraGameIds ?? NO_EXTRA_GAME_IDS;
     const extraKey = extraGameIds.join("\n");
     const endedHands = options?.endedHands;
+
+    // Identity-unstable callbacks and arrays must not abort an in-flight search.
+    const extraGameIdsRef = useRef(extraGameIds);
+    extraGameIdsRef.current = extraGameIds;
+    const endedHandsRef = useRef(endedHands);
+    endedHandsRef.current = endedHands;
+    const networksRef = useRef(networks);
+    networksRef.current = networks;
+    const indexerApiRef = useRef(indexerApi);
+    indexerApiRef.current = indexerApi;
+    const rpcForRef = useRef(rpcFor);
+    rpcForRef.current = rpcFor;
 
     useEffect(() => {
         setHands([]);
@@ -62,12 +76,12 @@ export function useRecoveredHands(
         recoverUnlistedHands({
             address,
             listed: listedRef.current,
-            sessions: offset => indexerApi.getPlayerSessions(address, historySessionPageSize, offset),
-            gameHands: (gameId, offset) => indexerApi.getHands(gameId, offset, historyGameHandPageSize),
-            rpcFor,
-            networks,
-            extraGameIds,
-            endedHands,
+            sessions: offset => indexerApiRef.current.getPlayerSessions(address, historySessionPageSize, offset),
+            gameHands: (gameId, offset) => indexerApiRef.current.getHands(gameId, offset, historyGameHandPageSize),
+            rpcFor: rpcForRef.current,
+            networks: networksRef.current,
+            extraGameIds: extraGameIdsRef.current,
+            endedHands: endedHandsRef.current,
             signal: controller.signal
         })
             .then(recovered => {
@@ -87,7 +101,7 @@ export function useRecoveredHands(
             cancelled = true;
             controller.abort();
         };
-    }, [address, listedComplete, listedKey, networksKey, networks, extraKey, extraGameIds, endedHands, indexerApi, rpcFor]);
+    }, [address, listedComplete, listedKey, networksKey, extraKey]);
 
     return { hands, states, recovering, searched };
 }

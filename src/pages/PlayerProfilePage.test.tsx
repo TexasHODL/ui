@@ -40,6 +40,8 @@ const mockRefetchClaims = jest.fn();
 const mockRefetchTournaments = jest.fn();
 const mockRefetchWallet = jest.fn();
 const mockReloadHands = jest.fn();
+const recoveredDefault = () => ({ hands: [] as never[], states: new Map(), recovering: false, searched: true });
+let mockRecovered = recoveredDefault();
 
 let mockProfileState: { profile: PlayerProfile | null; loading: boolean; error: string | null } = {
     profile,
@@ -103,7 +105,7 @@ jest.mock("../context/CosmosApiContext", () => ({
     useCosmosApi: () => ({ getAllTransactionsMatching: async () => ({ tx_responses: [] }) })
 }));
 jest.mock("../hooks/player/useRecoveredHands", () => ({
-    useRecoveredHands: () => ({ hands: [], states: new Map(), recovering: false, searched: true })
+    useRecoveredHands: () => mockRecovered
 }));
 jest.mock("../hooks/player/useMyHandHistory", () => ({
     useMyHandHistory: () => ({ hands: [], error: "", complete: true, loading: false, reload: mockReloadHands })
@@ -153,6 +155,7 @@ describe("PlayerProfilePage volume cards", () => {
         mockRefetchTournaments.mockReset();
         mockRefetchWallet.mockReset();
         mockReloadHands.mockReset();
+        mockRecovered = recoveredDefault();
         mockEntries = [];
         mockRegistrations = [];
         mockUnregistrations = [];
@@ -283,5 +286,18 @@ describe("PlayerProfilePage volume cards", () => {
         expect(mockRefetchTournaments).toHaveBeenCalledWith({ silent: true });
         expect(mockRefetchWallet).toHaveBeenCalledWith({ silent: true });
         expect(mockReloadHands).not.toHaveBeenCalled();
+    });
+
+    it("keeps Hands Played and Playing Style visible while recovered MTT hands are still loading", () => {
+        mockRecovered = { hands: [], states: new Map(), recovering: true, searched: false };
+        renderPage();
+        expect(valueOf("Hands Played")).toBe("480");
+        expect(valueOf("Sessions")).toBe("83");
+        const styleValue = (label: string) => screen.getByText(label).parentElement?.nextElementSibling?.textContent ?? "";
+        expect(styleValue("VPIP")).not.toBe("…");
+        expect(styleValue("PFR")).not.toBe("…");
+        expect(styleValue("Aggression")).not.toBe("…");
+        expect(styleValue("WTSD")).not.toBe("…");
+        expect(styleValue("W$SD")).not.toBe("…");
     });
 });

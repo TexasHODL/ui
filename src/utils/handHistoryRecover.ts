@@ -223,7 +223,10 @@ async function statesAroundHandEnd(
     return { state, nextState };
 }
 
-async function confirmPlayedHand(candidate: Pick<HandListItem, "game_id" | "hand_number">, deps: RecoverHandsDeps): Promise<RecoveredHand | null> {
+async function confirmPlayedHand(
+    candidate: Pick<HandListItem, "game_id" | "hand_number" | "block_height">,
+    deps: RecoverHandsDeps
+): Promise<RecoveredHand | null> {
     let query: string;
     try {
         query = handEndedQuery(candidate.game_id, candidate.hand_number);
@@ -231,18 +234,34 @@ async function confirmPlayedHand(candidate: Pick<HandListItem, "game_id" | "hand
         console.error("Skipping a hand history id the chain query cannot express:", err);
         return null;
     }
+    const knownHeight =
+        isNumber(candidate.block_height) && Number.isSafeInteger(candidate.block_height) && candidate.block_height > 0
+            ? candidate.block_height
+            : undefined;
+
+    const readAt = async (rpc: HistoryRpc, endHeight: number): Promise<RecoveredHand | null | undefined> => {
+        const snapshots = await statesAroundHandEnd(rpc, candidate.game_id, candidate.hand_number, endHeight, deps.signal);
+        if (!snapshots) return undefined;
+        const hand = playerHandFromState(candidate.game_id, snapshots.state, deps.address, endHeight, snapshots.nextState);
+        // This hand's own state is authoritative: another node will not show a different deal.
+        if (!hand) return null;
+        return { hand, state: snapshots.state };
+    };
+
     for (const network of deps.networks) {
         if (deps.signal?.aborted) return null;
         const rpc = deps.rpcFor(network.rpc);
         try {
+            // The indexer and chain hand_ended rows already carry the end height.
+            // Use that first so MTT tables do not need a tx_search per hand.
+            if (knownHeight !== undefined) {
+                const fromKnown = await readAt(rpc, knownHeight);
+                if (fromKnown !== undefined) return fromKnown;
+            }
             const endHeight = parseTxSearchHeight(await rpc.txSearch(query));
             if (endHeight === null) continue;
-            const snapshots = await statesAroundHandEnd(rpc, candidate.game_id, candidate.hand_number, endHeight, deps.signal);
-            if (!snapshots) continue;
-            const hand = playerHandFromState(candidate.game_id, snapshots.state, deps.address, endHeight, snapshots.nextState);
-            // This hand's own state is authoritative: another node will not show a different deal.
-            if (!hand) return null;
-            return { hand, state: snapshots.state };
+            const fromSearch = await readAt(rpc, endHeight);
+            if (fromSearch !== undefined) return fromSearch;
         } catch (err) {
             console.error(`Hand history lookup ${candidate.game_id}#${candidate.hand_number} on ${network.name}:`, err);
         }
@@ -262,23 +281,32 @@ export async function recoverUnlistedHands(deps: RecoverHandsDeps): Promise<Reco
             ...(deps.extraGameIds ?? [])
         ])];
         const candidates: Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> = [];
-        for (const gameId of gameIds) {
-            if (deps.signal?.aborted) break;
-            let gameHands: Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> = await collectPages(
-                offset => deps.gameHands(gameId, offset),
-                deps.signal
-            );
-            if (deps.endedHands && isExtraGameId(deps.extraGameIds, gameId)) {
-                try {
-                    const ended = await deps.endedHands(gameId);
-                    if (hasElements(ended)) gameHands = [...gameHands, ...unlistedHands(gameHands, ended)];
-                } catch (err) {
-                    console.error(`Failed to list hand_ended events for ${gameId}:`, err);
+        // Session tables are listed in parallel. A serial walk of dozens of tables
+        // was long enough to leave the profile Stats cards on an ellipsis.
+        const collected: Array<Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">>> = gameIds.map(() => []);
+        await mapPool(
+            gameIds.map((_, index) => index),
+            deps.concurrency ?? 4,
+            async index => {
+                const gameId = gameIds[index];
+                let gameHands: Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> = await collectPages(
+                    offset => deps.gameHands(gameId, offset),
+                    deps.signal
+                );
+                if (deps.endedHands && isExtraGameId(deps.extraGameIds, gameId)) {
+                    try {
+                        const ended = await deps.endedHands(gameId);
+                        if (hasElements(ended)) gameHands = [...gameHands, ...unlistedHands(gameHands, ended)];
+                    } catch (err) {
+                        console.error(`Failed to list hand_ended events for ${gameId}:`, err);
+                    }
                 }
-            }
-            const windows = sessions.filter(session => session.game_id === gameId);
-            candidates.push(...unlistedHands(deps.listed, gameHands).filter(hand => inSession(hand.block_height, windows)));
-        }
+                const windows = sessions.filter(session => session.game_id === gameId);
+                collected[index] = unlistedHands(deps.listed, gameHands).filter(hand => inSession(hand.block_height, windows));
+            },
+            deps.signal
+        );
+        for (const rows of collected) candidates.push(...rows);
         candidates.sort((a, b) => b.block_height - a.block_height || b.hand_number - a.hand_number);
         const claimed = new Set<string>();
         await mapPool(candidates, deps.concurrency ?? 4, async candidate => {
