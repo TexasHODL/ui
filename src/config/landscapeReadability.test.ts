@@ -1,6 +1,6 @@
 import { landscapeCommunityCardSize, landscapeHoleCardSize, mobileCardUnit, MOBILE_HOLE_CARD_HEIGHT, MOBILE_HOLE_CARD_WIDTH, communityCardHeight } from "./mobileCardSizing";
 import { mobileCardObstacles, mobileFeltContains, placeMobileRailMarkers } from "./landscapeSeatEdges";
-import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_LANDSCAPE_9_TOP_OUTSET, MOBILE_LANDSCAPE_9_WING_OUTSET, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
+import { calculateZoom, getAllPositions, getDeckOrigin, getSeatPositions, getStageDims, getSeatCoords, getContentBounds, getTableTransform, MOBILE_LANDSCAPE_BANNER_HALF, MOBILE_LANDSCAPE_HEIGHT_STRETCH, MOBILE_LANDSCAPE_WIDTH_STRETCH, MOBILE_LANDSCAPE_9_TOP_OUTSET, MOBILE_LANDSCAPE_9_WING_OUTSET, DESKTOP_9_OUTSET, MOBILE_PORTRAIT_HEIGHT_STRETCH, mobileLandscapeHeightStretch, mobileLandscapeWidthStretch, mobilePortraitHeightStretch, notePortraitSize, TABLE_HEIGHT, TABLE_WIDTH, type TableSize } from "./stageGeometry";
 
 describe("landscape mobile readability", () => {
     const oldWidth = window.innerWidth;
@@ -214,6 +214,82 @@ describe("landscape mobile readability", () => {
         window.matchMedia = (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
         Object.defineProperty(window, "innerWidth", { configurable: true, value: 1440 });
         Object.defineProperty(window, "innerHeight", { configurable: true, value: 900 });
+        const desktopRaw = getSeatPositions(9);
+        const desktopPlaced = getAllPositions(9);
+        expect(parseFloat(desktopPlaced.players[1].left)).toBeCloseTo(parseFloat(desktopRaw[1].left) - DESKTOP_9_OUTSET, 5);
+        expect(parseFloat(desktopPlaced.players[8].left)).toBeCloseTo(parseFloat(desktopRaw[8].left) + DESKTOP_9_OUTSET, 5);
+        expect(parseFloat(desktopPlaced.players[4].left)).toBeCloseTo(parseFloat(desktopRaw[4].left) - DESKTOP_9_OUTSET, 5);
+        expect(parseFloat(desktopPlaced.players[5].left)).toBeCloseTo(parseFloat(desktopRaw[5].left) + DESKTOP_9_OUTSET, 5);
+        for (const index of [0, 2, 3, 6, 7]) {
+            expect(desktopPlaced.players[index].left).toBe(desktopRaw[index].left);
+            expect(desktopPlaced.players[index].top).toBe(desktopRaw[index].top);
+        }
+        expect(desktopPlaced.players[1].top).toBe(desktopRaw[1].top);
+        expect(desktopPlaced.players[8].top).toBe(desktopRaw[8].top);
+        expect(desktopPlaced.players[4].top).toBe(desktopRaw[4].top);
+        expect(desktopPlaced.players[5].top).toBe(desktopRaw[5].top);
+    });
+
+    test("spreads 9-seat wings and the top pair outward on desktop only", () => {
+        const finePointer = (query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent() { return false; }, onchange: null }) as MediaQueryList;
+        const check = (width: number, height: number) => {
+            window.matchMedia = finePointer;
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: height });
+            const raw = getSeatPositions(9);
+            const placed = getAllPositions(9);
+            const x = (seat: { left: string }) => parseFloat(seat.left);
+            const y = (seat: { top: string }) => parseFloat(seat.top);
+            expect(x(placed.players[1])).toBeCloseTo(x(raw[1]) - DESKTOP_9_OUTSET, 5);
+            expect(x(placed.players[8])).toBeCloseTo(x(raw[8]) + DESKTOP_9_OUTSET, 5);
+            expect(x(placed.players[4])).toBeCloseTo(x(raw[4]) - DESKTOP_9_OUTSET, 5);
+            expect(x(placed.players[5])).toBeCloseTo(x(raw[5]) + DESKTOP_9_OUTSET, 5);
+            expect(y(placed.players[1])).toBeCloseTo(y(raw[1]), 5);
+            expect(y(placed.players[8])).toBeCloseTo(y(raw[8]), 5);
+            expect(y(placed.players[4])).toBeCloseTo(y(raw[4]), 5);
+            expect(y(placed.players[5])).toBeCloseTo(y(raw[5]), 5);
+            for (const index of [0, 2, 3, 6, 7]) {
+                expect(x(placed.players[index])).toBeCloseTo(x(raw[index]), 5);
+                expect(y(placed.players[index])).toBeCloseTo(y(raw[index]), 5);
+            }
+            expect(x(placed.vacantPlayers[1])).toBeCloseTo(x(placed.players[1]), 5);
+            expect(x(placed.vacantPlayers[8])).toBeCloseTo(x(placed.players[8]), 5);
+            expect(x(placed.vacantPlayers[4])).toBeCloseTo(x(placed.players[4]), 5);
+            expect(x(placed.vacantPlayers[5])).toBeCloseTo(x(placed.players[5]), 5);
+            const holeGap = x(placed.holeCards[0].first) - x(placed.players[0]);
+            expect(x(placed.holeCards[1].first) - x(placed.players[1])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[8].second) - x(placed.players[8])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.holeCards[4].first) - x(placed.players[4])).toBeCloseTo(holeGap, 0);
+            expect(x(placed.holeCards[5].second) - x(placed.players[5])).toBeCloseTo(x(placed.holeCards[0].second) - x(placed.players[0]), 0);
+            expect(x(placed.turnAnimations[1])).toBeCloseTo(x(placed.players[1]), 0);
+            expect(x(placed.winAnimations[8])).toBeCloseTo(x(placed.players[8]), 0);
+        };
+        // Keep a clear chip-follows-seat check via tablet (same landscape ring, no desktop outset).
+        check(1280, 720);
+        const tabletWidth = 1024;
+        const tabletHeight = 650;
+        window.matchMedia = finePointer;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: tabletWidth });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: tabletHeight });
+        const tablet = getAllPositions(9);
+        check(1280, 720);
+        const desktop = (() => {
+            window.matchMedia = finePointer;
+            Object.defineProperty(window, "innerWidth", { configurable: true, value: 1280 });
+            Object.defineProperty(window, "innerHeight", { configurable: true, value: 720 });
+            return getAllPositions(9);
+        })();
+        const x = (seat: { left: string }) => parseFloat(seat.left);
+        expect(x(desktop.chips[1])).toBeCloseTo(x(tablet.chips[1]) - DESKTOP_9_OUTSET, 5);
+        expect(x(desktop.chips[8])).toBeCloseTo(x(tablet.chips[8]) + DESKTOP_9_OUTSET, 5);
+        expect(x(desktop.chips[4])).toBeCloseTo(x(tablet.chips[4]) - DESKTOP_9_OUTSET, 5);
+        expect(x(desktop.chips[5])).toBeCloseTo(x(tablet.chips[5]) + DESKTOP_9_OUTSET, 5);
+        check(1920, 1080);
+        check(1440, 900);
+
+        window.matchMedia = finePointer;
+        Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+        Object.defineProperty(window, "innerHeight", { configurable: true, value: 650 });
         expect(getAllPositions(9).players.map(seat => seat.left)).toEqual(getSeatPositions(9).map(seat => seat.left));
     });
 

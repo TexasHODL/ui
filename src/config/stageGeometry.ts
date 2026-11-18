@@ -807,6 +807,14 @@ export const MOBILE_LANDSCAPE_9_WING_OUTSET = 48;
 export const MOBILE_LANDSCAPE_9_TOP_OUTSET = 28;
 
 /**
+ * Table-div pixels that move 9-seat desktop wings (2 and 9) and the top
+ * pair (5 and 6) outward. 32.3 table-div px is 20 CSS px at a 1280×720
+ * desktop preview window (zoom ≈ 0.6188). Y stays put. Phone landscape
+ * and portrait are unchanged.
+ */
+export const DESKTOP_9_OUTSET = 32.3;
+
+/**
  * 9-seat mobile landscape only. Seat 2 starts at the midpoint between
  * the right edge of seat 3 and the left edge of seat 1, then is pushed
  * further outward from the hero so the user has more space. Seat 9 is
@@ -848,10 +856,49 @@ function centerMobileLandscapeWingSeats(positions: PositionArrays, tableSize: Ta
     };
 }
 
+/**
+ * 9-seat desktop only. Move seats 2 and 5 left, and 6 and 9 right, by
+ * {@link DESKTOP_9_OUTSET} table-div pixels (20 CSS px at 1280×720).
+ * Chips, hole cards, and animations travel with their seats. Y is unchanged.
+ */
+function spreadDesktopNineSeats(positions: PositionArrays, tableSize: TableSize): PositionArrays {
+    if (getViewportMode() !== "desktop" || tableSize !== 9) return positions;
+    const dx = new Map<number, number>([
+        [1, -DESKTOP_9_OUTSET],
+        [8, DESKTOP_9_OUTSET],
+        [4, -DESKTOP_9_OUTSET],
+        [5, DESKTOP_9_OUTSET]
+    ]);
+    const shift = (pos: Position, index: number): Position => {
+        const delta = dx.get(index);
+        if (!delta) return pos;
+        const left = Math.round((parseFloat(pos.left) + delta) * 10) / 10;
+        return { ...pos, left: `${left}px` };
+    };
+    const shiftAll = (list: Position[]) => list.map(shift);
+    return {
+        ...positions,
+        players: shiftAll(positions.players),
+        vacantPlayers: shiftAll(positions.vacantPlayers),
+        turnAnimations: shiftAll(positions.turnAnimations),
+        winAnimations: shiftAll(positions.winAnimations),
+        holeCards: positions.holeCards.map((slot, index) => ({
+            first: shift(slot.first, index),
+            second: shift(slot.second, index)
+        })),
+        chips: positions.chips.map((chip, index) => {
+            const delta = dx.get(index);
+            if (!delta) return chip;
+            const left = Math.round((parseFloat(chip.left) + delta) * 10) / 10;
+            return { ...chip, left: `${left}px` };
+        })
+    };
+}
+
 /** Get all position arrays for a given table size, with offsets applied */
 export function getAllPositions(tableSize: TableSize): PositionArrays {
     notePortraitSize(tableSize);
-    return centerMobileLandscapeWingSeats({
+    return spreadDesktopNineSeats(centerMobileLandscapeWingSeats({
         players: applyPositionOffsets(getSeatPositions(tableSize), tableSize, "players"),
         vacantPlayers: applyPositionOffsets(getVacantPositions(tableSize), tableSize, "vacantPlayers"),
         chips: applyChipOffsets(getChipPositions(tableSize), tableSize),
@@ -861,7 +908,7 @@ export function getAllPositions(tableSize: TableSize): PositionArrays {
         winAnimations: applyPositionOffsets(getWinAnimationPositions(tableSize), tableSize, "winAnimations"),
         holeCards: applyHoleCardOffsets(getHoleCardSlotPositions(tableSize), tableSize),
         deck: getDeckOrigin()
-    }, tableSize);
+    }, tableSize), tableSize);
 }
 
 // ─── Bet chips and dealer button beside them ─────────────────────────
