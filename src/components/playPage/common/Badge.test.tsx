@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import Badge from "./Badge";
+import { PreviewSeatActionsContext, type PinnedSeatAction } from "../../../context/PreviewSeatActionsContext";
 
 jest.mock("../../../utils/colorConfig", () => ({
     colors: { accent: { success: "#55dda2" } }
@@ -97,5 +98,26 @@ describe("Badge finished places", () => {
         expect(screen.getByText("0.0%")).toBeInTheDocument();
         expect(screen.queryByTestId("finished-seat-place")).toBeNull();
         expect(container.querySelector(".seat-banner-shell")).not.toHaveClass("seat-banner-suppressed");
+    });
+});
+
+describe("Badge action banner width", () => {
+    it("keeps a long action label inside the stack pill", () => {
+        const pinned: PinnedSeatAction[] = [
+            { action: "", amount: "", isVisible: false, isTextHiding: false, isAnimatingOut: false },
+            { action: "RAISE TO", amount: "$1250.00", isVisible: true, isTextHiding: false, isAnimatingOut: false }
+        ];
+        const { container } = render(
+            <PreviewSeatActionsContext.Provider value={pinned}>
+                <Badge count={2} value={500} />
+            </PreviewSeatActionsContext.Provider>
+        );
+        const pill = container.querySelector(".badge-container") as HTMLElement;
+        const shell = container.querySelector(".seat-banner-shell") as HTMLElement;
+        expect(shell).toHaveAttribute("data-banner-mode", "action");
+        expect(shell).toHaveTextContent("RAISE TO");
+        expect(shell).toHaveTextContent("$1250.00");
+        expect(container.querySelector(".seat-banner-marquee")).not.toBeNull();
+        expect(pill.contains(shell)).toBe(true);
     });
 });

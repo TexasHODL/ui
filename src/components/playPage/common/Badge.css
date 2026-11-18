@@ -122,18 +122,8 @@
   pointer-events: none;
 }
 
-/* Action labels grow past the stack pill when the line is long. The
-   horizontal shift is the `translate` property so the drop animation, which
-   writes `transform`, still keeps the banner centred. */
-.seat-banner-shell[data-banner-mode="action"],
-.seat-banner-shell[data-banner-mode="seat-join"],
-.seat-banner-shell[data-banner-mode="payout"] {
-  left: 50%;
-  right: auto;
-  width: max-content;
-  min-width: 100%;
-  translate: -50% 0;
-}
+/* Action labels stay the stack pill's width. Long lines scroll inside
+   the banner instead of growing past it. */
 
 .seat-banner-box {
   width: 100%;
@@ -235,15 +225,25 @@
 
 /* The banner is 55px and tucks 22px under the stack pill. Desktop type is
    --seat-amount-size, the same variable as the stack amount and the
-   countdown. Mobile keeps the 30px line. The box widens instead of wrapping
-   or clipping. */
+   countdown. Mobile keeps the 30px line. The box stays the pill's width;
+   overflowing text scrolls (or ellipsises when motion is reduced). */
 [data-banner-mode="action"] .seat-banner-box,
 [data-banner-mode="seat-join"] .seat-banner-box,
 [data-banner-mode="payout"] .seat-banner-box {
-  width: max-content;
-  min-width: 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   white-space: nowrap;
   padding: 0 0.5rem 2px;
+  overflow: hidden;
+}
+
+[data-banner-mode="action"] .action-display-content,
+[data-banner-mode="seat-join"] .action-display-content,
+[data-banner-mode="payout"] .action-display-content {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 [data-banner-mode="action"] .action-display-content,
@@ -480,6 +480,51 @@
   visibility: hidden;
 }
 
+/* Overflowing banner text: a seamless loop with a pause at the start. */
+.seat-banner-marquee {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.seat-banner-marquee[data-overflow="true"] {
+  justify-content: flex-start;
+}
+
+.seat-banner-marquee-track {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+}
+
+.seat-banner-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.seat-banner-marquee[data-overflow="true"] .seat-banner-marquee-item {
+  padding-right: 1.5em;
+}
+
+.seat-banner-marquee[data-overflow="true"] .seat-banner-marquee-track {
+  animation: seat-banner-marquee 7.5s linear infinite;
+}
+
+@keyframes seat-banner-marquee {
+  0%, 20% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .action-display-enter,
@@ -492,5 +537,23 @@
 
   .action-display-content {
     transition: none;
+  }
+
+  .seat-banner-marquee[data-overflow="true"] .seat-banner-marquee-track {
+    animation: none;
+    display: block;
+    width: 100%;
+  }
+
+  .seat-banner-marquee[data-overflow="true"] .seat-banner-marquee-item:first-child {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 0;
+  }
+
+  .seat-banner-marquee[data-overflow="true"] .seat-banner-marquee-item[aria-hidden="true"] {
+    display: none;
   }
 } 
