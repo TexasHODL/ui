@@ -96,6 +96,34 @@ function isExtraGameId(extra: readonly string[] | undefined, gameId: string): bo
     return (extra ?? []).some(id => id.toLowerCase() === want);
 }
 
+/**
+ * One row per hand, keeping the later block height. The indexer table list
+ * often stores the start block (the previous hand's `hand_ended`), not the
+ * end block. Chain `hand_ended` rows carry the real end height.
+ */
+export function mergeHandEndHeights(
+    indexed: ReadonlyArray<Pick<HandListItem, "game_id" | "hand_number" | "block_height">>,
+    ended: ReadonlyArray<Pick<HandListItem, "game_id" | "hand_number" | "block_height">>
+): Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> {
+    const byHand = new Map<string, Pick<HandListItem, "game_id" | "hand_number" | "block_height">>();
+    for (const hand of [...indexed, ...ended]) {
+        const key = handKey(hand);
+        const current = byHand.get(key);
+        if (!current || hand.block_height > current.block_height) byHand.set(key, hand);
+    }
+    return [...byHand.values()];
+}
+
+/** True when `next` is a later hand, so the matching snapshot is this hand's end. */
+export function isFollowingHandSnapshot(next: { handNumber?: number } | undefined, handNumber: number): boolean {
+    return isNumber(next?.handNumber) && next.handNumber > handNumber;
+}
+
+/** True when `next` is the previous hand, so the height was this hand's start. */
+export function isPriorHandSnapshot(next: { handNumber?: number } | undefined, handNumber: number): boolean {
+    return isNumber(next?.handNumber) && next.handNumber < handNumber;
+}
+
 export interface RecoveredHand {
     hand: PlayerHand;
     state: TexasHoldemStateDTO;
@@ -220,6 +248,9 @@ async function statesAroundHandEnd(
         }
     }
     if (!state) return null;
+    // The indexer start height shows this hand at endHeight and the previous
+    // hand at endHeight-1. That is not the end — callers must try another height.
+    if (isPriorHandSnapshot(nextState, handNumber)) return null;
     return { state, nextState };
 }
 
@@ -243,17 +274,22 @@ async function confirmPlayedHand(
         const snapshots = await statesAroundHandEnd(rpc, candidate.game_id, candidate.hand_number, endHeight, deps.signal);
         if (!snapshots) return undefined;
         const hand = playerHandFromState(candidate.game_id, snapshots.state, deps.address, endHeight, snapshots.nextState);
-        // This hand's own state is authoritative: another node will not show a different deal.
-        if (!hand) return null;
-        return { hand, state: snapshots.state };
+        if (hand) return { hand, state: snapshots.state };
+        // The player is absent only once this is clearly the end (the next hand
+        // has started, or winners are recorded). A start-of-hand height has no
+        // actions yet and must not skip the real end-height search.
+        if (isFollowingHandSnapshot(snapshots.nextState, candidate.hand_number) || hasElements(snapshots.state.winners)) {
+            return null;
+        }
+        return undefined;
     };
 
     for (const network of deps.networks) {
         if (deps.signal?.aborted) return null;
         const rpc = deps.rpcFor(network.rpc);
         try {
-            // The indexer and chain hand_ended rows already carry the end height.
-            // Use that first so MTT tables do not need a tx_search per hand.
+            // Prefer a known height, but only trust it once the snapshot is the
+            // end of the hand. Indexer table rows are often the start height.
             if (knownHeight !== undefined) {
                 const fromKnown = await readAt(rpc, knownHeight);
                 if (fromKnown !== undefined) return fromKnown;
@@ -296,7 +332,7 @@ export async function recoverUnlistedHands(deps: RecoverHandsDeps): Promise<Reco
                 if (deps.endedHands && isExtraGameId(deps.extraGameIds, gameId)) {
                     try {
                         const ended = await deps.endedHands(gameId);
-                        if (hasElements(ended)) gameHands = [...gameHands, ...unlistedHands(gameHands, ended)];
+                        if (hasElements(ended)) gameHands = mergeHandEndHeights(gameHands, ended);
                     } catch (err) {
                         console.error(`Failed to list hand_ended events for ${gameId}:`, err);
                     }
