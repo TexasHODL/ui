@@ -14,7 +14,10 @@ import {
     tournamentFinishPlaceLabel,
     tournamentRegisteredQuery,
     tournamentRegistrationsFromTxSearch,
+    tournamentSessionCashOut,
+    tournamentUnregistrationsFromTxSearch,
     withTournamentHandLeaveBlocks,
+    withTournamentRefunds,
     type PlayerTournamentEntry,
     type TournamentRegistration
 } from "./playerTournamentEntries";
@@ -189,5 +192,48 @@ describe("tournament record", () => {
 
     it("fills a missing event amount from the tournament options", () => {
         expect(registrationBuyIn({}, state().options)).toBe(2_200_000);
+    });
+});
+
+describe("tournament unregistrations", () => {
+    it("reads a successful refund and ignores a failed tx", () => {
+        const found = tournamentUnregistrationsFromTxSearch(
+            {
+                tx_responses: [
+                    {
+                        code: 1,
+                        height: "1",
+                        txhash: "FAIL",
+                        events: [{ type: "tournament_unregistered", attributes: [{ key: "player", value: PLAYER }, { key: "tournament_id", value: TID }, { key: "refund", value: "1" }] }]
+                    },
+                    {
+                        code: 0,
+                        height: "1091316",
+                        txhash: "UNREG",
+                        events: [
+                            {
+                                type: "tournament_unregistered",
+                                attributes: [
+                                    { key: "tournament_id", value: TID },
+                                    { key: "player", value: PLAYER },
+                                    { key: "refund", value: "1600000" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            PLAYER
+        );
+        expect(found).toEqual([{ tournamentId: TID, height: 1_091_316, txhash: "UNREG", refund: 1_600_000 }]);
+
+        const unfinished = entryFrom({ status: "registering", results: [] });
+        const withRefund = withTournamentRefunds([unfinished], found);
+        expect(withRefund[0].refund).toBe(1_600_000);
+        expect(tournamentSessionCashOut(withRefund[0], PLAYER)).toBe(1_600_000);
+
+        const finished = entryFrom();
+        expect(withTournamentRefunds([finished], found)[0].refund).toBeUndefined();
+        expect(tournamentSessionCashOut(finished, PLAYER)).toBeUndefined();
     });
 });

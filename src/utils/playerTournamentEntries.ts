@@ -29,6 +29,11 @@ export function tournamentRegisteredQuery(player: string): string {
     return `tournament_registered.player='${player}'`;
 }
 
+/** Event query for one player's tournament unregistrations. `player` must already be a safe address. */
+export function tournamentUnregisteredQuery(player: string): string {
+    return `tournament_unregistered.player='${player}'`;
+}
+
 const TOURNAMENT_ID = /^0x[0-9a-fA-F]+$/;
 
 /** One successful `tournament_registered` event. */
@@ -38,6 +43,15 @@ export interface TournamentRegistration {
     /** Micro-USDC from the event. Absent when the attribute was missing or not a digit string. */
     buyIn?: number;
     entryFee?: number;
+}
+
+/** One successful `tournament_unregistered` event. */
+export interface TournamentUnregistration {
+    tournamentId: string;
+    height: number;
+    txhash: string;
+    /** Micro-USDC refunded (the escrowed net buy-in). */
+    refund?: number;
 }
 
 /** What Session History needs from one tournament the player registered for. */
@@ -50,6 +64,10 @@ export interface PlayerTournamentEntry {
     gameId: string;
     status: TournamentStateDTO["status"];
     results: GameResultPlace[];
+    /** Unregister refund, micro-USDC, when they left before the start. */
+    refund?: number;
+    /** Block the refund was committed in, when they unregistered. */
+    unregisterHeight?: number;
 }
 
 type HandBlock = Pick<PlayerHand, "game_id" | "block_height">;
@@ -226,6 +244,10 @@ function ownResult(results: GameResultPlace[], player: string): GameResultPlace 
 }
 
 /** Payout of a finished tournament, when the player cashed. 0 stays off the row so the bust cell can show the place. */
+export function paidTournamentPrize(entry: PlayerTournamentEntry, player: string): number | undefined {
+    return paidCashOut(entry, player);
+}
+
 function paidCashOut(entry: PlayerTournamentEntry, player: string): number | undefined {
     if (entry.status !== "finished" || !hasContent(player)) return undefined;
     const mine = ownResult(entry.results, player);
@@ -260,15 +282,75 @@ export function lastTournamentHandBlock(hands: readonly HandBlock[], tournamentI
     return best;
 }
 
-function coversTournament(gameId: string, tournamentId: string): boolean {
+export function coversTournament(gameId: string, tournamentId: string): boolean {
     const key = tournamentId.toLowerCase();
     if (gameId.toLowerCase() === key) return true;
     const table = parseTournamentGameId(gameId);
     return hasValue(table) && table.tournamentId.toLowerCase() === key;
 }
 
+/**
+ * Cash-out for a history row: a paid finish wins, otherwise an unregister refund.
+ * A bust (payout 0) stays unset so the bust cell can show the place.
+ */
+export function tournamentSessionCashOut(entry: PlayerTournamentEntry, player: string): number | undefined {
+    const prize = paidCashOut(entry, player);
+    if (hasValue(prize)) return prize;
+    return hasValue(entry.refund) ? entry.refund : undefined;
+}
+
+/**
+ * Attach the latest unregister refund that happened at or after this entry's
+ * registration. A finished tournament keeps its result; the refund is still
+ * counted in the profile totals from the unregistration list.
+ */
+export function withTournamentRefunds(
+    entries: PlayerTournamentEntry[],
+    unregistrations: TournamentUnregistration[]
+): PlayerTournamentEntry[] {
+    if (isEmpty(unregistrations)) return entries;
+    const latest = new Map<string, TournamentUnregistration>();
+    const ordered = [...unregistrations].sort(
+        (a, b) => a.height - b.height || a.txhash.localeCompare(b.txhash) || a.tournamentId.localeCompare(b.tournamentId)
+    );
+    for (const unreg of ordered) {
+        latest.set(unreg.tournamentId.toLowerCase(), unreg);
+    }
+    return entries.map(entry => {
+        const unreg = latest.get(entry.tournamentId.toLowerCase());
+        if (!hasValue(unreg) || unreg.height < entry.registerHeight) return entry;
+        if (entry.status === "finished") return entry;
+        const next: PlayerTournamentEntry = { ...entry, unregisterHeight: unreg.height };
+        if (hasValue(unreg.refund)) next.refund = unreg.refund;
+        return next;
+    });
+}
+
+/** Successful `tournament_unregistered` events for `player` in a GetTxsEvent body. */
+export function tournamentUnregistrationsFromTxSearch(body: unknown, player: string): TournamentUnregistration[] {
+    if (!hasContent(player) || !isRecord(body) || !Array.isArray(body.tx_responses)) return [];
+    const want = player.toLowerCase();
+    const found: TournamentUnregistration[] = [];
+    for (const tx of body.tx_responses) {
+        if (!isRecord(tx) || !txSucceeded(tx) || !isString(tx.txhash) || !hasContent(tx.txhash)) continue;
+        const height = txHeight(tx);
+        if (!hasValue(height) || !Array.isArray(tx.events)) continue;
+        for (const event of tx.events) {
+            if (!isRecord(event) || event.type !== "tournament_unregistered") continue;
+            const fields = attributesOf(event);
+            if (!hasContent(fields.player) || fields.player.toLowerCase() !== want) continue;
+            if (!hasContent(fields.tournament_id) || !TOURNAMENT_ID.test(fields.tournament_id)) continue;
+            const unreg: TournamentUnregistration = { tournamentId: fields.tournament_id, height, txhash: tx.txhash };
+            const refund = eventMicro(fields.refund);
+            if (hasValue(refund)) unreg.refund = refund;
+            found.push(unreg);
+        }
+    }
+    return found;
+}
+
 function tournamentSessionRow(entry: PlayerTournamentEntry, hands: readonly HandBlock[], player: string): SessionPrizeRow {
-    const cashOut = paidCashOut(entry, player);
+    const cashOut = tournamentSessionCashOut(entry, player);
     const leave = lastTournamentHandBlock(hands, entry.tournamentId, entry.registerHeight);
     // A zero payout stays off the row. sessionBustFor only labels an open seat,
     // and the leave block for that seat is filled in beside the row.

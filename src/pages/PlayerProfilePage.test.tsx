@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import type { PlayerProfile } from "../types/players";
 import PlayerProfilePage from "./PlayerProfilePage";
@@ -34,6 +34,13 @@ const profile: PlayerProfile = {
     longest_session_blocks: 0
 };
 
+const mockRefetchProfile = jest.fn();
+const mockRefetchSessions = jest.fn();
+const mockRefetchClaims = jest.fn();
+const mockRefetchTournaments = jest.fn();
+const mockRefetchWallet = jest.fn();
+const mockReloadHands = jest.fn();
+
 let mockProfileState: { profile: PlayerProfile | null; loading: boolean; error: string | null } = {
     profile,
     loading: false,
@@ -45,6 +52,19 @@ let mockWalletState: { micro: string | null; loading: boolean; error: string | n
     error: null
 };
 const mockUseBalance = jest.fn();
+let mockEntries: Array<{
+    tournamentId: string;
+    registerHeight: number;
+    buyIn: number;
+    gameId: string;
+    status: string;
+    results: Array<{ place: number; playerId: string; payout: string }>;
+    refund?: number;
+}> = [];
+let mockRegistrations: Array<{ tournamentId: string; height: number; buyIn?: number; entryFee?: number }> = [];
+let mockUnregistrations: Array<{ tournamentId: string; height: number; txhash: string; refund?: number }> = [];
+let mockClaims: Array<{ gameId: string; amount: number; height: number; txhash: string }> = [];
+let mockTournamentsLoading = false;
 
 jest.mock("../components/common/AnimatedBackground", () => ({ AnimatedBackground: () => null }));
 jest.mock("../components/common", () => ({ Pagination: () => null }));
@@ -55,22 +75,31 @@ jest.mock("../components/players/ProfileActivityPanel", () => ({ ProfileActivity
 jest.mock("../components/players/ProfileHeaderAvatar", () => ({
     ProfileHeaderAvatar: () => <span data-testid="player-avatar" />
 }));
-jest.mock("../hooks/player/usePlayerProfile", () => ({ usePlayerProfile: () => mockProfileState }));
+jest.mock("../hooks/player/usePlayerProfile", () => ({
+    usePlayerProfile: () => ({ ...mockProfileState, refetch: mockRefetchProfile })
+}));
 jest.mock("../hooks/player/usePlayerSessions", () => ({
-    useAllPlayerSessions: () => ({ sessions: [], loading: false, error: null, total: 0 })
+    useAllPlayerSessions: () => ({ sessions: [], loading: false, error: null, total: 0, refetch: mockRefetchSessions })
 }));
 jest.mock("../hooks/player/usePlayerPrizeClaims", () => ({
-    usePlayerPrizeClaims: () => ({ claims: [], loading: false, error: null })
+    usePlayerPrizeClaims: () => ({ claims: mockClaims, loading: false, error: null, refetch: mockRefetchClaims })
 }));
 jest.mock("../hooks/player/usePlayerTournamentEntries", () => ({
-    usePlayerTournamentEntries: () => ({ entries: [], loading: false, error: null })
+    usePlayerTournamentEntries: () => ({
+        entries: mockEntries,
+        registrations: mockRegistrations,
+        unregistrations: mockUnregistrations,
+        loading: mockTournamentsLoading,
+        error: null,
+        refetch: mockRefetchTournaments
+    })
 }));
 jest.mock("../hooks/wallet/useCosmosWallet", () => ({ useCosmosWallet: () => ({ address: null }) }));
 jest.mock("../context/NetworkContext", () => ({
     useNetwork: () => ({ currentNetwork: { name: "Texas Hodl", rest: "https://node.texashodl.net", rpc: "rpc" } })
 }));
 jest.mock("../hooks/player/useMyHandHistory", () => ({
-    useMyHandHistory: () => ({ hands: [], error: "", complete: true, loading: false })
+    useMyHandHistory: () => ({ hands: [], error: "", complete: true, loading: false, reload: mockReloadHands })
 }));
 jest.mock("../hooks/player/useSessionGameMeta", () => ({ useSessionGameMeta: () => ({ byId: {}, loading: false }) }));
 jest.mock("../hooks/player/useSessionEliminationBlocks", () => ({ useSessionEliminationBlocks: () => ({}) }));
@@ -110,7 +139,18 @@ describe("PlayerProfilePage volume cards", () => {
         mockProfileState = { profile, loading: false, error: null };
         mockWalletState = { micro: "39892077", loading: false, error: null };
         mockUseBalance.mockReset();
-        mockUseBalance.mockImplementation(() => mockWalletState);
+        mockUseBalance.mockImplementation(() => ({ ...mockWalletState, refetch: mockRefetchWallet }));
+        mockRefetchProfile.mockReset();
+        mockRefetchSessions.mockReset();
+        mockRefetchClaims.mockReset();
+        mockRefetchTournaments.mockReset();
+        mockRefetchWallet.mockReset();
+        mockReloadHands.mockReset();
+        mockEntries = [];
+        mockRegistrations = [];
+        mockUnregistrations = [];
+        mockClaims = [];
+        mockTournamentsLoading = false;
         writeText.mockReset();
         writeText.mockResolvedValue(undefined);
         Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
@@ -177,5 +217,64 @@ describe("PlayerProfilePage volume cards", () => {
         expect(screen.getByText("Recent activity panel")).toBeInTheDocument();
         expect(screen.queryByText("Wallet Balance")).not.toBeInTheDocument();
         expect(screen.queryByText("Loading player...")).not.toBeInTheDocument();
+    });
+
+    it("adds MTT registration buy-ins, unregister refunds and prize claims to the volume cards", () => {
+        const mtt = "0x8d34bcce49c988106bba58a5052c3ecf9a6532f142e19dcfba4230ea3ff8a872";
+        const cancelled = "0x2d5b0fc4d40f7fc9c60965f9292d0d96d8c8353e2cbd02c6700fb08a124aa444";
+        const refunded = "0x73751f1291e04944194f347071e5b3f135ae9ea9f2e56766b4ce1e8cb20484ad";
+        mockEntries = [
+            {
+                tournamentId: mtt,
+                registerHeight: 1,
+                buyIn: 2_200_000,
+                gameId: `${mtt}-t1`,
+                status: "finished",
+                results: [{ place: 1, playerId: ADDRESS, payout: "6400000" }]
+            },
+            {
+                tournamentId: cancelled,
+                registerHeight: 2,
+                buyIn: 10_000,
+                gameId: `${cancelled}-t1`,
+                status: "cancelled",
+                results: []
+            },
+            {
+                tournamentId: refunded,
+                registerHeight: 3,
+                buyIn: 2_200_000,
+                gameId: `${refunded}-t1`,
+                status: "registered",
+                results: []
+            }
+        ];
+        mockRegistrations = [
+            { tournamentId: mtt, height: 1, buyIn: 2_000_000, entryFee: 200_000 },
+            { tournamentId: cancelled, height: 2, buyIn: 10_000, entryFee: 0 },
+            { tournamentId: refunded, height: 3, buyIn: 2_000_000, entryFee: 200_000 }
+        ];
+        mockUnregistrations = [{ tournamentId: refunded, height: 4, txhash: "UNREG", refund: 1_600_000 }];
+        mockClaims = [];
+        renderPage();
+        // Indexer 62.90 + 2.20 + 0.01 + 2.20 = 67.31 buy-in; 76.82 + 6.40 + 1.60 = 84.82 cash-out.
+        const volume = (label: string) => screen.getAllByText(label)[0].nextElementSibling?.textContent ?? "";
+        expect(volume("Total Buy-In")).toBe("67.31");
+        expect(volume("Total Cash-Out")).toBe("84.82");
+        expect(volume("Net Profit")).toBe("17.51");
+    });
+
+    it("refreshes stats silently when the tab becomes visible and does not reload hand history", () => {
+        renderPage();
+        Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "visible" });
+        act(() => {
+            document.dispatchEvent(new Event("visibilitychange"));
+        });
+        expect(mockRefetchProfile).toHaveBeenCalledWith({ silent: true });
+        expect(mockRefetchSessions).toHaveBeenCalledWith({ silent: true });
+        expect(mockRefetchClaims).toHaveBeenCalledWith({ silent: true });
+        expect(mockRefetchTournaments).toHaveBeenCalledWith({ silent: true });
+        expect(mockRefetchWallet).toHaveBeenCalledWith({ silent: true });
+        expect(mockReloadHands).not.toHaveBeenCalled();
     });
 });
