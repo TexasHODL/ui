@@ -7,6 +7,8 @@ import {
     earliestRegistrations,
     firstTournamentTableGameId,
     mergeTournamentSessionRows,
+    tableGameIdsOf,
+    tournamentTableGameIds,
     readTournamentRecord,
     registrationBuyIn,
     sessionMetasWithTournamentEntries,
@@ -111,6 +113,8 @@ describe("finished busted MTT row", () => {
 
     it("shows no payout and the finishing place, with buy-in plus entry fee", () => {
         expect(entry.gameId).toBe(`${TID}-t1`);
+        expect(entry.tableGameIds).toEqual([`${TID}-t1`]);
+        expect(tableGameIdsOf(entry)).toEqual([`${TID}-t1`]);
         expect(rows).toEqual([{ gameId: `${TID}-t1`, joinBlock: REGISTERED_AT, buyIn: 2_200_000, isPrize: false }]);
         expect(sessionGameLabel(metas[entry.gameId], entry.gameId)).toEqual({
             title: "Multi-table tournament · Texas Hold'em",
@@ -235,5 +239,20 @@ describe("tournament unregistrations", () => {
         const finished = entryFrom();
         expect(withTournamentRefunds([finished], found)[0].refund).toBeUndefined();
         expect(tournamentSessionCashOut(finished, PLAYER)).toBeUndefined();
+    });
+});
+
+describe("tournament table game ids", () => {
+    it("lists every table and falls back to t1 when the record has none", () => {
+        expect(tournamentTableGameIds(TID, [
+            { tableId: `${TID}/t2`, ordinal: 2 },
+            { tableId: `${TID}/t1`, ordinal: 1 }
+        ])).toEqual([`${TID}-t1`, `${TID}-t2`]);
+        expect(firstTournamentTableGameId(TID, [
+            { tableId: `${TID}/t2`, ordinal: 2 },
+            { tableId: `${TID}/t1`, ordinal: 1 }
+        ])).toBe(`${TID}-t1`);
+        expect(tournamentTableGameIds(TID, [])).toEqual([`${TID}-t1`]);
+        expect(tableGameIdsOf({ gameId: `${TID}-t1` })).toEqual([`${TID}-t1`]);
     });
 });

@@ -13,7 +13,7 @@ import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { PlayerHand, PlayerSession, PlayerSessionsResponse } from "../types/players";
 import type { HandListItem, HandListResponse } from "../pages/explorer/types";
 import { encodeStringField1, parseAbciStringResponse } from "./abciQuery";
-import { hasElements } from "./guards";
+import { hasContent, hasElements, isNumber, isRecord, isString } from "./guards";
 import { handKey } from "./handHistory";
 import { playerHandFromState, unlistedHands } from "./handHistoryCards";
 import { GAME_STATE_PUBLIC_PATH, handEndedQuery, parseGameStateJson, parseTxSearchHeight, snapshotHeights } from "./handReplay";
@@ -30,8 +30,70 @@ export interface RecoverHandsDeps {
     gameHands: (gameId: string, offset: number) => Promise<HandListResponse>;
     rpcFor: (rpc: string) => HistoryRpc;
     networks: NetworkEndpoints[];
+    /** Extra tables to search, such as every `<tournamentId>-t*` from getTournament. */
+    extraGameIds?: readonly string[];
+    /**
+     * Chain `hand_ended` rows for one table. Used on extra (MTT) tables to
+     * fill indexer gaps â€” the table list routinely omits hand 1.
+     */
+    endedHands?: (gameId: string) => Promise<Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">>>;
     signal?: AbortSignal;
     concurrency?: number;
+}
+
+function attributesOf(event: Record<string, unknown>): Record<string, string> {
+    const fields: Record<string, string> = {};
+    if (!Array.isArray(event.attributes)) return fields;
+    for (const attribute of event.attributes) {
+        if (!isRecord(attribute) || !isString(attribute.key) || !isString(attribute.value)) continue;
+        fields[attribute.key] = attribute.value;
+    }
+    return fields;
+}
+
+function txSucceeded(tx: Record<string, unknown>): boolean {
+    if (isNumber(tx.code)) return tx.code === 0;
+    return isString(tx.code) && tx.code === "0";
+}
+
+function txHeight(tx: Record<string, unknown>): number | undefined {
+    if (isNumber(tx.height) && Number.isSafeInteger(tx.height) && tx.height > 0) return tx.height;
+    if (!isString(tx.height) || !/^\d+$/.test(tx.height)) return undefined;
+    const height = Number(tx.height);
+    return Number.isSafeInteger(height) && height > 0 ? height : undefined;
+}
+
+/** Finished hands of one table from a GetTxsEvent body (`hand_ended.game_id='â€¦'`). */
+export function endedHandsFromTxSearch(body: unknown, gameId: string): Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> {
+    if (!isRecord(body) || !Array.isArray(body.tx_responses) || !hasContent(gameId)) return [];
+    const want = gameId.toLowerCase();
+    const byHand = new Map<number, Pick<HandListItem, "game_id" | "hand_number" | "block_height">>();
+    for (const tx of body.tx_responses) {
+        if (!isRecord(tx) || !txSucceeded(tx)) continue;
+        const height = txHeight(tx);
+        if (!Array.isArray(tx.events)) continue;
+        for (const event of tx.events) {
+            if (!isRecord(event) || event.type !== "hand_ended") continue;
+            const fields = attributesOf(event);
+            if ((fields.game_id ?? "").toLowerCase() !== want) continue;
+            if (!/^\d+$/.test(fields.hand_number ?? "")) continue;
+            const handNumber = Number(fields.hand_number);
+            const blockHeight = /^\d+$/.test(fields.block_height ?? "") ? Number(fields.block_height) : height;
+            if (!Number.isSafeInteger(handNumber) || handNumber < 1) continue;
+            if (!hasValueNumber(blockHeight)) continue;
+            if (!byHand.has(handNumber)) byHand.set(handNumber, { game_id: gameId, hand_number: handNumber, block_height: blockHeight });
+        }
+    }
+    return [...byHand.values()];
+}
+
+function hasValueNumber(value: number | undefined): value is number {
+    return isNumber(value) && Number.isSafeInteger(value) && value > 0;
+}
+
+function isExtraGameId(extra: readonly string[] | undefined, gameId: string): boolean {
+    const want = gameId.toLowerCase();
+    return (extra ?? []).some(id => id.toLowerCase() === want);
 }
 
 export interface RecoveredHand {
@@ -136,6 +198,31 @@ export async function loadPublicHandState(
     return null;
 }
 
+async function statesAroundHandEnd(
+    rpc: Pick<HistoryRpc, "abciQuery">,
+    gameId: string,
+    handNumber: number,
+    endHeight: number,
+    signal?: AbortSignal
+): Promise<{ state: TexasHoldemStateDTO; nextState?: TexasHoldemStateDTO } | null> {
+    const request = encodeStringField1(gameId);
+    let state: TexasHoldemStateDTO | undefined;
+    let nextState: TexasHoldemStateDTO | undefined;
+    for (const height of snapshotHeights(endHeight)) {
+        if (signal?.aborted) return null;
+        try {
+            const json = parseAbciStringResponse(await rpc.abciQuery(GAME_STATE_PUBLIC_PATH, request, height));
+            const parsed = parseGameStateJson(json);
+            if (parsed.state.handNumber === handNumber) state = parsed.state;
+            else nextState = parsed.state;
+        } catch (err) {
+            console.error(`Public state for ${gameId} hand ${handNumber} at block ${height}:`, err);
+        }
+    }
+    if (!state) return null;
+    return { state, nextState };
+}
+
 async function confirmPlayedHand(candidate: Pick<HandListItem, "game_id" | "hand_number">, deps: RecoverHandsDeps): Promise<RecoveredHand | null> {
     let query: string;
     try {
@@ -150,12 +237,12 @@ async function confirmPlayedHand(candidate: Pick<HandListItem, "game_id" | "hand
         try {
             const endHeight = parseTxSearchHeight(await rpc.txSearch(query));
             if (endHeight === null) continue;
-            const state = await stateAtHeights(rpc, candidate.game_id, candidate.hand_number, endHeight, deps.signal);
-            if (!state) continue;
-            const hand = playerHandFromState(candidate.game_id, state, deps.address, endHeight);
+            const snapshots = await statesAroundHandEnd(rpc, candidate.game_id, candidate.hand_number, endHeight, deps.signal);
+            if (!snapshots) continue;
+            const hand = playerHandFromState(candidate.game_id, snapshots.state, deps.address, endHeight, snapshots.nextState);
             // This hand's own state is authoritative: another node will not show a different deal.
             if (!hand) return null;
-            return { hand, state };
+            return { hand, state: snapshots.state };
         } catch (err) {
             console.error(`Hand history lookup ${candidate.game_id}#${candidate.hand_number} on ${network.name}:`, err);
         }
@@ -169,14 +256,26 @@ export async function recoverUnlistedHands(deps: RecoverHandsDeps): Promise<Reco
     const states = new Map<string, TexasHoldemStateDTO>();
     try {
         const sessions = await collectPages(offset => deps.sessions(offset), deps.signal);
-        const gameIds = [...new Set([...sessions.map(session => session.game_id), ...deps.listed.map(hand => hand.game_id)])];
-        const candidates: HandListItem[] = [];
+        const gameIds = [...new Set([
+            ...sessions.map(session => session.game_id),
+            ...deps.listed.map(hand => hand.game_id),
+            ...(deps.extraGameIds ?? [])
+        ])];
+        const candidates: Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> = [];
         for (const gameId of gameIds) {
             if (deps.signal?.aborted) break;
-            const gameHands = await collectPages(
+            let gameHands: Array<Pick<HandListItem, "game_id" | "hand_number" | "block_height">> = await collectPages(
                 offset => deps.gameHands(gameId, offset),
                 deps.signal
             );
+            if (deps.endedHands && isExtraGameId(deps.extraGameIds, gameId)) {
+                try {
+                    const ended = await deps.endedHands(gameId);
+                    if (hasElements(ended)) gameHands = [...gameHands, ...unlistedHands(gameHands, ended)];
+                } catch (err) {
+                    console.error(`Failed to list hand_ended events for ${gameId}:`, err);
+                }
+            }
             const windows = sessions.filter(session => session.game_id === gameId);
             candidates.push(...unlistedHands(deps.listed, gameHands).filter(hand => inSession(hand.block_height, windows)));
         }

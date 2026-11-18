@@ -10,6 +10,8 @@
 import { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { captureFinishingHand } from "./finishingHand";
 import type { PlayerHand } from "../types/players";
+import { contributionFromActions, type ContributionAction } from "./handContribution";
+import { hasContent, hasElements, hasValue, isNumber } from "./guards";
 import { handKey } from "./handHistory";
 
 /** Actions the indexer ignores when deciding who played a hand. */
@@ -71,29 +73,103 @@ export function cardsForHistoryHand(state: TexasHoldemStateDTO, viewer: string):
     return { board: hand.board, seats };
 }
 
+/** A whole chip (or micro-USDC) count. Blank is 0. Anything else is unreadable. */
+export function chipCount(value: string | number | undefined): number | undefined {
+    if (value === undefined || value === "") return 0;
+    if (isNumber(value)) return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+    if (!/^\d+$/.test(value)) return undefined;
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) ? parsed : undefined;
+}
+
+function seatOf(state: { players?: ReadonlyArray<{ address?: string; stack?: string; sumOfBets?: string | number; status?: string }> } | undefined, playerId: string) {
+    const want = playerId.toLowerCase();
+    return (state?.players ?? []).find(seat => seat.address?.toLowerCase() === want);
+}
+
+/**
+ * Chips this player holds on a snapshot, including any street bets still in
+ * front of them. Used for the start of the next hand, where blinds may already
+ * be posted (stack is lower by that amount; sumOfBets holds it).
+ */
+export function awardedChipCount(player: { stack?: string; sumOfBets?: string | number } | undefined): number | undefined {
+    const stack = chipCount(player?.stack);
+    if (!hasValue(stack)) return undefined;
+    const bets = chipCount(player?.sumOfBets);
+    if (!hasValue(bets)) return undefined;
+    const total = stack + bets;
+    return Number.isSafeInteger(total) ? total : undefined;
+}
+
+/**
+ * The engine's winner.amount, or â€” when `winners` was already cleared at
+ * `hand_ended` â€” next-hand stack minus this hand's start plus contribution.
+ * Always 0 or a positive pot share, never a negative loss.
+ */
+export function wonAmountFromSnapshots(
+    playerId: string,
+    endState: {
+        previousActions?: ContributionAction[] | null;
+        players?: ReadonlyArray<{ address?: string; stack?: string; sumOfBets?: string | number }>;
+        winners?: ReadonlyArray<{ address?: string; amount?: string }>;
+    },
+    nextState?: {
+        players?: ReadonlyArray<{ address?: string; stack?: string; sumOfBets?: string | number }>;
+    }
+): number | undefined {
+    if (!hasContent(playerId)) return undefined;
+    if (hasElements(endState.winners)) {
+        let share = 0;
+        for (const winner of endState.winners) {
+            if (winner.address?.toLowerCase() !== playerId.toLowerCase()) continue;
+            const amount = chipCount(winner.amount);
+            if (!hasValue(amount)) return undefined;
+            share += amount;
+            if (!Number.isSafeInteger(share)) return undefined;
+        }
+        return share;
+    }
+    const contributed = contributionFromActions(endState.previousActions, playerId);
+    if (!hasValue(contributed)) return undefined;
+    const endStack = chipCount(seatOf(endState, playerId)?.stack);
+    if (!hasValue(endStack)) return undefined;
+    const start = endStack + contributed;
+    if (!Number.isSafeInteger(start)) return undefined;
+    const nextSeat = seatOf(nextState, playerId);
+    if (!hasValue(nextState) || !hasValue(nextSeat)) return 0;
+    const awarded = awardedChipCount(nextSeat);
+    if (!hasValue(awarded)) return undefined;
+    const raw = awarded - start + contributed;
+    if (!Number.isFinite(raw) || !Number.isSafeInteger(raw)) return undefined;
+    return raw > 0 ? raw : 0;
+}
+
 /**
  * A hand the wallet played, shaped like an indexer row, or null when this
  * snapshot does not show them playing it.
+ *
+ * `nextState` is the public snapshot at the `hand_ended` block when that
+ * block already started the next hand. It supplies awarded stacks when
+ * `winners` has been cleared.
  */
 export function playerHandFromState(
     gameId: string,
     state: TexasHoldemStateDTO,
     viewer: string,
-    blockHeight: number
+    blockHeight: number,
+    nextState?: TexasHoldemStateDTO
 ): PlayerHand | null {
     if (!viewerPlayedHand(state, viewer)) return null;
     const you = viewer.toLowerCase();
     const player = (state.players ?? []).find(seat => seat.address?.toLowerCase() === you);
     const action = (state.previousActions ?? []).find(entry => entry.playerId?.toLowerCase() === you);
-    const won = (state.winners ?? [])
-        .filter(winner => winner.address?.toLowerCase() === you)
-        .reduce((sum, winner) => sum + Number(winner.amount || 0), 0);
+    const won = wonAmountFromSnapshots(viewer, state, nextState);
     return {
         game_id: gameId,
         hand_number: state.handNumber,
         seat: player?.seat ?? action?.seat ?? 0,
         status: player?.status ?? "",
-        won_amount: Number.isFinite(won) ? won : 0,
+        won_amount: hasValue(won) ? won : 0,
         block_height: blockHeight,
         community_cards: (state.communityCards ?? []).map(card => card.toUpperCase()),
         winner_count: state.winners?.length ?? 0

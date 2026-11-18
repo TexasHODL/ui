@@ -3,7 +3,8 @@ import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { HandListItem } from "../pages/explorer/types";
 import type { PlayerHand, PlayerSession } from "../types/players";
 import { encodeStringField1 } from "./abciQuery";
-import { loadPublicHandState, recoverUnlistedHands, type HistoryRpc } from "./handHistoryRecover";
+import { endedHandsFromTxSearch, loadPublicHandState, recoverUnlistedHands, type HistoryRpc } from "./handHistoryRecover";
+import { handEndedTableQuery } from "./handReplay";
 
 const network: NetworkEndpoints = {
     name: "Localhost",
@@ -230,5 +231,121 @@ describe("loadPublicHandState", () => {
         expect(calls).toEqual([80, 79]);
         expect(state?.handNumber).toBe(15);
         expect(state?.players?.[0].holeCards).toEqual(["QH", "QD"]);
+    });
+});
+
+describe("endedHandsFromTxSearch", () => {
+    it("reads unique finished hands for one table and ignores other tables or failed txs", () => {
+        const gameId = "0xabc-t1";
+        expect(handEndedTableQuery(gameId)).toBe("hand_ended.game_id='0xabc-t1'");
+        const rows = endedHandsFromTxSearch({
+            tx_responses: [
+                {
+                    code: 0,
+                    height: "10",
+                    events: [{ type: "hand_ended", attributes: [
+                        { key: "game_id", value: gameId },
+                        { key: "hand_number", value: "1" },
+                        { key: "block_height", value: "10" }
+                    ] }]
+                },
+                {
+                    code: 0,
+                    height: "20",
+                    events: [{ type: "hand_ended", attributes: [
+                        { key: "game_id", value: "0xother-t1" },
+                        { key: "hand_number", value: "2" },
+                        { key: "block_height", value: "20" }
+                    ] }]
+                },
+                {
+                    code: 1,
+                    height: "30",
+                    events: [{ type: "hand_ended", attributes: [
+                        { key: "game_id", value: gameId },
+                        { key: "hand_number", value: "3" }
+                    ] }]
+                }
+            ]
+        }, gameId);
+        expect(rows).toEqual([{ game_id: gameId, hand_number: 1, block_height: 10 }]);
+    });
+});
+
+describe("recoverUnlistedHands extra tournament tables", () => {
+    it("searches extra MTT table ids and fills indexer gaps from endedHands", async () => {
+        const t1 = "0xabc-t1";
+        const t2 = "0xabc-t2";
+        const searched: string[] = [];
+        const err = jest.spyOn(console, "error").mockImplementation(() => {});
+        const recovered = await recoverUnlistedHands({
+            address: "hero",
+            listed: [],
+            sessions: async () => ({ data: [], pagination: { limit: 100, offset: 0, total: 0 } }),
+            gameHands: async gameId =>
+                gameId === t1
+                    ? { data: [gameHand(2, 40, t1)], pagination: { limit: 1000, offset: 0, total: 1 } }
+                    : { data: null as unknown as ReturnType<typeof gameHand>[], pagination: { limit: 1000, offset: 0, total: 0 } },
+            endedHands: async gameId =>
+                gameId === t1 ? [{ game_id: t1, hand_number: 1, block_height: 10 }] : [],
+            extraGameIds: [t1, t2],
+            rpcFor: () => ({
+                txSearch: async query => {
+                    searched.push(query);
+                    const match = query.match(/hand_number='(\d+)'/);
+                    return { result: { txs: [{ height: String(Number(match?.[1]) * 10) }] } };
+                },
+                abciQuery: async (_path, _data, height) => {
+                    const handNumber = Math.round(height / 10);
+                    if (height % 10 === 0) return abci(JSON.stringify({ handNumber: handNumber + 1 }));
+                    return abci(JSON.stringify(chainState(handNumber, true)));
+                }
+            }),
+            networks: [network]
+        });
+        err.mockRestore();
+        expect(searched.sort()).toEqual([
+            `hand_ended.game_id='${t1}' AND hand_ended.hand_number='1'`,
+            `hand_ended.game_id='${t1}' AND hand_ended.hand_number='2'`
+        ]);
+        expect(recovered.hands.map(hand => hand.hand_number).sort((a, b) => a - b)).toEqual([1, 2]);
+        expect(recovered.hands.every(hand => hand.game_id === t1)).toBe(true);
+    });
+
+    it("derives won_amount from the next hand when winners[] is empty", async () => {
+        const mtt = "0xabc-t1";
+        const hero = "hero";
+        const err = jest.spyOn(console, "error").mockImplementation(() => {});
+        const endState = {
+            handNumber: 39,
+            communityCards: [],
+            winners: [],
+            previousActions: [{ playerId: hero, seat: 6, action: "all-in", amount: "1445" }],
+            players: [{ seat: 6, address: hero, status: "all-in", stack: "0", sumOfBets: "1445" }]
+        };
+        const nextState = {
+            handNumber: 40,
+            winners: [],
+            previousActions: [],
+            players: [{ seat: 6, address: hero, status: "active", stack: "3190", sumOfBets: "0" }]
+        };
+        const recovered = await recoverUnlistedHands({
+            address: hero,
+            listed: [],
+            sessions: async () => ({ data: [], pagination: { limit: 100, offset: 0, total: 0 } }),
+            gameHands: async () => ({ data: [gameHand(39, 1059931, mtt)], pagination: { limit: 1000, offset: 0, total: 1 } }),
+            extraGameIds: [mtt],
+            rpcFor: () => ({
+                txSearch: async () => ({ result: { txs: [{ height: "1059931" }] } }),
+                abciQuery: async (_path, _data, height) => {
+                    if (height === 1059931) return abci(JSON.stringify(nextState));
+                    return abci(JSON.stringify(endState));
+                }
+            }),
+            networks: [network]
+        });
+        err.mockRestore();
+        expect(recovered.hands).toHaveLength(1);
+        expect(recovered.hands[0]).toMatchObject({ game_id: mtt, hand_number: 39, won_amount: 3190, block_height: 1059931 });
     });
 });

@@ -66,6 +66,7 @@ test("reads registrations and each tournament from the configured node", async (
             registerHeight: 1_059_332,
             buyIn: 2_200_000,
             gameId: `${TID}-t1`,
+            tableGameIds: [`${TID}-t1`],
             status: "finished",
             results: [{ place: 6, playerId: PLAYER, payout: "0" }]
         }
