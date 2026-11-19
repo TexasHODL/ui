@@ -3,7 +3,7 @@ import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { HandListItem } from "../pages/explorer/types";
 import type { PlayerHand, PlayerSession } from "../types/players";
 import { encodeStringField1 } from "./abciQuery";
-import { endedHandsFromTxSearch, loadPublicHandState, recoverUnlistedHands, type HistoryRpc } from "./handHistoryRecover";
+import { endedHandsFromTxSearch, isFollowingHandSnapshot, isPriorHandSnapshot, loadPublicHandState, mergeHandEndHeights, recoverUnlistedHands, type HistoryRpc } from "./handHistoryRecover";
 import { handEndedTableQuery } from "./handReplay";
 
 const network: NetworkEndpoints = {
@@ -273,6 +273,33 @@ describe("endedHandsFromTxSearch", () => {
     });
 });
 
+
+describe("mergeHandEndHeights", () => {
+    it("keeps the later chain end height when the indexer stored the start block", () => {
+        const t1 = "0xabc-t1";
+        const merged = mergeHandEndHeights(
+            [gameHand(39, 1_059_926, t1), gameHand(38, 1_059_920, t1)],
+            [{ game_id: t1, hand_number: 39, block_height: 1_059_931 }, { game_id: t1, hand_number: 1, block_height: 1_059_414 }]
+        );
+        expect(merged).toEqual(expect.arrayContaining([
+            expect.objectContaining({ hand_number: 39, block_height: 1_059_931 }),
+            expect.objectContaining({ hand_number: 38, block_height: 1_059_920 }),
+            expect.objectContaining({ hand_number: 1, block_height: 1_059_414 })
+        ]));
+        expect(merged.filter(hand => hand.hand_number === 39)).toHaveLength(1);
+    });
+});
+
+describe("hand-end snapshot direction", () => {
+    it("distinguishes the next hand from the previous one", () => {
+        expect(isFollowingHandSnapshot({ handNumber: 40 }, 39)).toBe(true);
+        expect(isFollowingHandSnapshot({ handNumber: 38 }, 39)).toBe(false);
+        expect(isFollowingHandSnapshot(undefined, 39)).toBe(false);
+        expect(isPriorHandSnapshot({ handNumber: 38 }, 39)).toBe(true);
+        expect(isPriorHandSnapshot({ handNumber: 40 }, 39)).toBe(false);
+    });
+});
+
 describe("recoverUnlistedHands extra tournament tables", () => {
     it("searches extra MTT table ids and fills indexer gaps from endedHands", async () => {
         const t1 = "0xabc-t1";
@@ -375,5 +402,93 @@ describe("recoverUnlistedHands extra tournament tables", () => {
         err.mockRestore();
         expect(recovered.hands).toHaveLength(1);
         expect(recovered.hands[0]).toMatchObject({ game_id: mtt, hand_number: 39, won_amount: 3190, block_height: 1059931 });
+    });
+
+    // Live 14 Nov MTT: indexer listed hand 39 at 1059926 (the start, when 38 ended).
+    // The real hand_ended height is 1059931. Using the start height as the end
+    // saw a preflop seat with no actions and skipped the hand.
+    const startOf39 = {
+        handNumber: 39,
+        communityCards: [],
+        winners: [],
+        previousActions: [],
+        players: [{ seat: 6, address: "hero", status: "active", stack: "1445", sumOfBets: "0" }]
+    };
+    const endOf39 = {
+        handNumber: 39,
+        communityCards: [],
+        winners: [],
+        previousActions: [{ playerId: "hero", seat: 6, action: "all-in", amount: "1445" }],
+        players: [{ seat: 6, address: "hero", status: "all-in", stack: "0", sumOfBets: "1445" }]
+    };
+    const startOf40 = {
+        handNumber: 40,
+        winners: [],
+        previousActions: [],
+        players: [{ seat: 6, address: "hero", status: "active", stack: "3190", sumOfBets: "0" }]
+    };
+    const endOf38 = {
+        handNumber: 38,
+        winners: [],
+        previousActions: [{ playerId: "hero", seat: 6, action: "fold" }],
+        players: [{ seat: 6, address: "hero", status: "folded", stack: "1445", sumOfBets: "0" }]
+    };
+    const liveAbci = async (_path: string, _data: string, height: number) => {
+        if (height === 1_059_931) return abci(JSON.stringify(startOf40));
+        if (height === 1_059_930) return abci(JSON.stringify(endOf39));
+        if (height === 1_059_926) return abci(JSON.stringify(startOf39));
+        if (height === 1_059_925) return abci(JSON.stringify(endOf38));
+        throw new Error(`unexpected height ${height}`);
+    };
+
+    it("prefers the chain end height when the indexer stored the start of the hand", async () => {
+        const mtt = "0x275a79-t1";
+        const searched: string[] = [];
+        const err = jest.spyOn(console, "error").mockImplementation(() => {});
+        const recovered = await recoverUnlistedHands({
+            address: "hero",
+            listed: [],
+            sessions: async () => ({ data: [], pagination: { limit: 100, offset: 0, total: 0 } }),
+            gameHands: async () => ({ data: [gameHand(39, 1_059_926, mtt)], pagination: { limit: 1000, offset: 0, total: 1 } }),
+            endedHands: async () => [{ game_id: mtt, hand_number: 39, block_height: 1_059_931 }],
+            extraGameIds: [mtt],
+            rpcFor: () => ({
+                txSearch: async query => {
+                    searched.push(query);
+                    return { result: { txs: [{ height: "1059931" }] } };
+                },
+                abciQuery: liveAbci
+            }),
+            networks: [network]
+        });
+        err.mockRestore();
+        expect(searched).toEqual([]);
+        expect(recovered.hands).toHaveLength(1);
+        expect(recovered.hands[0]).toMatchObject({ game_id: mtt, hand_number: 39, won_amount: 3190, block_height: 1_059_931 });
+    });
+
+    it("falls back to tx_search when the only known height is the start of the hand", async () => {
+        const mtt = "0x275a79-t1";
+        const searched: string[] = [];
+        const err = jest.spyOn(console, "error").mockImplementation(() => {});
+        const recovered = await recoverUnlistedHands({
+            address: "hero",
+            listed: [],
+            sessions: async () => ({ data: [], pagination: { limit: 100, offset: 0, total: 0 } }),
+            gameHands: async () => ({ data: [gameHand(39, 1_059_926, mtt)], pagination: { limit: 1000, offset: 0, total: 1 } }),
+            extraGameIds: [mtt],
+            rpcFor: () => ({
+                txSearch: async query => {
+                    searched.push(query);
+                    return { result: { txs: [{ height: "1059931" }] } };
+                },
+                abciQuery: liveAbci
+            }),
+            networks: [network]
+        });
+        err.mockRestore();
+        expect(searched).toEqual([`hand_ended.game_id='${mtt}' AND hand_ended.hand_number='39'`]);
+        expect(recovered.hands).toHaveLength(1);
+        expect(recovered.hands[0]).toMatchObject({ game_id: mtt, hand_number: 39, won_amount: 3190, block_height: 1_059_931 });
     });
 });
