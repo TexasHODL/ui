@@ -14,10 +14,14 @@ import {
     sessionMetasWithTournamentEntries,
     tournamentEntryFromRegistration,
     tournamentFinishPlaceLabel,
+    tournamentEntriesByPlayer,
     tournamentRegisteredQuery,
+    tournamentRegistrationsByPlayer,
     tournamentRegistrationsFromTxSearch,
     tournamentSessionCashOut,
+    tournamentUnregistrationsByPlayer,
     tournamentUnregistrationsFromTxSearch,
+    uniqueTournamentIds,
     withTournamentHandLeaveBlocks,
     withTournamentRefunds,
     type PlayerTournamentEntry,
@@ -254,5 +258,60 @@ describe("tournament table game ids", () => {
         ])).toBe(`${TID}-t1`);
         expect(tournamentTableGameIds(TID, [])).toEqual([`${TID}-t1`]);
         expect(tableGameIdsOf({ gameId: `${TID}-t1` })).toEqual([`${TID}-t1`]);
+    });
+});
+
+describe("directory-wide tournament events", () => {
+    it("groups registrations and unregistrations by player and lists unique tournament ids", () => {
+        const other = "b521other";
+        const otherTx = {
+            code: 0,
+            height: "1100000",
+            txhash: "OTHER",
+            events: [
+                {
+                    type: "tournament_registered",
+                    attributes: [
+                        { key: "tournament_id", value: TID },
+                        { key: "player", value: other },
+                        { key: "buy_in", value: "2000000" },
+                        { key: "entry_fee", value: "200000" }
+                    ]
+                }
+            ]
+        };
+        const grouped = tournamentRegistrationsByPlayer({ tx_responses: [tx(0, "1059332"), otherTx, tx(1, "1059000")] });
+        expect(grouped.get(PLAYER)).toEqual([{ tournamentId: TID, height: REGISTERED_AT, buyIn: 2_000_000, entryFee: 200_000 }]);
+        expect(grouped.get(other)?.[0].height).toBe(1_100_000);
+        expect(uniqueTournamentIds([...(grouped.get(PLAYER) ?? []), ...(grouped.get(other) ?? [])])).toEqual([TID]);
+
+        const unregs = tournamentUnregistrationsByPlayer({
+            tx_responses: [
+                {
+                    code: 0,
+                    height: "1091316",
+                    txhash: "UNREG",
+                    events: [
+                        {
+                            type: "tournament_unregistered",
+                            attributes: [
+                                { key: "tournament_id", value: TID },
+                                { key: "player", value: PLAYER },
+                                { key: "refund", value: "1600000" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        });
+        expect(unregs.get(PLAYER)).toEqual([{ tournamentId: TID, height: 1_091_316, txhash: "UNREG", refund: 1_600_000 }]);
+    });
+
+    it("builds entries from records and attaches unregister refunds", () => {
+        const registrations = new Map([[PLAYER, [registration()]]]);
+        const records = new Map([[TID.toLowerCase(), state()]]);
+        const entries = tournamentEntriesByPlayer(registrations, records, new Map());
+        expect(entries.get(PLAYER)?.[0]).toMatchObject({ tournamentId: TID, buyIn: 2_200_000, status: "finished" });
+        expect(tournamentEntriesByPlayer(registrations, new Map(), new Map()).get(PLAYER)).toEqual([]);
     });
 });

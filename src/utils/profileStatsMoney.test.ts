@@ -5,9 +5,11 @@ import {
     addedTournamentBuyIns,
     addedTournamentCashOuts,
     claimsForTournament,
+    playerListWithAllVariants,
     profileMoneyWithAllVariants,
     sessionCoversTournament
 } from "./profileStatsMoney";
+import type { PlayerListItem } from "../types/players";
 
 const PLAYER = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
 const CASH = "0x03dbba56a9a50bd607599b6fab0fc94649498ea08771047e8a3a1483979fc685";
@@ -209,5 +211,87 @@ describe("profileMoneyWithAllVariants", () => {
             totalCashOuts: 6_240_000,
             netProfit: 4_240_000
         });
+    });
+});
+
+const listRow = (player_address: string, net_profit: number): PlayerListItem => ({
+    player_address,
+    vip_tier: "bronze",
+    rakeback_pct: 0,
+    total_hands: 0,
+    total_actions: 0,
+    net_profit,
+    total_rake_contributed: 0
+});
+
+describe("playerListWithAllVariants", () => {
+    it("matches the profile net: indexer plus Sit & Go prizes, MTT buy-ins and a paid finish", () => {
+        const paid = "0x522af6f3faa14816649c2e24a6ab3b951d56b5e85f7cb8803fe72f1a0127a80b";
+        const dust = "0x3d8336114bf407d45e0102ee62c9ea82b4fe9ae9b71fa00a4d87a3bd8f9d9469";
+        const cancelled = "0x2d5b0fc4d40f7fc9c60965f9292d0d96d8c8353e2cbd02c6700fb08a124aa444";
+        const early = "0x275a79b9258009e0a1f4f4f4232cefe25262765f0a5c7c3a86040885ffec5187";
+        const claims = new Map([[PLAYER, [claim({ amount: 62_588_400, gameId: SNG, txhash: "PRIZES" })]]]);
+        const regs = [
+            registration({ tournamentId: paid, height: 1_123_929 }),
+            registration(),
+            registration({ tournamentId: MTT2, height: 1_091_542 }),
+            registration({ tournamentId: dust, buyIn: 10_000, entryFee: 0, height: 1_089_793 }),
+            registration({ tournamentId: cancelled, buyIn: 10_000, entryFee: 0, height: 1_089_413 }),
+            registration({ tournamentId: early, height: 1_059_332 })
+        ];
+        const bust = (tournamentId: string, height: number, place: number, buyIn = 2_200_000): PlayerTournamentEntry =>
+            entry({
+                tournamentId,
+                registerHeight: height,
+                buyIn,
+                gameId: `${tournamentId}-t1`,
+                results: [{ place, playerId: PLAYER, payout: "0" }]
+            });
+        const entries = [
+            entry({
+                tournamentId: paid,
+                registerHeight: 1_123_929,
+                gameId: `${paid}-t1`,
+                results: [{ place: 2, playerId: PLAYER, payout: "5280000" }]
+            }),
+            bust(MTT, 1_107_713, 6),
+            bust(MTT2, 1_091_542, 7),
+            bust(dust, 1_089_793, 3, 10_000),
+            entry({
+                tournamentId: cancelled,
+                registerHeight: 1_089_413,
+                buyIn: 10_000,
+                gameId: `${cancelled}-t1`,
+                status: "cancelled",
+                results: []
+            }),
+            bust(early, 1_059_332, 6)
+        ];
+        const [andrew, other] = playerListWithAllVariants(
+            [listRow(PLAYER, -46_812_200), listRow("b521other", 100)],
+            claims,
+            new Map(),
+            new Map([[PLAYER, regs]]),
+            new Map([[PLAYER, entries]]),
+            new Map()
+        );
+        // Indexer net -46.8122 + Sit & Go prizes 62.5884 would leave the list at 15.7762.
+        // Six MTT buy-ins (4 x 2.20 + 2 x 0.01 = 8.82) and a 5.28 payout bring net to 12.2362.
+        expect(andrew.net_profit).toBe(12_236_200);
+        expect(other.net_profit).toBe(100);
+    });
+
+    it("does not count a Sit & Go prize twice when the indexer already recorded it", () => {
+        const [row] = playerListWithAllVariants(
+            [listRow(PLAYER, 4_240_000)],
+            new Map([[PLAYER, [claim()]]]),
+            new Map([
+                [
+                    PLAYER,
+                    [session({ game_id: SNG, buy_in_amount: 2_000_000, cash_out_amount: 6_240_000, leave_block: 1011858 })]
+                ]
+            ])
+        );
+        expect(row.net_profit).toBe(4_240_000);
     });
 });

@@ -24,6 +24,12 @@ import { parseTournamentState } from "./tournamentBlinds";
 import { placeOrdinal, type GamePrizeMeta, type GameResultPlace } from "./transactionUtils";
 import type { SessionPrizeRow } from "./playerPrizeClaims";
 
+/** Every successful tournament registration. The node accepts this event query. */
+export const ALL_TOURNAMENT_REGISTERED_QUERY = "tournament_registered.player EXISTS";
+
+/** Every successful tournament unregistration. The node accepts this event query. */
+export const ALL_TOURNAMENT_UNREGISTERED_QUERY = "tournament_unregistered.player EXISTS";
+
 /** Event query for one player's tournament registrations. `player` must already be a safe address. */
 export function tournamentRegisteredQuery(player: string): string {
     return `tournament_registered.player='${player}'`;
@@ -122,14 +128,13 @@ function attributesOf(event: Record<string, unknown>): Record<string, string> {
 }
 
 /**
- * Successful `tournament_registered` events for `player` in a GetTxsEvent body.
- * A tx with code !== 0 is not an entry. Ids that aren't a 0x hash are dropped
- * so they are never interpolated into a later query.
+ * Successful `tournament_registered` events in a GetTxsEvent body, grouped by
+ * lowercase player. A tx with code !== 0 is not an entry. Ids that aren't a
+ * 0x hash are dropped so they are never interpolated into a later query.
  */
-export function tournamentRegistrationsFromTxSearch(body: unknown, player: string): TournamentRegistration[] {
-    if (!hasContent(player) || !isRecord(body) || !Array.isArray(body.tx_responses)) return [];
-    const want = player.toLowerCase();
-    const found: TournamentRegistration[] = [];
+export function tournamentRegistrationsByPlayer(body: unknown): Map<string, TournamentRegistration[]> {
+    const grouped = new Map<string, TournamentRegistration[]>();
+    if (!isRecord(body) || !Array.isArray(body.tx_responses)) return grouped;
     for (const tx of body.tx_responses) {
         if (!isRecord(tx) || !txSucceeded(tx)) continue;
         const height = txHeight(tx);
@@ -137,17 +142,29 @@ export function tournamentRegistrationsFromTxSearch(body: unknown, player: strin
         for (const event of tx.events) {
             if (!isRecord(event) || event.type !== "tournament_registered") continue;
             const fields = attributesOf(event);
-            if (!hasContent(fields.player) || fields.player.toLowerCase() !== want) continue;
-            if (!hasContent(fields.tournament_id) || !TOURNAMENT_ID.test(fields.tournament_id)) continue;
+            if (!hasContent(fields.player) || !hasContent(fields.tournament_id) || !TOURNAMENT_ID.test(fields.tournament_id)) continue;
+            const player = fields.player.toLowerCase();
             const registration: TournamentRegistration = { tournamentId: fields.tournament_id, height };
             const buyIn = eventMicro(fields.buy_in);
             if (hasValue(buyIn)) registration.buyIn = buyIn;
             const entryFee = eventMicro(fields.entry_fee);
             if (hasValue(entryFee)) registration.entryFee = entryFee;
-            found.push(registration);
+            const list = grouped.get(player) ?? [];
+            list.push(registration);
+            grouped.set(player, list);
         }
     }
-    return found;
+    return grouped;
+}
+
+/**
+ * Successful `tournament_registered` events for `player` in a GetTxsEvent body.
+ * A tx with code !== 0 is not an entry. Ids that aren't a 0x hash are dropped
+ * so they are never interpolated into a later query.
+ */
+export function tournamentRegistrationsFromTxSearch(body: unknown, player: string): TournamentRegistration[] {
+    if (!hasContent(player)) return [];
+    return tournamentRegistrationsByPlayer(body).get(player.toLowerCase()) ?? [];
 }
 
 /** One registration per tournament: the earliest successful one. */
@@ -347,11 +364,10 @@ export function withTournamentRefunds(
     });
 }
 
-/** Successful `tournament_unregistered` events for `player` in a GetTxsEvent body. */
-export function tournamentUnregistrationsFromTxSearch(body: unknown, player: string): TournamentUnregistration[] {
-    if (!hasContent(player) || !isRecord(body) || !Array.isArray(body.tx_responses)) return [];
-    const want = player.toLowerCase();
-    const found: TournamentUnregistration[] = [];
+/** Successful `tournament_unregistered` events in a GetTxsEvent body, grouped by lowercase player. */
+export function tournamentUnregistrationsByPlayer(body: unknown): Map<string, TournamentUnregistration[]> {
+    const grouped = new Map<string, TournamentUnregistration[]>();
+    if (!isRecord(body) || !Array.isArray(body.tx_responses)) return grouped;
     for (const tx of body.tx_responses) {
         if (!isRecord(tx) || !txSucceeded(tx) || !isString(tx.txhash) || !hasContent(tx.txhash)) continue;
         const height = txHeight(tx);
@@ -359,15 +375,60 @@ export function tournamentUnregistrationsFromTxSearch(body: unknown, player: str
         for (const event of tx.events) {
             if (!isRecord(event) || event.type !== "tournament_unregistered") continue;
             const fields = attributesOf(event);
-            if (!hasContent(fields.player) || fields.player.toLowerCase() !== want) continue;
-            if (!hasContent(fields.tournament_id) || !TOURNAMENT_ID.test(fields.tournament_id)) continue;
+            if (!hasContent(fields.player) || !hasContent(fields.tournament_id) || !TOURNAMENT_ID.test(fields.tournament_id)) continue;
+            const player = fields.player.toLowerCase();
             const unreg: TournamentUnregistration = { tournamentId: fields.tournament_id, height, txhash: tx.txhash };
             const refund = eventMicro(fields.refund);
             if (hasValue(refund)) unreg.refund = refund;
-            found.push(unreg);
+            const list = grouped.get(player) ?? [];
+            list.push(unreg);
+            grouped.set(player, list);
         }
     }
-    return found;
+    return grouped;
+}
+
+/** Successful `tournament_unregistered` events for `player` in a GetTxsEvent body. */
+export function tournamentUnregistrationsFromTxSearch(body: unknown, player: string): TournamentUnregistration[] {
+    if (!hasContent(player)) return [];
+    return tournamentUnregistrationsByPlayer(body).get(player.toLowerCase()) ?? [];
+}
+
+/** Tournament ids in first-seen order, compared case-insensitively. */
+export function uniqueTournamentIds(registrations: Iterable<TournamentRegistration>): string[] {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const registration of registrations) {
+        const key = registration.tournamentId.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        ids.push(registration.tournamentId);
+    }
+    return ids;
+}
+
+/**
+ * History entries for each player who registered, from tournament records and
+ * unregister refunds. A registration whose record is missing is skipped; buy-in
+ * totals can still use the event amounts on that registration.
+ */
+export function tournamentEntriesByPlayer(
+    registrationsByPlayer: Map<string, TournamentRegistration[]>,
+    recordsById: Map<string, TournamentStateDTO>,
+    unregistrationsByPlayer: Map<string, TournamentUnregistration[]>
+): Map<string, PlayerTournamentEntry[]> {
+    const out = new Map<string, PlayerTournamentEntry[]>();
+    registrationsByPlayer.forEach((registrations, player) => {
+        const entries: PlayerTournamentEntry[] = [];
+        for (const registration of earliestRegistrations(registrations)) {
+            const record = recordsById.get(registration.tournamentId.toLowerCase());
+            if (!hasValue(record)) continue;
+            const entry = tournamentEntryFromRegistration(registration, record, player);
+            if (hasValue(entry)) entries.push(entry);
+        }
+        out.set(player, withTournamentRefunds(entries, unregistrationsByPlayer.get(player) ?? []));
+    });
+    return out;
 }
 
 function tournamentSessionRow(entry: PlayerTournamentEntry, hands: readonly HandBlock[], player: string): SessionPrizeRow {

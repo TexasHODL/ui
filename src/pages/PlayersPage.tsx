@@ -1,6 +1,7 @@
 import { formatMicroUsd } from "../utils/moneyDisplay";
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useVisibleRefresh } from "../hooks/useVisibleRefresh";
 
 import { truncateMiddle } from "../utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
@@ -53,6 +54,8 @@ export default function PlayersPage() {
     );
 
     const { players, total, loading, error, refetch } = usePlayersDirectory(params);
+
+    useVisibleRefresh(() => refetch({ silent: true }));
 
     const toggleSort = (field: PlayerSortField) => {
         if (sort === field) {
