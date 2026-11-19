@@ -3,8 +3,9 @@ import { hasContent, hasValue } from "./guards";
 
 /**
  * Sort the directory in the browser.
- * The indexer sorts net profit without Sit & Go prizes, so a corrected net
- * cannot be paged on the server. Ties break on the address so a page is stable.
+ * The indexer sorts net profit without Sit & Go prizes or MTT money, so a
+ * corrected net cannot be paged on the server. Ties break on the address so a
+ * page is stable.
  */
 export function sortPlayers(players: PlayerListItem[], sort: PlayerSortField, order: "asc" | "desc"): PlayerListItem[] {
     const direction = order === "asc" ? 1 : -1;

@@ -3,6 +3,7 @@ import { useCosmosApi } from "../../context/CosmosApiContext";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 import type { PlayerListItem } from "../../types/players";
 import { ALL_PRIZE_CLAIMS_QUERY, PRIZE_DIRECTORY_QUERY_TIMEOUT_MS } from "../../utils/playerPrizeClaims";
+import { ALL_TOURNAMENT_REGISTERED_QUERY, ALL_TOURNAMENT_UNREGISTERED_QUERY } from "../../utils/playerTournamentEntries";
 import { resetPlayersDirectoryCache, usePlayersDirectory } from "./usePlayersDirectory";
 
 jest.mock("../../context/IndexerApiContext", () => ({ useIndexerApi: jest.fn() }));
@@ -11,8 +12,9 @@ jest.mock("../../context/CosmosApiContext", () => ({ useCosmosApi: jest.fn() }))
 const getPlayers = jest.fn();
 const getPlayerSessions = jest.fn();
 const getAllTransactionsMatching = jest.fn();
+const getTournament = jest.fn();
 (useIndexerApi as jest.Mock).mockReturnValue({ getPlayers, getPlayerSessions });
-(useCosmosApi as jest.Mock).mockReturnValue({ getAllTransactionsMatching });
+(useCosmosApi as jest.Mock).mockReturnValue({ getAllTransactionsMatching, getTournament });
 
 const ALPHA = "b521alpha";
 const BETA = "b521beta";
@@ -67,9 +69,10 @@ beforeEach(() => {
     getPlayers.mockReset();
     getPlayerSessions.mockReset();
     getAllTransactionsMatching.mockReset();
+    getTournament.mockReset();
     jest.spyOn(console, "error").mockImplementation(() => {});
     (useIndexerApi as jest.Mock).mockReturnValue({ getPlayers, getPlayerSessions });
-    (useCosmosApi as jest.Mock).mockReturnValue({ getAllTransactionsMatching });
+    (useCosmosApi as jest.Mock).mockReturnValue({ getAllTransactionsMatching, getTournament });
 });
 
 afterEach(() => {
@@ -123,7 +126,8 @@ test("a failed chain query keeps the indexer nets", async () => {
     ]);
     expect(result.current.error).toBeNull();
     expect(getPlayerSessions).not.toHaveBeenCalled();
-    expect(getAllTransactionsMatching).toHaveBeenCalledTimes(1);
+    expect(getTournament).not.toHaveBeenCalled();
+    expect(getAllTransactionsMatching).toHaveBeenCalledTimes(3);
 });
 
 test("an unsupported global query reads prizes for the visible page only", async () => {
@@ -148,4 +152,88 @@ test("an unsupported global query reads prizes for the visible page only", async
     expect(queries).toContain(ALL_PRIZE_CLAIMS_QUERY);
     expect(queries.some(query => query.includes(BETA))).toBe(true);
     expect(queries.some(query => query.includes(GAMMA))).toBe(false);
+});
+
+const MTT = "0x522af6f3faa14816649c2e24a6ab3b951d56b5e85f7cb8803fe72f1a0127a80b";
+
+const registrationTx = (player: string, tournamentId = MTT) => ({
+    code: 0,
+    height: "1123929",
+    txhash: "REG",
+    events: [
+        {
+            type: "tournament_registered",
+            attributes: [
+                { key: "tournament_id", value: tournamentId },
+                { key: "player", value: player },
+                { key: "buy_in", value: "2000000" },
+                { key: "entry_fee", value: "200000" }
+            ]
+        }
+    ]
+});
+
+const tournamentRecord = {
+    tournament: JSON.stringify({
+        tournamentId: MTT,
+        status: "finished",
+        level: 1,
+        options: {
+            buyIn: "2000000",
+            entryFee: "200000",
+            startingStack: "5000",
+            seatsPerTable: 9,
+            minEntrants: 2,
+            maxEntrants: 27,
+            startTime: 1,
+            blindStructure: { levels: [] },
+            actionTimeoutSeconds: 30
+        },
+        entrants: [],
+        tables: [{ tableId: `${MTT}/t1`, ordinal: 1 }],
+        prizePool: "5280000",
+        results: [{ place: 2, playerId: ALPHA, payout: "5280000" }]
+    })
+};
+
+test("adds MTT buy-ins and payouts to net and sorts by the profile figure", async () => {
+    getPlayers.mockResolvedValue(directory([row(ALPHA, -1000), row(BETA, 10)]));
+    getAllTransactionsMatching.mockImplementation((query: string) => {
+        if (query === ALL_PRIZE_CLAIMS_QUERY) return Promise.resolve({ tx_responses: [prizeTx(ALPHA, "2000", "ALPHA")] });
+        if (query === ALL_TOURNAMENT_REGISTERED_QUERY) return Promise.resolve({ tx_responses: [registrationTx(ALPHA)] });
+        if (query === ALL_TOURNAMENT_UNREGISTERED_QUERY) return Promise.resolve({ tx_responses: [] });
+        return Promise.resolve({ tx_responses: [] });
+    });
+    getPlayerSessions.mockResolvedValue(sessionPage(ALPHA, 0));
+    getTournament.mockResolvedValue(tournamentRecord);
+
+    const { result } = renderHook(() => usePlayersDirectory({ ...params, limit: 10 }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(getAllTransactionsMatching).toHaveBeenCalledWith(ALL_TOURNAMENT_REGISTERED_QUERY, PRIZE_DIRECTORY_QUERY_TIMEOUT_MS);
+    expect(getTournament).toHaveBeenCalledWith(MTT);
+    // Indexer -1000 + Sit & Go prize 2000 + MTT payout 5.28 - MTT buy-in 2.20.
+    expect(result.current.players.map(player => [player.player_address, player.net_profit])).toEqual([
+        [ALPHA, 3_081_000],
+        [BETA, 10]
+    ]);
+});
+
+test("a failed tournament query keeps the prize-corrected nets", async () => {
+    getPlayers.mockResolvedValue(directory([row(ALPHA, -1000), row(BETA, 10)]));
+    getAllTransactionsMatching.mockImplementation((query: string) => {
+        if (query === ALL_PRIZE_CLAIMS_QUERY) return Promise.resolve({ tx_responses: [prizeTx(ALPHA, "2000", "ALPHA")] });
+        if (query === ALL_TOURNAMENT_REGISTERED_QUERY) return Promise.reject(new Error("offline"));
+        return Promise.resolve({ tx_responses: [] });
+    });
+    getPlayerSessions.mockResolvedValue(sessionPage(ALPHA, 0));
+
+    const { result } = renderHook(() => usePlayersDirectory({ ...params, limit: 10 }));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.players.map(player => [player.player_address, player.net_profit])).toEqual([
+        [ALPHA, 1000],
+        [BETA, 10]
+    ]);
+    expect(getTournament).not.toHaveBeenCalled();
 });

@@ -9,7 +9,7 @@
  * refunds `net_buy_in` on `tournament_unregistered`. This adds those chain
  * figures once, without counting an indexer session or prize claim twice.
  */
-import type { PlayerSession } from "../types/players";
+import type { PlayerListItem, PlayerSession } from "../types/players";
 import { hasContent, hasElements, hasValue, isEmpty } from "./guards";
 import { addedPrizeCash, type PlayerPrizeClaim } from "./playerPrizeClaims";
 import {
@@ -130,4 +130,39 @@ export function profileMoneyWithAllVariants(
         totalCashOuts: money.totalCashOuts + addedCash,
         netProfit: money.netProfit + addedCash - addedBuyIns
     };
+}
+
+/**
+ * Directory rows with prize claims and MTT registration costs, refunds and
+ * payouts applied to net profit, using the same rules as the profile.
+ * Players with no claims or tournament activity are returned as-is.
+ */
+export function playerListWithAllVariants(
+    players: PlayerListItem[],
+    claimsByPlayer: Map<string, PlayerPrizeClaim[]>,
+    sessionsByPlayer: Map<string, PlayerSession[]>,
+    registrationsByPlayer: Map<string, TournamentRegistration[]> = new Map(),
+    entriesByPlayer: Map<string, PlayerTournamentEntry[]> = new Map(),
+    unregistrationsByPlayer: Map<string, TournamentUnregistration[]> = new Map()
+): PlayerListItem[] {
+    return players.map(player => {
+        const key = player.player_address.toLowerCase();
+        const claims = claimsByPlayer.get(key) ?? [];
+        const sessions = sessionsByPlayer.get(key) ?? [];
+        const registrations = registrationsByPlayer.get(key) ?? [];
+        const entries = entriesByPlayer.get(key) ?? [];
+        const unregistrations = unregistrationsByPlayer.get(key) ?? [];
+        if (isEmpty(claims) && isEmpty(registrations) && isEmpty(entries) && isEmpty(unregistrations)) return player;
+        const money = profileMoneyWithAllVariants(
+            { totalBuyIns: 0, totalCashOuts: 0, netProfit: player.net_profit },
+            sessions,
+            claims,
+            entries,
+            registrations,
+            unregistrations,
+            player.player_address
+        );
+        if (money.netProfit === player.net_profit) return player;
+        return { ...player, net_profit: money.netProfit };
+    });
 }
