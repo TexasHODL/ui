@@ -1,5 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { GameFormat } from "@block52/poker-vm-sdk";
+
+jest.mock("../../../../utils/colorConfig", () => ({
+    colors: { brand: { primary: "#be87e5" } },
+    getHexagonStroke: () => "#be87e5"
+}));
+
 import { TableModals, type TableModalsProps } from "./TableModals";
 
 // ui#874: no live tournament finish in these tests, so the result modal is never held.

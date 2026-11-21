@@ -6,7 +6,6 @@ jest.mock("../../utils/colorConfig", () => ({
     getHexagonStroke: () => "#ffffff"
 }));
 
-// eslint-disable-next-line import/first
 import { RebalanceNotice } from "./RebalanceNotice";
 
 describe("RebalanceNotice", () => {
