@@ -24,6 +24,7 @@ import {
 } from "@block52/poker-vm-sdk";
 import { isNullish, isNumber, isRecord, isString } from "./guards";
 import { gameIdFromTableId } from "./tournamentFollow";
+import { formatTournamentLateRegistration } from "./tournamentLateRegistration";
 
 export interface TournamentEntrantView {
     address: string;
@@ -48,6 +49,8 @@ export interface TournamentOptionsView {
     actionTimeoutSeconds: number;
     /** Optional custom name if the engine ever stores one. */
     name?: string;
+    /** Blind levels late registration stays open; 0/absent = off (ui#1000). Optional until the chain emits it (pokerchain#478). */
+    lateRegistrationLevels?: number;
 }
 
 /** What the lobby reads of the engine's TournamentStateDTO. */
@@ -145,7 +148,8 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         startTime: requireInt(o.startTime, "options.startTime"),
         blindStructure: parseBlindStructure(o.blindStructure),
         actionTimeoutSeconds: requireInt(o.actionTimeoutSeconds, "options.actionTimeoutSeconds"),
-        ...(optionalName(o.name) ? { name: optionalName(o.name) } : {})
+        ...(optionalName(o.name) ? { name: optionalName(o.name) } : {}),
+        ...(isNullish(o.lateRegistrationLevels) ? {} : { lateRegistrationLevels: requireInt(o.lateRegistrationLevels, "options.lateRegistrationLevels") })
     };
     const name = optionalName(raw.name) ?? options.name;
     return {
@@ -288,6 +292,8 @@ export interface TournamentLobbyCard {
     registerBlockedReason?: string;
     /** Stored custom name when the chain has one. */
     name?: string;
+    /** The lobby's late-registration line, e.g. "Late reg: until level 15" or "Late reg closed"; empty when there is none (ui#1000 item 2). */
+    lateRegistrationLabel: string;
 }
 
 /** Entrants that count toward the field: registered, or already playing/busted after the start. */
@@ -365,7 +371,12 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         canRegister: isNullish(registerBlockedReason),
         canUnregister: registering && !isNullish(mine) && mine.status === "registered",
         ...(isNullish(registerBlockedReason) ? {} : { registerBlockedReason }),
-        ...(isNullish(name) ? {} : { name })
+        ...(isNullish(name) ? {} : { name }),
+        // TODO(poker-vm#2800): the engine is the authority on when the window shuts
+        // (it also closes at the first paid place and while the final table forms),
+        // so `closed` must come from the tournament-level SDK helper once it ships;
+        // until then the label shows the configured target level while it exists.
+        lateRegistrationLabel: formatTournamentLateRegistration(state.options.lateRegistrationLevels, false)
     };
 }
 

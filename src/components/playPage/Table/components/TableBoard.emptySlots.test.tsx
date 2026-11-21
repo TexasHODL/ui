@@ -5,7 +5,11 @@ import { formatPotDisplay } from "../../../../utils/potDisplayUtils";
 import type { CardBackStyle } from "../../../../utils/cardImages";
 
 jest.mock("../../../../hooks/animations/useCardAnimations", () => ({ useCardAnimations: () => ({ revealedSlots: [true, true, true, true, true] }) }));
-jest.mock("../../../../utils/cardImages", () => ({ ...jest.requireActual("../../../../utils/cardImages"), getCardImageUrl: (card: string) => `/cards/${card}.svg`, getCardBackUrl: () => "/back.svg" }));
+jest.mock("../../../../utils/cardImages", () => ({
+    ...jest.requireActual("../../../../utils/cardImages"),
+    getCardImageUrl: (card: string) => `/cards/${card}.svg`,
+    getCardBackUrl: () => "/back.svg"
+}));
 jest.mock("../../../../context/GameSettingsContext", () => ({ useGameSettings: () => ({ potAsChips: false }), useChipStyle: () => "marble" }));
 
 const board = (communityCards: string[]) => (

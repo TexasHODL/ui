@@ -262,6 +262,7 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         expect(screen.queryByText(/tap an open seat to join/)).not.toBeInTheDocument();
     });
 
+
     describe("sit-out intents", () => {
         it("are absent when the engine does not allow sitting out", () => {
             renderHeader({ seated: true, legalActions: [] });

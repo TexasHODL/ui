@@ -5,6 +5,7 @@ import { displayTableName } from "../../utils/generatedTableName";
 import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
 import { formatUsdc, lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
 import { ShareTournamentButton } from "./ShareTournamentButton";
+import { hasContent } from "../../utils/guards";
 
 interface TournamentCardProps {
     card: TournamentLobbyCard;
@@ -50,6 +51,11 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) =
                     <div className="text-xs text-gray-400 font-bold">
                         {card.seatsPerTable}-max tables · {Number(card.startingStack).toLocaleString("en-US")} chips · {card.blindLabel}
                     </div>
+                    {hasContent(card.lateRegistrationLabel) && (
+                        <div className="text-xs text-gray-400 font-bold" data-testid="tournament-late-registration">
+                            {card.lateRegistrationLabel}
+                        </div>
+                    )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                     <ShareTournamentButton tournamentId={card.tournamentId} name={card.name} />
