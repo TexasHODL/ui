@@ -75,6 +75,14 @@ export interface BaseModalProps {
     closeOnBackdropClick?: boolean;
     /** Whether the modal content should scroll when it overflows (default: true) */
     scrollable?: boolean;
+    /**
+     * Whether to dim and block the page behind the modal (default: true).
+     * When false, no backdrop is drawn and the overlay does not capture clicks,
+     * so controls behind the card (e.g. Leave Table) stay usable.
+     */
+    showBackdrop?: boolean;
+    /** Tighter padding and title, for a compact notice card (default: false). */
+    compact?: boolean;
 }
 
 /**
@@ -122,7 +130,9 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
         patternId,
         closeOnEscape = true,
         closeOnBackdropClick = true,
-        scrollable = true
+        scrollable = true,
+        showBackdrop = true,
+        compact = false
     }) => {
         // Handle Escape key press
         useEffect(() => {
@@ -149,19 +159,24 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
         if (!isOpen) return null;
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+                className={`fixed inset-0 z-50 flex items-center justify-center ${showBackdrop ? "" : "pointer-events-none"}`}
+                data-testid={showBackdrop ? undefined : "modal-overlay-pass-through"}
+            >
                 {/* Backdrop */}
-                <div
-                    className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
-                    onClick={handleBackdropClick}
-                />
+                {showBackdrop && (
+                    <div
+                        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+                        onClick={handleBackdropClick}
+                    />
+                )}
 
                 {/* Modal Container */}
                 <div
                     role="dialog"
                     aria-modal="true"
                     aria-label={ariaLabel || title}
-                    className={`hodl-modal relative p-6 rounded-xl shadow-2xl overflow-x-hidden ${scrollable ? "overflow-y-auto max-h-[90vh]" : "overflow-y-hidden"} ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
+                    className={`hodl-modal relative ${compact ? "p-4" : "p-6"} rounded-xl shadow-2xl overflow-x-hidden ${showBackdrop ? "" : "pointer-events-auto"} ${scrollable ? "overflow-y-auto max-h-[90vh]" : "overflow-y-hidden"} ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
                 >
                     {/* Hexagon pattern background */}
                     {showHexagonPattern && <HexagonPattern patternId={patternId} />}

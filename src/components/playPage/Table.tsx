@@ -25,7 +25,8 @@ import { useTableId } from "../../hooks/game/useTableId";
 import { useTournament } from "../../hooks/tournament/useTournament";
 import { tournamentIdOf } from "../../utils/tournamentBlinds";
 import { followTarget, type MyTournamentTable } from "../../utils/tournamentFollow";
-import { tableUrl } from "../../utils/tableUrl";
+import { parseTournamentGameId, tableUrl } from "../../utils/tableUrl";
+import { REBALANCE_MOVE_NOTICE_MS, rebalanceNotice } from "../../utils/rebalanceNotice";
 import { tournamentRunners, tournamentSize } from "../../utils/tournamentResult";
 import React from "react";
 
@@ -37,6 +38,7 @@ import { useTableStyles } from "../../theme/useTableStyles";
 import { resolveCardBackId } from "../../theme/tableStyles";
 import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
+import { nextTableStyle, resolveDefaultTableStyle, TABLE_STYLE_LABELS, type TableStyleOption, cardBackStyleForTheme } from "../../utils/tableStyle";
 
 import "./Table.css";
 import { nextAppearanceId, readStoredAppearanceId, writeStoredAppearanceId, type TableAppearanceId } from "../../theme/tableAppearances";
@@ -724,11 +726,19 @@ const Table = React.memo(() => {
     const { myTable: myTournamentTable, tournament: tournamentRecord } = useTournament(tournamentIdOf(gameState));
     const tournamentOver = tournamentRecord?.status === "finished" || hasTournamentFinished(gameState);
     const seatedAt = useRef<MyTournamentTable | undefined>(undefined);
+    const [pendingMove, setPendingMove] = useState<{ gameId: string; tableNumber: number } | undefined>(undefined);
     useEffect(() => {
         const target = followTarget(id, seatedAt.current, myTournamentTable);
         seatedAt.current = myTournamentTable;
-        if (target) navigate(tableUrl(target));
+        if (!target) return;
+        const tableNumber = parseTournamentGameId(target)?.tableNumber;
+        if (tableNumber) setPendingMove({ gameId: target, tableNumber });
+        const timer = window.setTimeout(() => navigate(tableUrl(target)), REBALANCE_MOVE_NOTICE_MS);
+        return () => window.clearTimeout(timer);
     }, [id, myTournamentTable, navigate]);
+    useEffect(() => {
+        if (pendingMove && id === pendingMove.gameId) setPendingMove(undefined);
+    }, [id, pendingMove]);
 
     // Card back: the player's saved choice (including limited-time event backs)
     // when one is available, otherwise VITE_CARD_BACK_URL, then the default Texas HODL back.
@@ -747,6 +757,7 @@ const Table = React.memo(() => {
     const [isBalanceLoading, setIsBalanceLoading] = useState<boolean>(true);
     const [, setBalanceError] = useState<Error | null>(null);
     const publicKey = getCosmosAddressSync();
+    const tableRebalanceNotice = rebalanceNotice(tournamentRecord, id, publicKey ?? undefined, pendingMove);
 
     // Update to use the imported hook
     const tableDataValues = useTableData();
@@ -1357,13 +1368,21 @@ const Table = React.memo(() => {
     // instead, so seats/felt only lay out once, at the correct size.
     if (isTableStateLoading || !gameState) {
         return (
-            <div className="table-container">
+            <div className="table-container" data-table-theme={tableStyle}>
                 <div className="flex-grow relative overflow-visible flex items-center justify-center">
                     {/* Background layers — same as the live table for a seamless transition */}
-                    <HexagonPattern patternId="hexagons-table-loading" />
-                    <div className="background-shimmer shimmer-animation" />
-                    <div className="background-animated-static" />
-                    <div className="background-base-static" />
+                    {tableStyle === "blockchainpoker" ? (
+                        <div className="blockchain-poker-background" aria-hidden="true" />
+                    ) : tableStyle === "nouns" ? (
+                        <div className="nouns-background" />
+                    ) : (
+                        <>
+                            <HexagonPattern patternId="hexagons-table-loading" />
+                            <div className="background-shimmer shimmer-animation" />
+                            <div className="background-animated-static" />
+                            <div className="background-base-static" />
+                        </>
+                    )}
                     {/* Centered spinner */}
                     <div className="relative z-20 h-10 w-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
                 </div>
@@ -1734,6 +1753,7 @@ const Table = React.memo(() => {
                         handleClaimWinnings={handleClaimWinnings}
                         currentPlayerStack={currentPlayerData?.stack || "0"}
                         isInActiveHand={shouldWarnOnLeave(isGameInProgress, currentPlayerData?.status)}
+                        rebalanceNotice={tableRebalanceNotice}
                     />
                 )}
 

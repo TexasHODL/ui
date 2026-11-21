@@ -262,6 +262,12 @@ describe("MobileTableHeader drawer (ui#684)", () => {
         expect(screen.queryByText(/tap an open seat to join/)).not.toBeInTheDocument();
     });
 
+    it("shows the Blockchain Poker label in the Style row", () => {
+        renderHeader({ tableStyle: "blockchainpoker" });
+        openMenu();
+        expect(screen.getByText("Blockchain Poker")).toBeInTheDocument();
+    });
+
     describe("sit-out intents", () => {
         it("are absent when the engine does not allow sitting out", () => {
             renderHeader({ seated: true, legalActions: [] });
