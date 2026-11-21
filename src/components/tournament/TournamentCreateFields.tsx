@@ -16,6 +16,7 @@ import { LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "..
 import { DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS } from "../../utils/tournamentLateRegistration";
 import {
     DEFAULT_TOURNAMENT_FORM_VALUES,
+    MTT_SEATS_PER_TABLE_OPTIONS,
     defaultStartTimeLocal,
     tournamentBlindStructure,
     tournamentCreationFeeMicro,
@@ -23,7 +24,8 @@ import {
     type TournamentFormField,
     type TournamentFormValues
 } from "../../utils/tournamentCreate";
-import { hasElements, isBlank, isNullish } from "../../utils/guards";
+import { CREATION_FEE_BIG_BLINDS } from "../../utils/tableCreationFee";
+import { hasElements, hasValue, isBlank, isNullish } from "../../utils/guards";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import type { CreateTournamentParams } from "../../utils/tournamentTx";
 
@@ -62,6 +64,13 @@ interface TournamentCreateFieldsProps {
     labelClassName: string;
     /** Two columns on the wide tables form; one column in the create dialog. */
     layout: "grid" | "stack";
+    /**
+     * When the host form shows seats in the Max Players slot, hide the field
+     * here and keep this value as the submitted seats-per-table.
+     */
+    seatsPerTable?: string;
+    onSeatsPerTableChange?: (value: string) => void;
+    hideSeatsField?: boolean;
 }
 
 const Field: React.FC<{ labelClassName: string; label: string; hint?: string; error?: string; children: React.ReactNode; testId: string; className?: string }> = ({
@@ -92,15 +101,21 @@ const Field: React.FC<{ labelClassName: string; label: string; hint?: string; er
  * utils/tournamentCreate; submitting goes through the tournament tx hook.
  */
 export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, TournamentCreateFieldsProps>(function TournamentCreateFields(
-    { controlClassName, labelClassName, layout },
+    { controlClassName, labelClassName, layout, seatsPerTable, onSeatsPerTableChange, hideSeatsField = false },
     ref
 ) {
-    const [values, setValues] = useState<TournamentFormValues>(() => ({ ...DEFAULT_TOURNAMENT_FORM_VALUES, startTime: defaultStartTimeLocal(Date.now()) }));
+    const [values, setValues] = useState<TournamentFormValues>(() => ({
+        ...DEFAULT_TOURNAMENT_FORM_VALUES,
+        startTime: defaultStartTimeLocal(Date.now()),
+        ...(hasValue(seatsPerTable) ? { seatsPerTable } : {})
+    }));
     const [choice, setChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
     const [customText, setCustomText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const [blindsIndex, setBlindsIndex] = useState(1);
     const [levelMinutes, setLevelMinutes] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
     const [submitted, setSubmitted] = useState(false);
+
+    const formValues: TournamentFormValues = hasValue(seatsPerTable) ? { ...values, seatsPerTable } : values;
 
     const plan = useMemo(
         () => resolveBlindStructureChoice(choice, customText, { ...SNG_BLINDS[blindsIndex], durationMinutes: levelMinutes }),
@@ -108,7 +123,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
     );
     const blindStructure = tournamentBlindStructure(plan);
     const previewRows = useMemo(() => (plan.preview ? previewBlindLevels(plan.preview, PREVIEW_LEVELS) : []), [plan.preview]);
-    const result = validateTournamentForm({ values, blindStructure, blindError: plan.error, nowMs: Date.now() });
+    const result = validateTournamentForm({ values: formValues, blindStructure, blindError: plan.error, nowMs: Date.now() });
 
     const creationFee = useMemo(() => {
         if (isNullish(plan.preview)) return null;
@@ -130,8 +145,11 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
         }
     }), [result.params]);
 
-    const set = (field: keyof TournamentFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        setValues(current => ({ ...current, [field]: e.target.value }));
+    const set = (field: keyof TournamentFormValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const value = e.target.value;
+        if (field === "seatsPerTable") onSeatsPerTableChange?.(value);
+        setValues(current => ({ ...current, [field]: value }));
+    };
     const setStack = (stack: number | string) => setValues(current => ({ ...current, startingStack: String(stack) }));
     const err = (field: TournamentFormField): string | undefined => (submitted ? result.errors[field] : undefined);
     const lateRegLevels = Number(values.lateRegistrationLevels);
@@ -142,7 +160,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
         <div className={layout === "stack" ? "creation-span space-y-4" : "mb-4 space-y-4"} data-testid="mtt-create-fields">
             <ScheduledStartCard locked checked onChange={() => undefined} testId="tournament-start">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Field className="sm:col-span-2" labelClassName={innerLabel} label="Starts at" error={err("startTime")} testId="startTime">
+                    <Field labelClassName={innerLabel} label="Starts at" error={err("startTime")} testId="startTime">
                         <input
                             data-testid="tournament-start-input"
                             type="datetime-local"
@@ -154,7 +172,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                     </Field>
                     <Field
                         labelClassName={innerLabel}
-                        label="Minimum entrants"
+                        label="Minimum players"
                         error={err("minEntrants")}
                         testId="minEntrants"
                         hint="Cancelled with refunds if fewer have registered at the start."
@@ -162,7 +180,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                         <input
                             className={controlClassName}
                             inputMode="numeric"
-                            aria-label="Minimum entrants"
+                            aria-label="Minimum players"
                             value={values.minEntrants}
                             onChange={set("minEntrants")}
                         />
@@ -180,6 +198,21 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                             aria-label="Maximum entrants"
                             value={values.maxEntrants}
                             onChange={set("maxEntrants")}
+                        />
+                    </Field>
+                    <Field
+                        labelClassName={innerLabel}
+                        label="Action timeout (seconds)"
+                        error={err("actionTimeoutSeconds")}
+                        testId="actionTimeoutSeconds"
+                        hint="Every table's action clock."
+                    >
+                        <input
+                            className={controlClassName}
+                            inputMode="numeric"
+                            aria-label="Action timeout"
+                            value={values.actionTimeoutSeconds}
+                            onChange={set("actionTimeoutSeconds")}
                         />
                     </Field>
                     <Field
@@ -213,12 +246,12 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
             <div className={layout === "grid" ? "creation-tournament-fields" : "space-y-4"}>
                 {layout === "stack" ? (
                 <div className="creation-field-pairs">
-                    <Field labelClassName={labelClassName} label="Tournament Buy-In ($)" error={err("buyIn")} testId="buyIn" hint="What each player pays to register.">
+                    <Field labelClassName={labelClassName} label="Tournament Buy-In ($)" error={err("buyIn")} testId="buyIn" hint="All players pay the same buy in">
                         <input data-testid="tournament-buyin-input" className={controlClassName} inputMode="decimal" value={values.buyIn} onChange={set("buyIn")} />
                     </Field>
                     <Field
                         labelClassName={labelClassName}
-                        label="Entry fee ($)"
+                        label="Entry Fee ($)"
                         error={err("entryFee")}
                         testId="entryFee"
                         hint="Comes out of the buy-in and goes to you. 0 for none."
@@ -228,12 +261,12 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                 </div>
                 ) : (
                 <>
-                    <Field labelClassName={labelClassName} label="Tournament Buy-In ($)" error={err("buyIn")} testId="buyIn" hint="What each player pays to register.">
+                    <Field labelClassName={labelClassName} label="Tournament Buy-In ($)" error={err("buyIn")} testId="buyIn" hint="All players pay the same buy in">
                         <input data-testid="tournament-buyin-input" className={controlClassName} inputMode="decimal" value={values.buyIn} onChange={set("buyIn")} />
                     </Field>
                     <Field
                         labelClassName={labelClassName}
-                        label="Entry fee ($)"
+                        label="Entry Fee ($)"
                         error={err("entryFee")}
                         testId="entryFee"
                         hint="Comes out of the buy-in and goes to you. 0 for none."
@@ -276,24 +309,16 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                     </div>
                 </div>
 
-                {layout === "stack" ? (
-                <div className="creation-field-pairs">
+                {!hideSeatsField && (
                     <Field labelClassName={labelClassName} label="Seats per table" error={err("seatsPerTable")} testId="seatsPerTable" hint="2 to 9.">
-                        <input className={controlClassName} inputMode="numeric" aria-label="Seats per table" value={values.seatsPerTable} onChange={set("seatsPerTable")} />
+                        <select className={controlClassName} aria-label="Seats per table" value={formValues.seatsPerTable} onChange={set("seatsPerTable")}>
+                            {MTT_SEATS_PER_TABLE_OPTIONS.map(option => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
+                        </select>
                     </Field>
-                    <Field labelClassName={labelClassName} label="Action timeout (seconds)" error={err("actionTimeoutSeconds")} testId="actionTimeoutSeconds" hint="Every table's action clock.">
-                        <input className={controlClassName} inputMode="numeric" aria-label="Action timeout" value={values.actionTimeoutSeconds} onChange={set("actionTimeoutSeconds")} />
-                    </Field>
-                </div>
-                ) : (
-                <>
-                    <Field labelClassName={labelClassName} label="Seats per table" error={err("seatsPerTable")} testId="seatsPerTable" hint="2 to 9.">
-                        <input className={controlClassName} inputMode="numeric" aria-label="Seats per table" value={values.seatsPerTable} onChange={set("seatsPerTable")} />
-                    </Field>
-                    <Field labelClassName={labelClassName} label="Action timeout (seconds)" error={err("actionTimeoutSeconds")} testId="actionTimeoutSeconds" hint="Every table's action clock.">
-                        <input className={controlClassName} inputMode="numeric" aria-label="Action timeout" value={values.actionTimeoutSeconds} onChange={set("actionTimeoutSeconds")} />
-                    </Field>
-                </>
                 )}
 
                 <div className={layout === "stack" ? "creation-span" : undefined}>
@@ -338,9 +363,10 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                 </div>
             </div>
 
-            <p className="text-xs text-gray-400 mt-3" data-testid="tournament-create-fee">
-                {isNullish(creationFee) ? "Creation fee: set the buy-in, starting stack and blinds to see it." : `Creating costs you $${formatMicroUsd(creationFee)} (10 big blinds of level 1, priced at the buy-in's chip value).`}
-            </p>
+            <div className="creation-fee creation-span" data-testid="tournament-create-fee">
+                <span className="text-gray-400">Table Creation Fee ({CREATION_FEE_BIG_BLINDS.toString()} big blinds)</span>
+                <span className="text-white font-mono">{isNullish(creationFee) ? "—" : `$${formatMicroUsd(creationFee)}`}</span>
+            </div>
 
             {submitted && hasElements(Object.keys(result.errors)) && (
                 <p className="text-sm text-red-400 mt-2" role="alert" data-testid="tournament-create-summary">

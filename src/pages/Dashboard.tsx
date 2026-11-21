@@ -42,6 +42,7 @@ import { isValidSeedPhrase } from "../utils/cosmos";
 import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isMultiTableCreateType, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { TournamentCreateFields, type TournamentCreateFieldsHandle } from "../components/tournament/TournamentCreateFields";
+import { DEFAULT_TOURNAMENT_FORM_VALUES, MTT_SEATS_PER_TABLE_OPTIONS } from "../utils/tournamentCreate";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import {
@@ -101,6 +102,7 @@ const Dashboard: React.FC = () => {
     // Use the new useNewTable hook from hooks directory
     const { createTable, isCreating: isCreatingTable, error: createTableError } = useNewTable();
     const mttFields = useRef<TournamentCreateFieldsHandle>(null);
+    const [mttSeatsPerTable, setMttSeatsPerTable] = useState(DEFAULT_TOURNAMENT_FORM_VALUES.seatsPerTable);
     const tournamentActions = useTournamentActions(async () => undefined);
 
     // Removed: Ethereum private key import modal states
@@ -756,7 +758,7 @@ const Dashboard: React.FC = () => {
                                     </>
                                     )}
 
-                                    <div className={isMultiTableCreateType(modalGameType) ? "creation-span" : undefined}>
+                                    <div>
                                         <label className="block text-white text-sm mb-1">Game Type</label>
                                         <select
                                             aria-label="Game type"
@@ -776,14 +778,58 @@ const Dashboard: React.FC = () => {
                                         </select>
                                     </div>
 
-                                    {isMultiTableCreateType(modalGameType) ? (
+                                    {isMultiTableCreateType(modalGameType) && (
+                                        <>
+                                        <div>
+                                            <label className="block text-white text-sm mb-1">Game</label>
+                                            <select
+                                                aria-label="Game"
+                                                value={GameVariant.TEXAS_HOLDEM}
+                                                disabled
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                <option value={GameVariant.TEXAS_HOLDEM}>Texas Hold&apos;em</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-white text-sm mb-1">Limit</label>
+                                            <select
+                                                aria-label="Betting limit"
+                                                value={BettingLimit.NO_LIMIT}
+                                                disabled
+                                                data-testid="create-betting-limit"
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                <option value={BettingLimit.NO_LIMIT}>{bettingLimitLabel(BettingLimit.NO_LIMIT)}</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="lobby-mtt-seats" className="block text-white text-sm mb-1">Seats per table</label>
+                                            <select
+                                                id="lobby-mtt-seats"
+                                                aria-label="Seats per table"
+                                                data-testid="mtt-seats-per-table"
+                                                value={mttSeatsPerTable}
+                                                onChange={e => setMttSeatsPerTable(e.target.value)}
+                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
+                                            >
+                                                {MTT_SEATS_PER_TABLE_OPTIONS.map(option => (
+                                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
                                         <TournamentCreateFields
                                             ref={mttFields}
                                             layout="stack"
+                                            hideSeatsField
+                                            seatsPerTable={mttSeatsPerTable}
+                                            onSeatsPerTableChange={setMttSeatsPerTable}
                                             controlClassName="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
                                             labelClassName="block text-white text-sm mb-1"
                                         />
-                                    ) : (
+                                        </>
+                                    )}
+                                    {!isMultiTableCreateType(modalGameType) && (
                                     <>
                                     {/* Variant and betting limit (ui#768) */}
                                     <div>

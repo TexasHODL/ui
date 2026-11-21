@@ -77,6 +77,18 @@ export interface TournamentFormResult {
 }
 
 /** Defaults the form opens with. The start time is filled by {@link defaultStartTimeLocal}. */
+/** Seats-per-table choices (2..9), using the Sit & Go labels where they exist. */
+export const MTT_SEATS_PER_TABLE_OPTIONS: readonly { value: number; label: string }[] = [
+    { value: 2, label: "2 (Heads-Up)" },
+    { value: 3, label: "3" },
+    { value: 4, label: "4 (Sit & Go)" },
+    { value: 5, label: "5" },
+    { value: 6, label: "6 (Sit & Go)" },
+    { value: 7, label: "7" },
+    { value: 8, label: "8" },
+    { value: 9, label: "9 (Full Ring)" }
+];
+
 export const DEFAULT_TOURNAMENT_FORM_VALUES: Omit<TournamentFormValues, "startTime"> = {
     buyIn: "5",
     entryFee: "0",

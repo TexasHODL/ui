@@ -26,7 +26,8 @@ test("default multi-table fields submit a create payload", () => {
     expect(params?.actionTimeoutSeconds).toBe(25);
     expect(params?.blindStructure).toBeDefined();
     // The chain is charged the exact micro fee (1,666,666). The label ceilings to the next cent.
-    expect(screen.getByTestId("tournament-create-fee")).toHaveTextContent("Creating costs you $1.67");
+    expect(screen.getByTestId("tournament-create-fee")).toHaveTextContent("Table Creation Fee (10 big blinds)");
+    expect(screen.getByTestId("tournament-create-fee")).toHaveTextContent("$1.67");
 });
 
 test("an empty buy-in is shown on the field and does not submit", () => {
@@ -49,4 +50,23 @@ test("the scheduled-start card shows the late-registration select with the defau
     const params = submit(ref);
     expect(params).toBeDefined();
     expect(params).not.toHaveProperty("lateRegistrationLevels");
+});
+
+test("a host form can own seats-per-table in the Max Players slot", () => {
+    const ref = createRef<TournamentCreateFieldsHandle>();
+    const onSeats = jest.fn();
+    render(
+        <TournamentCreateFields
+            ref={ref}
+            controlClassName={control}
+            labelClassName={label}
+            layout="stack"
+            hideSeatsField
+            seatsPerTable="6"
+            onSeatsPerTableChange={onSeats}
+        />
+    );
+    expect(screen.queryByLabelText("Seats per table")).not.toBeInTheDocument();
+    const params = submit(ref);
+    expect(params?.seatsPerTable).toBe(6);
 });
