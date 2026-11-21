@@ -756,7 +756,7 @@ const Dashboard: React.FC = () => {
                                     </>
                                     )}
 
-                                    <div>
+                                    <div className={isMultiTableCreateType(modalGameType) ? "creation-span" : undefined}>
                                         <label className="block text-white text-sm mb-1">Game Type</label>
                                         <select
                                             aria-label="Game type"

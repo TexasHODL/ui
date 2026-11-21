@@ -134,6 +134,10 @@
 .creation-fields .creation-tournament-fields > div:has(button) {
     grid-column: 1 / -1;
 }
+.creation-fields .creation-tournament-fields > .creation-span {
+    grid-column: 1 / -1;
+}
+
 .creation-balance,
 .creation-total,
 .table-creation .creation-fee {
