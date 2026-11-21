@@ -167,6 +167,12 @@ html[data-theme="light"] .hodl-modal.theme-dialog .hodl-primary:disabled { backg
     .hodl-modal-header .hodl-modal-title { font-size: 20px; }
     .hodl-modal-brand-row { gap: 8px; }
 }
+/* Compact table notices (e.g. rebalance) keep HODL chrome but a tighter header. */
+.hodl-modal.hodl-modal-compact { padding: 16px; }
+.hodl-modal-compact .hodl-modal-header { margin-bottom: 12px; }
+.hodl-modal-compact .hodl-modal-brand-row { margin-bottom: 6px; }
+.hodl-modal-compact .hodl-modal-logo { width: 56px; height: auto; }
+.hodl-modal-compact .hodl-modal-header .hodl-modal-title { font-size: 18px; }
 .tournament-entry { width: 420px; padding: 24px; }
 .tournament-entry h2 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
 .tournament-subtitle { color: #b2a4c0; font-size: 15px; margin-bottom: 20px; font-weight: 700; }

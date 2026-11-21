@@ -22,6 +22,8 @@ describe("RebalanceNotice", () => {
         );
         expect(screen.getByRole("status")).toBeInTheDocument();
         expect(screen.getByText("Rebalancing")).toBeInTheDocument();
+        expect(screen.getByRole("dialog", { name: "Rebalancing" })).toHaveClass("hodl-modal", "hodl-modal-compact", "theme-dialog");
+        expect(screen.getByRole("img", { name: "Texas HODL" })).toBeInTheDocument();
         expect(document.querySelector("svg.animate-spin")).toBeTruthy();
     });
 

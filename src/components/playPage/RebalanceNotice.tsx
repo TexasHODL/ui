@@ -31,6 +31,7 @@ export const RebalanceNotice: React.FC<RebalanceNoticeProps> = ({ notice }) => {
             scrollable={false}
             compact
             widthClass="w-80"
+            className="theme-dialog"
             patternId="hexagons-rebalance"
         >
             <div className="flex flex-col items-center text-center gap-3" data-testid="rebalance-notice" role="status" aria-live="polite">

@@ -176,7 +176,7 @@ export const Modal: React.FC<BaseModalProps> = React.memo(
                     role="dialog"
                     aria-modal="true"
                     aria-label={ariaLabel || title}
-                    className={`hodl-modal relative ${compact ? "p-4" : "p-6"} rounded-xl shadow-2xl overflow-x-hidden ${showBackdrop ? "" : "pointer-events-auto"} ${scrollable ? "overflow-y-auto max-h-[90vh]" : "overflow-y-hidden"} ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
+                    className={`hodl-modal relative ${compact ? "hodl-modal-compact p-4" : "p-6"} rounded-xl shadow-2xl overflow-x-hidden ${showBackdrop ? "" : "pointer-events-auto"} ${scrollable ? "overflow-y-auto max-h-[90vh]" : "overflow-y-hidden"} ${widthClass} max-w-[95vw] ${className} ${styles.modalContainer}`}
                 >
                     {/* Hexagon pattern background */}
                     {showHexagonPattern && <HexagonPattern patternId={patternId} />}

@@ -52,7 +52,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) =
                         {card.seatsPerTable}-max tables · {Number(card.startingStack).toLocaleString("en-US")} chips · {card.blindLabel}
                     </div>
                     {hasContent(card.lateRegistrationLabel) && (
-                        <div className="text-xs text-gray-400" data-testid="tournament-late-registration">
+                        <div className="text-xs text-gray-400 font-bold" data-testid="tournament-late-registration">
                             {card.lateRegistrationLabel}
                         </div>
                     )}

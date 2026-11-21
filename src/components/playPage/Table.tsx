@@ -38,8 +38,6 @@ import { useTableStyles } from "../../theme/useTableStyles";
 import { resolveCardBackId } from "../../theme/tableStyles";
 import { cssVars } from "../../utils/cssVars";
 import { ANIMATION_CSS_VARS } from "../../bus/timing";
-import { nextTableStyle, resolveDefaultTableStyle, TABLE_STYLE_LABELS, type TableStyleOption, cardBackStyleForTheme } from "../../utils/tableStyle";
-
 import "./Table.css";
 import { nextAppearanceId, readStoredAppearanceId, writeStoredAppearanceId, type TableAppearanceId } from "../../theme/tableAppearances";
 
@@ -1371,18 +1369,10 @@ const Table = React.memo(() => {
             <div className="table-container" data-table-theme={tableStyle}>
                 <div className="flex-grow relative overflow-visible flex items-center justify-center">
                     {/* Background layers — same as the live table for a seamless transition */}
-                    {tableStyle === "blockchainpoker" ? (
-                        <div className="blockchain-poker-background" aria-hidden="true" />
-                    ) : tableStyle === "nouns" ? (
-                        <div className="nouns-background" />
-                    ) : (
-                        <>
-                            <HexagonPattern patternId="hexagons-table-loading" />
-                            <div className="background-shimmer shimmer-animation" />
-                            <div className="background-animated-static" />
-                            <div className="background-base-static" />
-                        </>
-                    )}
+                    <HexagonPattern patternId="hexagons-table-loading" />
+                    <div className="background-shimmer shimmer-animation" />
+                    <div className="background-animated-static" />
+                    <div className="background-base-static" />
                     {/* Centered spinner */}
                     <div className="relative z-20 h-10 w-10 rounded-full border-4 border-white/20 border-t-white animate-spin" />
                 </div>
