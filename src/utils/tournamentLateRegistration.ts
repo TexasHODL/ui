@@ -10,7 +10,8 @@
  * modal agree. They cover the two slices that are buildable before the chain and
  * the SDK ship the MTT half (pokerchain#478, poker-vm#2800):
  *
- *   1. the create form's choice (default 15 levels) and the cut-off time it
+ *   1. the create form's choice (default off, same as the single-table Tournament
+ *      form) and the cut-off time it
  *      implies from the blind structure's level durations;
  *   2. the lobby label ("Late reg: until level N", or "Late reg closed").
  *
@@ -25,10 +26,10 @@ import { expandBlindLevel, type BlindStructureDTO } from "@block52/poker-vm-sdk"
 import { hasValue, isNullish } from "./guards";
 
 /**
- * The create form's default: open for the first 15 blind levels. The field
- * still accepts any positive number, or 0 for off (ui#1000 item 1).
+ * The create form's default: off, same as the single-table Tournament form.
+ * The field still accepts 0 for off, or a positive number of levels.
  */
-export const DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS = 15;
+export const DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS = 0;
 
 /** A tournament's late-registration choice is valid when it is off (0) or a positive whole number of levels. */
 export const isValidLateRegistrationLevels = (levels: number): boolean => Number.isSafeInteger(levels) && levels >= 0;

@@ -100,9 +100,9 @@ describe("validateTournamentForm", () => {
     });
 
     it("validates late registration levels and returns them off params (ui#1000; wired to the chain in poker-vm#2800)", () => {
-        // Default is 15 levels, carried on the result but not yet on the SDK params.
+        // Default is off (0), same as the single-table Tournament form; carried on the result but not yet on the SDK params.
         const def = validate();
-        expect(def.lateRegistrationLevels).toBe(15);
+        expect(def.lateRegistrationLevels).toBe(0);
         expect("lateRegistrationLevels" in (def.params ?? {})).toBe(false);
         // 0 is a valid "off" choice.
         expect(validate({ lateRegistrationLevels: "0" }).lateRegistrationLevels).toBe(0);

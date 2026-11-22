@@ -38,11 +38,11 @@ test("an empty buy-in is shown on the field and does not submit", () => {
     expect(screen.getByTestId("buyIn-error")).toHaveTextContent("Buy-in");
 });
 
-test("the scheduled-start card shows the late-registration select with the default of 15 levels", () => {
+test("the scheduled-start card shows the late-registration select defaulted to off, like the Tournament form", () => {
     const ref = createRef<TournamentCreateFieldsHandle>();
     render(<TournamentCreateFields ref={ref} controlClassName={control} labelClassName={label} layout="stack" />);
     const select = screen.getByTestId("late-registration") as HTMLSelectElement;
-    expect(select).toHaveValue("15");
+    expect(select).toHaveValue("0");
     expect(screen.getByTestId("tournament-start")).toBeInTheDocument();
     fireEvent.change(select, { target: { value: "6" } });
     expect(select).toHaveValue("6");
