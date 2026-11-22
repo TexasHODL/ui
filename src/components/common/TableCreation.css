@@ -93,6 +93,10 @@
     box-shadow: none;
     color-scheme: var(--theme-scheme, dark);
 }
+.table-creation :is(input, select):disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
 .table-creation :is(input, select):focus {
     border-color: var(--theme-accent, #b97de6);
     outline: 2px solid var(--theme-wash, #b97de630);
@@ -134,6 +138,10 @@
 .creation-fields .creation-tournament-fields > div:has(button) {
     grid-column: 1 / -1;
 }
+.creation-fields .creation-tournament-fields > .creation-span {
+    grid-column: 1 / -1;
+}
+
 .creation-balance,
 .creation-total,
 .table-creation .creation-fee {

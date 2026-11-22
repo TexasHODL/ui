@@ -24,6 +24,7 @@ import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTE
 import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, getGameFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isMultiTableCreateType, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { TournamentCreateFields, type TournamentCreateFieldsHandle } from "../components/tournament/TournamentCreateFields";
+import { DEFAULT_TOURNAMENT_FORM_VALUES, MTT_SEATS_PER_TABLE_OPTIONS } from "../utils/tournamentCreate";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import { SNG_PREVIEW_LEVEL_COUNT, TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
@@ -60,6 +61,7 @@ export default function TableAdminPage() {
     const cosmosWallet = useCosmosWallet();
     const { createTable, isCreating, error: createError } = useNewTable();
     const mttFields = useRef<TournamentCreateFieldsHandle>(null);
+    const [mttSeatsPerTable, setMttSeatsPerTable] = useState(DEFAULT_TOURNAMENT_FORM_VALUES.seatsPerTable);
     const tournamentActions = useTournamentActions(async () => undefined);
     const { games: fetchedGames, isLoading, error: gamesError, refetch } = useFindGames();
 
@@ -466,13 +468,12 @@ export default function TableAdminPage() {
                                         ))}
                                     </select>
                                 </div>
-                                {!isMultiTableCreateType(gameType) && (
-                                <>
                                 <div>
                                     <label className="text-gray-300 text-xs mb-1 block">Game</label>
                                     <select
                                         aria-label="Game"
-                                        value={gameVariant}
+                                        value={isMultiTableCreateType(gameType) ? GameVariant.TEXAS_HOLDEM : gameVariant}
+                                        disabled={isMultiTableCreateType(gameType)}
                                         onChange={e => {
                                             const variant = toGameVariant(e.target.value);
                                             if (!variant) return;
@@ -482,29 +483,47 @@ export default function TableAdminPage() {
                                         className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     >
                                         <option value={GameVariant.TEXAS_HOLDEM}>Texas Hold&apos;em</option>
-                                        <option value={GameVariant.OMAHA}>Omaha</option>
+                                        {!isMultiTableCreateType(gameType) && <option value={GameVariant.OMAHA}>Omaha</option>}
                                     </select>
                                 </div>
                                 <div>
                                     <label className="text-gray-300 text-xs mb-1 block">Limit</label>
                                     <select
                                         aria-label="Betting limit"
-                                        value={bettingLimit}
+                                        value={isMultiTableCreateType(gameType) ? BettingLimit.NO_LIMIT : bettingLimit}
+                                        disabled={isMultiTableCreateType(gameType)}
                                         onChange={e => {
                                             const limit = toCreatableBettingLimit(e.target.value, gameVariant);
                                             if (limit) setBettingLimit(limit);
                                         }}
                                         className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     >
-                                        {creatableBettingLimits(gameVariant).map(limit => (
-                                            <option key={limit} value={limit}>
-                                                {bettingLimitLabel(limit)}
-                                            </option>
-                                        ))}
+                                        {isMultiTableCreateType(gameType) ? (
+                                            <option value={BettingLimit.NO_LIMIT}>{bettingLimitLabel(BettingLimit.NO_LIMIT)}</option>
+                                        ) : (
+                                            creatableBettingLimits(gameVariant).map(limit => (
+                                                <option key={limit} value={limit}>
+                                                    {bettingLimitLabel(limit)}
+                                                </option>
+                                            ))
+                                        )}
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="text-gray-300 text-xs mb-1 block">Max Players</label>
+                                    {isMultiTableCreateType(gameType) ? <label className="text-gray-300 text-xs mb-1 block">Seats per table</label> : <label className="text-gray-300 text-xs mb-1 block">Max Players</label>}
+                                    {isMultiTableCreateType(gameType) ? (
+                                    <select
+                                        aria-label="Seats per table"
+                                        data-testid="mtt-seats-per-table"
+                                        value={mttSeatsPerTable}
+                                        onChange={e => setMttSeatsPerTable(e.target.value)}
+                                        className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                    >
+                                        {MTT_SEATS_PER_TABLE_OPTIONS.map(option => (
+                                            <option key={option.value} value={option.value}>{option.label}</option>
+                                        ))}
+                                    </select>
+                                    ) : (
                                     <select
                                         aria-label="Number of players"
                                         value={maxPlayers}
@@ -515,15 +534,17 @@ export default function TableAdminPage() {
                                             <option key={option.value} value={option.value}>{option.label}</option>
                                         ))}
                                     </select>
+                                    )}
                                 </div>
-                                </>
-                                )}
                             </div>
 
                             {isMultiTableCreateType(gameType) ? (
                                 <TournamentCreateFields
                                     ref={mttFields}
                                     layout="grid"
+                                    hideSeatsField
+                                    seatsPerTable={mttSeatsPerTable}
+                                    onSeatsPerTableChange={setMttSeatsPerTable}
                                     controlClassName="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                     labelClassName="text-gray-300 text-xs mb-1 block"
                                 />
