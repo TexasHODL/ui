@@ -13,7 +13,6 @@ import {
     type BlindStructureChoice
 } from "../../utils/blindStructureChoice";
 import { LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "../../utils/scheduledSng";
-import { DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS } from "../../utils/tournamentLateRegistration";
 import {
     DEFAULT_TOURNAMENT_FORM_VALUES,
     MTT_SEATS_PER_TABLE_OPTIONS,
@@ -47,11 +46,6 @@ const DURATION_PRESETS = [
     { value: 20, label: "20 min" },
     { value: 30, label: "30 min" }
 ] as const;
-
-/** Sit & Go choices, plus the multi-table default of 15 levels. */
-const MTT_LATE_REGISTRATION_LEVEL_OPTIONS: readonly number[] = Array.from(
-    new Set([...LATE_REGISTRATION_LEVEL_OPTIONS, DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS])
-);
 
 export interface TournamentCreateFieldsHandle {
     /** Validates the fields. Returns the create params, or undefined after showing the errors. */
@@ -229,7 +223,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                             value={values.lateRegistrationLevels}
                             onChange={set("lateRegistrationLevels")}
                         >
-                            {MTT_LATE_REGISTRATION_LEVEL_OPTIONS.map(n => (
+                            {LATE_REGISTRATION_LEVEL_OPTIONS.map(n => (
                                 <option key={n} value={n}>
                                     {lateRegistrationOptionLabel(n)}
                                 </option>

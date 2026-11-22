@@ -22,8 +22,8 @@ const TABLE_WITH_BREAK: BlindStructureDTO = {
 };
 
 describe("DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS", () => {
-    it("is 15, the issue's pre-filled default", () => {
-        expect(DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS).toBe(15);
+    it("is 0 (off), the same default as the single-table Tournament form", () => {
+        expect(DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS).toBe(0);
     });
 });
 
