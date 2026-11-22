@@ -1,4 +1,4 @@
-import { BettingLimit, GameListItem, GameFormat, GameVariant, RakeConfigDTO } from "@block52/poker-vm-sdk";
+import { BettingLimit, BlindStructureDTO, GameListItem, GameFormat, GameVariant, RakeConfigDTO } from "@block52/poker-vm-sdk";
 import { getGameFormat, getGameVariant } from "./gameFormatUtils";
 
 /**
@@ -35,6 +35,8 @@ export interface GameWithFormat {
     lateRegistrationLevels?: number;
     /** Cash-table rake config from the chain (micro-USDC strings); absent = no rake. */
     rake?: RakeConfigDTO;
+    /** The blind structure (poker-vm#1734), antes included (ui#891); absent = the blinds double, no antes. */
+    blindStructure?: BlindStructureDTO;
 }
 
 /** Epoch ms for lobby math; string SST would concat with grace and break 24h hide. */
@@ -78,6 +80,7 @@ export const convertGameListItemToGameWithFormat = (game: GameListItem): GameWit
         updatedAt: game.updatedAt,
         scheduledStartTime: coerceScheduledStartTimeMs(opts.scheduledStartTime),
         lateRegistrationLevels: opts.lateRegistrationLevels,
+        blindStructure: opts.blindStructure,
         entryFee: opts.entryFee,
         protocolFeeBps: opts.protocolFeeBps,
         rake: opts.rake

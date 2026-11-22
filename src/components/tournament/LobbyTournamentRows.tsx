@@ -4,7 +4,7 @@ import styles from "../TableList.module.css";
 import { ShareTournamentButton } from "./ShareTournamentButton";
 import { useNow } from "../../hooks/tournament/useTournamentLobby";
 import { MULTI_TABLE_TOURNAMENT_LABEL } from "../../utils/createGameType";
-import { hasValue } from "../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { displayTableName } from "../../utils/generatedTableName";
 import { lobbyTournamentAction, tournamentListRow } from "../../utils/tournamentListRow";
 import type { TournamentLobbyCard } from "../../utils/tournamentLobby";

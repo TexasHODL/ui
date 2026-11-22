@@ -18,7 +18,7 @@ import { useWinnerInfo } from "./useWinnerInfo";
 import { shouldShowWinnerSummary } from "../../components/ActionsLog.utils";
 import { getShowdownSummaryLines } from "../../utils/showdownSummary";
 import { setLastHandResult } from "../../utils/lastHandResult";
-import { hasElements } from "../../utils/guards";
+import { hasElements } from "@block52/ui-sdk/helpers";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 
 export const useLastHandResultCapture = (tableId: string | undefined): void => {

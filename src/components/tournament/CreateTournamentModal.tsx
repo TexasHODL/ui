@@ -1,17 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Modal } from "../common";
-import { BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../BlindStructureFields";
+import { AnteControls, BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../BlindStructureFields";
+import { useBlindStructureForm } from "../../hooks/useBlindStructureForm";
 import { SNG_BLINDS } from "../../constants/blindLevels";
 import { DEFAULT_SNG_BLIND_LEVEL_MINUTES } from "../../constants/blindLevels";
-import {
-    DEFAULT_BLIND_STRUCTURE_CHOICE,
-    DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
-    choiceUsesFormBlinds,
-    openingBlindsOf,
-    previewBlindLevels,
-    resolveBlindStructureChoice,
-    type BlindStructureChoice
-} from "../../utils/blindStructureChoice";
+import { choiceUsesFormBlinds, openingBlindsOf, previewBlindLevels } from "../../utils/blindStructureChoice";
 import {
     DEFAULT_TOURNAMENT_FORM_VALUES,
     defaultStartTimeLocal,
@@ -23,7 +16,7 @@ import {
 } from "../../utils/tournamentCreate";
 import { lateRegistrationCutoffAt } from "../../utils/tournamentLateRegistration";
 import { formatStartsAt, localDateTimeToUnixSeconds } from "../../utils/scheduledSng";
-import { hasElements, hasValue, isBlank, isNullish } from "../../utils/guards";
+import { hasElements, hasValue, isBlank, isNullish } from "@block52/ui-sdk/helpers";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { parseUsdcToMicro } from "../../constants/currency";
 import type { CreateTournamentParams } from "../../utils/tournamentTx";
@@ -56,16 +49,12 @@ const Field: React.FC<{ label: string; hint?: string; error?: string; children: 
 /** The create-tournament form. Validation and the message it builds live in utils/tournamentCreate. */
 export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ isOpen, busy, error, onSubmit, onClose }) => {
     const [values, setValues] = useState<TournamentFormValues>(() => ({ ...DEFAULT_TOURNAMENT_FORM_VALUES, startTime: defaultStartTimeLocal(Date.now()) }));
-    const [choice, setChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
-    const [customText, setCustomText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const [blindsIndex, setBlindsIndex] = useState(1); // 25 / 50
     const [levelMinutes, setLevelMinutes] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
     const [submitted, setSubmitted] = useState(false);
-
-    const plan = useMemo(
-        () => resolveBlindStructureChoice(choice, customText, { ...SNG_BLINDS[blindsIndex], durationMinutes: levelMinutes }),
-        [choice, customText, blindsIndex, levelMinutes]
-    );
+    const blindForm = useBlindStructureForm({ ...SNG_BLINDS[blindsIndex], durationMinutes: levelMinutes });
+    const choice = blindForm.choice;
+    const plan = blindForm.plan;
     const blindStructure = tournamentBlindStructure(plan);
     const previewRows = useMemo(() => (plan.preview ? previewBlindLevels(plan.preview, PREVIEW_LEVELS) : []), [plan.preview]);
 
@@ -150,7 +139,7 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
                 </div>
 
                 <div>
-                    <BlindStructureSelect value={choice} onChange={setChoice} className={CONTROL} />
+                    <BlindStructureSelect value={choice} onChange={blindForm.setChoice} className={CONTROL} />
                     {choiceUsesFormBlinds(choice) && (
                         <div className="grid grid-cols-2 gap-3">
                             <div>
@@ -175,7 +164,14 @@ export const CreateTournamentModal: React.FC<CreateTournamentModalProps> = ({ is
                             </div>
                         </div>
                     )}
-                    {choice === "custom" && <CustomBlindStructureInput value={customText} onChange={setCustomText} error={plan.error} />}
+                    {choice === "custom" && <CustomBlindStructureInput value={blindForm.customText} onChange={blindForm.setCustomText} error={plan.error} />}
+                    <AnteControls
+                        value={blindForm.anteForm}
+                        onChange={blindForm.setAnteForm}
+                        disabled={blindForm.anteControlsDisabled}
+                        customAntes={blindForm.customAntes}
+                        className={CONTROL}
+                    />
                     <BlindPreviewTable rows={previewRows} />
                     {err("blindStructure") && choice !== "custom" && <p className="text-xs text-red-400 mt-1">{err("blindStructure")}</p>}
                 </div>

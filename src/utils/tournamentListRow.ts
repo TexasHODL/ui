@@ -1,5 +1,5 @@
 import { formatMicroAsUsdc } from "../constants/currency";
-import { hasValue } from "./guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { formatCountdown } from "./scheduledSng";
 import { tableUrl, tournamentUrl } from "./tableUrl";
 import { lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "./tournamentLobby";

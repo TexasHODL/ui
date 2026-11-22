@@ -5,7 +5,7 @@
  * list of prizes cannot add up to more than the floored pool. Nothing here
  * changes a payout, a fee, or a claim.
  */
-import { hasContent, hasValue } from "./guards";
+import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 
 const MICRO_PER_CENT = 10_000n;
 

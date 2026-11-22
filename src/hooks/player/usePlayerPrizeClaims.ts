@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { httpErrorMessage } from "../../apis/HTTPClient";
 import { useCosmosApi } from "../../context/CosmosApiContext";
-import { hasContent, hasValue } from "../../utils/guards";
+import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 import { isPrizeClaimAddress, prizeClaimsFromTxSearch, prizeClaimsQueryFor, type PlayerPrizeClaim } from "../../utils/playerPrizeClaims";
 import type { SilentRefetchOptions } from "./usePlayerTournamentEntries";
 

@@ -7,7 +7,7 @@ import { useCreateValidator } from "../../hooks/nodes/useCreateValidator";
 import { useCosmosWallet } from "../../hooks/wallet";
 import { formatMicroAsUsdc } from "../../constants/currency";
 import { faultTolerance, parseConsensusPubkey, parseMicroAmount, powerShareBps, wouldControlLiveness } from "../../utils/nodePortal";
-import { hasContent, isNullish } from "../../utils/guards";
+import { hasContent, isNullish } from "@block52/ui-sdk/helpers";
 
 const inputClass = "w-full bg-[#0c0911] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-400";
 

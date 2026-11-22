@@ -22,7 +22,8 @@ import {
     type TournamentEntrantStatus,
     type TournamentStatus
 } from "@block52/poker-vm-sdk";
-import { isNullish, isNumber, isRecord, isString } from "./guards";
+import { isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
+import { describeAnteSchedule } from "./anteRule";
 import { gameIdFromTableId } from "./tournamentFollow";
 import { formatTournamentLateRegistration } from "./tournamentLateRegistration";
 
@@ -294,6 +295,8 @@ export interface TournamentLobbyCard {
     name?: string;
     /** The lobby's late-registration line, e.g. "Late reg: until level 15" or "Late reg closed"; empty when there is none (ui#1000 item 2). */
     lateRegistrationLabel: string;
+    /** "Antes from level N" or "No antes", from the structure (ui#891). */
+    anteLabel: string;
 }
 
 /** Entrants that count toward the field: registered, or already playing/busted after the start. */
@@ -376,7 +379,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         // (it also closes at the first paid place and while the final table forms),
         // so `closed` must come from the tournament-level SDK helper once it ships;
         // until then the label shows the configured target level while it exists.
-        lateRegistrationLabel: formatTournamentLateRegistration(state.options.lateRegistrationLevels, false)
+        lateRegistrationLabel: formatTournamentLateRegistration(state.options.lateRegistrationLevels, false),
+        anteLabel: describeAnteSchedule(state.options.blindStructure)
     };
 }
 

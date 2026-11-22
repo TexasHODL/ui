@@ -12,7 +12,7 @@ import { installModalViewportFit } from "./utils/modalViewportFit";
 import { installChunkLoadRecovery } from "./utils/lazyRoute";
 import { Profiler } from "react";
 import { NetworkProvider } from "./context/NetworkContext";
-import { hasContent } from "./utils/guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { getCosmosMnemonic, getCosmosAddress, setCosmosMnemonic, setCosmosAddress } from "./utils/cosmos/storage";
 
 const projectId = import.meta.env.VITE_PROJECT_ID;

@@ -3,7 +3,7 @@ import { FaTrophy } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
 import { NftAvatarImage } from "../profile/NftAvatarImage";
-import { hasContent } from "../../utils/guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { formatUsdc } from "../../utils/tournamentLobby";
 import { ordinalPlace } from "../../utils/tournamentFinish";

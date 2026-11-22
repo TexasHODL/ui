@@ -11,7 +11,7 @@
  */
 import type { ContributionSnapshot } from "./handContribution";
 import { viewerPlayedHand } from "./handHistoryCards";
-import { hasContent, hasValue, isNumber } from "./guards";
+import { hasContent, hasValue, isNumber } from "@block52/ui-sdk/helpers";
 
 const PENDING = "…";
 const UNKNOWN = "—";

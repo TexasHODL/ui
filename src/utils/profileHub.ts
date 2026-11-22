@@ -1,4 +1,4 @@
-import { hasContent } from "./guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 
 /** Standalone routes. A connected wallet is redirected to the matching profile tab. */
 export const MY_HANDS_PATH = "/hands";

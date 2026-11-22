@@ -12,7 +12,7 @@
  * Display only. This module never writes a table id or any on-chain field.
  */
 
-import { hasContent } from "./guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 
 /** Curated two-word table names. Title Case, one space, no hyphen. */
 export const GENERATED_TABLE_NAMES: readonly string[] = [

@@ -13,7 +13,7 @@ import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { PlayerHand, PlayerSession, PlayerSessionsResponse } from "../types/players";
 import type { HandListItem, HandListResponse } from "../pages/explorer/types";
 import { encodeStringField1, parseAbciStringResponse } from "./abciQuery";
-import { hasContent, hasElements, isNumber, isRecord, isString } from "./guards";
+import { hasContent, hasElements, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 import { playerHandFromState, unlistedHands } from "./handHistoryCards";
 import { GAME_STATE_PUBLIC_PATH, handEndedQuery, parseGameStateJson, parseTxSearchHeight, snapshotHeights } from "./handReplay";

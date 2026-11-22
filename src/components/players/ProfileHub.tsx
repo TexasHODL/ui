@@ -2,7 +2,7 @@ import { FC } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useCosmosWallet } from "../../hooks/wallet/useCosmosWallet";
 import { getCosmosAddress } from "../../utils/cosmos/storage";
-import { hasElements } from "../../utils/guards";
+import { hasElements } from "@block52/ui-sdk/helpers";
 import { PROFILE_TAB_PARAM, profileHubItems, viewerAddress, visibleProfileTab } from "../../utils/profileHub";
 import "../common/PageLayout.css";
 import styles from "./ProfileHub.module.css";

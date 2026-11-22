@@ -24,7 +24,7 @@ import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useActionSubmit } from "../../../../context/ActionSubmitContext";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
-import { hasValue } from "../../../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { tournamentIdOf } from "../../../../utils/tournamentBlinds";
 
 export interface PlayerActionButtonsProps {

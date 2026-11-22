@@ -1,5 +1,5 @@
 import { FC, useEffect, useState } from "react";
-import { hasContent } from "../../utils/guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { ProfileHeaderAvatar } from "./ProfileHeaderAvatar";
 import styles from "./ProfileIdentity.module.css";
 

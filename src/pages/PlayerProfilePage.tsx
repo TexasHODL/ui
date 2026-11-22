@@ -7,7 +7,7 @@ import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import CosmosWalletPage from "../components/CosmosWalletPage";
 import PlayerAwardsPage from "./PlayerAwardsPage";
 import { ExplorerHeader } from "../components/explorer/ExplorerHeader";
-import { isEmpty, hasElements, hasValue, hasContent } from "../utils/guards";
+import { isEmpty, hasElements, hasValue, hasContent } from "@block52/ui-sdk/helpers";
 import { Pagination } from "../components/common";
 import { MyHandsPanel } from "../components/players/MyHandsPanel";
 import { ProfileHub } from "../components/players/ProfileHub";

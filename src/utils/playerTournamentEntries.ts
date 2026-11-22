@@ -16,7 +16,7 @@
  */
 import type { TournamentStateDTO } from "../types/tournament";
 import type { PlayerHand } from "../types/players";
-import { hasContent, hasElements, hasValue, isEmpty, isNumber, isRecord, isString } from "./guards";
+import { hasContent, hasElements, hasValue, isEmpty, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { prizeMicroIsPositive } from "./prizeDisplay";
 import { parseTournamentGameId, tournamentGameId } from "./tableUrl";
 import { gameIdFromTableId } from "./tournamentFollow";

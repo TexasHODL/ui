@@ -1,6 +1,6 @@
 import React from "react";
 import { finishedSeatDisplay } from "../../../utils/finishedSeatDisplay";
-import { hasValue } from "../../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { PrizeAmount } from "../PrizeAmount";
 import { FitText } from "../common/FitText";
 import "./FinishedSeatCards.css";

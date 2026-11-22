@@ -8,7 +8,7 @@ import { useIndexerApi } from "../../context/IndexerApiContext";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { getCardImageUrl, getCardBackUrl, getDealerImageUrl } from "../../utils/cardImages";
 import { potLabel } from "../../utils/potDisplayUtils";
-import { isEmpty, hasElements, hasContent } from "../../utils/guards";
+import { isEmpty, hasElements, hasContent } from "@block52/ui-sdk/helpers";
 import { parseGameStateJson, buildHandShareUrl, buildShareOnXUrl } from "../../utils/handReplay";
 import styles from "./HandPage.module.css";
 

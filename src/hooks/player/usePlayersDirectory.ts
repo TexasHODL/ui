@@ -4,7 +4,7 @@ import { useCosmosApi } from "../../context/CosmosApiContext";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 import type { PlayerListItem, PlayerSearchParams, PlayerSession, PlayerSortField } from "../../types/players";
 import type { TournamentStateDTO } from "../../types/tournament";
-import { hasContent, hasElements, hasValue, isNumber } from "../../utils/guards";
+import { hasContent, hasElements, hasValue, isNumber } from "@block52/ui-sdk/helpers";
 import { fetchAllPages, mapWithConcurrency } from "../../utils/pagedFetch";
 import { playersPage } from "../../utils/playerDirectory";
 import {

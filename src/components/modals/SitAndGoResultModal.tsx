@@ -6,7 +6,7 @@ import { formatFlooredPrizeDollars, parsePrizeMicro, prizeMicroIsPositive } from
 import { PrizeAmount } from "../playPage/PrizeAmount";
 import type { ResultDTO } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../context/GameStateContext";
-import { hasValue } from "../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { finisherResult } from "../../utils/tournamentResult";
 import { tournamentIdOf } from "../../utils/tournamentBlinds";
 import { getFinishingHand, subscribeFinishingHand } from "../../utils/finishingHand";

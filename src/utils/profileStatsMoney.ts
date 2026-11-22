@@ -10,7 +10,7 @@
  * figures once, without counting an indexer session or prize claim twice.
  */
 import type { PlayerListItem, PlayerSession } from "../types/players";
-import { hasContent, hasElements, hasValue, isEmpty } from "./guards";
+import { hasContent, hasElements, hasValue, isEmpty } from "@block52/ui-sdk/helpers";
 import { addedPrizeCash, type PlayerPrizeClaim } from "./playerPrizeClaims";
 import {
     coversTournament,

@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useRef } from "react";
-import { hasValue, isNullish } from "../../../utils/guards";
+import { hasValue, isNullish } from "@block52/ui-sdk/helpers";
 import { finishedSeatDisplay } from "../../../utils/finishedSeatDisplay";
 import { PrizeAmount } from "../PrizeAmount";
 import { getViewportMode } from "../../../config/stageGeometry";

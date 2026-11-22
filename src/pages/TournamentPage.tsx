@@ -10,7 +10,7 @@ import { useNow } from "../hooks/tournament/useTournamentLobby";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
 import { parseMicroToBigInt } from "../constants/currency";
-import { hasElements, isNullish } from "../utils/guards";
+import { hasElements, isNullish } from "@block52/ui-sdk/helpers";
 import { MULTI_TABLE_TOURNAMENT_LABEL } from "../utils/createGameType";
 import { displayTableName } from "../utils/generatedTableName";
 import { formatStartsAt } from "../utils/scheduledSng";

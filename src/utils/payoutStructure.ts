@@ -9,7 +9,7 @@
  * amount (`floor(pool * bps / 10000)`), so the label round-trips.
  */
 import type { TournamentStateDTO } from "../types/tournament";
-import { hasElements, hasValue, isNullish, isNumber, isRecord, isString } from "./guards";
+import { hasElements, hasValue, isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { parsePrizeMicro } from "./prizeDisplay";
 
 export interface PayoutPlaceView {

@@ -19,7 +19,7 @@
  */
 import { PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
 import type { PlayerHand } from "../types/players";
-import { hasContent, hasElements, hasValue, isNumber, safeLength } from "./guards";
+import { hasContent, hasElements, hasValue, isNumber, safeLength } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 import type { ContributionAction, ContributionSnapshot, HandContributionTarget } from "./handContribution";
 

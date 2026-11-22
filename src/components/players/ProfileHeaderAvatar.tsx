@@ -1,6 +1,6 @@
 import { FC } from "react";
 import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
-import { hasContent } from "../../utils/guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { NftAvatarImage } from "../profile/NftAvatarImage";
 import styles from "./ProfileHeaderAvatar.module.css";
 

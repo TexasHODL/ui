@@ -14,7 +14,7 @@
 import { BettingLimit, GameFormat, isCashFormat, isTournamentFormat } from "@block52/poker-vm-sdk";
 import { displayGameFormat } from "./createGameType";
 import { formatGameFormatDisplay, formatTableGameDisplay, getBlindsForDisplay, toGameFormat, toGameVariant } from "./gameFormatUtils";
-import { hasContent, hasValue } from "./guards";
+import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 import { formatMicroUsd } from "./moneyDisplay";
 import { placeOrdinal, resolvePrizePlace, type GamePrizeMeta } from "./transactionUtils";
 

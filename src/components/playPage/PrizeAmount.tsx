@@ -1,6 +1,6 @@
 import React from "react";
 import { formatFlooredPrizeDollars, parsePrizeMicro } from "../../utils/prizeDisplay";
-import { hasValue } from "../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 
 interface PrizeAmountProps {
     /** Chain prize in micro-USDC. Display only; the value is not rewritten. */

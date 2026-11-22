@@ -13,7 +13,7 @@
  * hand is never reported in its place.
  */
 import { isTournamentFormat, PlayerStatus } from "@block52/poker-vm-sdk";
-import { hasContent, hasElements, hasValue, isNumber, isRecord, isString } from "./guards";
+import { hasContent, hasElements, hasValue, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { handEndedQuery } from "./handReplay";
 import type { SessionPrizeRow } from "./playerPrizeClaims";
 import { prizeMicroIsPositive } from "./prizeDisplay";

@@ -16,7 +16,7 @@
 import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { ordinalPlace } from "./tournamentFinish";
 import { floorPrizeCents, parsePrizeMicro } from "./prizeDisplay";
-import { hasContent, hasValue } from "./guards";
+import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 
 /** Where a positive payout is drawn. Null means show no amount. */
 export type FinishedPayoutPlace = "action-banner" | "hole-cards";

@@ -26,7 +26,7 @@ import { useCardFaceUrl } from "../../../theme/useTableStyles";
 import { useAllInEquity } from "../../../hooks/player/useAllInEquity";
 import { useProfileAvatar } from "../../../context/profile/ProfileAvatarContext";
 import { usePlayerTimer } from "../../../hooks/player/usePlayerTimer";
-import { hasElements, hasValue } from "../../../utils/guards";
+import { hasElements, hasValue } from "@block52/ui-sdk/helpers";
 import { winnerCardHighlight } from "../../../utils/holeCardLayout";
 import { HoleCardRow } from "./HoleCardRow";
 import { FinishedSeatCards } from "./FinishedSeatCards";

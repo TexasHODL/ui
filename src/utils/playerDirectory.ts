@@ -1,5 +1,5 @@
 import type { PlayerListItem, PlayerSortField } from "../types/players";
-import { hasContent, hasValue } from "./guards";
+import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 
 /**
  * Sort the directory in the browser.

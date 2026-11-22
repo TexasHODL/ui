@@ -23,7 +23,7 @@
  * the UI must read that from the tournament state rather than recompute it here.
  */
 import { expandBlindLevel, type BlindStructureDTO } from "@block52/poker-vm-sdk";
-import { hasValue, isNullish } from "./guards";
+import { hasValue, isNullish } from "@block52/ui-sdk/helpers";
 
 /**
  * The create form's default: off, same as the single-table Tournament form.

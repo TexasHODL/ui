@@ -23,7 +23,7 @@ import {
 } from "../utils/transactionUtils";
 import { useCosmosApi, useCometRpcApiFactory } from "../context/CosmosApiContext";
 import { bridgeDepositRow, fetchBridgeDeposits } from "../utils/bridgeDeposits";
-import { isEmpty, hasElements } from "../utils/guards";
+import { isEmpty, hasElements } from "@block52/ui-sdk/helpers";
 
 interface Transaction {
     txhash: string;

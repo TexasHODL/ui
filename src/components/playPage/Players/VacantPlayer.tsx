@@ -28,7 +28,7 @@ import { useGameOptions } from "../../../hooks/game/useGameOptions";
 import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../../utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
 import { microToUsdc } from "../../../constants/currency";
-import { hasElements, isNullish } from "../../../utils/guards";
+import { hasElements, isNullish } from "@block52/ui-sdk/helpers";
 import { seatsAreDrawn } from "../../../utils/seatDraw";
 import { showsBlankSeatPill } from "../../../utils/blankSeatPill";
 import { viteEnv } from "../../../utils/viteEnv";

@@ -11,7 +11,7 @@ import { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { captureFinishingHand } from "./finishingHand";
 import type { PlayerHand } from "../types/players";
 import { contributionFromActions, type ContributionAction } from "./handContribution";
-import { hasContent, hasElements, hasValue, isNumber } from "./guards";
+import { hasContent, hasElements, hasValue, isNumber } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 
 /** Actions the indexer ignores when deciding who played a hand. */

@@ -6,7 +6,7 @@ import { ActionDTO, PlayerActionType, NonPlayerActionType } from "@block52/poker
 import { formatDisplayAmount, formatForSitAndGo } from "../../utils/numberUtils";
 import { getStreetCommitTotalForAction } from "../../utils/raiseUtils";
 import { isTournamentFormat } from "../../utils/gameFormatUtils";
-import { isBlank, isEmpty } from "../../utils/guards";
+import { isBlank, isEmpty } from "@block52/ui-sdk/helpers";
 import { useClosingBetPresentation } from "./useClosingBetPresentation";
 
 export interface PlayerActionDisplay {

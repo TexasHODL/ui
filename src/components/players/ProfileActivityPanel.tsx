@@ -2,7 +2,7 @@ import { FC, MouseEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import { formatTimestampRelative } from "../../utils/formatUtils";
-import { hasContent, hasElements, isEmpty } from "../../utils/guards";
+import { hasContent, hasElements, isEmpty } from "@block52/ui-sdk/helpers";
 import { tableUrl } from "../../utils/tableUrl";
 import {
     formatActionAmount,
