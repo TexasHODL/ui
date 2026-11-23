@@ -22,7 +22,7 @@ import {
     type TournamentEntrantStatus,
     type TournamentStatus
 } from "@block52/poker-vm-sdk";
-import { isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
+import { hasValue, isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { describeAnteSchedule } from "./anteRule";
 import { gameIdFromTableId } from "./tournamentFollow";
 import { formatTournamentLateRegistration } from "./tournamentLateRegistration";
@@ -274,7 +274,7 @@ export function endedAtMsFromTournamentFinishedTx(page: unknown): number | undef
     if (!isRecord(page) || !Array.isArray(page.tx_responses)) return undefined;
     for (const tx of page.tx_responses) {
         if (!isRecord(tx)) continue;
-        if (tx.code !== undefined && tx.code !== 0 && tx.code !== "0") continue;
+        if (hasValue(tx.code) && tx.code !== 0 && tx.code !== "0") continue;
         if (!isString(tx.timestamp)) continue;
         const ms = parseTxTimestampMs(tx.timestamp);
         if (!isNullish(ms)) return ms;

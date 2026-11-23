@@ -1,4 +1,5 @@
 import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "@block52/poker-ui-core/utils/scheduledSng";
+import { isNumber } from "@block52/ui-sdk/helpers";
 import type { ActionDTO } from "@block52/poker-vm-sdk";
 import { blindLevelSecondsRemaining } from "./blindLevelTimer";
 
@@ -131,11 +132,11 @@ const lobbyEndedFilterApi = (() => {
     function shouldHideEndedLobbyTournament(card: LobbyEndedTournament, nowMs: number): boolean {
         if (card.phase === "finished") {
             const endedAt = card.endedAtMs;
-            if (typeof endedAt !== "number" || endedAt <= 0) return false;
+            if (!isNumber(endedAt) || endedAt <= 0) return false;
             return nowMs >= endedAt + retentionMs;
         }
         if (card.phase !== "cancelled") return false;
-        const endedAt = typeof card.endedAtMs === "number" && card.endedAtMs > 0 ? card.endedAtMs : card.startsAtMs;
+        const endedAt = isNumber(card.endedAtMs) && card.endedAtMs > 0 ? card.endedAtMs : card.startsAtMs;
         if (!(endedAt > 0)) return false;
         return nowMs >= endedAt + retentionMs;
     }

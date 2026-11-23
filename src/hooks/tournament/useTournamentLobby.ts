@@ -14,7 +14,7 @@ import {
     type TournamentLobbyCard,
     type TournamentRecord
 } from "@block52/poker-ui-core/utils/tournamentLobby";
-import { isNullish } from "@block52/ui-sdk/helpers";
+import { hasElements, isNullish } from "@block52/ui-sdk/helpers";
 
 /** How often the lobby re-reads the chain. */
 export const TOURNAMENT_LOBBY_POLL_MS = 5000;
@@ -91,7 +91,7 @@ export const useTournamentLobby = (): UseTournamentLobbyResult => {
                 if (known.has(id)) return false;
                 return (finishLookupFails.current[id] ?? 0) < 3;
             }).map(record => record.state.tournamentId);
-            if (toLookup.length > 0) {
+            if (hasElements(toLookup)) {
                 const found = await lookupTournamentFinishedAtMs(toLookup, query => cosmosApi.getLatestTransaction(query), known);
                 let changed = false;
                 const next = { ...finishAtByIdRef.current };
