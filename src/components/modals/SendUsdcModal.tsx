@@ -1,8 +1,8 @@
-import { formatUsd } from "../../utils/moneyDisplay";
+import { formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 import React, { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { usdcToMicroBigInt } from "../../constants/currency";
+import { usdcToMicroBigInt } from "@block52/poker-ui-core/constants/currency";
 import type { SendUsdcModalProps } from "./types";
 import styles from "./SendUsdcModal.module.css";
 

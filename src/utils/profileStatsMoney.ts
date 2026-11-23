@@ -9,7 +9,7 @@
  * refunds `net_buy_in` on `tournament_unregistered`. This adds those chain
  * figures once, without counting an indexer session or prize claim twice.
  */
-import type { PlayerListItem, PlayerSession } from "../types/players";
+import type { PlayerListItem, PlayerSession } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasElements, hasValue, isEmpty } from "@block52/ui-sdk/helpers";
 import { addedPrizeCash, type PlayerPrizeClaim } from "./playerPrizeClaims";
 import {

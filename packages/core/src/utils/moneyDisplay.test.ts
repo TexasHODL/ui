@@ -1,6 +1,6 @@
 import { formatMicroUsd, formatUsd } from "./moneyDisplay";
-import { parseUsdcToMicro, formatMicroAsUsdc } from "../constants/currency";
-import { formatBalance, formatForCashGame, formatSliderInputValue, formatUSDCToSimpleDollars } from "./numberUtils";
+import { parseUsdcToMicro, formatMicroAsUsdc } from "@block52/poker-ui-core/constants/currency";
+import { formatBalance, formatForCashGame, formatSliderInputValue, formatUSDCToSimpleDollars } from "@block52/poker-ui-core/utils/numberUtils";
 
 describe("display-only upward cent rounding", () => {
     test.each([

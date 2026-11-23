@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
-import { truncateMiddle } from "../../utils/stringUtils";
-import type { TournamentStandingRow } from "../../utils/tournamentTables";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
+import type { TournamentStandingRow } from "@block52/poker-ui-core/utils/tournamentTables";
 import { TournamentPodium } from "./TournamentPodium";
 
 jest.mock("../../context/profile/ProfileAvatarContext", () => ({ useProfileAvatar: jest.fn() }));

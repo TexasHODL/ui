@@ -1,4 +1,4 @@
-import type { PlayerListItem, PlayerSortField } from "../types/players";
+import type { PlayerListItem, PlayerSortField } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 
 /**

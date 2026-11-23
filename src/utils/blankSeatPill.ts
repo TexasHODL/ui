@@ -9,8 +9,8 @@
  */
 import { isSitAndGoFormat, isTournamentFormat } from "@block52/poker-vm-sdk";
 import { hasValue, isNullish, isString } from "@block52/ui-sdk/helpers";
-import { parseTournamentGameId } from "./tableUrl";
-import { tournamentIdOf } from "./tournamentBlinds";
+import { parseTournamentGameId } from "@block52/poker-ui-core/utils/tableUrl";
+import { tournamentIdOf } from "@block52/poker-ui-core/utils/tournamentBlinds";
 
 export const showsBlankSeatPill = (
     gameFormat: Parameters<typeof isTournamentFormat>[0] | null,

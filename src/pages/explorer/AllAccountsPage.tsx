@@ -1,13 +1,13 @@
-import { formatMicroUsd, formatUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd, formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { isNetworkError } from "../../apis/HTTPClient";
 import { useNavigate } from "react-router-dom";
 import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { getCosmosClient } from "../../utils/cosmos/client";
 import { useNetwork } from "../../context/NetworkContext";
-import { microToUsdc } from "../../constants/currency";
-import { truncateMiddle } from "../../utils/stringUtils";
-import { formatTimestampAbsolute, formatTimestampRelative } from "../../utils/formatUtils";
+import { microToUsdc } from "@block52/poker-ui-core/constants/currency";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
+import { formatTimestampAbsolute, formatTimestampRelative } from "@block52/poker-ui-core/utils/formatUtils";
 import { compareLastActive, latestTimestamp } from "../../utils/accountActivity";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";

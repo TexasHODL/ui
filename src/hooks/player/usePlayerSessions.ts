@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 import { hasContent } from "@block52/ui-sdk/helpers";
 import { fetchAllPages } from "../../utils/pagedFetch";
-import type { PlayerSession } from "../../types/players";
+import type { PlayerSession } from "@block52/poker-ui-core/types/players";
 import type { SilentRefetchOptions } from "./usePlayerTournamentEntries";
 
 interface UsePlayerSessionsResult {

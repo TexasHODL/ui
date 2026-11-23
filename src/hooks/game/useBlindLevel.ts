@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import type { BlindStructureDTO } from "@block52/poker-vm-sdk";
 import { useGameStateContext } from "../../context/GameStateContext";
-import { isSitAndGoFormat, isTournamentFormat } from "../../utils/gameFormatUtils";
-import { formatChipCount } from "../../utils/potDisplayUtils";
+import { isSitAndGoFormat, isTournamentFormat } from "@block52/poker-ui-core/utils/gameFormatUtils";
+import { formatChipCount } from "@block52/poker-ui-core/utils/potDisplayUtils";
 import { hasContent, hasValue, isNullish } from "@block52/ui-sdk/helpers";
 import { blindLevelSecondsRemaining } from "../../utils/blindLevelTimer";
-import { hasTournamentFinished } from "../../utils/scheduledSng";
-import { directedBlinds, tournamentIdOf } from "../../utils/tournamentBlinds";
+import { hasTournamentFinished } from "@block52/poker-ui-core/utils/scheduledSng";
+import { directedBlinds, tournamentIdOf } from "@block52/poker-ui-core/utils/tournamentBlinds";
 import { useTournament } from "../tournament/useTournament";
 
 export interface BlindLevelInfo {

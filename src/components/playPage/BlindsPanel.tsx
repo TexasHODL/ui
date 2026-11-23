@@ -17,7 +17,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useBlindLevel } from "../../hooks/game/useBlindLevel";
 import { buildBlindLadder, formatBlindCountdown } from "../../utils/blindStructure";
 import { isNullish } from "@block52/ui-sdk/helpers";
-import { formatChipCount } from "../../utils/potDisplayUtils";
+import { formatChipCount } from "@block52/poker-ui-core/utils/potDisplayUtils";
 import styles from "./BlindsPanel.module.css";
 import { SettingsPanelShell } from "./Table/components/SettingsPanelShell";
 import { MobileDrawerShell } from "./Table/components/MobileDrawerShell";

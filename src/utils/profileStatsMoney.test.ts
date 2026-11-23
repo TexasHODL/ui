@@ -1,4 +1,4 @@
-import type { PlayerSession } from "../types/players";
+import type { PlayerSession } from "@block52/poker-ui-core/types/players";
 import type { PlayerPrizeClaim } from "./playerPrizeClaims";
 import type { PlayerTournamentEntry, TournamentRegistration, TournamentUnregistration } from "./playerTournamentEntries";
 import {
@@ -9,7 +9,7 @@ import {
     profileMoneyWithAllVariants,
     sessionCoversTournament
 } from "./profileStatsMoney";
-import type { PlayerListItem } from "../types/players";
+import type { PlayerListItem } from "@block52/poker-ui-core/types/players";
 
 const PLAYER = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
 const CASH = "0x03dbba56a9a50bd607599b6fab0fc94649498ea08771047e8a3a1483979fc685";

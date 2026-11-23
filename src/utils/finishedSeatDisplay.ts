@@ -14,7 +14,7 @@
  * another, so the players who finish it stay on the banner.
  */
 import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
-import { ordinalPlace } from "./tournamentFinish";
+import { ordinalPlace } from "@block52/poker-ui-core/utils/tournamentFinish";
 import { floorPrizeCents, parsePrizeMicro } from "./prizeDisplay";
 import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 

@@ -1,7 +1,7 @@
-import { formatMicroUsd } from "../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect } from "react";
-import { truncateMiddle } from "../utils/stringUtils";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { hasElements } from "@block52/ui-sdk/helpers";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";

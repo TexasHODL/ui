@@ -1,9 +1,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { tableUrl, tournamentUrl } from "../../utils/tableUrl";
+import { tableUrl, tournamentUrl } from "@block52/poker-ui-core/utils/tableUrl";
 import { displayTableName } from "../../utils/generatedTableName";
-import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
-import { formatUsdc, lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "../../utils/tournamentLobby";
+import { formatCountdown, formatStartsAt } from "@block52/poker-ui-core/utils/scheduledSng";
+import { formatUsdc, lobbyRunnersLabel, phaseLabel, type TournamentLobbyCard } from "@block52/poker-ui-core/utils/tournamentLobby";
 import { ShareTournamentButton } from "./ShareTournamentButton";
 import { hasContent } from "@block52/ui-sdk/helpers";
 

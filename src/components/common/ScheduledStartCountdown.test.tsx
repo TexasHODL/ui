@@ -1,6 +1,6 @@
 import { render, screen, act } from "@testing-library/react";
 import { ScheduledStartCountdown } from "./ScheduledStartCountdown";
-import { formatCountdown } from "../../utils/scheduledSng";
+import { formatCountdown } from "@block52/poker-ui-core/utils/scheduledSng";
 
 beforeEach(() => {
     jest.useFakeTimers();

@@ -10,8 +10,8 @@
  */
 import { GameFormat } from "@block52/poker-vm-sdk";
 import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
-import { isScheduledSng } from "./scheduledSng";
-import { parseTournamentGameId } from "./tableUrl";
+import { isScheduledSng } from "@block52/poker-ui-core/utils/scheduledSng";
+import { parseTournamentGameId } from "@block52/poker-ui-core/utils/tableUrl";
 
 export type CreateGameType = "cash" | "sit-and-go" | "tournament" | "multi-table";
 

@@ -2,10 +2,10 @@ import { CreationDialog } from "../components/common/CreationDialog";
 import { ModalHeader } from "../components/common/ModalHeader";
 import { ScheduledStartCard } from "../components/common/ScheduledStartCard";
 import { TABLE_SEAT_OPTIONS } from "../utils/sngAdvancedParams";
-import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
+import { formatUsd, formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import "../components/common/TableCreation.css";
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "../utils/scheduledSng";
+import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "@block52/poker-ui-core/utils/scheduledSng";
 import { useNavigate } from "react-router-dom";
 
 import "./Dashboard.css";
@@ -15,11 +15,11 @@ import styles from "./Dashboard.module.css";
 import { ETH_CHAIN_ID } from "../config/constants";
 import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
-import { calculateBuyIn } from "../utils/buyInUtils";
+import { calculateBuyIn } from "@block52/poker-ui-core/utils/buyInUtils";
 import { hasValue, isNullish, hasContent, hasElements } from "@block52/ui-sdk/helpers";
 import { readUsdcBalance } from "../utils/usdcBalance";
-import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
-import { usdcToMicroBigInt, microToUsdc } from "../constants/currency";
+import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "@block52/poker-ui-core/constants/blindLevels";
+import { usdcToMicroBigInt, microToUsdc } from "@block52/poker-ui-core/constants/currency";
 
 import { UpcomingSngModal } from "../components/modals";
 import TableList from "../components/TableList";
@@ -39,13 +39,13 @@ import type { CreateTableOptions } from "../hooks/game/useNewTable";
 
 // Cosmos wallet utils
 import { isValidSeedPhrase } from "../utils/cosmos";
-import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "../utils/gameFormatUtils";
+import { bettingLimitLabel, creatableBettingLimits, defaultBettingLimitFor, isTournamentFormat, toCreatableBettingLimit, toGameVariant } from "@block52/poker-ui-core/utils/gameFormatUtils";
 import { CREATE_GAME_TYPES, SCHEDULED_SIT_AND_GO_NOTE, createdTableFormat, createGameTypeFormat, createGameTypeLabel, isMultiTableCreateType, isScheduledCreateType, toCreateGameType, type CreateGameType } from "../utils/createGameType";
 import { TournamentCreateFields, type TournamentCreateFieldsHandle } from "../components/tournament/TournamentCreateFields";
 import { DEFAULT_TOURNAMENT_FORM_VALUES, MTT_SEATS_PER_TABLE_OPTIONS } from "../utils/tournamentCreate";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
-import { choiceUsesFormBlinds, openingBlindsOf, previewBlindLevels, sngBlindFields } from "../utils/blindStructureChoice";
+import { choiceUsesFormBlinds, openingBlindsOf, previewBlindLevels, sngBlindFields } from "@block52/poker-ui-core/utils/blindStructureChoice";
 import { SNG_PREVIEW_LEVEL_COUNT } from "../utils/sngAdvancedParams";
 import { AnteControls, BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../components/BlindStructureFields";
 import { useBlindStructureForm } from "../hooks/useBlindStructureForm";

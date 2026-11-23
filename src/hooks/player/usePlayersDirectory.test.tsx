@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { useIndexerApi } from "../../context/IndexerApiContext";
-import type { PlayerListItem } from "../../types/players";
+import type { PlayerListItem } from "@block52/poker-ui-core/types/players";
 import { ALL_PRIZE_CLAIMS_QUERY, PRIZE_DIRECTORY_QUERY_TIMEOUT_MS } from "../../utils/playerPrizeClaims";
 import { ALL_TOURNAMENT_REGISTERED_QUERY, ALL_TOURNAMENT_UNREGISTERED_QUERY } from "../../utils/playerTournamentEntries";
 import { resetPlayersDirectoryCache, usePlayersDirectory } from "./usePlayersDirectory";

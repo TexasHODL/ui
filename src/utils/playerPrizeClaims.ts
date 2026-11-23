@@ -1,4 +1,4 @@
-import type { PlayerListItem, PlayerSession } from "../types/players";
+import type { PlayerListItem, PlayerSession } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasElements, hasValue, isBlank, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { findSngPrizeClaimed, type TransferEvent } from "./transactionUtils";
 

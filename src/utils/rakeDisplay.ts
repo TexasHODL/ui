@@ -1,5 +1,5 @@
-import { formatMicroUsd } from "./moneyDisplay";
-import { isSitAndGoFormat, isTournamentFormat } from "./gameFormatUtils";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
+import { isSitAndGoFormat, isTournamentFormat } from "@block52/poker-ui-core/utils/gameFormatUtils";
 
 /** Rake config as it arrives from the chain's game options (micro-USDC strings). */
 export interface RakeDisplayInput {

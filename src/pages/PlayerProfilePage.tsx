@@ -1,8 +1,8 @@
-import { formatMicroUsd } from "../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 
-import { truncateMiddle } from "../utils/stringUtils";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import CosmosWalletPage from "../components/CosmosWalletPage";
 import PlayerAwardsPage from "./PlayerAwardsPage";

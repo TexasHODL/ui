@@ -2,7 +2,7 @@ import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
 import { hasContent } from "@block52/ui-sdk/helpers";
 import { isLobbyGameUnavailable, isOpenScheduledRegistration, type LobbyGameProgress, type LobbySort } from "./lobbyFilters";
-import type { TournamentLobbyCard } from "./tournamentLobby";
+import type { TournamentLobbyCard } from "@block52/poker-ui-core/utils/tournamentLobby";
 
 /** One row in the All-games lobby: a multi-table tournament or a cash / sit-and-go table. */
 export type LobbyEntry = { kind: "mtt"; card: TournamentLobbyCard } | { kind: "game"; game: GameWithFormat };

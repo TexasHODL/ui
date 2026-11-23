@@ -28,8 +28,8 @@ jest.mock("../../context/GameStateContext", () => ({
 jest.mock("../../context/NetworkContext", () => ({ useNetwork: () => ({ currentNetwork: { name: "fixture" } }) }));
 jest.mock("../../hooks/playerActions/usePlayerLegalActions", () => ({ usePlayerLegalActions: () => ({ legalActions: [] }) }));
 jest.mock("../../hooks/playerActions/startTournament", () => ({ startTournament: jest.fn(() => Promise.resolve()) }));
-jest.mock("../../utils/gameFormatUtils", () => ({ getGameTypeMnemonic: () => "6-Max" }));
-jest.mock("../../utils/numberUtils", () => ({ formatSitAndGoStackString: (value: string) => value }));
+jest.mock("@block52/poker-ui-core/utils/gameFormatUtils", () => ({ getGameTypeMnemonic: () => "6-Max" }));
+jest.mock("@block52/poker-ui-core/utils/numberUtils", () => ({ formatSitAndGoStackString: (value: string) => value }));
 
 const start = startTournament as jest.Mock;
 

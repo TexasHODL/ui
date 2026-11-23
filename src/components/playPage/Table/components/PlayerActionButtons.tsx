@@ -23,9 +23,9 @@ import { useGameStateContext } from "../../../../context/GameStateContext";
 import { useGameSettings } from "../../../../context/GameSettingsContext";
 import { useActionSubmit } from "../../../../context/ActionSubmitContext";
 import { useSitOutIntent } from "../../../../context/SitOutIntentContext";
-import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
+import { tournamentRegistrationClosed } from "@block52/poker-ui-core/utils/scheduledSng";
 import { hasValue } from "@block52/ui-sdk/helpers";
-import { tournamentIdOf } from "../../../../utils/tournamentBlinds";
+import { tournamentIdOf } from "@block52/poker-ui-core/utils/tournamentBlinds";
 
 export interface PlayerActionButtonsProps {
     isMobile: boolean;

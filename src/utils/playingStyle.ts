@@ -18,7 +18,7 @@
  * A hand whose log cannot be read is left out of every denominator.
  */
 import { PlayerActionType, TexasHoldemRound } from "@block52/poker-vm-sdk";
-import type { PlayerHand } from "../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasElements, hasValue, isNumber, safeLength } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 import type { ContributionAction, ContributionSnapshot, HandContributionTarget } from "./handContribution";

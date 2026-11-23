@@ -1,4 +1,4 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 import React from "react";
 import { createPortal } from "react-dom";

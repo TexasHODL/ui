@@ -16,8 +16,8 @@ import { captureFinishingHand, createHandRevealLedger, endHandFinisherIds, Finis
 import { useGameStateContext } from "../../context/GameStateContext";
 import { useWinnerInfo } from "./useWinnerInfo";
 import { shouldShowWinnerSummary } from "../../components/ActionsLog.utils";
-import { getShowdownSummaryLines } from "../../utils/showdownSummary";
-import { setLastHandResult } from "../../utils/lastHandResult";
+import { getShowdownSummaryLines } from "@block52/poker-ui-core/utils/showdownSummary";
+import { setLastHandResult } from "@block52/poker-ui-core/utils/lastHandResult";
 import { hasElements } from "@block52/ui-sdk/helpers";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 

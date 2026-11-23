@@ -1,7 +1,7 @@
 import { PlayerStatus, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { HandListItem } from "../pages/explorer/types";
-import type { PlayerHand, PlayerSession } from "../types/players";
+import type { PlayerHand, PlayerSession } from "@block52/poker-ui-core/types/players";
 import { encodeStringField1 } from "./abciQuery";
 import { endedHandsFromTxSearch, isFollowingHandSnapshot, isPriorHandSnapshot, loadPublicHandState, mergeHandEndHeights, recoverUnlistedHands, type HistoryRpc } from "./handHistoryRecover";
 import { handEndedTableQuery } from "./handReplay";

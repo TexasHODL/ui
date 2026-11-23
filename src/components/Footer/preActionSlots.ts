@@ -1,4 +1,4 @@
-import { PreAction } from "../../utils/preActions";
+import { PreAction } from "@block52/poker-ui-core/utils/preActions";
 
 /**
  * Pre-action slot mapping shared by mobile landscape (the bottom-up action column)

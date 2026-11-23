@@ -1,5 +1,5 @@
 import React from "react";
-import { PreAction } from "../../utils/preActions";
+import { PreAction } from "@block52/poker-ui-core/utils/preActions";
 import { preActionSlots } from "./preActionSlots";
 import { DESKTOP_ACTION_HEIGHT, DESKTOP_SLOT_ROW } from "./desktopActionSlot";
 

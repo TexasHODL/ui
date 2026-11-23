@@ -1,6 +1,6 @@
 import React from "react";
 import "../Card/HoleCardFan.css";
-import { HOLE_CARD_ROW_HEIGHT, holeCardLayout, WinnerCardHighlight } from "../../../utils/holeCardLayout";
+import { HOLE_CARD_ROW_HEIGHT, holeCardLayout, WinnerCardHighlight } from "@block52/poker-ui-core/utils/holeCardLayout";
 
 export interface HoleCardImage {
     key: string;

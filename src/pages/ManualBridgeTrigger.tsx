@@ -1,4 +1,4 @@
-import { formatMicroUsd } from "../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState } from "react";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
