@@ -6,6 +6,11 @@ import {
     parseTournamentResponse,
     lobbyRunnersLabel,
     parseTournamentState,
+    tournamentEndedAtMs,
+    tournamentFinishedQuery,
+    endedAtMsFromTournamentFinishedTx,
+    lookupTournamentFinishedAtMs,
+    parseTxTimestampMs,
     phaseLabel,
     sortTournamentCards,
     tournamentEntryCost,
@@ -275,6 +280,94 @@ describe("openingLevelLabel", () => {
     });
 });
 
+
+
+describe("tournamentEndedAtMs and lobby hide timestamps", () => {
+    it("parses optional startedAt and levelStartTime", () => {
+        const s = parseTournamentState(stateJson({ startedAt: START + 1000, levelStartTime: START + 2000 }));
+        expect(s.startedAt).toBe(START + 1000);
+        expect(s.levelStartTime).toBe(START + 2000);
+    });
+
+    it("omits startedAt and levelStartTime when they are missing or zero", () => {
+        expect(parseTournamentState(stateJson()).startedAt).toBeUndefined();
+        expect(parseTournamentState(stateJson({ startedAt: 0, levelStartTime: 0 })).startedAt).toBeUndefined();
+        expect(parseTournamentState(stateJson({ startedAt: 0, levelStartTime: 0 })).levelStartTime).toBeUndefined();
+    });
+
+    it("prefers a finishedAt (or endedAt) on the tournament record when the engine wrote one", () => {
+        const withFinishedAt = record({ status: "finished", startedAt: START + 5_000, levelStartTime: START + 9_000, finishedAt: START + 12_000 });
+        expect(withFinishedAt.state.finishedAt).toBe(START + 12_000);
+        expect(tournamentEndedAtMs(withFinishedAt.state, "finished", START + 11_000)).toBe(START + 12_000);
+        expect(buildTournamentCard(withFinishedAt, ME, START + 13_000, START + 11_000).endedAtMs).toBe(START + 12_000);
+
+        const withEndedAt = record({ status: "finished", endedAt: START + 12_500 });
+        expect(tournamentEndedAtMs(withEndedAt.state, "finished", START + 11_000)).toBe(START + 12_500);
+    });
+
+    it("uses the tournament_finished tx time when the record has no finishedAt", () => {
+        const rec = record({ status: "finished", startedAt: START + 5_000, levelStartTime: START + 9_000 });
+        expect(tournamentEndedAtMs(rec.state, "finished", START + 11_000)).toBe(START + 11_000);
+        expect(buildTournamentCard(rec, ME, START + 13_000, START + 11_000).endedAtMs).toBe(START + 11_000);
+    });
+
+    it("falls back to levelStartTime, then startedAt, then the scheduled start when no declared-at timestamp is obtainable", () => {
+        const withLevel = record({ status: "finished", startedAt: START + 5_000, levelStartTime: START + 9_000 });
+        expect(tournamentEndedAtMs(withLevel.state, "finished")).toBe(START + 9_000);
+        expect(buildTournamentCard(withLevel, ME, START + 10_000).endedAtMs).toBe(START + 9_000);
+
+        const withStarted = record({ status: "finished", startedAt: START + 5_000 });
+        expect(tournamentEndedAtMs(withStarted.state, "finished")).toBe(START + 5_000);
+        expect(buildTournamentCard(withStarted, ME, START + 10_000).endedAtMs).toBe(START + 5_000);
+
+        const scheduledOnly = record({ status: "finished" });
+        expect(tournamentEndedAtMs(scheduledOnly.state, "finished")).toBe(START);
+        expect(buildTournamentCard(scheduledOnly, ME, START + 10_000).endedAtMs).toBe(START);
+    });
+
+    it("uses the scheduled start for a cancelled event, even if startedAt is present", () => {
+        const rec = record({ status: "cancelled", startedAt: START + 5_000, levelStartTime: START + 9_000 });
+        expect(tournamentEndedAtMs(rec.state, "cancelled")).toBe(START);
+        expect(buildTournamentCard(rec, ME, START + 10_000).endedAtMs).toBe(START);
+    });
+
+    it("does not set endedAtMs on live events", () => {
+        expect(buildTournamentCard(record({ status: "registering" }), ME, START - 60_000).endedAtMs).toBeUndefined();
+        expect(buildTournamentCard(record({ status: "running", startedAt: START, levelStartTime: START }), ME, START + 1000).endedAtMs).toBeUndefined();
+    });
+
+    it("parses tournament_finished LCD timestamps, including nanoseconds", () => {
+        expect(parseTxTimestampMs("2026-11-22T11:06:01Z")).toBe(Date.parse("2026-11-22T11:06:01Z"));
+        expect(parseTxTimestampMs("2026-11-22T11:06:01.123456789Z")).toBe(Date.parse("2026-11-22T11:06:01.123Z"));
+        expect(parseTxTimestampMs("not a date")).toBeUndefined();
+    });
+
+    it("reads endedAt from the successful tournament_finished tx timestamp", () => {
+        expect(tournamentFinishedQuery("0xabc")).toBe("tournament_finished.tournament_id='0xabc'");
+        expect(endedAtMsFromTournamentFinishedTx({
+            tx_responses: [
+                { code: 1, timestamp: "2026-11-22T10:00:00Z" },
+                { code: 0, timestamp: "2026-11-22T11:06:01Z" }
+            ]
+        })).toBe(Date.parse("2026-11-22T11:06:01Z"));
+        expect(endedAtMsFromTournamentFinishedTx({ tx_responses: [] })).toBeUndefined();
+        expect(endedAtMsFromTournamentFinishedTx({})).toBeUndefined();
+    });
+
+    it("looks up missing finish times and leaves known and failed ids alone", async () => {
+        const known = new Map([["0xknown", 100]]);
+        const lookup = jest.fn(async (query: string) => {
+            if (query.includes("0xwin")) return { tx_responses: [{ code: 0, timestamp: "2026-11-22T11:06:01Z" }] };
+            if (query.includes("0xfail")) throw new Error("offline");
+            return { tx_responses: [] };
+        });
+        const found = await lookupTournamentFinishedAtMs(["0xknown", "0xwin", "0xfail", "0xempty"], lookup, known);
+        expect(found).toEqual({ "0xwin": Date.parse("2026-11-22T11:06:01Z") });
+        expect(lookup).toHaveBeenCalledTimes(3);
+        expect(lookup).toHaveBeenCalledWith(tournamentFinishedQuery("0xwin"));
+        expect(lookup).not.toHaveBeenCalledWith(tournamentFinishedQuery("0xknown"));
+    });
+});
 
 describe("results and finish detection", () => {
     const results = [

@@ -10,7 +10,7 @@ import { useForceCloseGame } from "../hooks/game/useForceCloseGame";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useLobbySeats } from "../hooks/game/useLobbySeats";
 import { useLobbyTournamentStarted, type LobbyTournamentMark } from "../hooks/game/useLobbyTournamentStarted";
-import { applyEndedLobbyRetention } from "../utils/lobbyEndedFilter";
+import { applyEndedLobbyRetention, applyEndedLobbyTournamentRetention } from "../utils/lobbyEndedFilter";
 
 import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay, formatTableGameDisplay, toGameVariant } from "@block52/poker-ui-core/utils/gameFormatUtils";
 import { displayGameFormat, SINGLE_TABLE_TOURNAMENT_LABEL, SIT_AND_GO_LABEL } from "../utils/createGameType";
@@ -93,7 +93,7 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
     const tournamentRows = useMemo(() => {
         // All games and the Tournaments tab share these rows. Sit & Go and cash do not list them.
         if (format !== "all" && format !== "mtt") return [];
-        return filterLobbyTournamentCards(tournamentCards, {
+        const filtered = filterLobbyTournamentCards(tournamentCards, {
             search,
             openOnly,
             ownedOnly,
@@ -101,6 +101,8 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
             treasuryOnly,
             treasuryAddress
         });
+        // Same 24h Finished/Cancelled hide as sit-and-go / STT tables; search keeps old events findable.
+        return applyEndedLobbyTournamentRetention(filtered, Date.now(), search);
     }, [tournamentCards, format, search, openOnly, ownedOnly, address, treasuryOnly]);
     // All sit-and-go / tournament tables in the club list — needed before paging so
     // Finished/Cancelled rows older than 24h can be filtered out of the lobby.

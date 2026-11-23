@@ -22,7 +22,7 @@ import {
     type TournamentEntrantStatus,
     type TournamentStatus
 } from "@block52/poker-vm-sdk";
-import { isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
+import { hasValue, isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { describeAnteSchedule } from "./anteRule";
 import { gameIdFromTableId } from "./tournamentFollow";
 import { formatTournamentLateRegistration } from "./tournamentLateRegistration";
@@ -73,6 +73,14 @@ export interface TournamentStateDTO {
     prizePool: string;
     /** Final places when the engine has written them; place 1 is present only once the tournament is over. */
     results?: TournamentResultView[];
+    /** Epoch ms when the tournament actually started, if the chain has written it. */
+    startedAt?: number;
+    /** Epoch ms when the current (or last) blind level started, if the chain has written it. */
+    levelStartTime?: number;
+    /** Epoch ms when the tournament finished, if the engine ever writes one. */
+    finishedAt?: number;
+    /** Alias some engine builds may use instead of finishedAt. */
+    endedAt?: number;
 }
 
 export interface TournamentRecord {
@@ -97,6 +105,13 @@ function requireMicro(value: unknown, name: string): string {
 function requireInt(value: unknown, name: string): number {
     if (!isNumber(value) || !Number.isInteger(value)) throw new Error(`tournament ${name} must be an integer`);
     return value;
+}
+
+/** Optional positive epoch ms; absent or 0 is undefined (the chain may omit these). */
+function optionalEpochMs(value: unknown, name: string): number | undefined {
+    if (isNullish(value)) return undefined;
+    const ms = requireInt(value, name);
+    return ms > 0 ? ms : undefined;
 }
 
 function isTournamentStatus(value: string): value is TournamentStatus {
@@ -153,6 +168,10 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         ...(isNullish(o.lateRegistrationLevels) ? {} : { lateRegistrationLevels: requireInt(o.lateRegistrationLevels, "options.lateRegistrationLevels") })
     };
     const name = optionalName(raw.name) ?? options.name;
+    const startedAt = optionalEpochMs(raw.startedAt, "startedAt");
+    const levelStartTime = optionalEpochMs(raw.levelStartTime, "levelStartTime");
+    const finishedAt = optionalEpochMs(raw.finishedAt, "finishedAt");
+    const endedAt = optionalEpochMs(raw.endedAt, "endedAt");
     return {
         tournamentId: requireString(raw.tournamentId, "tournamentId"),
         status,
@@ -160,7 +179,11 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         options,
         entrants: raw.entrants.map(parseEntrant),
         prizePool: requireMicro(raw.prizePool, "prizePool"),
-        ...(isNullish(raw.results) ? {} : { results: parseResults(raw.results) })
+        ...(isNullish(raw.results) ? {} : { results: parseResults(raw.results) }),
+        ...(isNullish(startedAt) ? {} : { startedAt }),
+        ...(isNullish(levelStartTime) ? {} : { levelStartTime }),
+        ...(isNullish(finishedAt) ? {} : { finishedAt }),
+        ...(isNullish(endedAt) ? {} : { endedAt })
     };
 }
 
@@ -220,6 +243,67 @@ export function tournamentIdsFromTxSearch(raw: unknown): string[] {
 
 /** The event query that finds every tournament the chain has created. */
 export const TOURNAMENT_CREATED_QUERY = "tournament_created.tournament_id EXISTS";
+
+/** The event emitted in the same tx that writes place 1 and settles MTT payouts. */
+export const TOURNAMENT_FINISHED_QUERY = "tournament_finished.tournament_id EXISTS";
+
+/** LCD / CometBFT event query for the tx that declared this tournament's winner. */
+export function tournamentFinishedQuery(tournamentId: string): string {
+    return `tournament_finished.tournament_id='${tournamentId}'`;
+}
+
+/**
+ * Epoch ms from an ISO / RFC 3339 tx timestamp. Cosmos LCD may include
+ * nanoseconds, which Date.parse does not promise to read, so the fraction is
+ * cut to milliseconds first (same idea as parseBlockTime).
+ */
+export function parseTxTimestampMs(timestamp: string): number | undefined {
+    const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(timestamp.trim());
+    const ms = match
+        ? Date.parse(`${match[1]}${match[2] ? match[2].slice(0, 4) : ""}${match[3]}`)
+        : Date.parse(timestamp);
+    return Number.isNaN(ms) || ms <= 0 ? undefined : ms;
+}
+
+/**
+ * The time the winner was declared, from a GetTxsEvent / getLatestTransaction
+ * page for {@link tournamentFinishedQuery}. Uses the successful tx's `timestamp`
+ * (block time). Undefined when the page has no usable tx.
+ */
+export function endedAtMsFromTournamentFinishedTx(page: unknown): number | undefined {
+    if (!isRecord(page) || !Array.isArray(page.tx_responses)) return undefined;
+    for (const tx of page.tx_responses) {
+        if (!isRecord(tx)) continue;
+        if (hasValue(tx.code) && tx.code !== 0 && tx.code !== "0") continue;
+        if (!isString(tx.timestamp)) continue;
+        const ms = parseTxTimestampMs(tx.timestamp);
+        if (!isNullish(ms)) return ms;
+    }
+    return undefined;
+}
+
+/**
+ * Look up {@link tournament_finished} timestamps for finished tournaments that
+ * are not already in `known`. Failures and empty pages are omitted so the
+ * caller can fall back to the lower-bound finish time.
+ */
+export async function lookupTournamentFinishedAtMs(
+    tournamentIds: string[],
+    lookup: (query: string) => Promise<unknown>,
+    known: ReadonlyMap<string, number> = new Map()
+): Promise<Record<string, number>> {
+    const pending = tournamentIds.filter(id => id !== "" && !known.has(id));
+    const found: Record<string, number> = {};
+    const results = await Promise.all(pending.map(async id => {
+        try {
+            return [id, endedAtMsFromTournamentFinishedTx(await lookup(tournamentFinishedQuery(id)))] as const;
+        } catch {
+            return [id, undefined] as const;
+        }
+    }));
+    for (const [id, ms] of results) if (!isNullish(ms)) found[id] = ms;
+    return found;
+}
 
 /** What one entrant pays and what part of it reaches the prize pool. All micro-USDC bigint. */
 export interface TournamentEntryCost {
@@ -297,11 +381,41 @@ export interface TournamentLobbyCard {
     lateRegistrationLabel: string;
     /** "Antes from level N" or "No antes", from the structure (ui#891). */
     anteLabel: string;
+    /**
+     * When the event ended, for the lobby's 24h hide. Cancelled = the
+     * scheduled start (MTTs cancel at that time). Finished = when the winner
+     * was declared (state finishedAt/endedAt, else the tournament_finished tx
+     * time), falling back to levelStartTime / startedAt / the scheduled start
+     * only when no declared-at timestamp is available.
+     */
+    endedAtMs?: number;
 }
 
 /** Entrants that count toward the field: registered, or already playing/busted after the start. */
 function countedEntrants(entrants: TournamentEntrantView[]): TournamentEntrantView[] {
     return entrants.filter(e => e.status !== "unregistered");
+}
+
+/**
+ * The time the lobby uses to age out a finished or cancelled tournament.
+ * Undefined while the event is still live.
+ *
+ * Finished time, in order: a finishedAt/endedAt on the tournament record if
+ * the engine wrote one; else `declaredAtMs` from the tournament_finished tx
+ * (the same transaction that writes place 1 and settles payouts — the trigger
+ * the lobby already uses to show Finished); else a lower bound of
+ * levelStartTime, startedAt, or the scheduled start, when no declared-at
+ * timestamp is obtainable.
+ */
+export function tournamentEndedAtMs(state: TournamentStateDTO, phase: TournamentLobbyPhase, declaredAtMs?: number): number | undefined {
+    if (phase === "cancelled") return state.options.startTime > 0 ? state.options.startTime : undefined;
+    if (phase !== "finished") return undefined;
+    if (!isNullish(state.finishedAt) && state.finishedAt > 0) return state.finishedAt;
+    if (!isNullish(state.endedAt) && state.endedAt > 0) return state.endedAt;
+    if (!isNullish(declaredAtMs) && declaredAtMs > 0) return declaredAtMs;
+    if (!isNullish(state.levelStartTime) && state.levelStartTime > 0) return state.levelStartTime;
+    if (!isNullish(state.startedAt) && state.startedAt > 0) return state.startedAt;
+    return state.options.startTime > 0 ? state.options.startTime : undefined;
 }
 
 export function tournamentPhase(state: TournamentStateDTO, nowMs: number): TournamentLobbyPhase {
@@ -326,7 +440,7 @@ function tablePlayedBy(entrant: TournamentEntrantView | undefined): { gameId: st
  * Registration closes at the start time, so the buttons follow the clock rather
  * than waiting for the chain to flip the status.
  */
-export function buildTournamentCard(record: TournamentRecord, viewer: string | undefined, nowMs: number): TournamentLobbyCard {
+export function buildTournamentCard(record: TournamentRecord, viewer: string | undefined, nowMs: number, declaredAtMs?: number): TournamentLobbyCard {
     const { state, creator } = record;
     const phase = tournamentPhase(state, nowMs);
     const cost = tournamentEntryCost(state.options);
@@ -349,6 +463,7 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
     const myTable = phase === "running" ? tablePlayedBy(mine) : undefined;
 
     const name = state.name ?? state.options.name;
+    const endedAtMs = tournamentEndedAtMs(state, phase, declaredAtMs);
 
     return {
         tournamentId: state.tournamentId,
@@ -380,7 +495,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         // so `closed` must come from the tournament-level SDK helper once it ships;
         // until then the label shows the configured target level while it exists.
         lateRegistrationLabel: formatTournamentLateRegistration(state.options.lateRegistrationLevels, false),
-        anteLabel: describeAnteSchedule(state.options.blindStructure)
+        anteLabel: describeAnteSchedule(state.options.blindStructure),
+        ...(isNullish(endedAtMs) ? {} : { endedAtMs })
     };
 }
 
