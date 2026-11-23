@@ -2,7 +2,7 @@ import { FC, ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useCosmosWallet } from "../../hooks/wallet/useCosmosWallet";
 import { getCosmosAddress } from "../../utils/cosmos/storage";
-import { hasValue } from "../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { standaloneSectionTarget, viewerAddress } from "../../utils/profileHub";
 
 interface ProfileSectionRedirectProps {

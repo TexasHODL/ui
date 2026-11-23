@@ -1,7 +1,7 @@
 import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import type { CometRpcApi } from "../apis/Api";
 import { encodeStringField1, parseAbciStringResponse } from "./abciQuery";
-import { hasContent, hasValue, isString } from "./guards";
+import { hasContent, hasValue, isString } from "@block52/ui-sdk/helpers";
 import { GAME_STATE_PUBLIC_PATH, parseGameStateJson } from "./handReplay";
 
 /** A table's public (masked) game state as of block `height` (0 = latest), via the node's ABCI query. */

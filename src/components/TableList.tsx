@@ -18,7 +18,7 @@ import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, LobbyFormat, LobbySort } from "../utils/lobbyFilters";
 import { filterLobbyTournamentCards, sortLobbyEntries } from "../utils/lobbyEntries";
-import { hasContent, hasElements, isEmpty, isNullish } from "../utils/guards";
+import { hasContent, hasElements, isEmpty, isNullish } from "@block52/ui-sdk/helpers";
 import { useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
 import { LobbyTournamentRows } from "./tournament/LobbyTournamentRows";
 import { parseTournamentGameId } from "../utils/tableUrl";
@@ -26,6 +26,7 @@ import DeleteTableModal from "./modals/DeleteTableModal";
 import ForceCloseTableModal from "./modals/ForceCloseTableModal";
 import { Pagination } from "./common";
 import styles from "./TableList.module.css";
+import { describeAnteSchedule } from "../utils/anteRule";
 
 const PAGE_SIZE = 10;
 const formats: { value: LobbyFormat; label: string }[] = [
@@ -379,6 +380,11 @@ const TableList: React.FC<TableListProps> = ({ onCreateTable, compact = false, r
                                             {rake && (
                                                 <span className={styles.detail} title={rake.title} data-testid="lobby-rake">
                                                     {rake.withCap}
+                                                </span>
+                                            )}
+                                            {tournamentStyle && (
+                                                <span className={styles.antes} data-testid="lobby-antes">
+                                                    {describeAnteSchedule(game.blindStructure)}
                                                 </span>
                                             )}
                                         </td>

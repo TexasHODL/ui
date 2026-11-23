@@ -11,7 +11,7 @@ import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { HistoryRpc } from "./handHistoryRecover";
 import { loadPublicHandState } from "./handHistoryRecover";
 import type { PlayerHand } from "../types/players";
-import { hasElements } from "./guards";
+import { hasElements } from "@block52/ui-sdk/helpers";
 import { FinishingHand, showdownForViewer } from "./finishingHand";
 
 /** How many indexed hands to open before giving up. The newest is the bust. */

@@ -7,7 +7,7 @@ import { ExplorerHeader } from "../../components/explorer/ExplorerHeader";
 import styles from "./DistributionPage.module.css";
 import { useAppliedTheme } from "../../theme/useTheme";
 import { useIndexerApi } from "../../context/IndexerApiContext";
-import { isNullish } from "../../utils/guards";
+import { isNullish } from "@block52/ui-sdk/helpers";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);

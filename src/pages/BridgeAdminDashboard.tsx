@@ -2,7 +2,7 @@ import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { truncateMiddle } from "../utils/stringUtils";
-import { isEmpty, isBlank, hasContent } from "../utils/guards";
+import { isEmpty, isBlank, hasContent } from "@block52/ui-sdk/helpers";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
 import { toast } from "react-toastify";

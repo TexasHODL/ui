@@ -7,7 +7,7 @@ import { ModalHeader } from "../common/ModalHeader";
  */
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { NonPlayerActionType } from "@block52/poker-vm-sdk";
-import { hasValue, isEmpty, isNullish } from "../../utils/guards";
+import { hasValue, isEmpty, isNullish } from "@block52/ui-sdk/helpers";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { useGameStateContext } from "../../context/GameStateContext";

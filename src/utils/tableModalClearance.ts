@@ -1,4 +1,4 @@
-import { isBlank } from "./guards";
+import { isBlank } from "@block52/ui-sdk/helpers";
 
 /**
  * Bottom edge of the table's top banners, in CSS pixels from the viewport top.

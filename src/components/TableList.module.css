@@ -516,3 +516,10 @@
         flex-wrap: wrap;
     }
 }
+
+.antes {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--theme-muted, #a99ab4);
+}

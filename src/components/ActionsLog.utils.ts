@@ -1,7 +1,7 @@
 import { ActionDTO, NonPlayerActionType, TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { formatPlayerId, formatAmount } from "../utils/accountUtils";
 import { WinnerInfo } from "../types/index";
-import { hasElements } from "../utils/guards";
+import { hasElements } from "@block52/ui-sdk/helpers";
 import { formatSeatLabel } from "../utils/playerSeatUtils";
 
 /**

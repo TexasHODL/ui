@@ -1,6 +1,6 @@
 import { getCardImageUrl } from "../../utils/cardImages";
 import type { HistorySeatCards } from "../../utils/handHistoryCards";
-import { hasElements } from "../../utils/guards";
+import { hasElements } from "@block52/ui-sdk/helpers";
 
 /** Hole cards the history page is allowed to show. The viewer's seat uses the bust-modal label. */
 export function HandHistoryCards({ seats }: { seats: HistorySeatCards[] }) {

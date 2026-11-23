@@ -1,5 +1,5 @@
 import { FC, useEffect, useRef, useState } from "react";
-import { hasValue } from "../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import type { SessionGameFilterOption } from "../../utils/sessionGameDisplay";
 import styles from "./SessionHistoryFilter.module.css";
 

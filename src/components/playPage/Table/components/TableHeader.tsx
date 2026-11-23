@@ -15,6 +15,7 @@ import { GameFormat, GameOptionsDTO, GameVariant, PlayerDTO } from "@block52/pok
 import { useDismissDetailsOnOutsidePointer } from "../../../../hooks/useDismissDetailsOnOutsidePointer";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
 import { formatBlindCountdown } from "../../../../utils/blindStructure";
+import { formatBlindsWithAnte } from "../../../../utils/anteRule";
 import styles from "./TableHeader.module.css";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
 import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
@@ -222,7 +223,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                     <span>BLINDS</span>
                     <strong>
                         {blindLevel.isActive
-                            ? blindLevel.currentBlindsFormatted
+                            ? formatBlindsWithAnte(blindLevel.currentBlindsFormatted, blindLevel.currentAnteFormatted)
                             : (formattedValues.isTournamentStyle ? "" : "$") +
                               formattedValues.smallBlindFormatted +
                               " / " +

@@ -1,6 +1,6 @@
 import { GameFormat, NonPlayerActionType, PlayerActionType, TexasHoldemRound, isLateRegistrationOpen, lateRegistrationClosesAt, type ActionDTO, type GameOptionsDTO, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { isSitAndGoFormat, isTournamentFormat } from "./gameFormatUtils";
-import { hasValue, isNullish } from "./guards";
+import { hasValue, isNullish } from "@block52/ui-sdk/helpers";
 import { tournamentIdOf } from "./tournamentBlinds";
 
 /**

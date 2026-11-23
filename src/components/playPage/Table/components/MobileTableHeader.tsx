@@ -28,6 +28,7 @@ import { displayGameFormat } from "../../../../utils/createGameType";
 import { buildHandShareUrl, buildShareOnXUrl } from "../../../../utils/handReplay";
 import { GameFormat, GameOptionsDTO, GameVariant, LegalActionDTO, NonPlayerActionType, PlayerDTO } from "@block52/poker-vm-sdk";
 import { useBlindLevel } from "../../../../hooks/game/useBlindLevel";
+import { formatBlindsWithAnte } from "../../../../utils/anteRule";
 import { useTableTopUp } from "../../../../hooks/game/useTableTopUp";
 import { useGameStateContext } from "../../../../context/GameStateContext";
 import { tournamentRegistrationClosed } from "../../../../utils/scheduledSng";
@@ -39,7 +40,7 @@ import { TableSettingsOptions } from "./TableSettingsSidebar";
 import SngPayoutPanel from "../../SngPayoutPanel";
 import { MobileDrawerShell } from "./MobileDrawerShell";
 import type { TournamentStateDTO } from "../../../../types/tournament";
-import { hasValue } from "../../../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { rakeDisplay } from "../../../../utils/rakeDisplay";
 import { ProvablyFairButton } from "../../ProvablyFair/ProvablyFairPanel";
 import type { TableStyleOption } from "../../../../theme/tableAppearances";
@@ -228,7 +229,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
                     {blindLevel.isActive ? (
                         <BlindsButton className="whitespace-nowrap underline decoration-dotted underline-offset-2">
                             {hasValue(blindLevel.level) && `L${blindLevel.level + 1} `}
-                            {blindLevel.currentBlindsFormatted}
+                            {formatBlindsWithAnte(blindLevel.currentBlindsFormatted, blindLevel.currentAnteFormatted)}
                             {blindLevel.hasTimer && (
                                 <>
                                     {" ("}

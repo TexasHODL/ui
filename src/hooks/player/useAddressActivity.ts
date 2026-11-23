@@ -4,7 +4,7 @@ import { useCometRpcApiFactory, useCosmosApi } from "../../context/CosmosApiCont
 import { useNetwork } from "../../context/NetworkContext";
 import { TX_SEARCH_PAGE_SIZE } from "../../apis/Api";
 import { bridgeDepositRow, fetchBridgeDeposits } from "../../utils/bridgeDeposits";
-import { hasContent, isNullish } from "../../utils/guards";
+import { hasContent, isNullish } from "@block52/ui-sdk/helpers";
 import {
     describeTransaction,
     fetchGamePrizeMeta,

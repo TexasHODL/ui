@@ -1,6 +1,6 @@
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { hasContent } from "./guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { isLobbyGameUnavailable, isOpenScheduledRegistration, type LobbyGameProgress, type LobbySort } from "./lobbyFilters";
 import type { TournamentLobbyCard } from "./tournamentLobby";
 

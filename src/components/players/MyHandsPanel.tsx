@@ -14,7 +14,7 @@ import { historyNetworks } from "../../utils/handReplay";
 import { formatTimestampRelative } from "../../utils/formatUtils";
 import { truncateMiddle } from "../../utils/stringUtils";
 import { getCardImageUrl } from "../../utils/cardImages";
-import { hasContent, hasElements, isEmpty } from "../../utils/guards";
+import { hasContent, hasElements, isEmpty } from "@block52/ui-sdk/helpers";
 import { playerProfilePath } from "../../utils/profileHub";
 import { tableUrl } from "../../utils/tableUrl";
 import type { PlayerHand } from "../../types/players";

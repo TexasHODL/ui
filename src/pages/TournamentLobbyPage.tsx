@@ -6,7 +6,7 @@ import { TournamentCard } from "../components/tournament/TournamentCard";
 import { CreateTournamentModal } from "../components/tournament/CreateTournamentModal";
 import { useNow, useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
-import { isEmpty } from "../utils/guards";
+import { isEmpty } from "@block52/ui-sdk/helpers";
 
 /** /tournaments: multi-table tournaments to register for, and the form to create one (ui#980). */
 export default function TournamentLobbyPage() {

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCometRpcApiFactory, useCosmosApi } from "../../context/CosmosApiContext";
 import { NETWORK_PRESETS, useNetwork } from "../../context/NetworkContext";
 import { block52HistoryRpc, publicStateAt, publicStateAtFallingBack } from "../../utils/chainHistory";
-import { hasContent, hasValue, isEmpty } from "../../utils/guards";
+import { hasContent, hasValue, isEmpty } from "@block52/ui-sdk/helpers";
 import { mapWithConcurrency } from "../../utils/pagedFetch";
 import { findEliminationBlock, type SessionEliminationLookup } from "../../utils/sessionBust";
 

@@ -113,7 +113,7 @@ import { mobileCardUnit } from "../../config/mobileCardSizing";
 import { useTurnNotification } from "../../hooks/notifications/useTurnNotification";
 import ConnectionBanner from "./ConnectionBanner";
 
-import { hasContent, hasElements, hasValue, isNullish } from "../../utils/guards";
+import { hasContent, hasElements, hasValue, isNullish } from "@block52/ui-sdk/helpers";
 import { clearTableBannerEnd, publishTableBannerEnd, tableBannerEndPx } from "../../utils/tableModalClearance";
 
 //* Here's the typical sequence of a poker hand:

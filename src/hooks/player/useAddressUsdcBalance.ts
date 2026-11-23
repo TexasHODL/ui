@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNetwork } from "../../context/NetworkContext";
 import { fetchAddressUsdcMicro } from "../../utils/addressUsdcBalance";
-import { hasContent } from "../../utils/guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import type { SilentRefetchOptions } from "./usePlayerTournamentEntries";
 
 export interface AddressUsdcBalance {

@@ -1,4 +1,4 @@
-import { hasContent } from "./guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { displayTableName } from "./generatedTableName";
 import { parseTournamentGameId } from "./tableUrl";
 

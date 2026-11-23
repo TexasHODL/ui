@@ -8,7 +8,7 @@
  * seat place card.
  */
 import { isSitAndGoFormat, isTournamentFormat } from "@block52/poker-vm-sdk";
-import { hasValue, isNullish, isString } from "./guards";
+import { hasValue, isNullish, isString } from "@block52/ui-sdk/helpers";
 import { parseTournamentGameId } from "./tableUrl";
 import { tournamentIdOf } from "./tournamentBlinds";
 

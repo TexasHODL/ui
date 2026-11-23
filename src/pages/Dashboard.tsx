@@ -16,7 +16,7 @@ import { ETH_CHAIN_ID } from "../config/constants";
 import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "../utils/buyInUtils";
-import { hasValue, isNullish, hasContent, hasElements } from "../utils/guards";
+import { hasValue, isNullish, hasContent, hasElements } from "@block52/ui-sdk/helpers";
 import { readUsdcBalance } from "../utils/usdcBalance";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../constants/blindLevels";
 import { usdcToMicroBigInt, microToUsdc } from "../constants/currency";
@@ -45,19 +45,10 @@ import { TournamentCreateFields, type TournamentCreateFieldsHandle } from "../co
 import { DEFAULT_TOURNAMENT_FORM_VALUES, MTT_SEATS_PER_TABLE_OPTIONS } from "../utils/tournamentCreate";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
-import {
-    BLIND_STRUCTURE_CHOICES,
-    choiceUsesFormBlinds,
-    DEFAULT_BLIND_STRUCTURE_CHOICE,
-    DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
-    isBlindStructureChoice,
-    openingBlindsOf,
-    previewBlindLevels,
-    resolveBlindStructureChoice,
-    sngBlindFields,
-    type BlindStructureChoice
-} from "../utils/blindStructureChoice";
+import { choiceUsesFormBlinds, openingBlindsOf, previewBlindLevels, sngBlindFields } from "../utils/blindStructureChoice";
 import { SNG_PREVIEW_LEVEL_COUNT } from "../utils/sngAdvancedParams";
+import { AnteControls, BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../components/BlindStructureFields";
+import { useBlindStructureForm } from "../hooks/useBlindStructureForm";
 
 // Password protection utils
 import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as utilHandlePasswordSubmit, handlePasswordKeyPress as utilHandlePasswordKeyPress } from "../utils/passwordProtectionUtils";
@@ -146,11 +137,6 @@ const Dashboard: React.FC = () => {
     const [modalSngMinPlayers, setModalSngMinPlayers] = useState(2);
     const [modalLateRegLevels, setModalLateRegLevels] = useState(0); // poker-vm#2731; 0 = off
     const [modalSngBlindsIndex, setModalSngBlindsIndex] = useState(0); // 10 / 20
-    // Blind structure (ui#860, poker-vm#1734): the ladder (default, ui#905) or
-    // doubling (both from the two selects above and below), an engine preset, or
-    // a custom structure in the SDK's text form.
-    const [modalBlindStructureChoice, setModalBlindStructureChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
-    const [modalCustomBlindText, setModalCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const [entryFee, setEntryFee] = useState(0);
     const [enableRake, setEnableRake] = useState(false);
     const [rakeThreshold, setRakeThreshold] = useState(0);
@@ -161,15 +147,13 @@ const Dashboard: React.FC = () => {
     const isModalTournament = isTournamentFormat(modalGameFormat);
     // What the choice submits (structure) and previews; a structured table's
     // opening blinds and level time come from its level 0, not the selects.
-    const blindPlan = useMemo(
-        () =>
-            resolveBlindStructureChoice(modalBlindStructureChoice, modalCustomBlindText, {
-                smallBlind: SNG_BLINDS[modalSngBlindsIndex].smallBlind,
-                bigBlind: SNG_BLINDS[modalSngBlindsIndex].bigBlind,
-                durationMinutes: modalBlindLevelDuration
-            }),
-        [modalBlindStructureChoice, modalCustomBlindText, modalSngBlindsIndex, modalBlindLevelDuration]
-    );
+    // Blind structure (ui#860, ui#905) plus the ante controls (ui#891).
+    const blindForm = useBlindStructureForm({
+        smallBlind: SNG_BLINDS[modalSngBlindsIndex].smallBlind,
+        bigBlind: SNG_BLINDS[modalSngBlindsIndex].bigBlind,
+        durationMinutes: modalBlindLevelDuration
+    });
+    const blindPlan = blindForm.plan;
     const sngOpeningBlinds = useMemo(
         () => (blindPlan.preview ? openingBlindsOf(blindPlan.preview) : undefined),
         [blindPlan.preview]
@@ -1036,23 +1020,9 @@ const Dashboard: React.FC = () => {
                                             </div>
                                             </div>
                                             <div className="creation-span">
-                                            <label className="block text-white text-sm mb-1">Blind Structure</label>
-                                            <select
-                                                data-testid="blind-structure"
-                                                value={modalBlindStructureChoice}
-                                                onChange={e => {
-                                                    if (isBlindStructureChoice(e.target.value)) setModalBlindStructureChoice(e.target.value);
-                                                }}
-                                                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                            >
-                                                {BLIND_STRUCTURE_CHOICES.map(c => (
-                                                    <option key={c.value} value={c.value}>
-                                                        {c.label}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            <BlindStructureSelect value={blindForm.choice} onChange={blindForm.setChoice} />
                                             </div>
-                                            {choiceUsesFormBlinds(modalBlindStructureChoice) && (
+                                            {choiceUsesFormBlinds(blindForm.choice) && (
                                                 <>
                                             <div className="creation-span" data-testid="sng-blinds">
                                             <label className="block text-white text-sm mb-1">Starting Blinds (chips)</label>
@@ -1086,54 +1056,20 @@ const Dashboard: React.FC = () => {
                                             </div>
                                                 </>
                                             )}
-                                            {modalBlindStructureChoice === "custom" && (
+                                            {blindForm.choice === "custom" && (
                                                 <div className="creation-span">
-                                                    <label className="block text-white text-sm mb-1">Custom structure</label>
-                                                    <textarea
-                                                        data-testid="blind-custom"
-                                                        value={modalCustomBlindText}
-                                                        onChange={e => setModalCustomBlindText(e.target.value)}
-                                                        rows={8}
-                                                        spellCheck={false}
-                                                        className="w-full p-2 rounded bg-gray-700 text-white font-mono text-xs border border-gray-600 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all duration-200"
-                                                    />
-                                                    <p className="text-xs text-gray-400 mt-1">
-                                                        start: sb/bb · duration: 5m · progression: double | linear 25 | percentage 1.5 (+ round: 25) · ante: bb | bb * 0.1 |
-                                                        level &gt;= 4 ? bb * 0.1 : 0 · cap: 15 — or levels {"{"} 0: 100/200 … {"}"} (levels count from 0)
-                                                    </p>
-                                                    {blindPlan.error && (
-                                                        <p className="text-xs text-red-400 mt-1" data-testid="blind-structure-error">
-                                                            {blindPlan.error}
-                                                        </p>
-                                                    )}
+                                                    <CustomBlindStructureInput value={blindForm.customText} onChange={blindForm.setCustomText} error={blindPlan.error} />
                                                 </div>
                                             )}
-                                            {hasElements(blindPreviewRows) && (
-                                                <div className="creation-span mt-3 max-h-40 overflow-y-auto rounded border border-gray-700" data-testid="blind-preview">
-                                                    <table className="w-full text-xs text-gray-300">
-                                                        <thead className="text-gray-400 sticky top-0 bg-gray-800">
-                                                            <tr>
-                                                                <th className="text-left px-2 py-1">Level</th>
-                                                                <th className="text-left px-2 py-1">Blinds</th>
-                                                                <th className="text-left px-2 py-1">Ante</th>
-                                                                <th className="text-left px-2 py-1">Minutes</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {blindPreviewRows.map(r => (
-                                                                <tr key={r.number} className="border-t border-gray-700">
-                                                                    <td className="px-2 py-1">{r.number}</td>
-                                                                    <td className="px-2 py-1">
-                                                                        {r.isBreak ? "Break" : `${Number(r.smallBlind).toLocaleString()} / ${Number(r.bigBlind).toLocaleString()}`}
-                                                                    </td>
-                                                                    <td className="px-2 py-1">{r.isBreak || r.ante === "0" ? "—" : Number(r.ante).toLocaleString()}</td>
-                                                                    <td className="px-2 py-1">{r.durationMinutes}</td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            )}
+                                            <div className="creation-span">
+                                                <AnteControls
+                                                    value={blindForm.anteForm}
+                                                    onChange={blindForm.setAnteForm}
+                                                    disabled={blindForm.anteControlsDisabled}
+                                                    customAntes={blindForm.customAntes}
+                                                />
+                                            </div>
+                                            <BlindPreviewTable rows={blindPreviewRows} className="creation-span mt-3 max-h-40 overflow-y-auto rounded border border-gray-700" />
                                             </div>
                                         </div>
                                     ) : (

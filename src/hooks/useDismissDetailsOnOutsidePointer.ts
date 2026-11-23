@@ -1,5 +1,5 @@
 import { useEffect, type RefObject } from "react";
-import { isNullish } from "../utils/guards";
+import { isNullish } from "@block52/ui-sdk/helpers";
 import { pressDismissesDetails } from "../utils/dismissDetails";
 
 /**

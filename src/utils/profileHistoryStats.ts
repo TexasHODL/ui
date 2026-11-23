@@ -25,7 +25,7 @@
  * left out of the figure rather than counted as 0.
  */
 import type { PlayerHand } from "../types/players";
-import { hasContent, hasValue, isEmpty, isNumber } from "./guards";
+import { hasContent, hasValue, isEmpty, isNumber } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 import { formatMicroUsd } from "./moneyDisplay";
 import type { SessionPrizeRow } from "./playerPrizeClaims";

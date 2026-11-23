@@ -8,7 +8,7 @@ import { BettingLimit, GameFormat, GameVariant, CosmosClient, getDefaultCosmosCo
 import { Link, useNavigate } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { isValidPlayerAddress } from "../utils/addressUtils";
-import { isEmpty, hasValue, isNullish, hasContent, hasElements } from "../utils/guards";
+import { isEmpty, hasValue, isNullish, hasContent, hasElements } from "@block52/ui-sdk/helpers";
 import { useNewTable } from "../hooks/game/useNewTable";
 import { useFindGames } from "../hooks/game/useFindGames";
 import { toast } from "react-toastify";
@@ -28,17 +28,9 @@ import { DEFAULT_TOURNAMENT_FORM_VALUES, MTT_SEATS_PER_TABLE_OPTIONS } from "../
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { computeTableCreationFeeMicro, CREATION_FEE_BIG_BLINDS } from "../utils/tableCreationFee";
 import { SNG_PREVIEW_LEVEL_COUNT, TABLE_SEAT_OPTIONS, VALID_SNG_RUNNER_COUNTS } from "../utils/sngAdvancedParams";
-import {
-    choiceUsesFormBlinds,
-    DEFAULT_BLIND_STRUCTURE_CHOICE,
-    DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
-    openingBlindsOf,
-    previewBlindLevels,
-    resolveBlindStructureChoice,
-    sngBlindFields,
-    type BlindStructureChoice
-} from "../utils/blindStructureChoice";
-import { BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../components/BlindStructureFields";
+import { choiceUsesFormBlinds, openingBlindsOf, previewBlindLevels, sngBlindFields } from "../utils/blindStructureChoice";
+import { AnteControls, BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../components/BlindStructureFields";
+import { useBlindStructureForm } from "../hooks/useBlindStructureForm";
 
 interface TableData {
     gameId: string;
@@ -95,12 +87,8 @@ export default function TableAdminPage() {
     // Blind structure (ui#905, ui#906): the same choices as the lobby's create
     // modal, ladder by default. Ladder and doubling use the opening blinds and
     // level time above; presets and custom text carry their own.
-    const [blindStructureChoice, setBlindStructureChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
-    const [customBlindText, setCustomBlindText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
-    const blindPlan = useMemo(
-        () => resolveBlindStructureChoice(blindStructureChoice, customBlindText, { smallBlind: sngSmallBlind, bigBlind: sngBigBlind, durationMinutes: blindLevelDuration }),
-        [blindStructureChoice, customBlindText, sngSmallBlind, sngBigBlind, blindLevelDuration]
-    );
+    const blindForm = useBlindStructureForm({ smallBlind: sngSmallBlind, bigBlind: sngBigBlind, durationMinutes: blindLevelDuration });
+    const blindPlan = blindForm.plan;
     // What the create message carries as the opening small/big blind and level time.
     const sngOpeningBlinds = useMemo(
         () => (blindPlan.preview ? openingBlindsOf(blindPlan.preview) : { smallBlind: sngSmallBlind, bigBlind: sngBigBlind, durationMinutes: blindLevelDuration }),
@@ -745,22 +733,22 @@ export default function TableAdminPage() {
                                         {/* Blind Structure (ui#905) */}
                                         <div>
                                             <BlindStructureSelect
-                                                value={blindStructureChoice}
-                                                onChange={setBlindStructureChoice}
+                                                value={blindForm.choice}
+                                                onChange={blindForm.setChoice}
                                                 labelClassName="text-gray-300 text-xs mb-2 block"
                                                 className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
                                             />
-                                            {blindStructureChoice === "custom" && (
+                                            {blindForm.choice === "custom" && (
                                                 <CustomBlindStructureInput
-                                                    value={customBlindText}
-                                                    onChange={setCustomBlindText}
+                                                    value={blindForm.customText}
+                                                    onChange={blindForm.setCustomText}
                                                     error={blindPlan.error}
                                                     labelClassName="text-gray-300 text-xs mt-3 mb-2 block"
                                                 />
                                             )}
                                         </div>
 
-                                        {choiceUsesFormBlinds(blindStructureChoice) && (<>
+                                        {choiceUsesFormBlinds(blindForm.choice) && (<>
                                         {/* Starting Blinds (chips) */}
                                         <div>
                                             <label className="text-gray-300 text-xs mb-2 block">Starting Blinds (chips)</label>
@@ -963,8 +951,16 @@ export default function TableAdminPage() {
 
                                     {showStructure && (
                                         <div className="bg-[#0c0911] rounded-lg p-4 border border-white/10">
+                                            <AnteControls
+                                                value={blindForm.anteForm}
+                                                onChange={blindForm.setAnteForm}
+                                                disabled={blindForm.anteControlsDisabled}
+                                                customAntes={blindForm.customAntes}
+                                                labelClassName="text-gray-300 text-xs mt-3 mb-2 block"
+                                                className="w-full px-3 py-2 bg-[#0c0911] border border-white/20 rounded-lg text-white text-sm"
+                                            />
                                             {hasElements(blindPreviewRows) ? (
-                                                <BlindPreviewTable rows={blindPreviewRows} choice={blindStructureChoice} className="rounded border border-white/10" />
+                                                <BlindPreviewTable rows={blindPreviewRows} choice={blindForm.choice} className="rounded border border-white/10" />
                                             ) : (
                                                 <p className="text-red-400 text-xs">Fix the custom structure to see its levels.</p>
                                             )}

@@ -8,7 +8,7 @@
 import { formatMicroUsd } from "./moneyDisplay";
 import { getCosmosClient } from "./cosmos/client";
 import type { NetworkEndpoints } from "./cosmos/urls";
-import { hasContent, isRecord, isString } from "./guards";
+import { hasContent, isRecord, isString } from "@block52/ui-sdk/helpers";
 
 const PENDING = "…";
 const UNKNOWN = "—";

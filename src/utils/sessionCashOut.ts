@@ -6,7 +6,7 @@
  * the same 2.00 / 2.00, so the comparison uses those displayed cents. An
  * unknown cash-out (the em dash for a seat still open) is not a result.
  */
-import { hasValue, isNumber } from "./guards";
+import { hasValue, isNumber } from "@block52/ui-sdk/helpers";
 import { formatMicroUsd } from "./moneyDisplay";
 
 /** Cash-out above the buy-in, below it, or the same once both are shown to cents. */

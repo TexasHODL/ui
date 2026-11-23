@@ -20,7 +20,7 @@
  */
 import { PlayerActionType } from "@block52/poker-vm-sdk";
 import type { PlayerHand } from "../types/players";
-import { hasContent, hasElements, hasValue, isNumber } from "./guards";
+import { hasContent, hasElements, hasValue, isNumber } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 import { snapshotHeights } from "./handReplay";
 import { sharedHistoryUnit, type HistoryMoneyUnit } from "./profileHistoryStats";

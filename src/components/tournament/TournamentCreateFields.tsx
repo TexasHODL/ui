@@ -1,17 +1,10 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useState } from "react";
-import { BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../BlindStructureFields";
+import { AnteControls, BlindPreviewTable, BlindStructureSelect, CustomBlindStructureInput } from "../BlindStructureFields";
+import { useBlindStructureForm } from "../../hooks/useBlindStructureForm";
 import { ScheduledStartCard } from "../common/ScheduledStartCard";
 import { DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "../../constants/blindLevels";
 import { parseUsdcToMicro } from "../../constants/currency";
-import {
-    DEFAULT_BLIND_STRUCTURE_CHOICE,
-    DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT,
-    choiceUsesFormBlinds,
-    openingBlindsOf,
-    previewBlindLevels,
-    resolveBlindStructureChoice,
-    type BlindStructureChoice
-} from "../../utils/blindStructureChoice";
+import { choiceUsesFormBlinds, openingBlindsOf, previewBlindLevels } from "../../utils/blindStructureChoice";
 import { LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "../../utils/scheduledSng";
 import {
     DEFAULT_TOURNAMENT_FORM_VALUES,
@@ -24,7 +17,7 @@ import {
     type TournamentFormValues
 } from "../../utils/tournamentCreate";
 import { CREATION_FEE_BIG_BLINDS } from "../../utils/tableCreationFee";
-import { hasElements, hasValue, isBlank, isNullish } from "../../utils/guards";
+import { hasElements, hasValue, isBlank, isNullish } from "@block52/ui-sdk/helpers";
 import { formatMicroUsd } from "../../utils/moneyDisplay";
 import type { CreateTournamentParams } from "../../utils/tournamentTx";
 
@@ -103,18 +96,14 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
         startTime: defaultStartTimeLocal(Date.now()),
         ...(hasValue(seatsPerTable) ? { seatsPerTable } : {})
     }));
-    const [choice, setChoice] = useState<BlindStructureChoice>(DEFAULT_BLIND_STRUCTURE_CHOICE);
-    const [customText, setCustomText] = useState(DEFAULT_CUSTOM_BLIND_STRUCTURE_TEXT);
     const [blindsIndex, setBlindsIndex] = useState(1);
     const [levelMinutes, setLevelMinutes] = useState(DEFAULT_SNG_BLIND_LEVEL_MINUTES);
     const [submitted, setSubmitted] = useState(false);
+    const blindForm = useBlindStructureForm({ ...SNG_BLINDS[blindsIndex], durationMinutes: levelMinutes });
+    const choice = blindForm.choice;
+    const plan = blindForm.plan;
 
     const formValues: TournamentFormValues = hasValue(seatsPerTable) ? { ...values, seatsPerTable } : values;
-
-    const plan = useMemo(
-        () => resolveBlindStructureChoice(choice, customText, { ...SNG_BLINDS[blindsIndex], durationMinutes: levelMinutes }),
-        [choice, customText, blindsIndex, levelMinutes]
-    );
     const blindStructure = tournamentBlindStructure(plan);
     const previewRows = useMemo(() => (plan.preview ? previewBlindLevels(plan.preview, PREVIEW_LEVELS) : []), [plan.preview]);
     const result = validateTournamentForm({ values: formValues, blindStructure, blindError: plan.error, nowMs: Date.now() });
@@ -316,7 +305,7 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                 )}
 
                 <div className={layout === "stack" ? "creation-span" : undefined}>
-                    <BlindStructureSelect value={choice} onChange={setChoice} className={controlClassName} labelClassName={labelClassName} />
+                    <BlindStructureSelect value={choice} onChange={blindForm.setChoice} className={controlClassName} labelClassName={labelClassName} />
                     {choiceUsesFormBlinds(choice) && (
                         <>
                             <div className="mt-3" data-testid="sng-blinds">
@@ -351,7 +340,15 @@ export const TournamentCreateFields = forwardRef<TournamentCreateFieldsHandle, T
                             </div>
                         </>
                     )}
-                    {choice === "custom" && <CustomBlindStructureInput value={customText} onChange={setCustomText} error={plan.error} />}
+                    {choice === "custom" && <CustomBlindStructureInput value={blindForm.customText} onChange={blindForm.setCustomText} error={plan.error} />}
+                    <AnteControls
+                        value={blindForm.anteForm}
+                        onChange={blindForm.setAnteForm}
+                        disabled={blindForm.anteControlsDisabled}
+                        customAntes={blindForm.customAntes}
+                        labelClassName={labelClassName}
+                        className={controlClassName}
+                    />
                     <BlindPreviewTable rows={previewRows} />
                     {err("blindStructure") && choice !== "custom" && <p className="text-xs text-red-400 mt-1">{err("blindStructure")}</p>}
                 </div>

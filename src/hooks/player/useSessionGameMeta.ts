@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useCosmosApi } from "../../context/CosmosApiContext";
-import { hasContent } from "../../utils/guards";
+import { hasContent } from "@block52/ui-sdk/helpers";
 import { mapWithConcurrency } from "../../utils/pagedFetch";
 import { uniqueGameIds } from "../../utils/sessionGameDisplay";
 import { fetchGamePrizeMeta, type GamePrizeMeta } from "../../utils/transactionUtils";

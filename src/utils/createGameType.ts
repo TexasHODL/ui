@@ -9,7 +9,7 @@
  * lobby and the table header agree on what to call a table.
  */
 import { GameFormat } from "@block52/poker-vm-sdk";
-import { hasContent, hasValue } from "./guards";
+import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 import { isScheduledSng } from "./scheduledSng";
 import { parseTournamentGameId } from "./tableUrl";
 

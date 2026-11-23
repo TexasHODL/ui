@@ -12,7 +12,7 @@
  * Pure functions, so the transport can be tested without React or a node.
  */
 import { TexasHoldemRound, type TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
-import { hasElements, hasValue } from "./guards";
+import { hasElements, hasValue } from "@block52/ui-sdk/helpers";
 import { assertQueryableGameId } from "./queryableGameId";
 
 /** CometBFT tx_search query for every action of hand `handNumber` of `gameId`. */

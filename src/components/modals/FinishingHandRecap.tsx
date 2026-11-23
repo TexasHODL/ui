@@ -2,7 +2,7 @@
 import type { FinishingHand } from "../../utils/finishingHand";
 import { getCardImageUrl } from "../../utils/cardImages";
 import { HoleCardFan } from "../playPage/Card/HoleCardFan";
-import { hasValue } from "../../utils/guards";
+import { hasValue } from "@block52/ui-sdk/helpers";
 import { finishingSeatHeading, finishingWinnerCards, normalizeCard } from "../../utils/finishingHand";
 
 const suits: Record<string, string> = { H: "hearts", D: "diamonds", C: "clubs", S: "spades" };

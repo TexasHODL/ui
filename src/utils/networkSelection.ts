@@ -1,6 +1,6 @@
 import type { NetworkEndpoints } from "../context/NetworkContext";
 import { STORAGE_KEYS } from "../constants/storageKeys";
-import { hasContent, hasValue, isBlank, isNullish, isRecord, isString } from "./guards";
+import { hasContent, hasValue, isBlank, isNullish, isRecord, isString } from "@block52/ui-sdk/helpers";
 
 /**
  * Host of the Texas Hodl node. Must match the Texas Hodl entry in NETWORK_PRESETS.
