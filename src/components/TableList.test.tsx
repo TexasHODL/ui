@@ -42,6 +42,7 @@ let mockTournamentCards: {
     name?: string;
     winnerAddress?: string;
     startsAtMs?: number;
+    endedAtMs?: number;
     minEntrants?: number;
     isRegistered?: boolean;
     creator?: string;
@@ -682,3 +683,30 @@ test("Sit & Go tab lists only Sit & Gos; Tournaments lists single-table and mult
     }
 });
 
+test("finished and cancelled multi-table tournaments drop off the lobby after 24 hours, but stay findable by search", () => {
+    const HOUR = 60 * 60 * 1000;
+    const now = Date.now();
+    mockTournamentCards = [
+        { ...openTournamentCard, tournamentId: "0xlive", name: "Live MTT", phase: "open", startsAtMs: now + HOUR },
+        { ...openTournamentCard, tournamentId: "0xrecentfin", name: "Recent Finished MTT", phase: "finished", startsAtMs: now - 48 * HOUR, endedAtMs: now - 12 * HOUR },
+        { ...openTournamentCard, tournamentId: "0xoldfin", name: "Old Finished MTT", phase: "finished", startsAtMs: now - 72 * HOUR, endedAtMs: now - 25 * HOUR },
+        { ...openTournamentCard, tournamentId: "0xoldcan", name: "Old Cancelled MTT", phase: "cancelled", startsAtMs: now - 25 * HOUR }
+    ];
+    renderLobby();
+    // Cash tables are unaffected, including on the All tab with aged-out MTTs present.
+    expect(screen.getByText("My empty table")).toBeInTheDocument();
+    expect(screen.getByText("Live MTT")).toBeInTheDocument();
+    expect(screen.getByText("Recent Finished MTT")).toBeInTheDocument();
+    expect(screen.queryByText("Old Finished MTT")).not.toBeInTheDocument();
+    expect(screen.queryByText("Old Cancelled MTT")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Tournaments" }));
+    expect(screen.getByText("Live MTT")).toBeInTheDocument();
+    expect(screen.getByText("Recent Finished MTT")).toBeInTheDocument();
+    expect(screen.queryByText("Old Finished MTT")).not.toBeInTheDocument();
+    expect(screen.queryByText("Old Cancelled MTT")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Search tables"), { target: { value: "Old Finished MTT" } });
+    expect(screen.getByText("Old Finished MTT")).toBeInTheDocument();
+    expect(screen.queryByText("Live MTT")).not.toBeInTheDocument();
+});

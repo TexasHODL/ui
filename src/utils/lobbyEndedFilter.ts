@@ -15,6 +15,15 @@ export type LobbyEndedProgress = {
     blindTimer?: { levelStartTime?: number; blindLevelDuration?: number };
 };
 
+/** Minimal MTT card shape used to age out finished / cancelled lobby cards. */
+export type LobbyEndedTournament = {
+    tournamentId: string;
+    phase: string;
+    startsAtMs: number;
+    /** Best available end time (ms). Finished without one stays visible. */
+    endedAtMs?: number;
+};
+
 /**
  * Rolldown co-bundles this module with TableList and mangles exports / imports
  * to the same short names as TableList locals (`games`/`W`, `isLoading`/`a`,
@@ -112,11 +121,41 @@ const lobbyEndedFilterApi = (() => {
         return games.filter(game => !shouldHideEndedLobbyGame(game, progressById[game.gameId], nowMs));
     }
 
+    /**
+     * Hide a finished or cancelled multi-table tournament once it has been
+     * ended for retentionMs — the same window as sit-and-go / STT tables.
+     * Open, full, starting and running cards always stay. Finished cards
+     * without endedAtMs stay visible (fail open). Cancelled cards without
+     * endedAtMs use startsAtMs (MTTs cancel at the scheduled start).
+     */
+    function shouldHideEndedLobbyTournament(card: LobbyEndedTournament, nowMs: number): boolean {
+        if (card.phase === "finished") {
+            const endedAt = card.endedAtMs;
+            if (typeof endedAt !== "number" || endedAt <= 0) return false;
+            return nowMs >= endedAt + retentionMs;
+        }
+        if (card.phase !== "cancelled") return false;
+        const endedAt = typeof card.endedAtMs === "number" && card.endedAtMs > 0 ? card.endedAtMs : card.startsAtMs;
+        if (!(endedAt > 0)) return false;
+        return nowMs >= endedAt + retentionMs;
+    }
+
+    /**
+     * Drop past-retention finished/cancelled MTT cards. A non-empty search
+     * skips aging so an old event can still be found by id or name.
+     */
+    function applyEndedLobbyTournamentRetention<T extends LobbyEndedTournament>(cards: T[], nowMs: number, search: string): T[] {
+        if (search.trim()) return cards;
+        return cards.filter(card => !shouldHideEndedLobbyTournament(card, nowMs));
+    }
+
     return {
         LOBBY_ENDED_RETENTION_MS: retentionMs,
         LOBBY_STUCK_LEVEL_OVERDUE_MS: stuckOverdueMs,
         maxPreviousActionTimestamp,
         shouldHideEndedLobbyGame,
+        shouldHideEndedLobbyTournament,
+        applyEndedLobbyTournamentRetention,
         applyEndedLobbyRetention
     };
 })();
@@ -152,3 +191,16 @@ export const shouldHideEndedLobbyGame = lobbyEndedFilterApi.shouldHideEndedLobby
  * find an old finished table by id (or name) to review the finishing hand.
  */
 export const applyEndedLobbyRetention = lobbyEndedFilterApi.applyEndedLobbyRetention;
+
+/**
+ * Hide a finished or cancelled multi-table tournament once it has been ended
+ * for {@link LOBBY_ENDED_RETENTION_MS}. Same window as sit-and-go / STT tables.
+ */
+export const shouldHideEndedLobbyTournament = lobbyEndedFilterApi.shouldHideEndedLobbyTournament;
+
+/**
+ * Drop past-retention Finished/Cancelled MTT cards from an already-filtered
+ * lobby list. When the user has typed a search query, skip aging so they can
+ * still find an old finished event by id or name.
+ */
+export const applyEndedLobbyTournamentRetention = lobbyEndedFilterApi.applyEndedLobbyTournamentRetention;

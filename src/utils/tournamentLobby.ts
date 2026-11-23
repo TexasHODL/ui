@@ -73,6 +73,10 @@ export interface TournamentStateDTO {
     prizePool: string;
     /** Final places when the engine has written them; place 1 is present only once the tournament is over. */
     results?: TournamentResultView[];
+    /** Epoch ms when the tournament actually started, if the chain has written it. */
+    startedAt?: number;
+    /** Epoch ms when the current (or last) blind level started, if the chain has written it. */
+    levelStartTime?: number;
 }
 
 export interface TournamentRecord {
@@ -97,6 +101,13 @@ function requireMicro(value: unknown, name: string): string {
 function requireInt(value: unknown, name: string): number {
     if (!isNumber(value) || !Number.isInteger(value)) throw new Error(`tournament ${name} must be an integer`);
     return value;
+}
+
+/** Optional positive epoch ms; absent or 0 is undefined (the chain may omit these). */
+function optionalEpochMs(value: unknown, name: string): number | undefined {
+    if (isNullish(value)) return undefined;
+    const ms = requireInt(value, name);
+    return ms > 0 ? ms : undefined;
 }
 
 function isTournamentStatus(value: string): value is TournamentStatus {
@@ -153,6 +164,8 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         ...(isNullish(o.lateRegistrationLevels) ? {} : { lateRegistrationLevels: requireInt(o.lateRegistrationLevels, "options.lateRegistrationLevels") })
     };
     const name = optionalName(raw.name) ?? options.name;
+    const startedAt = optionalEpochMs(raw.startedAt, "startedAt");
+    const levelStartTime = optionalEpochMs(raw.levelStartTime, "levelStartTime");
     return {
         tournamentId: requireString(raw.tournamentId, "tournamentId"),
         status,
@@ -160,7 +173,9 @@ export function parseTournamentState(raw: unknown): TournamentStateDTO {
         options,
         entrants: raw.entrants.map(parseEntrant),
         prizePool: requireMicro(raw.prizePool, "prizePool"),
-        ...(isNullish(raw.results) ? {} : { results: parseResults(raw.results) })
+        ...(isNullish(raw.results) ? {} : { results: parseResults(raw.results) }),
+        ...(isNullish(startedAt) ? {} : { startedAt }),
+        ...(isNullish(levelStartTime) ? {} : { levelStartTime })
     };
 }
 
@@ -297,11 +312,32 @@ export interface TournamentLobbyCard {
     lateRegistrationLabel: string;
     /** "Antes from level N" or "No antes", from the structure (ui#891). */
     anteLabel: string;
+    /**
+     * When the event ended, for the lobby's 24h hide. Cancelled = the
+     * scheduled start (MTTs cancel at that time). Finished = the best engine
+     * timestamp available (last level start, else startedAt, else the scheduled
+     * start) because TournamentStateDTO has no finished-at field.
+     */
+    endedAtMs?: number;
 }
 
 /** Entrants that count toward the field: registered, or already playing/busted after the start. */
 function countedEntrants(entrants: TournamentEntrantView[]): TournamentEntrantView[] {
     return entrants.filter(e => e.status !== "unregistered");
+}
+
+/**
+ * The time the lobby uses to age out a finished or cancelled tournament.
+ * Undefined while the event is still live. Finished tournaments prefer
+ * levelStartTime, then startedAt, then the scheduled start — a lower bound
+ * on the true finish, since the engine DTO has no ended-at field.
+ */
+export function tournamentEndedAtMs(state: TournamentStateDTO, phase: TournamentLobbyPhase): number | undefined {
+    if (phase === "cancelled") return state.options.startTime > 0 ? state.options.startTime : undefined;
+    if (phase !== "finished") return undefined;
+    if (!isNullish(state.levelStartTime) && state.levelStartTime > 0) return state.levelStartTime;
+    if (!isNullish(state.startedAt) && state.startedAt > 0) return state.startedAt;
+    return state.options.startTime > 0 ? state.options.startTime : undefined;
 }
 
 export function tournamentPhase(state: TournamentStateDTO, nowMs: number): TournamentLobbyPhase {
@@ -349,6 +385,7 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
     const myTable = phase === "running" ? tablePlayedBy(mine) : undefined;
 
     const name = state.name ?? state.options.name;
+    const endedAtMs = tournamentEndedAtMs(state, phase);
 
     return {
         tournamentId: state.tournamentId,
@@ -380,7 +417,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         // so `closed` must come from the tournament-level SDK helper once it ships;
         // until then the label shows the configured target level while it exists.
         lateRegistrationLabel: formatTournamentLateRegistration(state.options.lateRegistrationLevels, false),
-        anteLabel: describeAnteSchedule(state.options.blindStructure)
+        anteLabel: describeAnteSchedule(state.options.blindStructure),
+        ...(isNullish(endedAtMs) ? {} : { endedAtMs })
     };
 }
 

@@ -6,6 +6,7 @@ import {
     parseTournamentResponse,
     lobbyRunnersLabel,
     parseTournamentState,
+    tournamentEndedAtMs,
     phaseLabel,
     sortTournamentCards,
     tournamentEntryCost,
@@ -275,6 +276,46 @@ describe("openingLevelLabel", () => {
     });
 });
 
+
+
+describe("tournamentEndedAtMs and lobby hide timestamps", () => {
+    it("parses optional startedAt and levelStartTime", () => {
+        const s = parseTournamentState(stateJson({ startedAt: START + 1000, levelStartTime: START + 2000 }));
+        expect(s.startedAt).toBe(START + 1000);
+        expect(s.levelStartTime).toBe(START + 2000);
+    });
+
+    it("omits startedAt and levelStartTime when they are missing or zero", () => {
+        expect(parseTournamentState(stateJson()).startedAt).toBeUndefined();
+        expect(parseTournamentState(stateJson({ startedAt: 0, levelStartTime: 0 })).startedAt).toBeUndefined();
+        expect(parseTournamentState(stateJson({ startedAt: 0, levelStartTime: 0 })).levelStartTime).toBeUndefined();
+    });
+
+    it("prefers levelStartTime, then startedAt, then the scheduled start for a finished event", () => {
+        const withLevel = record({ status: "finished", startedAt: START + 5_000, levelStartTime: START + 9_000 });
+        expect(tournamentEndedAtMs(withLevel.state, "finished")).toBe(START + 9_000);
+        expect(buildTournamentCard(withLevel, ME, START + 10_000).endedAtMs).toBe(START + 9_000);
+
+        const withStarted = record({ status: "finished", startedAt: START + 5_000 });
+        expect(tournamentEndedAtMs(withStarted.state, "finished")).toBe(START + 5_000);
+        expect(buildTournamentCard(withStarted, ME, START + 10_000).endedAtMs).toBe(START + 5_000);
+
+        const scheduledOnly = record({ status: "finished" });
+        expect(tournamentEndedAtMs(scheduledOnly.state, "finished")).toBe(START);
+        expect(buildTournamentCard(scheduledOnly, ME, START + 10_000).endedAtMs).toBe(START);
+    });
+
+    it("uses the scheduled start for a cancelled event, even if startedAt is present", () => {
+        const rec = record({ status: "cancelled", startedAt: START + 5_000, levelStartTime: START + 9_000 });
+        expect(tournamentEndedAtMs(rec.state, "cancelled")).toBe(START);
+        expect(buildTournamentCard(rec, ME, START + 10_000).endedAtMs).toBe(START);
+    });
+
+    it("does not set endedAtMs on live events", () => {
+        expect(buildTournamentCard(record({ status: "registering" }), ME, START - 60_000).endedAtMs).toBeUndefined();
+        expect(buildTournamentCard(record({ status: "running", startedAt: START, levelStartTime: START }), ME, START + 1000).endedAtMs).toBeUndefined();
+    });
+});
 
 describe("results and finish detection", () => {
     const results = [

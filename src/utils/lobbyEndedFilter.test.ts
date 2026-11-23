@@ -2,8 +2,10 @@
 import {
     LOBBY_ENDED_RETENTION_MS,
     applyEndedLobbyRetention,
+    applyEndedLobbyTournamentRetention,
     maxPreviousActionTimestamp,
-    shouldHideEndedLobbyGame
+    shouldHideEndedLobbyGame,
+    shouldHideEndedLobbyTournament
 } from "./lobbyEndedFilter";
 
 const HOUR = 60 * 60 * 1000;
@@ -169,5 +171,93 @@ describe("prod Heads Up cancelled fixture", () => {
         expect(
             applyEndedLobbyRetention([asString], {}, nowMs, "").map(g => g.gameId)
         ).toEqual([]);
+    });
+});
+
+describe("shouldHideEndedLobbyTournament", () => {
+    const finished = (endedAtMs: number | undefined) => ({
+        tournamentId: "0xmtt",
+        phase: "finished",
+        startsAtMs: now - 48 * HOUR,
+        ...(endedAtMs === undefined ? {} : { endedAtMs })
+    });
+
+    it("keeps finished events visible inside the 24h retention window", () => {
+        expect(shouldHideEndedLobbyTournament(finished(now - 23 * HOUR), now)).toBe(false);
+    });
+
+    it("hides finished events once past 24h from endedAtMs", () => {
+        expect(shouldHideEndedLobbyTournament(finished(now - 24 * HOUR - 1), now)).toBe(true);
+    });
+
+    it("keeps finished events visible when endedAtMs is missing", () => {
+        expect(shouldHideEndedLobbyTournament(finished(undefined), now)).toBe(false);
+    });
+
+    it("keeps cancelled events visible inside 24h of the start (MTTs cancel at the start)", () => {
+        expect(shouldHideEndedLobbyTournament({
+            tournamentId: "0xc",
+            phase: "cancelled",
+            startsAtMs: now - 23 * HOUR
+        }, now)).toBe(false);
+    });
+
+    it("hides cancelled events once past 24h from the start", () => {
+        expect(shouldHideEndedLobbyTournament({
+            tournamentId: "0xc",
+            phase: "cancelled",
+            startsAtMs: now - 24 * HOUR - 1
+        }, now)).toBe(true);
+    });
+
+    it("uses endedAtMs for cancelled events when present", () => {
+        expect(shouldHideEndedLobbyTournament({
+            tournamentId: "0xc",
+            phase: "cancelled",
+            startsAtMs: now - 48 * HOUR,
+            endedAtMs: now - 12 * HOUR
+        }, now)).toBe(false);
+        expect(shouldHideEndedLobbyTournament({
+            tournamentId: "0xc",
+            phase: "cancelled",
+            startsAtMs: now - 48 * HOUR,
+            endedAtMs: now - 24 * HOUR - 1
+        }, now)).toBe(true);
+    });
+
+    it("always shows open, full, starting and running events", () => {
+        for (const phase of ["open", "full", "starting", "running"]) {
+            expect(shouldHideEndedLobbyTournament({
+                tournamentId: "0xlive",
+                phase,
+                startsAtMs: now - 48 * HOUR,
+                endedAtMs: now - 48 * HOUR
+            }, now)).toBe(false);
+        }
+    });
+});
+
+describe("applyEndedLobbyTournamentRetention", () => {
+    const oldFinished = {
+        tournamentId: "0xoldfin",
+        phase: "finished",
+        startsAtMs: now - 48 * HOUR,
+        endedAtMs: now - 48 * HOUR
+    };
+    const live = {
+        tournamentId: "0xlive",
+        phase: "open",
+        startsAtMs: now + HOUR
+    };
+
+    it("hides past-24h finished cards when search is empty", () => {
+        expect(applyEndedLobbyTournamentRetention([oldFinished, live], now, "").map(c => c.tournamentId)).toEqual(["0xlive"]);
+        expect(applyEndedLobbyTournamentRetention([oldFinished], now, "   ").map(c => c.tournamentId)).toEqual([]);
+    });
+
+    it("keeps past-24h finished cards when search is non-empty", () => {
+        expect(applyEndedLobbyTournamentRetention([oldFinished, live], now, oldFinished.tournamentId).map(c => c.tournamentId))
+            .toEqual(["0xoldfin", "0xlive"]);
+        expect(applyEndedLobbyTournamentRetention([oldFinished], now, "oldfin").map(c => c.tournamentId)).toEqual(["0xoldfin"]);
     });
 });

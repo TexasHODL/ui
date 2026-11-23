@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatedBackground } from "../components/common/AnimatedBackground";
 import { PageHeading } from "../components/common/PageHeading";
 import { ExplorerEmpty, ExplorerError, ExplorerLoading, ExplorerPanel, ExplorerReloadButton } from "../components/explorer/ExplorerPanel";
@@ -7,12 +7,14 @@ import { CreateTournamentModal } from "../components/tournament/CreateTournament
 import { useNow, useTournamentLobby } from "../hooks/tournament/useTournamentLobby";
 import { useTournamentActions } from "../hooks/tournament/useTournamentActions";
 import { isEmpty } from "@block52/ui-sdk/helpers";
+import { applyEndedLobbyTournamentRetention } from "../utils/lobbyEndedFilter";
 
 /** /tournaments: multi-table tournaments to register for, and the form to create one (ui#980). */
 export default function TournamentLobbyPage() {
     const { cards, isLoading, error, failedCount, refresh } = useTournamentLobby();
     const actions = useTournamentActions(refresh);
     const now = useNow(1000);
+    const visibleCards = useMemo(() => applyEndedLobbyTournamentRetention(cards, now, ""), [cards, now]);
     const [creating, setCreating] = useState(false);
     const [createdId, setCreatedId] = useState<string | null>(null);
 
@@ -54,11 +56,15 @@ export default function TournamentLobbyPage() {
                         <ExplorerLoading label="Loading tournaments…" />
                     ) : error ? (
                         <ExplorerError>{error}</ExplorerError>
-                    ) : isEmpty(cards) ? (
-                        <ExplorerEmpty>No tournaments yet. Create the first one.</ExplorerEmpty>
+                    ) : isEmpty(visibleCards) ? (
+                        <ExplorerEmpty>
+                            {isEmpty(cards)
+                                ? "No tournaments yet. Create the first one."
+                                : "Finished and cancelled tournaments drop off this list after 24 hours."}
+                        </ExplorerEmpty>
                     ) : (
                         <div className="p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-                            {cards.map(card => (
+                            {visibleCards.map(card => (
                                 <TournamentCard key={card.tournamentId} card={card} nowMs={now} />
                             ))}
                         </div>
