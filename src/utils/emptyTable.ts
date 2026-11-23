@@ -1,4 +1,4 @@
-import type { PotDisplayValues } from "./potDisplayUtils";
+import type { PotDisplayValues } from "@block52/poker-ui-core/utils/potDisplayUtils";
 
 /**
  * An empty table (nobody seated) shows a clean felt: no pot, no board, no dealer

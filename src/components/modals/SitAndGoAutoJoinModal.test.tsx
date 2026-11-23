@@ -24,12 +24,12 @@ jest.mock("../../context/GameStateContext", () => ({
     useGameStateContext: () => ({ subscribeToTable: jest.fn(), gameFormat: mockContext.gameFormat, gameState: mockContext.gameState })
 }));
 jest.mock("../../utils/colorConfig", () => ({ colors: { brand: { primary: "#be87e5" } }, getHexagonStroke: () => "#be87e5" }));
-jest.mock("../../utils/numberUtils", () => ({
+jest.mock("@block52/poker-ui-core/utils/numberUtils", () => ({
     formatUSDCToSimpleDollars: (s: string) => (Number(s) / 1e6).toFixed(2),
     formatForSitAndGo: (s: string) => Number(s).toLocaleString("en-US")
 }));
-jest.mock("../../utils/gameFormatUtils", () => ({
-    ...jest.requireActual("../../utils/gameFormatUtils"),
+jest.mock("@block52/poker-ui-core/utils/gameFormatUtils", () => ({
+    ...jest.requireActual("@block52/poker-ui-core/utils/gameFormatUtils"),
     getGameTypeMnemonic: () => "6-Max",
     formatTableGameDisplay: () => "Texas Hold'em"
 }));

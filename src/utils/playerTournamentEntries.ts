@@ -14,13 +14,13 @@
  * on the row. A tournament the player is still in has no cash-out, so the
  * totals leave it out as an open session.
  */
-import type { TournamentStateDTO } from "../types/tournament";
-import type { PlayerHand } from "../types/players";
+import type { TournamentStateDTO } from "@block52/poker-ui-core/types/tournament";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasElements, hasValue, isEmpty, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { prizeMicroIsPositive } from "./prizeDisplay";
-import { parseTournamentGameId, tournamentGameId } from "./tableUrl";
-import { gameIdFromTableId } from "./tournamentFollow";
-import { parseTournamentState } from "./tournamentBlinds";
+import { parseTournamentGameId, tournamentGameId } from "@block52/poker-ui-core/utils/tableUrl";
+import { gameIdFromTableId } from "@block52/poker-ui-core/utils/tournamentFollow";
+import { parseTournamentState } from "@block52/poker-ui-core/utils/tournamentBlinds";
 import { placeOrdinal, type GamePrizeMeta, type GameResultPlace } from "./transactionUtils";
 import type { SessionPrizeRow } from "./playerPrizeClaims";
 

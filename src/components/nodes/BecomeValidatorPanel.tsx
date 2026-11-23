@@ -1,11 +1,11 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { FC, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { toValoperAddress } from "@block52/poker-vm-sdk";
 import { ChainOverview } from "../../hooks/nodes/useChainOverview";
 import { useCreateValidator } from "../../hooks/nodes/useCreateValidator";
 import { useCosmosWallet } from "../../hooks/wallet";
-import { formatMicroAsUsdc } from "../../constants/currency";
+import { formatMicroAsUsdc } from "@block52/poker-ui-core/constants/currency";
 import { faultTolerance, parseConsensusPubkey, parseMicroAmount, powerShareBps, wouldControlLiveness } from "../../utils/nodePortal";
 import { hasContent, isNullish } from "@block52/ui-sdk/helpers";
 

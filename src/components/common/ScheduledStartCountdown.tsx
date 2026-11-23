@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatCountdown, formatStartsAt } from "../../utils/scheduledSng";
+import { formatCountdown, formatStartsAt } from "@block52/poker-ui-core/utils/scheduledSng";
 
 export interface ScheduledStartCountdownProps {
     scheduledStartTime: number;

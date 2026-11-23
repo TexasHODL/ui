@@ -1,4 +1,4 @@
-import type { PlayerListItem, PlayerSession } from "../types/players";
+import type { PlayerListItem, PlayerSession } from "@block52/poker-ui-core/types/players";
 import {
     isPrizeClaimAddress,
     isUnsupportedTxQuery,

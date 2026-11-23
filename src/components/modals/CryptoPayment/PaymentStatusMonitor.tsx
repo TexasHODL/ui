@@ -1,4 +1,4 @@
-import { formatUsd } from "../../../utils/moneyDisplay";
+import { formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { useState, useEffect, useCallback, useRef } from "react";
 import spinner from "../../../assets/spinning-circles.svg";
 import type { PaymentStatusMonitorProps } from "../types";

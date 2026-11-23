@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { PlayerStatus, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
-import type { PlayerHand } from "../../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { encodeStringField1 } from "../../utils/abciQuery";
 import { useHandHistoryCards } from "./useHandHistoryCards";
 import { useCometRpcApiFactory } from "../../context/CosmosApiContext";

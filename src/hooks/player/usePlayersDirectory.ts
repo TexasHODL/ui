@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IndexerApi } from "../../apis/Api";
 import { useIndexerApi } from "../../context/IndexerApiContext";
-import type { PlayerListItem, PlayerSearchParams } from "../../types/players";
+import type { PlayerListItem, PlayerSearchParams } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 import { fetchAllPages } from "../../utils/pagedFetch";
 import { playersPage } from "../../utils/playerDirectory";

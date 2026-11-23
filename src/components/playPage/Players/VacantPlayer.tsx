@@ -1,4 +1,4 @@
-import { formatUsd, formatMicroUsd } from "../../../utils/moneyDisplay";
+import { formatUsd, formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { ModalHeader } from "../../common/ModalHeader";
 /**
  * VacantPlayer Component
@@ -22,22 +22,22 @@ import { createPortal } from "react-dom";
 import { useTableId } from "../../../hooks/game/useTableId";
 
 import { useVacantSeatData } from "../../../hooks/game/useVacantSeatData";
-import type { VacantPlayerProps } from "../../../types/index";
+import type { VacantPlayerProps } from "@block52/poker-ui-core/types";
 import { joinTable } from "../../../hooks/playerActions/joinTable";
 import { useGameOptions } from "../../../hooks/game/useGameOptions";
-import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "../../../utils/numberUtils";
+import { formatDollars, formatUSDCToSimpleDollars, parseDollars } from "@block52/poker-ui-core/utils/numberUtils";
 import { useCosmosWallet } from "../../../hooks";
-import { microToUsdc } from "../../../constants/currency";
+import { microToUsdc } from "@block52/poker-ui-core/constants/currency";
 import { hasElements, isNullish } from "@block52/ui-sdk/helpers";
-import { seatsAreDrawn } from "../../../utils/seatDraw";
+import { seatsAreDrawn } from "@block52/poker-ui-core/utils/seatDraw";
 import { showsBlankSeatPill } from "../../../utils/blankSeatPill";
 import { viteEnv } from "../../../utils/viteEnv";
-import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "../../../utils/vacantSeatText";
+import { joinSeatButtonLabel, SEAT_DRAW_NOTE, vacantSeatText } from "@block52/poker-ui-core/utils/vacantSeatText";
 import Badge from "../common/Badge";
 import playerStyles from "./PlayersCommon.module.css";
 import { useNetwork } from "../../../context/NetworkContext";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { hasTournamentStarted, isRegistrationClosed, scheduledSngPhase, tournamentRegistrationClosed } from "../../../utils/scheduledSng";
+import { hasTournamentStarted, isRegistrationClosed, scheduledSngPhase, tournamentRegistrationClosed } from "@block52/poker-ui-core/utils/scheduledSng";
 import styles from "./VacantPlayer.module.css";
 import { USDCDepositModal } from "../../modals";
 

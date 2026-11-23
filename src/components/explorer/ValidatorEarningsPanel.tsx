@@ -1,6 +1,6 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React from "react";
-import { truncateMiddle } from "../../utils/stringUtils";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { isEmpty } from "@block52/ui-sdk/helpers";
 import type { ValidatorBond } from "../../utils/validatorBonds";
 

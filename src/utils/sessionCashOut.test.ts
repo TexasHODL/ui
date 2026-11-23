@@ -1,4 +1,4 @@
-import { formatMicroUsd } from "./moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { compareSessionCashOut, sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCashOutClass } from "./sessionCashOut";
 
 /** What the profile table prints, grouping commas removed so it can be compared. */

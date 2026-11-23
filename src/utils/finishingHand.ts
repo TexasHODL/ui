@@ -1,7 +1,7 @@
 import { Deck, GameVariant, PlayerActionType, PlayerDTO, PlayerStatus, PokerSolver, TexasHoldemRound, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
-import { isMaskedHand, isRevealedHand } from "../bus/deriveEvents";
+import { isMaskedHand, isRevealedHand } from "@block52/poker-ui-core/bus/deriveEvents";
 import { hasElements, hasValue } from "@block52/ui-sdk/helpers";
-import { describeShownHand } from "./showdownSummary";
+import { describeShownHand } from "@block52/poker-ui-core/utils/showdownSummary";
 
 export interface FinishingSeat {
     seat: number;

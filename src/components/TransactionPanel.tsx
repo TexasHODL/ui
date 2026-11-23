@@ -1,9 +1,9 @@
-import { formatMicroUsd } from "../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { useNetwork } from "../context/NetworkContext";
-import { formatTimestampRelative } from "../utils/formatUtils";
+import { formatTimestampRelative } from "@block52/poker-ui-core/utils/formatUtils";
 
 import styles from "./TransactionPanel.module.css";
 import {

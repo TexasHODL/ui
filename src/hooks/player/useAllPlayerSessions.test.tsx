@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { useIndexerApi } from "../../context/IndexerApiContext";
-import type { PlayerSession } from "../../types/players";
+import type { PlayerSession } from "@block52/poker-ui-core/types/players";
 import { useAllPlayerSessions } from "./usePlayerSessions";
 
 jest.mock("../../context/IndexerApiContext", () => ({ useIndexerApi: jest.fn() }));

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useCosmosApi } from "../../context/CosmosApiContext";
 import { parseGameStateJson } from "../../utils/handReplay";
 import { maxPreviousActionTimestamp, type LobbyEndedProgress } from "../../utils/lobbyEndedFilter";
-import { hasTournamentFinished, hasTournamentStarted, lateRegistrationEndsAt, lateRegistrationPhase } from "../../utils/scheduledSng";
+import { hasTournamentFinished, hasTournamentStarted, lateRegistrationEndsAt, lateRegistrationPhase } from "@block52/poker-ui-core/utils/scheduledSng";
 
 export type LobbyTournamentMark = "started" | "finished";
 export type LobbyTournamentProgress = LobbyEndedProgress;

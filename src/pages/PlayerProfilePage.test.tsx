@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import type { PlayerProfile } from "../types/players";
+import type { PlayerProfile } from "@block52/poker-ui-core/types/players";
 import PlayerProfilePage from "./PlayerProfilePage";
 
 const ADDRESS = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";

@@ -5,8 +5,8 @@
 import { BettingLimit } from "@block52/poker-vm-sdk";
 import { coerceScheduledStartTimeMs } from "./convertUtils";
 import { hasContent, hasValue, isBlank, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
-import { truncateMiddle } from "./stringUtils";
-import { formatMicroUsd } from "./moneyDisplay";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 
 export interface TransferEvent {
     type?: string;

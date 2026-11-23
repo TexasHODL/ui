@@ -1,11 +1,11 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { useMemo } from "react";
 import { useGameData } from "../../context/gameState/GameDataContext";
 import { useGameMeta } from "../../context/gameState/GameMetaContext";
 import { useGameUI } from "../../context/gameState/GameUIContext";
 import { TexasHoldemRound, GameFormat } from "@block52/poker-vm-sdk";
-import { TableStateReturn } from "../../types/index";
-import { getGameFormat } from "../../utils/gameFormatUtils";
+import { TableStateReturn } from "@block52/poker-ui-core/types";
+import { getGameFormat } from "@block52/poker-ui-core/utils/gameFormatUtils";
 
 import { hasElements } from "@block52/ui-sdk/helpers";
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { useCometRpcApiFactory } from "../../context/CosmosApiContext";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
-import type { PlayerHand } from "../../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { handKey } from "../../utils/handHistory";
 import { cardsForHistoryHand, type HistoryHandCards } from "../../utils/handHistoryCards";
 import { loadPublicHandState, mapPool } from "../../utils/handHistoryRecover";

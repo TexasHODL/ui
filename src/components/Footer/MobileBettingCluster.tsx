@@ -1,5 +1,5 @@
 import React from "react";
-import { formatDisplayAmount } from "../../utils/numberUtils";
+import { formatDisplayAmount } from "@block52/poker-ui-core/utils/numberUtils";
 import { MainActionButtons } from "./MainActionButtons";
 import { PotSizedBetButtons } from "./PotSizedBetButtons";
 import { VerticalPillSlider } from "./VerticalPillSlider";
