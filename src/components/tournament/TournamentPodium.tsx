@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { useProfileAvatar } from "../../context/profile/ProfileAvatarContext";
 import { NftAvatarImage } from "../profile/NftAvatarImage";
 import { hasContent } from "@block52/ui-sdk/helpers";
-import { truncateMiddle } from "../../utils/stringUtils";
-import { formatUsdc } from "../../utils/tournamentLobby";
-import { ordinalPlace } from "../../utils/tournamentFinish";
-import type { TournamentStandingRow } from "../../utils/tournamentTables";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
+import { formatUsdc } from "@block52/poker-ui-core/utils/tournamentLobby";
+import { ordinalPlace } from "@block52/poker-ui-core/utils/tournamentFinish";
+import type { TournamentStandingRow } from "@block52/poker-ui-core/utils/tournamentTables";
 import styles from "./TournamentPodium.module.css";
 
 const PODIUM_ORDER = [2, 1, 3] as const;

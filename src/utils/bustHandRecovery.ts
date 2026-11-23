@@ -10,7 +10,7 @@ import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../context/NetworkContext";
 import type { HistoryRpc } from "./handHistoryRecover";
 import { loadPublicHandState } from "./handHistoryRecover";
-import type { PlayerHand } from "../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { hasElements } from "@block52/ui-sdk/helpers";
 import { FinishingHand, showdownForViewer } from "./finishingHand";
 

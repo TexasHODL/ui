@@ -1,4 +1,4 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { ModalHeader } from "../common/ModalHeader";
 /**
  * AMOUNT HANDLING PATTERN (Cosmos SDK):
@@ -13,19 +13,19 @@ import { useNavigate } from "react-router-dom";
 import { useGameOptions } from "../../hooks/game/useGameOptions";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
 import { joinTable } from "../../hooks/playerActions/joinTable";
-import { formatUSDCToSimpleDollars, formatForSitAndGo } from "../../utils/numberUtils";
-import { computeSngEntryBreakdown } from "../../utils/buyInUtils";
+import { formatUSDCToSimpleDollars, formatForSitAndGo } from "@block52/poker-ui-core/utils/numberUtils";
+import { computeSngEntryBreakdown } from "@block52/poker-ui-core/utils/buyInUtils";
 import { getCosmosBalance } from "../../utils/cosmosAccountUtils";
 import { useNetwork } from "../../context/NetworkContext";
 import Modal from "../common/Modal";
-import { microToUsdc } from "../../constants/currency";
+import { microToUsdc } from "@block52/poker-ui-core/constants/currency";
 import { STORAGE_KEYS } from "../../constants/storageKeys";
 import { useGameStateContext } from "../../context/GameStateContext";
-import { formatTableGameDisplay, getGameTypeMnemonic } from "../../utils/gameFormatUtils";
+import { formatTableGameDisplay, getGameTypeMnemonic } from "@block52/poker-ui-core/utils/gameFormatUtils";
 import { sitAndGoJoinTitle } from "../../utils/createGameType";
 import { isEmpty, hasValue } from "@block52/ui-sdk/helpers";
-import { SEAT_DRAW_NOTE } from "../../utils/vacantSeatText";
-import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed, tournamentStartRule, waitsForStartTime } from "../../utils/scheduledSng";
+import { SEAT_DRAW_NOTE } from "@block52/poker-ui-core/utils/vacantSeatText";
+import { formatStartsAt, hasTournamentStarted, isScheduledSng, lateRegistrationEndsAt, lateRegistrationPhase, scheduledSngPhase, tournamentRegistrationClosed, tournamentStartRule, waitsForStartTime } from "@block52/poker-ui-core/utils/scheduledSng";
 import { ScheduledStartCountdown } from "../common/ScheduledStartCountdown";
 
 import type { SitAndGoAutoJoinModalProps } from "./types";

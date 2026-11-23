@@ -10,7 +10,7 @@ import { useCosmosWallet } from "../hooks/wallet/useCosmosWallet";
 import { getCosmosAddress } from "../utils/cosmos/storage";
 import { isPrimaryNavCurrent, primaryNavItems, viewerAddress } from "../utils/profileHub";
 import styles from "./GlobalHeader.module.css";
-import { isTournamentTablePath } from "../utils/tableUrl";
+import { isTournamentTablePath } from "@block52/poker-ui-core/utils/tableUrl";
 
 const extraGroups = [
     {

@@ -1,4 +1,4 @@
-import { formatCountdown } from "./scheduledSng";
+import { formatCountdown } from "@block52/poker-ui-core/utils/scheduledSng";
 
 /**
  * The count down to a registering tournament's start ("4:32"), or "Starting…" once

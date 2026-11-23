@@ -3,7 +3,7 @@ import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import { useIndexerApi } from "../../context/IndexerApiContext";
 import { useCometRpcApiFactory } from "../../context/CosmosApiContext";
 import type { NetworkEndpoints } from "../../context/NetworkContext";
-import type { PlayerHand } from "../../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { handKey } from "../../utils/handHistory";
 import { historyGameHandPageSize, historySessionPageSize, recoverUnlistedHands } from "../../utils/handHistoryRecover";
 

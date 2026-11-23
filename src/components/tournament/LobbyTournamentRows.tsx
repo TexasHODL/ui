@@ -6,8 +6,8 @@ import { useNow } from "../../hooks/tournament/useTournamentLobby";
 import { MULTI_TABLE_TOURNAMENT_LABEL } from "../../utils/createGameType";
 import { hasValue } from "@block52/ui-sdk/helpers";
 import { displayTableName } from "../../utils/generatedTableName";
-import { lobbyTournamentAction, tournamentListRow } from "../../utils/tournamentListRow";
-import type { TournamentLobbyCard } from "../../utils/tournamentLobby";
+import { lobbyTournamentAction, tournamentListRow } from "@block52/poker-ui-core/utils/tournamentListRow";
+import type { TournamentLobbyCard } from "@block52/poker-ui-core/utils/tournamentLobby";
 
 /**
  * One row per multi-table tournament in the Texas HODL lobby table.

@@ -1,5 +1,5 @@
 import { PlayerActionType, PlayerStatus, TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
-import type { PlayerHand } from "../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import {
     byHandRecency,
     cardsForHistoryHand,

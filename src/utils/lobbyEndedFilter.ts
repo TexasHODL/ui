@@ -1,4 +1,4 @@
-import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "./scheduledSng";
+import { SCHEDULED_SNG_GRACE_MS, scheduledSngPhase } from "@block52/poker-ui-core/utils/scheduledSng";
 import type { ActionDTO } from "@block52/poker-vm-sdk";
 import { blindLevelSecondsRemaining } from "./blindLevelTimer";
 

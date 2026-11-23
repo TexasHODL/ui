@@ -1,4 +1,4 @@
-import type { TournamentStateDTO } from "../types/tournament";
+import type { TournamentStateDTO } from "@block52/poker-ui-core/types/tournament";
 import { sessionBustFor, sessionLeaveBlock } from "./sessionBust";
 import { sessionGameLabel } from "./sessionGameDisplay";
 import { settledSessionCashOut, variantMoneyFromRows } from "./profileHistoryStats";

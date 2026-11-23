@@ -1,4 +1,4 @@
-﻿import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
+﻿import { SCHEDULED_SNG_GRACE_MS } from "@block52/poker-ui-core/utils/scheduledSng";
 import {
     LOBBY_ENDED_RETENTION_MS,
     applyEndedLobbyRetention,

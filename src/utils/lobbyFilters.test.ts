@@ -2,7 +2,7 @@ import { GameFormat, GameVariant } from "@block52/poker-vm-sdk";
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
 import { filterLobbyGames, isLateRegistrationOpenProgress, isLobbyGameUnavailable, isOpenScheduledRegistration } from "./lobbyFilters";
-import { SCHEDULED_SNG_GRACE_MS } from "./scheduledSng";
+import { SCHEDULED_SNG_GRACE_MS } from "@block52/poker-ui-core/utils/scheduledSng";
 
 const makeGame = (overrides: Partial<GameWithFormat>): GameWithFormat => ({
     gameId: "cash-empty",

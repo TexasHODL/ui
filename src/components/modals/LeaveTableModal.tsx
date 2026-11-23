@@ -1,4 +1,4 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React, { useState, useCallback } from "react";
 import { colors } from "../../utils/colorConfig";
 

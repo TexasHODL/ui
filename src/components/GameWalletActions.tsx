@@ -1,4 +1,4 @@
-import { formatUsd } from "../utils/moneyDisplay";
+import { formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React, { useCallback, useState } from "react";
 import { FaArrowDown, FaArrowUp, FaPlus, FaRedo } from "react-icons/fa";
 import USDCDepositModal from "./modals/USDCDepositModal";

@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { amountAtStep, sliderStepCount } from "../../utils/raiseSlider";
+import { amountAtStep, sliderStepCount } from "@block52/poker-ui-core/utils/raiseSlider";
 import { betFromTravel, SLIDER_TRAVEL_GRADIENT, sliderTravelColor } from "./sliderTravel";
 
 export interface VerticalPillSliderProps {

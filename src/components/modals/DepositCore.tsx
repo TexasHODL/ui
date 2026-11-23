@@ -1,4 +1,4 @@
-import { formatUsd, formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatUsd, formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { useState, useEffect, useCallback } from "react";
 import { hasValue } from "@block52/ui-sdk/helpers";
 import * as React from "react";
@@ -17,7 +17,7 @@ import { maxUint256 } from "viem";
 import { getTokenAddress } from "../../utils/tokenUtils";
 import type { DepositToken } from "../../utils/tokenUtils";
 import { useCosmosWallet } from "../../hooks";
-import { formatUSDCToSimpleDollars, convertAmountToBigInt } from "../../utils/numberUtils";
+import { formatUSDCToSimpleDollars, convertAmountToBigInt } from "@block52/poker-ui-core/utils/numberUtils";
 import CurrencySelector from "./CryptoPayment/CurrencySelector";
 import { DEFAULT_DEPOSIT_CURRENCY } from "../../config/depositCurrencies";
 import PaymentDisplay from "./CryptoPayment/PaymentDisplay";

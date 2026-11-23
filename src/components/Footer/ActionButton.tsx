@@ -1,4 +1,4 @@
-import { formatUsd } from "../../utils/moneyDisplay";
+import { formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React from "react";
 import { LoadingSpinner } from "../common";
 import type { ActionButtonProps } from "./types";

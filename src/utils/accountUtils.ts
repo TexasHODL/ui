@@ -1,6 +1,6 @@
-import { formatMicroUsd } from "./moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 
-import { truncateMiddle } from "./stringUtils";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 
 /**
  * Format player ID for display

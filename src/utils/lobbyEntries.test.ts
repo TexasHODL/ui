@@ -1,7 +1,7 @@
 import { GameFormat } from "@block52/poker-vm-sdk";
 import type { GameWithFormat } from "./convertUtils";
 import { filterLobbyTournamentCards, sortLobbyEntries, type LobbyEntry } from "./lobbyEntries";
-import type { TournamentLobbyCard } from "./tournamentLobby";
+import type { TournamentLobbyCard } from "@block52/poker-ui-core/utils/tournamentLobby";
 
 const game = (over: Partial<GameWithFormat> & Pick<GameWithFormat, "gameId">): GameWithFormat =>
     ({

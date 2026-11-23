@@ -1,6 +1,6 @@
 import React from "react";
 import { useSitAndGoPayouts } from "../../hooks/game/useSitAndGoPayouts";
-import type { TournamentStateDTO } from "../../types/tournament";
+import type { TournamentStateDTO } from "@block52/poker-ui-core/types/tournament";
 import { hasContent, hasValue, isEmpty } from "@block52/ui-sdk/helpers";
 import { payoutSharePercent, tournamentPayoutStructure } from "../../utils/payoutStructure";
 import { PrizeAmount } from "./PrizeAmount";

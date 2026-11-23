@@ -5,7 +5,7 @@
  * profile shows someone else's address, so this asks that same client for the
  * address in the URL. It does not touch the indexer.
  */
-import { formatMicroUsd } from "./moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { getCosmosClient } from "./cosmos/client";
 import type { NetworkEndpoints } from "./cosmos/urls";
 import { hasContent, isRecord, isString } from "@block52/ui-sdk/helpers";
