@@ -19,14 +19,14 @@ const profile: PlayerProfile = {
     vip_points: 0,
     total_rake_contributed: 0,
     current_month_rake: 0,
-    vpip: 0,
-    pfr: 0,
-    aggression_factor: 0,
-    wtsd: 0,
-    won_at_showdown: 0,
-    total_bets: 0,
-    total_raises: 0,
-    total_calls: 0,
+    vpip: 3960,
+    pfr: 973,
+    aggression_factor: 62,
+    wtsd: 923,
+    won_at_showdown: 4790,
+    total_bets: 682,
+    total_raises: 467,
+    total_calls: 1832,
     total_folds: 0,
     total_checks: 0,
     biggest_pot_won: 0,
@@ -113,13 +113,7 @@ jest.mock("../hooks/player/useMyHandHistory", () => ({
 jest.mock("../hooks/player/useSessionGameMeta", () => ({ useSessionGameMeta: () => ({ byId: {}, loading: false }) }));
 jest.mock("../hooks/player/useSessionEliminationBlocks", () => ({ useSessionEliminationBlocks: () => ({}) }));
 jest.mock("../hooks/player/useHandContributions", () => ({
-    useHandContributions: () => ({ byKey: {}, pending: false, unavailable: 0 }),
-    usePlayingStyle: () => ({
-        counts: { hands: 0, vpip: 0, pfr: 0, aggressive: 0, calls: 0, sawFlop: 0, showdown: 0, wonShowdown: 0 },
-        pending: false,
-        unavailable: 0,
-        dealt: 480
-    })
+    useHandContributions: () => ({ byKey: {}, pending: false, unavailable: 0 })
 }));
 jest.mock("../hooks/player/useAddressUsdcBalance", () => ({
     useAddressUsdcBalance: (address: string | undefined) => mockUseBalance(address)
@@ -129,6 +123,10 @@ const VOLUME = ["Wallet Balance", "Net Profit", "Total Buy-In", "Total Cash-Out"
 
 function valueOf(label: string): string {
     return screen.getByText(label).nextElementSibling?.textContent ?? "";
+}
+
+function styleValue(label: string): string {
+    return screen.getByText(label).parentElement?.nextElementSibling?.textContent ?? "";
 }
 
 function renderPage(path = `/players/${ADDRESS}`) {
@@ -176,10 +174,15 @@ describe("PlayerProfilePage volume cards", () => {
         expect(valueOf("Net Profit")).toBe("13.92");
         expect(valueOf("Total Buy-In")).toBe("62.90");
         expect(valueOf("Total Cash-Out")).toBe("76.82");
-        expect(valueOf("Hands Played")).toBe("480");
+        expect(valueOf("Hands Played")).toBe("69");
         expect(valueOf("Sessions")).toBe("83");
         expect(valueOf("Total Actions")).toBe("4,616");
         expect(valueOf("Network Fees Paid")).toBe("0.00");
+        expect(styleValue("VPIP")).toBe("39.60%");
+        expect(styleValue("PFR")).toBe("9.73%");
+        expect(styleValue("Aggression")).toBe("0.62");
+        expect(styleValue("WTSD")).toBe("9.23%");
+        expect(styleValue("W$SD")).toBe("47.90%");
         expect(mockUseBalance).toHaveBeenCalledWith(ADDRESS);
     });
 
@@ -229,10 +232,8 @@ describe("PlayerProfilePage volume cards", () => {
         expect(screen.queryByText("Loading player...")).not.toBeInTheDocument();
     });
 
-    it("adds MTT registration buy-ins, unregister refunds and prize claims to the volume cards", () => {
+    it("keeps volume cards on the indexer figures when chain MTT entries and prize claims are present", () => {
         const mtt = "0x8d34bcce49c988106bba58a5052c3ecf9a6532f142e19dcfba4230ea3ff8a872";
-        const cancelled = "0x2d5b0fc4d40f7fc9c60965f9292d0d96d8c8353e2cbd02c6700fb08a124aa444";
-        const refunded = "0x73751f1291e04944194f347071e5b3f135ae9ea9f2e56766b4ce1e8cb20484ad";
         mockEntries = [
             {
                 tournamentId: mtt,
@@ -241,37 +242,17 @@ describe("PlayerProfilePage volume cards", () => {
                 gameId: `${mtt}-t1`,
                 status: "finished",
                 results: [{ place: 1, playerId: ADDRESS, payout: "6400000" }]
-            },
-            {
-                tournamentId: cancelled,
-                registerHeight: 2,
-                buyIn: 10_000,
-                gameId: `${cancelled}-t1`,
-                status: "cancelled",
-                results: []
-            },
-            {
-                tournamentId: refunded,
-                registerHeight: 3,
-                buyIn: 2_200_000,
-                gameId: `${refunded}-t1`,
-                status: "registered",
-                results: []
             }
         ];
-        mockRegistrations = [
-            { tournamentId: mtt, height: 1, buyIn: 2_000_000, entryFee: 200_000 },
-            { tournamentId: cancelled, height: 2, buyIn: 10_000, entryFee: 0 },
-            { tournamentId: refunded, height: 3, buyIn: 2_000_000, entryFee: 200_000 }
-        ];
-        mockUnregistrations = [{ tournamentId: refunded, height: 4, txhash: "UNREG", refund: 1_600_000 }];
-        mockClaims = [];
+        mockRegistrations = [{ tournamentId: mtt, height: 1, buyIn: 2_000_000, entryFee: 200_000 }];
+        mockUnregistrations = [];
+        mockClaims = [{ gameId: `${mtt}-t1`, amount: 6_400_000, height: 10, txhash: "CLAIM" }];
         renderPage();
-        // Indexer 62.90 + 2.20 + 0.01 + 2.20 = 67.31 buy-in; 76.82 + 6.40 + 1.60 = 84.82 cash-out.
         const volume = (label: string) => screen.getAllByText(label)[0].nextElementSibling?.textContent ?? "";
-        expect(volume("Total Buy-In")).toBe("67.31");
-        expect(volume("Total Cash-Out")).toBe("84.82");
-        expect(volume("Net Profit")).toBe("17.51");
+        expect(volume("Total Buy-In")).toBe("62.90");
+        expect(volume("Total Cash-Out")).toBe("76.82");
+        expect(volume("Net Profit")).toBe("13.92");
+        expect(volume("Hands Played")).toBe("69");
     });
 
     it("refreshes stats silently when the tab becomes visible and does not reload hand history", () => {
@@ -288,16 +269,15 @@ describe("PlayerProfilePage volume cards", () => {
         expect(mockReloadHands).not.toHaveBeenCalled();
     });
 
-    it("keeps Hands Played and Playing Style visible while recovered MTT hands are still loading", () => {
+    it("shows indexer Playing Style immediately while recovered MTT hands are still loading", () => {
         mockRecovered = { hands: [], states: new Map(), recovering: true, searched: false };
         renderPage();
-        expect(valueOf("Hands Played")).toBe("480");
+        expect(valueOf("Hands Played")).toBe("69");
         expect(valueOf("Sessions")).toBe("83");
-        const styleValue = (label: string) => screen.getByText(label).parentElement?.nextElementSibling?.textContent ?? "";
-        expect(styleValue("VPIP")).not.toBe("…");
-        expect(styleValue("PFR")).not.toBe("…");
-        expect(styleValue("Aggression")).not.toBe("…");
-        expect(styleValue("WTSD")).not.toBe("…");
-        expect(styleValue("W$SD")).not.toBe("…");
+        expect(styleValue("VPIP")).toBe("39.60%");
+        expect(styleValue("PFR")).toBe("9.73%");
+        expect(styleValue("Aggression")).toBe("0.62");
+        expect(styleValue("WTSD")).toBe("9.23%");
+        expect(styleValue("W$SD")).toBe("47.90%");
     });
 });

@@ -15,7 +15,7 @@ import { ProfileActivityPanel } from "../components/players/ProfileActivityPanel
 import { ProfileIdentity } from "../components/players/ProfileIdentity";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
-import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandContributions";
+import { useHandContributions } from "../hooks/player/useHandContributions";
 import { useAddressUsdcBalance } from "../hooks/player/useAddressUsdcBalance";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
@@ -32,7 +32,6 @@ import { useVisibleRefresh } from "../hooks/useVisibleRefresh";
 import { useSessionEliminationBlocks } from "../hooks/player/useSessionEliminationBlocks";
 import { useSessionGameMeta } from "../hooks/player/useSessionGameMeta";
 import { sessionRowsWithPrizes } from "../utils/playerPrizeClaims";
-import { profileMoneyWithAllVariants } from "../utils/profileStatsMoney";
 import {
     mergeTournamentSessionRows,
     sessionMetasWithTournamentEntries,
@@ -56,9 +55,8 @@ import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCash
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
 import { formatProfileWalletBalance } from "../utils/addressUsdcBalance";
-import { formatHandsPlayed, handsPlayedReadFailed } from "../utils/handsPlayed";
-import { profileHistoryHandsPending, profileStyleCardsPending } from "../utils/profileStatsLoading";
-import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
+import { profileHistoryHandsPending } from "../utils/profileStatsLoading";
+import { formatIndexerPlayingStyle, PLAYING_STYLE_FIGURES } from "../utils/playingStyle";
 import {
     formatHistoryAmount,
     formatHistoryBlocks,
@@ -108,16 +106,9 @@ export default function PlayerProfilePage() {
 
     const { profile, loading, error, refetch: refetchProfile } = usePlayerProfile(address);
     const { sessions, loading: sessionsLoading, refetch: refetchSessions } = useAllPlayerSessions(address);
-    // Chain prize claims. Empty on failure, so the cards and rows stay on the indexer.
+    // Prize claims and MTT entries still label Session History rows.
     const { claims, loading: prizesLoading, refetch: refetchClaims } = usePlayerPrizeClaims(address);
-    // MTT entry never joins a table, so the indexer has no session for it.
-    const {
-        entries: tournamentEntries,
-        registrations: tournamentRegistrations,
-        unregistrations: tournamentUnregistrations,
-        loading: tournamentsLoading,
-        refetch: refetchTournaments
-    } = usePlayerTournamentEntries(address);
+    const { entries: tournamentEntries, loading: tournamentsLoading, refetch: refetchTournaments } = usePlayerTournamentEntries(address);
     const { address: walletAddress } = useCosmosWallet();
     const { currentNetwork } = useNetwork();
     const cosmosApi = useCosmosApi();
@@ -208,29 +199,8 @@ export default function PlayerProfilePage() {
         [gamesLoading, handHistory.error, gameFilter, settledHands, gameLabels, gamesById]
     );
     const contributions = useHandContributions(address, profitHands ?? NO_PROFIT_HANDS, hasValue(profitHands));
-    // Every finished hand, every variant, including an open session. Same snapshot cache as the profit card.
-    const styleSelection = useMemo(() => playingStyleHands(listedHands), [listedHands]);
-    // Start style logs as soon as the indexer list is available. Recovery of
-    // omitted MTT hands can take minutes and must not hold these cards on "…".
-    const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error));
-    const stylePending = profileStyleCardsPending({
-        onStatsTab: tab === "stats",
-        hasAddress: hasContent(address),
-        handListFailed: hasContent(handHistory.error),
-        handListComplete: handHistory.complete,
-        styleLogsPending: styleRead.pending,
-        recoveredSearched: recovered.searched,
-        styleDealt: styleRead.dealt
-    });
-    const styleDisplay = formatPlayingStyle(styleRead.counts, stylePending);
-    // Chain count from the Playing Style logs. Ellipsis until those finish, so the indexer's total_hands never flashes first.
-    const handsPlayedLabel = formatHandsPlayed({
-        pending: stylePending,
-        failed: handsPlayedReadFailed(hasContent(handHistory.error), styleSelection.hands.length, styleRead.dealt, styleRead.unavailable),
-        dealt: styleRead.dealt,
-        indexerHands: hasValue(profile) ? profile.total_hands : undefined
-    });
-    const styleNote = stylePending ? undefined : playingStyleNote(styleRead.counts.hands, styleRead.unavailable + styleSelection.dropped);
+    // Playing Style is the indexer's VPIP/PFR/AF/WTSD/W$SD. Hands Played is total_hands.
+    const styleDisplay = formatIndexerPlayingStyle(profile);
     const historyHands = useMemo(
         () => withHandContributions(hasContent(handHistory.error) ? [] : handsForHistory(settledHands), contributions.byKey),
         [handHistory.error, settledHands, contributions.byKey]
@@ -258,21 +228,7 @@ export default function PlayerProfilePage() {
     const variantTotals = useMemo(() => variantMoneyFromRows(filteredRows, rows, gamesById, address), [filteredRows, rows, gamesById, address]);
     const openSessionsNote = openSessionTotalsNote(variantTotals.excludedOpen);
     const netClass = hasValue(variantTotals.netProfit) ? historyNetClass(variantTotals.netProfit) : "";
-    const statsMoney = useMemo(
-        () =>
-            hasValue(profile) && !prizesLoading && !tournamentsLoading
-                ? profileMoneyWithAllVariants(
-                      { totalBuyIns: profile.total_buy_ins, totalCashOuts: profile.total_cash_outs, netProfit: profile.net_profit },
-                      sessions,
-                      claims,
-                      tournamentEntries,
-                      tournamentRegistrations,
-                      tournamentUnregistrations,
-                      address
-                  )
-                : null,
-        [profile, prizesLoading, tournamentsLoading, sessions, claims, tournamentEntries, tournamentRegistrations, tournamentUnregistrations, address]
-    );
+    // Volume money is the indexer's net, buy-in and cash-out (SNG prizes and MTT money included).
     const historyLoading = sessionsLoading || prizesLoading || tournamentsLoading;
 
     useVisibleRefresh(() => {
@@ -280,7 +236,6 @@ export default function PlayerProfilePage() {
         refetchSessions({ silent: true });
         refetchClaims({ silent: true });
         refetchTournaments({ silent: true });
-        // Hands Played walks the chain logs; a focus must not start that over.
         if (tab === "stats") walletBalance.refetch({ silent: true });
     });
 
@@ -348,26 +303,18 @@ export default function PlayerProfilePage() {
                             <StatCard
                                 className={VOLUME_STAT_CARD}
                                 label="Net Profit"
-                                value={hasValue(statsMoney) ? formatUsd(statsMoney.netProfit) : "…"}
-                                valueClass={hasValue(statsMoney) && statsMoney.netProfit < 0 ? "text-red-400" : "text-green-400"}
+                                value={formatUsd(profile.net_profit)}
+                                valueClass={profile.net_profit < 0 ? "text-red-400" : "text-green-400"}
                             />
-                            <StatCard
-                                className={VOLUME_STAT_CARD}
-                                label="Total Buy-In"
-                                value={hasValue(statsMoney) ? formatUsd(statsMoney.totalBuyIns) : "…"}
-                            />
-                            <StatCard
-                                className={VOLUME_STAT_CARD}
-                                label="Total Cash-Out"
-                                value={hasValue(statsMoney) ? formatUsd(statsMoney.totalCashOuts) : "…"}
-                            />
-                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={handsPlayedLabel} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Total Buy-In" value={formatUsd(profile.total_buy_ins)} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Total Cash-Out" value={formatUsd(profile.total_cash_outs)} />
+                            <StatCard className={VOLUME_STAT_CARD} label="Hands Played" value={profile.total_hands.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Sessions" value={profile.session_count.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Total Actions" value={profile.total_actions.toLocaleString()} />
                             <StatCard className={VOLUME_STAT_CARD} label="Network Fees Paid" value={formatUsd(profile.total_rake_contributed)} />
                         </div>
 
-                        {/* Playing style: every variant, from the chain action logs. */}
+                        {/* Playing style: every variant, from the indexer aggregates. */}
                         <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                             <h2 className="text-white font-bold mb-4">Playing Style</h2>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -381,7 +328,6 @@ export default function PlayerProfilePage() {
                                     </div>
                                 ))}
                             </div>
-                            {hasContent(styleNote) && <p className="mt-3 text-xs text-gray-500">{styleNote}</p>}
                         </div>
 
                         {/* History: one variant filter drives the records and the session table. */}

@@ -30,7 +30,7 @@ describe("PlayingStyleTip", () => {
         fireEvent.click(button);
         const tip = screen.getByRole("tooltip");
         expect(tip.querySelector("strong")).toHaveTextContent("Voluntarily put money in pot.");
-        expect(tip).toHaveTextContent("not just posting blinds");
+        expect(tip).toHaveTextContent("not posting blinds");
         expect(button).toHaveAttribute("aria-expanded", "true");
         expect(button).toHaveAttribute("aria-controls", tip.id);
 
