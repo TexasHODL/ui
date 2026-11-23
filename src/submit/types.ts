@@ -8,8 +8,6 @@
  * already land), and surfaces every failure. See ui#538 and ui#609.
  */
 import type { PlayerActionResult } from "@block52/poker-ui-core/types";
-import type { TrackMeta } from "@block52/poker-ui-core/bus/types";
-
 /**
  * One submission request. `run` is a lazy, re-runnable thunk so the controller
  * stays transport-agnostic: fold/call/bet/deal/new-hand all look the same here,

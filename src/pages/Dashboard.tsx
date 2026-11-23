@@ -6,8 +6,6 @@ import { formatUsd, formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDis
 import "../components/common/TableCreation.css";
 import React, { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "@block52/poker-ui-core/utils/scheduledSng";
-import { useNavigate } from "react-router-dom";
-
 import "./Dashboard.css";
 import styles from "./Dashboard.module.css";
 
@@ -16,7 +14,7 @@ import { ETH_CHAIN_ID } from "../config/constants";
 import { useConnection as useWagmiAccount, useSwitchChain } from "wagmi";
 
 import { calculateBuyIn } from "@block52/poker-ui-core/utils/buyInUtils";
-import { hasValue, isNullish, hasContent, hasElements } from "@block52/ui-sdk/helpers";
+import { hasValue, isNullish, hasContent } from "@block52/ui-sdk/helpers";
 import { readUsdcBalance } from "../utils/usdcBalance";
 import { BLIND_LEVELS, DEFAULT_BLIND_LEVEL_INDEX, DEFAULT_SNG_BLIND_LEVEL_MINUTES, SNG_BLINDS } from "@block52/poker-ui-core/constants/blindLevels";
 import { usdcToMicroBigInt, microToUsdc } from "@block52/poker-ui-core/constants/currency";
@@ -54,8 +52,6 @@ import { useBlindStructureForm } from "../hooks/useBlindStructureForm";
 import { checkAuthCookie, isPasswordProtectionEnabled, handlePasswordSubmit as utilHandlePasswordSubmit, handlePasswordKeyPress as utilHandlePasswordKeyPress } from "../utils/passwordProtectionUtils";
 
 // Club branding imports
-import { colors } from "../utils/colorConfig";
-
 /** Minimum registered players for a scheduled sit-and-go. Any count from 2 up to the table. Seat layouts still exist only for 2, 4, 6 and 9. */
 const SNG_MIN_PLAYER_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9];
 const STACK_PRESETS = [
@@ -71,7 +67,6 @@ const DURATION_PRESETS = [
 ] as const;
 
 const Dashboard: React.FC = () => {
-    const navigate = useNavigate();
     // Removed: Game selection state variables - now handled in Create Game modal
     // Removed: Ethereum wallet state - now using Cosmos wallet only
 
@@ -82,7 +77,7 @@ const Dashboard: React.FC = () => {
     const [passwordError, setPasswordError] = useState<string>("");
     const [showPassword, setShowPassword] = useState<boolean>(false);
 
-    const { isConnected, open, address } = useUserWalletConnect();
+    const { isConnected } = useUserWalletConnect();
 
     // Wagmi hooks for Ethereum Mainnet (USDC deposit bridge)
     const { chain } = useWagmiAccount();
@@ -184,7 +179,7 @@ const Dashboard: React.FC = () => {
     const [showNewWalletModal, setShowNewWalletModal] = useState(false);
     const [newWalletSeedPhrase, setNewWalletSeedPhrase] = useState("");
     const [newWalletAddress, setNewWalletAddress] = useState("");
-    const [isCreatingWallet, setIsCreatingWallet] = useState(false);
+    const [_isCreatingWallet, setIsCreatingWallet] = useState(false);
     const [seedPhraseCopied, setSeedPhraseCopied] = useState(false);
 
     const [cosmosSeedPhrase, setCosmosSeedPhrase] = useState("");
@@ -413,7 +408,7 @@ const Dashboard: React.FC = () => {
             if (isConnected && chain?.id !== ETH_CHAIN_ID && switchChain) {
                 try {
                     await switchChain.mutateAsync({ chainId: ETH_CHAIN_ID });
-                } catch (err) {
+                } catch {
                     // Don't show error to user - they can manually switch if needed
                 }
             }

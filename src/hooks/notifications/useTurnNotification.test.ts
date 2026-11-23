@@ -114,7 +114,7 @@ describe("useTurnNotification", () => {
     });
 
     it("should not flash favicon when isUserTurn is false", () => {
-        const originalHref = mockFavicon.href;
+        const _originalHref = mockFavicon.href;
         renderHook(() => useTurnNotification(false));
         
         // Advance timers
@@ -131,7 +131,7 @@ describe("useTurnNotification", () => {
             get: () => true
         });
 
-        const originalHref = mockFavicon.href;
+        const _originalHref = mockFavicon.href;
         renderHook(() => useTurnNotification(true));
         
         // Initial favicon should still be original

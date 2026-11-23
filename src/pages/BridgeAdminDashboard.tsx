@@ -280,7 +280,7 @@ export default function BridgeAdminDashboard() {
                         // Update deposit status to processed
                         setDeposits(prev => prev.map(d => (d.index === depositIndex ? { ...d, status: "processed" as const } : d)));
                     }
-                } catch (err) {
+                } catch {
                     toast.success(`Deposit ${depositIndex} processed successfully!`);
 
                     // Update deposit status to processed

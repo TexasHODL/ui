@@ -169,7 +169,7 @@ export const useNewTable = (): UseNewTableReturn => {
                 let tx;
                 try {
                     tx = await cosmosClient.getTx(txHash);
-                } catch (_txError) {
+                } catch {
                     // Indexer hiccup — tx is on-chain but we couldn't fetch it.
                     return { txHash, gameId: null };
                 }

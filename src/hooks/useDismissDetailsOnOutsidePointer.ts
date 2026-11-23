@@ -24,7 +24,7 @@ export function useDismissDetailsOnOutsidePointer(detailsRef: RefObject<HTMLDeta
             if (event.key !== "Escape") return;
             const details = detailsRef.current;
             if (isNullish(details) || !details.open) return;
-            if (document.querySelector('[role="dialog"]')) return;
+            if (document.querySelector("[role=\"dialog\"]")) return;
             details.open = false;
         };
         document.addEventListener("pointerdown", onPointerDown, true);

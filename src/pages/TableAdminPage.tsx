@@ -5,7 +5,7 @@ import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { localDateTimeToUnixSeconds, scheduledStartRejection, LATE_REGISTRATION_LEVEL_OPTIONS, lateRegistrationOptionLabel } from "@block52/poker-ui-core/utils/scheduledSng";
 import { BettingLimit, GameFormat, GameVariant, CosmosClient, getDefaultCosmosConfig, PlayerDTO, computeGameNameFee } from "@block52/poker-vm-sdk";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { isValidPlayerAddress } from "../utils/addressUtils";
 import { isEmpty, hasValue, isNullish, hasContent, hasElements } from "@block52/ui-sdk/helpers";
@@ -49,7 +49,6 @@ interface TableData {
 }
 
 export default function TableAdminPage() {
-    const navigate = useNavigate();
     const cosmosWallet = useCosmosWallet();
     const { createTable, isCreating, error: createError } = useNewTable();
     const mttFields = useRef<TournamentCreateFieldsHandle>(null);
@@ -145,16 +144,16 @@ export default function TableAdminPage() {
     const [rakeFreeThreshold, setRakeFreeThreshold] = useState("0");
     const [rakePercentage, setRakePercentage] = useState("5");
     const [rakeCap, setRakeCap] = useState("0.10");
-    const [rakeOwner, setRakeOwner] = useState("");
+    const [rakeOwner] = useState("");
 
     // Success modal state
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [successTxHash, setSuccessTxHash] = useState<string | null>(null);
     const [createdGameAddress, setCreatedGameAddress] = useState<string | null>(null);
-    const [tableCountBeforeCreation, setTableCountBeforeCreation] = useState<number>(0);
+    const [_tableCountBeforeCreation, setTableCountBeforeCreation] = useState<number>(0);
 
     // Player counts from game state
-    const [playerCounts, setPlayerCounts] = useState<Record<string, number>>({});
+    const [_playerCounts, setPlayerCounts] = useState<Record<string, number>>({});
     const [cosmosClient] = useState(() => new CosmosClient(getDefaultCosmosConfig()));
 
     // Get USDC balance from wallet
@@ -381,11 +380,6 @@ export default function TableAdminPage() {
 
     // Note: createdGameAddress is now set directly from the transaction response
     // when creating a table, so we no longer need to guess from the sorted tables list
-
-    // Stats
-    const totalTables = tables.length;
-    const activeTables = tables.filter(t => t.status === "playing" || t.status === "waiting").length;
-    const sitAndGoTables = tables.filter(t => t.maxPlayers <= 6).length;
 
     return (
         <div className="site-page">

@@ -239,7 +239,7 @@ function recordHistory(gameId: string): void {
   const events: string[] = [];
   if (!prev || prev.handNumber !== t.handNumber) events.push("hand_started");
   else events.push("action_performed");
-  if (t.round === "end" && (!prev || prev.handNumber !== t.handNumber || !prev.json.includes('"round":"end"'))) events.push("hand_ended");
+  if (t.round === "end" && (!prev || prev.handNumber !== t.handNumber || !prev.json.includes("\"round\":\"end\""))) events.push("hand_ended");
   entries.push({
     height: nextHeight++,
     handNumber: t.handNumber,

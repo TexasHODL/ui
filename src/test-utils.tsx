@@ -141,7 +141,7 @@ export class MockWebSocket {
         }, 0);
     }
 
-    send(data: string): void {
+    send(_data: string): void {
         // Mock implementation - can be spied on
     }
 

@@ -213,7 +213,6 @@ export default function NodesPage() {
     // Count validators and sync nodes (sync = non-validator nodes)
     const presetValidatorCount = productionNodes.filter(n => isValidator(n.name)).length;
     const discoveredValidatorCount = discoveredNodes.filter(n => isValidator(n.moniker)).length;
-    const totalValidators = validators.length; // Use actual validator count from API
     const totalSyncNodes = totalNodes - (presetValidatorCount + discoveredValidatorCount);
 
     return (

@@ -13,9 +13,9 @@ import type { Page } from "@playwright/test";
 const SHOTS = new URL("../../../screenshots/", import.meta.url).pathname;
 
 /** Our own seat renders face cards as `Card N`; an opponent's shown cards as `Player Card N`. */
-const heroCard = (page: Page) => page.locator('img[alt="Card 1"]');
-const opponentShownCard = (page: Page) => page.locator('img[alt="Player Card 1"]');
-const opponentCardBack = (page: Page) => page.locator('img[alt="Opposite Player Card"]');
+const heroCard = (page: Page) => page.locator("img[alt=\"Card 1\"]");
+const opponentShownCard = (page: Page) => page.locator("img[alt=\"Player Card 1\"]");
+const opponentCardBack = (page: Page) => page.locator("img[alt=\"Opposite Player Card\"]");
 const CARD_BACK = /CardBack/;
 
 test("replay button opens the previous hand with working transport controls", async ({ page }) => {

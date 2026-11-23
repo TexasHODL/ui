@@ -33,7 +33,7 @@ describe("win pulse particles", () => {
         const { container } = render(<WinAnimation index={0} position={{ left: "10px", top: "10px" }} />);
         act(() => setTableStyle("chips", "E"));
         // Sit & Go: Marble swaps to its number chips (no $).
-        expect(particleUrls(container)[0]).toBe('url("/assets/chipstyles/E/numbers/25chip.webp")');
+        expect(particleUrls(container)[0]).toBe("url(\"/assets/chipstyles/E/numbers/25chip.webp\")");
     });
 
     it("floats Marble number chips on tournament and Sit & Go tables, Marble $ chips on cash", () => {

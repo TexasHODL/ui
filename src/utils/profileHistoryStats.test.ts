@@ -231,13 +231,6 @@ describe("sessionSpansForHistory", () => {
 
 describe("variant money totals", () => {
     const player = "b521kjpfyeyg3watq2f978vhu48ju3xjwdp0wjgp5t";
-    const closed = (buyIn: number, cashOut: number, gameId = "cashA"): SessionPrizeRow => ({
-        gameId,
-        joinBlock: 10,
-        buyIn,
-        cashOut,
-        isPrize: false
-    });
 
     it("sums the buy-ins and cash-outs the table prints, and nets them", () => {
         const totals = variantMoneyTotals([

@@ -101,10 +101,6 @@ export const useCosmosWallet = (): UseCosmosWalletReturn => {
             setCosmosMnemonic(mnemonic);
             setCosmosAddress(addr);
 
-            // Verify storage worked
-            const verifyMnemonic = getCosmosMnemonic();
-            const verifyAddress = getCosmosAddress();
-
             // Update state
             setAddress(addr);
         } catch (err) {

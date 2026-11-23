@@ -8,7 +8,6 @@ import { formatTimestampRelative } from "@block52/poker-ui-core/utils/formatUtil
 import styles from "./TransactionPanel.module.css";
 import {
     describeTransaction,
-    fetchGameFormats,
     fetchGamePrizeMeta,
     formatActionAmount,
     formatPrizeClaimLabel,
