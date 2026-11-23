@@ -1,9 +1,9 @@
 import { FC, MouseEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { formatMicroUsd } from "../../utils/moneyDisplay";
-import { formatTimestampRelative } from "../../utils/formatUtils";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
+import { formatTimestampRelative } from "@block52/poker-ui-core/utils/formatUtils";
 import { hasContent, hasElements, isEmpty } from "@block52/ui-sdk/helpers";
-import { tableUrl } from "../../utils/tableUrl";
+import { tableUrl } from "@block52/poker-ui-core/utils/tableUrl";
 import {
     formatActionAmount,
     formatGameId,

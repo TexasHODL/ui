@@ -1,8 +1,8 @@
 import React, { useRef } from "react";
-import { formatDisplayAmount, formatSliderInputValue, parseSliderInput } from "../../utils/numberUtils";
+import { formatDisplayAmount, formatSliderInputValue, parseSliderInput } from "@block52/poker-ui-core/utils/numberUtils";
 import { hasValue } from "@block52/ui-sdk/helpers";
 import type { RaiseSliderProps } from "./types";
-import { amountAtStep, sliderStepCount, stepForAmount } from "../../utils/raiseSlider";
+import { amountAtStep, sliderStepCount, stepForAmount } from "@block52/poker-ui-core/utils/raiseSlider";
 import styles from "./RaiseSlider.module.css";
 import { DESKTOP_PILL_GRADIENT, desktopPillColor } from "./desktopPillTravel";
 import "./desktopPillSlider.css";

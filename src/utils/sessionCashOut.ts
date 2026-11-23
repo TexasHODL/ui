@@ -7,7 +7,7 @@
  * unknown cash-out (the em dash for a seat still open) is not a result.
  */
 import { hasValue, isNumber } from "@block52/ui-sdk/helpers";
-import { formatMicroUsd } from "./moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 
 /** Cash-out above the buy-in, below it, or the same once both are shown to cents. */
 export type SessionCashOutTone = "profit" | "loss" | "even";

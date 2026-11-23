@@ -1,7 +1,7 @@
-import { formatUsd, formatMicroUsd } from "../utils/moneyDisplay";
+import { formatUsd, formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { truncateMiddle } from "../utils/stringUtils";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { isEmpty, isBlank, hasContent } from "@block52/ui-sdk/helpers";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
@@ -20,7 +20,7 @@ import { StuckPaymentsPanel } from "../components/bridge/StuckPaymentsPanel";
 import { proxyErrorMessage } from "../utils/bridge/proxyError";
 
 import { STORAGE_KEYS } from "../constants/storageKeys";
-import { countByStatus } from "../utils/statusCounts";
+import { countByStatus } from "@block52/poker-ui-core/utils/statusCounts";
 
 /** The admin key lives for this browser tab only: sessionStorage is cleared when the tab closes. */
 function readStoredAdminKey(): string {

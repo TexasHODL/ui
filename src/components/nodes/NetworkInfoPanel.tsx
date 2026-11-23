@@ -1,4 +1,4 @@
-import { formatMicroUsd } from "../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { FC } from "react";
 import { Link } from "react-router-dom";
 import { ChainOverview } from "../../hooks/nodes/useChainOverview";

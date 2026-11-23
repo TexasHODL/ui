@@ -1,5 +1,5 @@
 import { emptyTableBoard, hiddenPotDisplay, isTableEmpty } from "./emptyTable";
-import { formatPotDisplay } from "./potDisplayUtils";
+import { formatPotDisplay } from "@block52/poker-ui-core/utils/potDisplayUtils";
 import { TexasHoldemRound } from "@block52/poker-vm-sdk";
 
 // The live "Honey Pot" case: 0 seated, round end, $0.48 pot, 4 board cards, dealer seat 4.

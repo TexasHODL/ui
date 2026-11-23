@@ -1,4 +1,4 @@
-import type { PlayerListItem } from "../types/players";
+import type { PlayerListItem } from "@block52/poker-ui-core/types/players";
 import { playersPage, sortPlayers } from "./playerDirectory";
 
 const row = (player_address: string, net_profit: number, total_hands = 0): PlayerListItem => ({

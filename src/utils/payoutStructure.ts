@@ -8,7 +8,7 @@
  * percentage, the amount is the same integer share the box uses to label an
  * amount (`floor(pool * bps / 10000)`), so the label round-trips.
  */
-import type { TournamentStateDTO } from "../types/tournament";
+import type { TournamentStateDTO } from "@block52/poker-ui-core/types/tournament";
 import { hasElements, hasValue, isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { parsePrizeMicro } from "./prizeDisplay";
 

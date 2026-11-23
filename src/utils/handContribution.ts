@@ -19,7 +19,7 @@
  * count the same chips twice.
  */
 import { PlayerActionType } from "@block52/poker-vm-sdk";
-import type { PlayerHand } from "../types/players";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import { hasContent, hasElements, hasValue, isNumber } from "@block52/ui-sdk/helpers";
 import { handKey } from "./handHistory";
 import { snapshotHeights } from "./handReplay";

@@ -2,9 +2,9 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { copyToClipboard } from "../utils/clipboard";
 import { displayTableName } from "../utils/generatedTableName";
-import { tournamentShareUrl } from "../utils/tableUrl";
+import { tournamentShareUrl } from "@block52/poker-ui-core/utils/tableUrl";
 import TournamentPage from "./TournamentPage";
-import type { TournamentStateDTO } from "../types/tournament";
+import type { TournamentStateDTO } from "@block52/poker-ui-core/types/tournament";
 import type { TournamentInfo } from "../hooks/tournament/useTournament";
 
 jest.mock("../utils/clipboard", () => ({ copyToClipboard: jest.fn() }));

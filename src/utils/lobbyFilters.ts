@@ -1,8 +1,8 @@
 import type { GameWithFormat } from "./convertUtils";
 import { displayTableName } from "./generatedTableName";
-import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay } from "./gameFormatUtils";
+import { isCashFormat, isSitAndGoFormat, isTournamentFormat, formatGameFormatDisplay } from "@block52/poker-ui-core/utils/gameFormatUtils";
 import { displayGameFormat, SINGLE_TABLE_TOURNAMENT_LABEL, SIT_AND_GO_LABEL } from "./createGameType";
-import { scheduledSngPhase } from "./scheduledSng";
+import { scheduledSngPhase } from "@block52/poker-ui-core/utils/scheduledSng";
 
 export type LobbyFormat = "all" | "cash" | "tournament" | "mtt";
 export type LobbySort = "activity" | "buyin";

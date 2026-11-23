@@ -1,4 +1,4 @@
-import { formatMicroAsUsdc, microToUsdc } from "../constants/currency";
+import { formatMicroAsUsdc, microToUsdc } from "@block52/poker-ui-core/constants/currency";
 
 export interface DenomAmount {
     denom: string;

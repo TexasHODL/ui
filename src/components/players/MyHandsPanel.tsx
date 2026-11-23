@@ -11,13 +11,13 @@ import { useTableFormats } from "../../hooks/player/useTableFormats";
 import { describeHandOutcome, describeIndexing, handKey, HandOutcomeTone } from "../../utils/handHistory";
 import { displayBoard, historyCountLabel, mergeHistoryHands, type HistoryHandCards } from "../../utils/handHistoryCards";
 import { historyNetworks } from "../../utils/handReplay";
-import { formatTimestampRelative } from "../../utils/formatUtils";
-import { truncateMiddle } from "../../utils/stringUtils";
+import { formatTimestampRelative } from "@block52/poker-ui-core/utils/formatUtils";
+import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { getCardImageUrl } from "../../utils/cardImages";
 import { hasContent, hasElements, isEmpty } from "@block52/ui-sdk/helpers";
 import { playerProfilePath } from "../../utils/profileHub";
-import { tableUrl } from "../../utils/tableUrl";
-import type { PlayerHand } from "../../types/players";
+import { tableUrl } from "@block52/poker-ui-core/utils/tableUrl";
+import type { PlayerHand } from "@block52/poker-ui-core/types/players";
 import styles from "../../pages/explorer/AllAccountsPage.module.css";
 
 const PAGE_SIZE = 25;

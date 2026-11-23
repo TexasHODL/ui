@@ -1,7 +1,7 @@
 
 import { fireEvent, render, screen } from "@testing-library/react";
 import { TableBoard } from "./TableBoard";
-import type { PotDisplayValues } from "../../../../utils/potDisplayUtils";
+import type { PotDisplayValues } from "@block52/poker-ui-core/utils/potDisplayUtils";
 import type { CardBackStyle } from "../../../../utils/cardImages";
 
 jest.mock("../../../../hooks/animations/useCardAnimations", () => ({ useCardAnimations: () => ({ revealedSlots: [true, true, true, true, true] }) }));

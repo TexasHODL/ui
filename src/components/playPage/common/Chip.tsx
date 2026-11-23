@@ -1,8 +1,8 @@
 import { chipSizeForViewport } from "../../../utils/chipSize";
-import { formatMicroUsd } from "../../../utils/moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React from "react";
-import { formatForSitAndGo, convertUSDCToNumber } from "../../../utils/numberUtils";
-import { decomposeAmount } from "../../../utils/chipBreakdown";
+import { formatForSitAndGo, convertUSDCToNumber } from "@block52/poker-ui-core/utils/numberUtils";
+import { decomposeAmount } from "@block52/poker-ui-core/utils/chipBreakdown";
 import { getChipImageUrl } from "../../../utils/cardImages";
 import { useChipImageUrl } from "../../../theme/useTableStyles";
 

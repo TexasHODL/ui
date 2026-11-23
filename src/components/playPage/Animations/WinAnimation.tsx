@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
 import { useWinnerInfo } from "../../../hooks/game/useWinnerInfo";
-import { WinAnimationProps } from "../../../types/index";
+import { WinAnimationProps } from "@block52/poker-ui-core/types";
 import { useChipImageUrl } from "../../../theme/useTableStyles";
 import { getChipImageUrl } from "../../../utils/cardImages";
 import { useGameStateContext } from "../../../context/GameStateContext";
-import { isTournamentFormat } from "../../../utils/gameFormatUtils";
-import { CHIP_DENOMINATIONS } from "../../../constants/chips";
+import { isTournamentFormat } from "@block52/poker-ui-core/utils/gameFormatUtils";
+import { CHIP_DENOMINATIONS } from "@block52/poker-ui-core/constants/chips";
 import "./WinAnimation.css";
 
 /**

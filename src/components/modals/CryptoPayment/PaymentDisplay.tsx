@@ -1,4 +1,4 @@
-import { formatUsd } from "../../../utils/moneyDisplay";
+import { formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { PaymentDisplayProps } from "../types";

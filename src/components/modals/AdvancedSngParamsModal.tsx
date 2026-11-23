@@ -1,4 +1,4 @@
-import { formatUsd } from "../../utils/moneyDisplay";
+import { formatUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import React, { useMemo, useState } from "react";
 import { Modal } from "../common";
 import { hasContent } from "@block52/ui-sdk/helpers";

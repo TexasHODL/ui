@@ -25,7 +25,7 @@ import {
     setTableStyle,
     subscribeTableStyles
 } from "./tableStyles";
-import { decomposeAmount } from "../utils/chipBreakdown";
+import { decomposeAmount } from "@block52/poker-ui-core/utils/chipBreakdown";
 import { getCardImageUrl } from "../utils/cardImages";
 
 const getCardFaceUrl = (deck: Parameters<typeof deckCardUrl>[0], code: string) => deckCardUrl(deck, code) ?? getCardImageUrl(code);

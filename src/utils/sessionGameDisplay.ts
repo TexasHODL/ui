@@ -13,9 +13,9 @@
  */
 import { BettingLimit, GameFormat, isCashFormat, isTournamentFormat } from "@block52/poker-vm-sdk";
 import { displayGameFormat } from "./createGameType";
-import { formatGameFormatDisplay, formatTableGameDisplay, getBlindsForDisplay, toGameFormat, toGameVariant } from "./gameFormatUtils";
+import { formatGameFormatDisplay, formatTableGameDisplay, getBlindsForDisplay, toGameFormat, toGameVariant } from "@block52/poker-ui-core/utils/gameFormatUtils";
 import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
-import { formatMicroUsd } from "./moneyDisplay";
+import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { placeOrdinal, resolvePrizePlace, type GamePrizeMeta } from "./transactionUtils";
 
 /** Filter value that shows every session. */

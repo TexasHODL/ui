@@ -2,7 +2,7 @@ import React from "react";
 import { FaShareAlt } from "react-icons/fa";
 import { copyToClipboard } from "../../utils/clipboard";
 import { displayTableName } from "../../utils/generatedTableName";
-import { tournamentShareUrl } from "../../utils/tableUrl";
+import { tournamentShareUrl } from "@block52/poker-ui-core/utils/tableUrl";
 import styles from "../TableList.module.css";
 
 export const TOURNAMENT_SHARE_TOAST = "Tournament link copied";

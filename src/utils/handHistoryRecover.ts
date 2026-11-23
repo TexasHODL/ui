@@ -10,7 +10,7 @@
 
 import type { TexasHoldemStateDTO } from "@block52/poker-vm-sdk";
 import type { NetworkEndpoints } from "../context/NetworkContext";
-import type { PlayerHand, PlayerSession, PlayerSessionsResponse } from "../types/players";
+import type { PlayerHand, PlayerSession, PlayerSessionsResponse } from "@block52/poker-ui-core/types/players";
 import type { HandListItem, HandListResponse } from "../pages/explorer/types";
 import { encodeStringField1, parseAbciStringResponse } from "./abciQuery";
 import { hasContent, hasElements, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
