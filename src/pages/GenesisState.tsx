@@ -1,6 +1,6 @@
 import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { PageHeading } from "../components/common/PageHeading";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { hasElements } from "@block52/ui-sdk/helpers";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
@@ -68,34 +68,7 @@ export default function GenesisState() {
     const { currentNetwork } = useNetwork();
     const cosmosApi = useCosmosApi(currentNetwork.rest);
 
-    // Derive addresses from mnemonics on mount
-    useEffect(() => {
-        deriveAddresses();
-    }, []);
-
-    useEffect(() => {
-        fetchGenesisState();
-    }, []);
-
-    const deriveAddresses = async () => {
-        const addressMap = new Map<string, string>();
-
-        for (const account of WELL_KNOWN_ACCOUNTS) {
-            try {
-                const wallet = await DirectSecp256k1HdWallet.fromMnemonic(account.mnemonic, {
-                    prefix: "b52"
-                });
-                const [firstAccount] = await wallet.getAccounts();
-                addressMap.set(account.name, firstAccount.address);
-            } catch (err) {
-                console.error(`Failed to derive address for ${account.name}:`, err);
-            }
-        }
-
-        setDerivedAddresses(addressMap);
-    };
-
-    const fetchGenesisState = async () => {
+    const fetchGenesisState = useCallback(async () => {
         setLoading(true);
         setError(null);
 
@@ -142,6 +115,33 @@ export default function GenesisState() {
         } finally {
             setLoading(false);
         }
+    }, [cosmosApi]);
+
+    // Derive addresses from mnemonics on mount
+    useEffect(() => {
+        deriveAddresses();
+    }, []);
+
+    useEffect(() => {
+        fetchGenesisState();
+    }, [fetchGenesisState]);
+
+    const deriveAddresses = async () => {
+        const addressMap = new Map<string, string>();
+
+        for (const account of WELL_KNOWN_ACCOUNTS) {
+            try {
+                const wallet = await DirectSecp256k1HdWallet.fromMnemonic(account.mnemonic, {
+                    prefix: "b52"
+                });
+                const [firstAccount] = await wallet.getAccounts();
+                addressMap.set(account.name, firstAccount.address);
+            } catch (err) {
+                console.error(`Failed to derive address for ${account.name}:`, err);
+            }
+        }
+
+        setDerivedAddresses(addressMap);
     };
 
     const fetchBridgeState = async () => {

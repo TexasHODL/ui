@@ -163,7 +163,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         };
     }, [gameOptions?.maxBuyIn, gameOptions?.entryFee, gameState?.gameOptions?.protocolFeeBps]);
 
-    // Fetch balance on mount
+    // Fetch balance on mount and whenever the selected network changes
     useEffect(() => {
         const fetchBalance = async () => {
             try {
@@ -186,7 +186,7 @@ const SitAndGoAutoJoinModal: React.FC<SitAndGoAutoJoinModalProps> = ({ tableId, 
         };
 
         fetchBalance();
-    }, [publicKey]);
+    }, [publicKey, currentNetwork]);
 
     // Handle auto-join
     const handleTakeSeat = useCallback(async () => {
