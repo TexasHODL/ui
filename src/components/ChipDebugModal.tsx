@@ -88,7 +88,6 @@ const ChipDebugModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }, []);
 
     const totalDollars = liveAmounts.reduce((sum, a) => sum + a, 0);
-    const usdcAmounts = liveAmounts.map(dollarsToUsdc);
     const totalUsdc = dollarsToUsdc(totalDollars);
 
     // Decompose for breakdown display

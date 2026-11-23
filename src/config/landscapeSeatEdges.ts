@@ -414,7 +414,7 @@ export function placeMobileRailMarkers(
                 if (!owned) continue;
                 const box = { x, y, hw: feltHX, hy: feltHY };
                 if (railBlockers.some(blocker => boxesOverlap(box, blocker, 4))) continue;
-                if (holeCards.some((card, cardIndex) => boxesOverlap(box, card, holeGap))) continue;
+                if (holeCards.some(card => boxesOverlap(box, card, holeGap))) continue;
                 if (seatBoxes.some(other => boxesOverlap(pileAt(x, y), other, 4))) continue;
                 if (paintedLogo && boxesOverlap(pileAt(x, y), paintedLogo, 4)) continue;
                 const moved = Math.hypot(x - point.x, y - point.y);

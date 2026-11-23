@@ -41,8 +41,6 @@ export const usePlayerTimer = (_tableId?: string, playerSeat?: number): PlayerTi
     const playersBySeat = usePlayersBySeat();
 
     const TIMEOUT_DURATION = useMemo(() => getTimeoutMs(gameOptions?.timeout), [gameOptions]);
-    const timeoutInSeconds = useMemo(() => timeoutToSeconds(TIMEOUT_DURATION), [TIMEOUT_DURATION]);
-
     // Find the player by seat number
     const player = useMemo((): PlayerDTO | null => {
         if (!gameState?.players || isNullish(playerSeat)) {

@@ -40,7 +40,7 @@ test("verify a hand: pending while it runs, verified from its seed once it ends"
   });
 
   await test.step("hand #2 starts from a new-hand carrying a seed", async () => {
-    const newHand = page.locator('[data-action="new-hand"]');
+    const newHand = page.locator("[data-action=\"new-hand\"]");
     await expect(newHand).toBeEnabled({ timeout: 15_000 });
     await newHand.click();
     await expect(page.locator(".btn-call")).toBeVisible({ timeout: 15_000 });

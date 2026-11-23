@@ -31,7 +31,7 @@ export const MAX_DEALT_PLAYERS = 10;
 /** Names the derivation in a downloaded record, so a later scheme can be told apart. */
 export const DEAL_PROTOCOL = "block52/deal/seed-v1";
 
-export const DERIVATION_DESCRIPTION = 'HKDF-SHA256 over the seed (no salt, info "poker/deck/v1"), then a Fisher–Yates shuffle of a standard deck';
+export const DERIVATION_DESCRIPTION = "HKDF-SHA256 over the seed (no salt, info \"poker/deck/v1\"), then a Fisher–Yates shuffle of a standard deck";
 export const DEAL_ORDER_DESCRIPTION = "Hole cards one at a time to the dealt-in seats in ascending order, then 5 cards set aside, then the board street by street";
 
 const SEED_PARAM = /(?:^|&)seed=([0-9a-fA-F]{64})(?:&|$)/;

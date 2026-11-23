@@ -82,13 +82,6 @@ const Badge: React.FC<BadgeProps> = React.memo(({
     // Get seat join notification data for this player
     const seatJoinNotification = useSeatJoinNotification(count);
 
-    // Determine if a transient (action/seat-join) message is active
-    const hasTransientMessage =
-        actionDisplay.isVisible ||
-        actionDisplay.isAnimatingOut ||
-        seatJoinNotification.isVisible ||
-        seatJoinNotification.isAnimatingOut;
-
     // A recorded place (busted or in the money) replaces the stack amount.
     // Playing seats keep the stack. Same results[] source as the old pills.
     const finished = hasValue(tournamentPlace) ? finishedSeatDisplay(tournamentPlace, tournamentPayout) : null;

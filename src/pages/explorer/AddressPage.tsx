@@ -20,7 +20,7 @@ import {
 } from "../../components/explorer/ExplorerPanel";
 import styles from "./AddressPage.module.css";
 import { TransactionResponse, type CosmosTxResponse } from "../../components/TransactionPanel";
-import { describeTransaction, fetchGameFormats, fetchGamePrizeMeta, formatActionAmount, formatPrizeClaimLabel, formatGameId, resolvePrizePlace, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
+import { describeTransaction, fetchGamePrizeMeta, formatActionAmount, formatPrizeClaimLabel, formatGameId, resolvePrizePlace, type ChainGameFormat, formatTransferDirection, getTransferDirectionClass, type TxDescription } from "../../utils/transactionUtils";
 
 /** One row of the Transactions tab: the tx plus what it was for (shared with the lobby card). */
 type AddressTx = CosmosTxResponse & TxDescription & { linkTo?: string; displayHash?: string };

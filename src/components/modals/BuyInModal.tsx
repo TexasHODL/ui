@@ -69,7 +69,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
         // Get blinds for display using utility function
         // Determines format based on isSitAndGo flag (fixed buy-in = tournament-style)
         const format = isSitAndGo ? GameFormat.SIT_AND_GO : GameFormat.CASH;
-        const { smallBlind, bigBlind, stakeLabel: stake } = getBlindsForDisplay(
+        const { bigBlind, stakeLabel: stake } = getBlindsForDisplay(
             format,
             gameState?.gameOptions?.smallBlind,
             gameState?.gameOptions?.bigBlind
@@ -166,7 +166,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
             localStorage.setItem(STORAGE_KEYS.waitForBigBlind, JSON.stringify(waitForBigBlind));
 
             onJoin(buyInAmount, waitForBigBlind);
-        } catch (_error) {
+        } catch {
             setBuyInError("Invalid input amount.");
         }
     }, [buyInAmount, minBuyInValue, maxBuyInValue, minBuyInFormatted, maxBuyInFormatted, balanceFormatted, minBuyInNumber, waitForBigBlind, onJoin]);
@@ -210,7 +210,7 @@ const BuyInModal: React.FC<BuyInModalProps> = React.memo(({ onClose, onJoin, tab
 
             // Navigate to table after successful join
             navigate(`/table/${tableId}`);
-        } catch (_error) {
+        } catch {
             setBuyInError("Failed to join table. Please try again.");
         } finally {
             setIsJoiningRandomSeat(false);

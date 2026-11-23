@@ -62,7 +62,7 @@ describe("computeGameNameFee (SDK cost formula, sanity)", () => {
 describe("friendlyCreateTableError (ui#878)", () => {
     it("turns the chain's taken-name refusal into one sentence", () => {
         const raw =
-            'Failed to create game: transaction FBA435079FFEA84C06BCF46359EE2F35A8B4EADE9654284B642DDC25428090D4 failed with code 1104 — failed to execute message; message index: 0: table name "callfix-876" is already taken: invalid request';
+            "Failed to create game: transaction FBA435079FFEA84C06BCF46359EE2F35A8B4EADE9654284B642DDC25428090D4 failed with code 1104 — failed to execute message; message index: 0: table name \"callfix-876\" is already taken: invalid request";
         expect(friendlyCreateTableError(raw)).toBe("“callfix-876” is already taken — pick another name.");
     });
 

@@ -61,7 +61,7 @@ export const PlayerActionButtons: React.FC<PlayerActionButtonsProps> = ({
     currentNetwork,
     playerStatus,
     sitInMethod,
-    pendingSitOut,
+    pendingSitOut: _pendingSitOut,
     totalSeatedPlayers,
     handNumber,
     hasActivePlayers,

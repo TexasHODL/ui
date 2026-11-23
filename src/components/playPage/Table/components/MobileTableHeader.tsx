@@ -10,7 +10,7 @@
  */
 
 import React, { useLayoutEffect, useRef, useState } from "react";
-import { FaBars, FaLayerGroup, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare, FaTimes } from "react-icons/fa";
+import { FaBars, FaLayerGroup, FaCopy, FaExpand, FaQrcode, FaRedo, FaShare } from "react-icons/fa";
 import { IoSettingsOutline } from "react-icons/io5";
 import { LuPanelLeftOpen, LuPanelLeftClose } from "react-icons/lu";
 import { RxExit } from "react-icons/rx";
@@ -141,7 +141,7 @@ export const MobileTableHeader: React.FC<MobileTableHeaderProps> = ({
     maxBuyIn,
     walletBalance,
     openSidebar,
-    openSettings,
+    openSettings: _openSettings,
     tableStyle,
     onTableStyleChange,
     onToggleFocus,

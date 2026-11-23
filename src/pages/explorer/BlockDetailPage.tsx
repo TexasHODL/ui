@@ -6,7 +6,6 @@ import { ClickableAddress } from "../../components/explorer/ClickableAddress";
 import { AnimatedBackground } from "../../components/common/AnimatedBackground";
 import { formatProposerAddress } from "@block52/poker-ui-core/utils/formatUtils";
 import { isEmpty, hasElements } from "@block52/ui-sdk/helpers";
-import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { extractMessageTypeFromHex } from "../../utils/transactionUtils";
 import styles from "./BlockDetailPage.module.css";
 import { PageHeading } from "../../components/common/PageHeading";
@@ -132,12 +131,6 @@ export default function BlockDetailPage() {
         computeHashes();
     }, [block]);
 
-    const truncateHash = (hash: string, length: number = 16) => {
-        if (!hash) return "N/A";
-        if (hash.length <= length * 2) return hash;
-        return truncateMiddle(hash, length, length);
-    };
-
     const formatTimestamp = (timestamp: string) => {
         const date = new Date(timestamp);
         return date.toLocaleString();
@@ -210,7 +203,7 @@ export default function BlockDetailPage() {
     const extractMessageType = (hexTx: string): string => {
         try {
             return extractMessageTypeFromHex(hexTx) ?? "Unknown Message Type";
-        } catch (err) {
+        } catch {
             return "Unknown";
         }
     };

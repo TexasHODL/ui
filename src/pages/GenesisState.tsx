@@ -1,7 +1,6 @@
 import { formatMicroUsd } from "@block52/poker-ui-core/utils/moneyDisplay";
 import { PageHeading } from "../components/common/PageHeading";
 import { useState, useEffect } from "react";
-import { truncateMiddle } from "@block52/poker-ui-core/utils/stringUtils";
 import { hasElements } from "@block52/ui-sdk/helpers";
 import useCosmosWallet from "../hooks/wallet/useCosmosWallet";
 import { useNetwork } from "../context/NetworkContext";
@@ -186,10 +185,6 @@ export default function GenesisState() {
             return `${wholePart.toLocaleString()}.${decimalPart.toString().padStart(6, "0")} ${denom}`;
         }
         return `${num.toLocaleString()} ${denom}`;
-    };
-
-    const shortenAddress = (address: string): string => {
-        return truncateMiddle(address, 12, 8);
     };
 
     const isMyWallet = (address: string): boolean => {

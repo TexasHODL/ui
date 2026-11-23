@@ -48,7 +48,7 @@ export const GUARD_RULES: readonly GuardRule[] = [
     typeofRule("boolean", "isBoolean(x)"),
     typeofRule("object", "isRecord(x), which also rejects arrays"),
     { pattern: /\.length\s*(>|!==?)\s*0\b|\.length\s*>=\s*1\b/, use: "hasElements(x) for arrays, hasContent(x) for strings" },
-    { pattern: /\.length\s*(===?\s*0|<\s*1)\b|!\s*[\w$.?\]\[]+\.length\b(?!\s*[<>=!])/, use: "isEmpty(x) for arrays, isBlank(x) for strings" },
+    { pattern: /\.length\s*(===?\s*0|<\s*1)\b|!\s*[\w$.?[\]]+\.length\b(?!\s*[<>=!])/, use: "isEmpty(x) for arrays, isBlank(x) for strings" },
     { pattern: /\.trim\(\)\s*(===?|!==?)\s*(""|''|``)/, use: "isBlank(x) / hasContent(x)" },
     { pattern: /!==?\s*(null|undefined)\b|\b(null|undefined)\s*!==?/, use: "hasValue(x)" },
     { pattern: /[^=!]===?\s*(null|undefined)\b|\b(null|undefined)\s*===?[^=]/, use: "isNullish(x)" }

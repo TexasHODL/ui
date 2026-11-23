@@ -125,8 +125,6 @@ const visible = (rect: DOMRect) => rect.width > 1 && rect.height > 1;
  * floating overlays (History, Show controls, hand strength), with nothing clipped.
  * Off outside table-only view.
  */
-const SHOW_GAP = 6;
-
 function clearShowAnchor(root: HTMLElement): void {
     root.removeAttribute("data-show-above-fold");
     root.style.removeProperty("--table-only-show-bottom");

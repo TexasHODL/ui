@@ -98,14 +98,13 @@ import { ProvablyFairFrame } from "./ProvablyFair/ProvablyFairPanel";
 import TableErrorPage from "./TableErrorPage";
 import { useGameStartCountdown } from "../../hooks/game/useGameStartCountdown";
 import { useReplayMode } from "../../hooks/game/useReplayMode";
-import { useIndexerApi } from "../../context/IndexerApiContext";
 
 // Table Layout Configuration
 import { useTableLayout } from "../../hooks/game/useTableLayout";
 import { fitTransform, useTableOnlyFit } from "../../hooks/game/useTableOnlyFit";
 import { useTablePageViewportLock } from "../../hooks/useTablePageViewportLock";
 import { useVacantSeatData } from "../../hooks/game/useVacantSeatData";
-import { getViewportMode, isTabletPortrait, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, PLAYER_UI_PADDING, type TableSize } from "../../config/stageGeometry";
+import { getViewportMode, isTabletPortrait, type PositionArrays, getSeatCoords, getStageDims, stageDimsFor, getContentBounds, VIEWPORT_PARAMS, type TableSize } from "../../config/stageGeometry";
 import "./mobileReadability.css";
 import { mobileCardUnit } from "../../config/mobileCardSizing";
 
@@ -400,22 +399,14 @@ const GeometryDebugOverlay: React.FC<{
     containerHeight: number;
     zoom: number;
     tableDivRef?: React.RefObject<HTMLDivElement | null>;
-}> = ({ tableSize, containerWidth, containerHeight, zoom, tableDivRef }) => {
+}> = ({ tableSize, containerWidth: _containerWidth, containerHeight: _containerHeight, zoom: _zoom, tableDivRef: _tableDivRef }) => {
     const debug = useDebugToggle();
-    const [panelPos, setPanelPos] = useState({ x: 20, y: 20 });
-    const [dragging, setDragging] = useState(false);
-    const dragStart = useRef({ x: 0, y: 0 });
     if (!debug.showGeometry) return null;
 
     const ts = tableSize as TableSize;
     const dims = getStageDims();
     const coords = getSeatCoords(ts);
     const bounds = getContentBounds(ts);
-    const mode = getViewportMode();
-    const params = VIEWPORT_PARAMS[mode];
-    const pad = PLAYER_UI_PADDING[mode];
-    const usableW = containerWidth - params.paddingH;
-    const usableH = containerHeight - params.footerOverlay - params.paddingV;
 
     const trx = (stageX: number) => stageX - dims.originX;
     const tryy = (stageY: number) => stageY - dims.originY;
@@ -434,20 +425,6 @@ const GeometryDebugOverlay: React.FC<{
         sMinY = Math.min(sMinY, tryy(y));
         sMaxY = Math.max(sMaxY, tryy(y));
     }
-
-    const tableDivEl = tableDivRef?.current;
-    const containerParent = tableDivEl?.closest(".table-container");
-    const headerEl = containerParent?.querySelector(".sub-header");
-    const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : (containerParent?.getBoundingClientRect()?.top ?? 0);
-    const footerHeight = mode === "mobile-landscape" ? 80 : 160;
-    const footerTop = window.innerHeight - footerHeight;
-    const tableRect = tableDivEl?.getBoundingClientRect();
-    const tTop = tableRect?.top ?? 0;
-    const tScaleY = tableRect ? tableRect.height / dims.tableHeight : zoom;
-    const boundsTopScreen = tTop + boundsMinY * tScaleY;
-    const boundsBottomScreen = tTop + (boundsMinY + bounds.height) * tScaleY;
-    const gapTop = boundsTopScreen - headerBottom;
-    const gapBottom = footerTop - boundsBottomScreen;
 
     return (
         <>
@@ -539,7 +516,6 @@ const GeometryFixedOverlay: React.FC<{
     const bounds = getContentBounds(ts);
     const mode = getViewportMode();
     const params = VIEWPORT_PARAMS[mode];
-    const pad = PLAYER_UI_PADDING[mode];
     const usableW = containerWidth - params.paddingH;
     const usableH = containerHeight - params.footerOverlay - params.paddingV;
     const footerHeight = mode === "mobile-landscape" ? 80 : 160;
@@ -618,39 +594,6 @@ const GeometryFixedOverlay: React.FC<{
     );
 };
 
-const GeometryToggleButton: React.FC = () => {
-    const debug = useDebugToggle();
-    return (
-        <button
-            onClick={() => {
-                const s = !_debugGeometry;
-                _debugGeometry = s;
-                _debugChips = s;
-                _debugDealers = s;
-                _debugSeats = s;
-                debugListeners.forEach(cb => cb());
-            }}
-            style={{
-                position: "fixed",
-                bottom: 12,
-                left: 12,
-                zIndex: 999999,
-                padding: "6px 12px",
-                borderRadius: 6,
-                border: `2px solid ${debug.showGeometry ? "#f472b6" : "#555"}`,
-                backgroundColor: debug.showGeometry ? "rgba(244,114,182,0.2)" : "rgba(0,0,0,0.6)",
-                color: debug.showGeometry ? "#f472b6" : "#888",
-                fontSize: 14,
-                fontFamily: "monospace",
-                fontWeight: "bold",
-                cursor: "pointer"
-            }}
-        >
-            [G] Geometry
-        </button>
-    );
-};
-
 const Table = React.memo(() => {
     const id = useTableId();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -693,7 +636,6 @@ const Table = React.memo(() => {
     }, [id, replayHand]);
     const replay = useReplayTimeline({ tableId: id, handNumber: replayHandNumber, active: isReplayMode });
     const replayStepLabel = useMemo(() => describeReplayStep(gameState), [gameState]);
-    const indexerApi = useIndexerApi();
 
     // No-wallet detection: must be declared before the subscribeToTable useEffect that depends on it.
     const [hasWallet, setHasWallet] = useState<boolean>(() => !!getCosmosAddressSync());
@@ -839,7 +781,7 @@ const Table = React.memo(() => {
 
     // Add the useNextToActInfo hook
     const {
-        seat: nextToActSeat,
+        seat: _nextToActSeat,
         player: _nextToActPlayer,
         isCurrentUserTurn,
         availableActions: _nextToActAvailableActions,

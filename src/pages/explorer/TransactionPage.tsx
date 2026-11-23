@@ -21,7 +21,7 @@ export default function TransactionPage() {
     const previousAddress = location.state?.fromAddress;
 
     const [transaction, setTransaction] = useState<CosmosTransaction | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [_loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showEventExplanation, setShowEventExplanation] = useState(false);
 

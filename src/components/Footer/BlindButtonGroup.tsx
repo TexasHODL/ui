@@ -15,7 +15,7 @@ export const BlindButtonGroup: React.FC<BlindButtonGroupProps> = ({
     playerStatus,
     loading,
     isMobileLandscape,
-    isTournament,
+    isTournament: _isTournament,
     onPostSmallBlind,
     onPostBigBlind,
     onFold

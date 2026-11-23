@@ -224,7 +224,7 @@ describe("PlayerActionButtons", () => {
 
     it("hides BuyChipsButton in SNG games even when TOP_UP is in legalActions", () => {
         mockGameStateContext.gameFormat = GameFormat.SIT_AND_GO;
-        const { container } = render(
+        render(
             <PlayerActionButtons
                 {...baseProps}
                 legalActions={[action(NonPlayerActionType.TOP_UP)]}

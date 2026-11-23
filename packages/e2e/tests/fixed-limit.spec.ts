@@ -68,7 +68,7 @@ test("action panel: a fixed-limit raise has one amount and no slider", async ({ 
   });
 
   await expect(page.getByText("Fixed-Limit Texas Hold'em").first()).toBeVisible({ timeout: 10_000 });
-  await expect(page.locator('input[type="range"]')).toHaveCount(0);
+  await expect(page.locator("input[type=\"range\"]")).toHaveCount(0);
   const raise = page.getByRole("button", { name: /raise to/i });
   await expect(raise).toBeEnabled();
   await page.screenshot({ path: `${SHOTS}fixed-limit-action-panel.png` });

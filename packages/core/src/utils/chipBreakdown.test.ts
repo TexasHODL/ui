@@ -498,7 +498,6 @@ describe("decomposeAmount", () => {
 
         it("$12345 → accurate multi-denomination decomposition", () => {
             const result = decomposeAmount(12345);
-            const totalValue = result.reduce((sum, s) => sum + s.value * s.count, 0);
             expect(result.length).toBeLessThanOrEqual(5);
             expect(result.length).toBeGreaterThanOrEqual(1);
         });
