@@ -176,7 +176,7 @@ describe("PlayerProfilePage volume cards", () => {
         expect(valueOf("Net Profit")).toBe("13.92");
         expect(valueOf("Total Buy-In")).toBe("62.90");
         expect(valueOf("Total Cash-Out")).toBe("76.82");
-        expect(valueOf("Hands Played")).toBe("480");
+        expect(valueOf("Hands Played")).toBe("69");
         expect(valueOf("Sessions")).toBe("83");
         expect(valueOf("Total Actions")).toBe("4,616");
         expect(valueOf("Network Fees Paid")).toBe("0.00");
@@ -229,10 +229,8 @@ describe("PlayerProfilePage volume cards", () => {
         expect(screen.queryByText("Loading player...")).not.toBeInTheDocument();
     });
 
-    it("adds MTT registration buy-ins, unregister refunds and prize claims to the volume cards", () => {
+    it("keeps volume cards on the indexer figures when chain MTT entries and prize claims are present", () => {
         const mtt = "0x8d34bcce49c988106bba58a5052c3ecf9a6532f142e19dcfba4230ea3ff8a872";
-        const cancelled = "0x2d5b0fc4d40f7fc9c60965f9292d0d96d8c8353e2cbd02c6700fb08a124aa444";
-        const refunded = "0x73751f1291e04944194f347071e5b3f135ae9ea9f2e56766b4ce1e8cb20484ad";
         mockEntries = [
             {
                 tournamentId: mtt,
@@ -241,37 +239,17 @@ describe("PlayerProfilePage volume cards", () => {
                 gameId: `${mtt}-t1`,
                 status: "finished",
                 results: [{ place: 1, playerId: ADDRESS, payout: "6400000" }]
-            },
-            {
-                tournamentId: cancelled,
-                registerHeight: 2,
-                buyIn: 10_000,
-                gameId: `${cancelled}-t1`,
-                status: "cancelled",
-                results: []
-            },
-            {
-                tournamentId: refunded,
-                registerHeight: 3,
-                buyIn: 2_200_000,
-                gameId: `${refunded}-t1`,
-                status: "registered",
-                results: []
             }
         ];
-        mockRegistrations = [
-            { tournamentId: mtt, height: 1, buyIn: 2_000_000, entryFee: 200_000 },
-            { tournamentId: cancelled, height: 2, buyIn: 10_000, entryFee: 0 },
-            { tournamentId: refunded, height: 3, buyIn: 2_000_000, entryFee: 200_000 }
-        ];
-        mockUnregistrations = [{ tournamentId: refunded, height: 4, txhash: "UNREG", refund: 1_600_000 }];
-        mockClaims = [];
+        mockRegistrations = [{ tournamentId: mtt, height: 1, buyIn: 2_000_000, entryFee: 200_000 }];
+        mockUnregistrations = [];
+        mockClaims = [{ gameId: `${mtt}-t1`, amount: 6_400_000, height: 10, txhash: "CLAIM" }];
         renderPage();
-        // Indexer 62.90 + 2.20 + 0.01 + 2.20 = 67.31 buy-in; 76.82 + 6.40 + 1.60 = 84.82 cash-out.
         const volume = (label: string) => screen.getAllByText(label)[0].nextElementSibling?.textContent ?? "";
-        expect(volume("Total Buy-In")).toBe("67.31");
-        expect(volume("Total Cash-Out")).toBe("84.82");
-        expect(volume("Net Profit")).toBe("17.51");
+        expect(volume("Total Buy-In")).toBe("62.90");
+        expect(volume("Total Cash-Out")).toBe("76.82");
+        expect(volume("Net Profit")).toBe("13.92");
+        expect(volume("Hands Played")).toBe("69");
     });
 
     it("refreshes stats silently when the tab becomes visible and does not reload hand history", () => {
@@ -291,7 +269,7 @@ describe("PlayerProfilePage volume cards", () => {
     it("keeps Hands Played and Playing Style visible while recovered MTT hands are still loading", () => {
         mockRecovered = { hands: [], states: new Map(), recovering: true, searched: false };
         renderPage();
-        expect(valueOf("Hands Played")).toBe("480");
+        expect(valueOf("Hands Played")).toBe("69");
         expect(valueOf("Sessions")).toBe("83");
         const styleValue = (label: string) => screen.getByText(label).parentElement?.nextElementSibling?.textContent ?? "";
         expect(styleValue("VPIP")).not.toBe("…");

@@ -3,9 +3,9 @@ import { hasContent, hasValue } from "@block52/ui-sdk/helpers";
 
 /**
  * Sort the directory in the browser.
- * The indexer sorts net profit without Sit & Go prizes or MTT money, so a
- * corrected net cannot be paged on the server. Ties break on the address so a
- * page is stable.
+ * The hook loads the full indexer search result, then sorts and pages here so
+ * Hands and Net Profit stay on the figures the indexer returned. Ties break
+ * on the address so a page is stable.
  */
 export function sortPlayers(players: PlayerListItem[], sort: PlayerSortField, order: "asc" | "desc"): PlayerListItem[] {
     const direction = order === "asc" ? 1 : -1;
