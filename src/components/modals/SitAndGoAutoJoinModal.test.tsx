@@ -16,7 +16,8 @@ jest.mock("../../hooks/game/useGameOptions", () => ({ useGameOptions: () => ({ g
 jest.mock("../../hooks/game/useVacantSeatData", () => ({ useVacantSeatData: () => ({ emptySeatIndexes: mockSeats, isUserAlreadyPlaying: mockPlaying }) }));
 jest.mock("../../hooks/playerActions/joinTable", () => ({ joinTable: (...args: unknown[]) => mockJoin(...args) }));
 jest.mock("../../utils/cosmosAccountUtils", () => ({ getCosmosBalance: (...args: unknown[]) => mockBalance(...args) }));
-jest.mock("../../context/NetworkContext", () => ({ useNetwork: () => ({ currentNetwork: { name: "fixture" } }) }));
+let mockNetwork = { name: "fixture" };
+jest.mock("../../context/NetworkContext", () => ({ useNetwork: () => ({ currentNetwork: mockNetwork }) }));
 const mockContext: { gameFormat?: string; gameState: Record<string, unknown> } = {
     gameState: { gameOptions: { protocolFeeBps: 1000 } }
 };
@@ -36,6 +37,7 @@ jest.mock("@block52/poker-ui-core/utils/gameFormatUtils", () => ({
 
 beforeEach(() => {
     jest.clearAllMocks();
+    mockNetwork = { name: "fixture" };
     mockSeats = [0, 1, 2, 3, 4, 5];
     mockPlaying = false;
     mockContext.gameFormat = undefined;
@@ -222,4 +224,17 @@ it("takes a drawn seat: joins without naming one and says the seat is random (ui
     expect(tableId).toBe("fixture-table");
     expect(options).toEqual({ amount: "1", format: "sit-and-go" });
     expect(options).not.toHaveProperty("seatNumber");
+});
+
+it("refetches the wallet balance when the selected network changes", async () => {
+    mockNetwork = { name: "Block52" };
+    mockBalance.mockImplementation(async (network: { name: string }) => (network.name === "Block52" ? "2500000" : "7500000"));
+    const { rerender } = render(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(await screen.findByText("$2.50")).toBeInTheDocument();
+    expect(mockBalance).toHaveBeenCalledWith(expect.objectContaining({ name: "Block52" }), "usdc");
+
+    mockNetwork = { name: "Texas Hodl" };
+    rerender(<SitAndGoAutoJoinModal tableId="fixture-table" onJoinSuccess={jest.fn()} />);
+    expect(await screen.findByText("$7.50")).toBeInTheDocument();
+    expect(mockBalance).toHaveBeenCalledWith(expect.objectContaining({ name: "Texas Hodl" }), "usdc");
 });
