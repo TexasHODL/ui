@@ -2,7 +2,10 @@ const plugin = require("tailwindcss/plugin");
 // Typography tokens (block52/ui#922): one source of truth, shared with the CSS variables.
 const { fontStacks, typography, typographyCssVariables } = require("./src/utils/typography.ts");
 module.exports = {
-    content: ["./src/**/*.{js,ts,jsx,tsx}"], // Adjust based on your project
+    // packages/core holds class names used at runtime (e.g. SEAT_OPACITY.FOLDED
+    // = "opacity-60"). Without this path, Tailwind will not emit those utilities
+    // and folded seats stay at full brightness.
+    content: ["./src/**/*.{js,ts,jsx,tsx}", "./packages/core/src/**/*.{js,ts,jsx,tsx}"],
     theme: {
         extend: {
             fontFamily: {
