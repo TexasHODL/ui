@@ -19,14 +19,14 @@ const profile: PlayerProfile = {
     vip_points: 0,
     total_rake_contributed: 0,
     current_month_rake: 0,
-    vpip: 0,
-    pfr: 0,
-    aggression_factor: 0,
-    wtsd: 0,
-    won_at_showdown: 0,
-    total_bets: 0,
-    total_raises: 0,
-    total_calls: 0,
+    vpip: 3960,
+    pfr: 973,
+    aggression_factor: 62,
+    wtsd: 923,
+    won_at_showdown: 4790,
+    total_bets: 682,
+    total_raises: 467,
+    total_calls: 1832,
     total_folds: 0,
     total_checks: 0,
     biggest_pot_won: 0,
@@ -113,13 +113,7 @@ jest.mock("../hooks/player/useMyHandHistory", () => ({
 jest.mock("../hooks/player/useSessionGameMeta", () => ({ useSessionGameMeta: () => ({ byId: {}, loading: false }) }));
 jest.mock("../hooks/player/useSessionEliminationBlocks", () => ({ useSessionEliminationBlocks: () => ({}) }));
 jest.mock("../hooks/player/useHandContributions", () => ({
-    useHandContributions: () => ({ byKey: {}, pending: false, unavailable: 0 }),
-    usePlayingStyle: () => ({
-        counts: { hands: 0, vpip: 0, pfr: 0, aggressive: 0, calls: 0, sawFlop: 0, showdown: 0, wonShowdown: 0 },
-        pending: false,
-        unavailable: 0,
-        dealt: 480
-    })
+    useHandContributions: () => ({ byKey: {}, pending: false, unavailable: 0 })
 }));
 jest.mock("../hooks/player/useAddressUsdcBalance", () => ({
     useAddressUsdcBalance: (address: string | undefined) => mockUseBalance(address)
@@ -129,6 +123,10 @@ const VOLUME = ["Wallet Balance", "Net Profit", "Total Buy-In", "Total Cash-Out"
 
 function valueOf(label: string): string {
     return screen.getByText(label).nextElementSibling?.textContent ?? "";
+}
+
+function styleValue(label: string): string {
+    return screen.getByText(label).parentElement?.nextElementSibling?.textContent ?? "";
 }
 
 function renderPage(path = `/players/${ADDRESS}`) {
@@ -180,6 +178,11 @@ describe("PlayerProfilePage volume cards", () => {
         expect(valueOf("Sessions")).toBe("83");
         expect(valueOf("Total Actions")).toBe("4,616");
         expect(valueOf("Network Fees Paid")).toBe("0.00");
+        expect(styleValue("VPIP")).toBe("39.60%");
+        expect(styleValue("PFR")).toBe("9.73%");
+        expect(styleValue("Aggression")).toBe("0.62");
+        expect(styleValue("WTSD")).toBe("9.23%");
+        expect(styleValue("W$SD")).toBe("47.90%");
         expect(mockUseBalance).toHaveBeenCalledWith(ADDRESS);
     });
 
@@ -266,16 +269,15 @@ describe("PlayerProfilePage volume cards", () => {
         expect(mockReloadHands).not.toHaveBeenCalled();
     });
 
-    it("keeps Hands Played and Playing Style visible while recovered MTT hands are still loading", () => {
+    it("shows indexer Playing Style immediately while recovered MTT hands are still loading", () => {
         mockRecovered = { hands: [], states: new Map(), recovering: true, searched: false };
         renderPage();
         expect(valueOf("Hands Played")).toBe("69");
         expect(valueOf("Sessions")).toBe("83");
-        const styleValue = (label: string) => screen.getByText(label).parentElement?.nextElementSibling?.textContent ?? "";
-        expect(styleValue("VPIP")).not.toBe("…");
-        expect(styleValue("PFR")).not.toBe("…");
-        expect(styleValue("Aggression")).not.toBe("…");
-        expect(styleValue("WTSD")).not.toBe("…");
-        expect(styleValue("W$SD")).not.toBe("…");
+        expect(styleValue("VPIP")).toBe("39.60%");
+        expect(styleValue("PFR")).toBe("9.73%");
+        expect(styleValue("Aggression")).toBe("0.62");
+        expect(styleValue("WTSD")).toBe("9.23%");
+        expect(styleValue("W$SD")).toBe("47.90%");
     });
 });

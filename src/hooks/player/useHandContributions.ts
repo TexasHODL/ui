@@ -11,11 +11,9 @@ import {
     type HandContributionTarget
 } from "../../utils/handContribution";
 import { mapWithConcurrency } from "../../utils/pagedFetch";
-import { countDealtHands, type DealtHandLog } from "../../utils/handsPlayed";
-import { addHandStyle, emptyPlayingStyle, styleFromSnapshot, type PlayingStyleCounts, type PlayingStyleHand } from "../../utils/playingStyle";
 
 /**
- * One public snapshot per hand, shared by Biggest Hand Profit and Playing Style.
+ * One public snapshot per hand, used by Biggest Hand Profit.
  * Null when the node no longer has that hand. A second ask for the same hand
  * reads this map and does not query again.
  */
@@ -50,19 +48,6 @@ export interface HandContributions {
     pending: boolean;
     /** Requested hands whose action log could not be read. */
     unavailable: number;
-}
-
-export interface PlayingStyleRead {
-    counts: PlayingStyleCounts;
-    /** True while a requested hand has not been read yet. */
-    pending: boolean;
-    /** Requested hands whose action log could not be read. Left out of the counts. */
-    unavailable: number;
-    /**
-     * Distinct hands whose log shows this player was dealt in.
-     * Same snapshots as `counts`. A missing log is not included.
-     */
-    dealt: number;
 }
 
 function useHandLogVersion(): number {
@@ -131,35 +116,10 @@ function collectContributions(network: string, player: string | undefined, hands
     return { byKey, pending, unavailable };
 }
 
-function collectStyle(network: string, player: string | undefined, hands: PlayingStyleHand[], enabled: boolean): PlayingStyleRead {
-    if (!enabled || !hasContent(player)) return { counts: emptyPlayingStyle(), pending: false, unavailable: 0, dealt: 0 };
-    let counts = emptyPlayingStyle();
-    const seen = new Set<string>();
-    const resolved: DealtHandLog[] = [];
-    let unavailable = 0;
-    let pending = false;
-    for (const hand of hands) {
-        const key = handKeyForTarget(hand);
-        if (seen.has(key)) continue;
-        seen.add(key);
-        const stored = cacheKey(network, player, key);
-        if (!memory.has(stored)) {
-            pending = true;
-            continue;
-        }
-        const snapshot = memory.get(stored);
-        resolved.push({ key, snapshot });
-        const style = styleFromSnapshot(snapshot, player, hand.wonAmount);
-        if (!hasValue(style)) unavailable += 1;
-        else counts = addHandStyle(counts, style);
-    }
-    return { counts, pending, unavailable, dealt: countDealtHands(resolved, player) };
-}
-
 /**
  * Fills `contributed` for the profiled player's hands from public chain state.
  *
- * One abci_query per hand, a few at a time, shared with Playing Style. The
+ * One abci_query per hand, a few at a time. The
  * selected node is asked first. A pruned height is read again on Block52, the
  * same fallback Session History uses; any other error stays on the selected
  * node. Results stay in memory for the session. A hand neither node still has
@@ -171,17 +131,4 @@ export function useHandContributions(player: string | undefined, hands: HandCont
     // `logVersion` is not read inside the memo. It bumps when a batch lands in the module cache, which is what the memo has to re-read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return useMemo(() => collectContributions(currentNetwork.name, player, hands, enabled), [currentNetwork.name, enabled, hands, player, logVersion]);
-}
-
-/**
- * VPIP, PFR, aggression, WTSD and W$SD from the same snapshots as Biggest Hand Profit.
- * Every finished hand passed in is included, open session or not. A hand the node
- * no longer has is counted in `unavailable` and left out of the rates.
- */
-export function usePlayingStyle(player: string | undefined, hands: PlayingStyleHand[], enabled: boolean): PlayingStyleRead {
-    const { currentNetwork } = useNetwork();
-    const logVersion = useHandLogs(player, hands, enabled);
-    // `logVersion` is not read inside the memo. It bumps when a batch lands in the module cache, which is what the memo has to re-read.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    return useMemo(() => collectStyle(currentNetwork.name, player, hands, enabled), [currentNetwork.name, enabled, hands, player, logVersion]);
 }

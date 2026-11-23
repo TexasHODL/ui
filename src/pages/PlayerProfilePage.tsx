@@ -15,7 +15,7 @@ import { ProfileActivityPanel } from "../components/players/ProfileActivityPanel
 import { ProfileIdentity } from "../components/players/ProfileIdentity";
 import { SessionHistoryFilter } from "../components/players/SessionHistoryFilter";
 import { PlayingStyleTip } from "../components/players/PlayingStyleTip";
-import { useHandContributions, usePlayingStyle } from "../hooks/player/useHandContributions";
+import { useHandContributions } from "../hooks/player/useHandContributions";
 import { useAddressUsdcBalance } from "../hooks/player/useAddressUsdcBalance";
 import { usePlayerProfile } from "../hooks/player/usePlayerProfile";
 import { useMyHandHistory } from "../hooks/player/useMyHandHistory";
@@ -55,8 +55,8 @@ import { sessionCashOutAmountClass, sessionPrizeAmountRowClass, sessionPrizeCash
 import { eliminationLookupsFor, sessionBustFor, sessionLeaveBlock } from "../utils/sessionBust";
 import { handContributionNote, profitHandsToMeasure, type HandContributionTarget } from "../utils/handContribution";
 import { formatProfileWalletBalance } from "../utils/addressUsdcBalance";
-import { profileHistoryHandsPending, profileStyleCardsPending } from "../utils/profileStatsLoading";
-import { formatPlayingStyle, PLAYING_STYLE_FIGURES, playingStyleHands, playingStyleNote } from "../utils/playingStyle";
+import { profileHistoryHandsPending } from "../utils/profileStatsLoading";
+import { formatIndexerPlayingStyle, PLAYING_STYLE_FIGURES } from "../utils/playingStyle";
 import {
     formatHistoryAmount,
     formatHistoryBlocks,
@@ -199,23 +199,8 @@ export default function PlayerProfilePage() {
         [gamesLoading, handHistory.error, gameFilter, settledHands, gameLabels, gamesById]
     );
     const contributions = useHandContributions(address, profitHands ?? NO_PROFIT_HANDS, hasValue(profitHands));
-    // Every finished hand, every variant, including an open session. Same snapshot cache as the profit card.
-    const styleSelection = useMemo(() => playingStyleHands(listedHands), [listedHands]);
-    // Start style logs as soon as the indexer list is available. Recovery of
-    // omitted MTT hands can take minutes and must not hold these cards on "…".
-    const styleRead = usePlayingStyle(address, styleSelection.hands, tab === "stats" && hasContent(address) && !hasContent(handHistory.error));
-    const stylePending = profileStyleCardsPending({
-        onStatsTab: tab === "stats",
-        hasAddress: hasContent(address),
-        handListFailed: hasContent(handHistory.error),
-        handListComplete: handHistory.complete,
-        styleLogsPending: styleRead.pending,
-        recoveredSearched: recovered.searched,
-        styleDealt: styleRead.dealt
-    });
-    const styleDisplay = formatPlayingStyle(styleRead.counts, stylePending);
-    // Hands Played is the indexer's total_hands. Playing Style still reads chain logs on its own.
-    const styleNote = stylePending ? undefined : playingStyleNote(styleRead.counts.hands, styleRead.unavailable + styleSelection.dropped);
+    // Playing Style is the indexer's VPIP/PFR/AF/WTSD/W$SD. Hands Played is total_hands.
+    const styleDisplay = formatIndexerPlayingStyle(profile);
     const historyHands = useMemo(
         () => withHandContributions(hasContent(handHistory.error) ? [] : handsForHistory(settledHands), contributions.byKey),
         [handHistory.error, settledHands, contributions.byKey]
@@ -329,7 +314,7 @@ export default function PlayerProfilePage() {
                             <StatCard className={VOLUME_STAT_CARD} label="Network Fees Paid" value={formatUsd(profile.total_rake_contributed)} />
                         </div>
 
-                        {/* Playing style: every variant, from the chain action logs. */}
+                        {/* Playing style: every variant, from the indexer aggregates. */}
                         <div className={`backdrop-blur-md p-6 rounded-xl shadow-2xl mb-6 ${styles.containerCard}`}>
                             <h2 className="text-white font-bold mb-4">Playing Style</h2>
                             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -343,7 +328,6 @@ export default function PlayerProfilePage() {
                                     </div>
                                 ))}
                             </div>
-                            {hasContent(styleNote) && <p className="mt-3 text-xs text-gray-500">{styleNote}</p>}
                         </div>
 
                         {/* History: one variant filter drives the records and the session table. */}
