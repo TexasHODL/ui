@@ -194,6 +194,42 @@ describe("buildTournamentCard", () => {
         expect(late.registerBlockedReason).toBe("Registration is closed");
     });
 
+    describe("late entry on a running tournament", () => {
+        const RUNNING_AT = START + 60_000;
+        const runningRecord = (over: Record<string, unknown> = {}, levels = 3) =>
+            record(
+                { status: "running", startedAt: START, entrants: [{ address: "b521a", status: "playing", tableId: "0xabc/t1", stack: "1500" }], ...over },
+                { lateRegistrationLevels: levels }
+            );
+
+        it("allows a stranger to register while open and prevents unregistering", () => {
+            const card = buildTournamentCard(runningRecord(), "b521other", RUNNING_AT);
+            expect(card.canRegister).toBe(true);
+            expect(card.lateEntryOpen).toBe(true);
+            expect(card.canUnregister).toBe(false);
+            expect(card.lateRegistrationLabel).toMatch(/^Late registration open until level 3/);
+        });
+
+        it("closes late registration after the level window or a paid result", () => {
+            const after = buildTournamentCard(runningRecord(), "b521other", START + 31 * 60_000);
+            expect(after.canRegister).toBe(false);
+            expect(after.lateRegistrationLabel).toBe("Late reg closed");
+            const paid = buildTournamentCard(
+                runningRecord({ results: [{ place: 3, playerId: "b521x", payout: "500000" }] }),
+                "b521other",
+                RUNNING_AT
+            );
+            expect(paid.canRegister).toBe(false);
+        });
+
+        it("marks an unseated late entrant as waiting for a seat", () => {
+            const entrants = [{ address: ME, status: "registered", stack: "1500" }];
+            const card = buildTournamentCard(runningRecord({ entrants }), ME, RUNNING_AT);
+            expect(card.waitingForSeat).toBe(true);
+            expect(card.canUnregister).toBe(false);
+        });
+    });
+
     it("reports the fixed prize pool once running", () => {
         const card = buildTournamentCard(record({ status: "running", prizePool: "24300000" }), "b521other", START + 1000);
         expect(card.prizePoolMicro).toBe(24_300_000n);

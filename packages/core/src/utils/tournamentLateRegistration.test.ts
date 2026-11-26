@@ -1,7 +1,7 @@
 import type { BlindStructureDTO } from "@block52/poker-vm-sdk";
 import {
     DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS,
-    formatTournamentLateRegistration,
+    formatRunningLateRegistration,\n    formatTournamentLateRegistration,\n    lateRegistrationWindow,
     isValidLateRegistrationLevels,
     lateRegistrationCutoffAt,
     lateRegistrationDurationMinutes,
@@ -101,5 +101,45 @@ describe("formatTournamentLateRegistration", () => {
         expect(formatTournamentLateRegistration(0, false)).toBe("");
         expect(formatTournamentLateRegistration(undefined, false)).toBe("");
         expect(formatTournamentLateRegistration(0, true)).toBe("");
+    });
+});
+
+
+describe("lateRegistrationWindow", () => {
+    const startedAt = Date.UTC(2026, 10, 24, 12, 0, 0);
+    const options = (levels?: number) => ({
+        buyIn: "1000000", startingStack: "1500", seatsPerTable: 9,
+        minEntrants: 4, maxEntrants: 27, startTime: startedAt,
+        blindStructure: DOUBLE_10, actionTimeoutSeconds: 25,
+        ...(levels === undefined ? {} : { lateRegistrationLevels: levels })
+    });
+    const running = (levels: number | undefined, extra: Record<string, unknown> = {}) => ({
+        status: "running" as const, options: options(levels), startedAt, ...extra
+    });
+
+    it("opens through the configured level and closes at its end", () => {
+        expect(lateRegistrationWindow(running(3), startedAt + 29 * 60_000)).toEqual({
+            open: true, closesAtMs: startedAt + 30 * 60_000
+        });
+        expect(lateRegistrationWindow(running(3), startedAt + 30 * 60_000).open).toBe(false);
+    });
+
+    it("closes when a paid place is recorded", () => {
+        const results = [{ place: 3, playerId: "b521x", payout: "500000" }];
+        expect(lateRegistrationWindow(running(3, { results }), startedAt + 60_000).open).toBe(false);
+    });
+
+    it("keeps the existing off default and returns no window outside a running event", () => {
+        expect(DEFAULT_TOURNAMENT_LATE_REGISTRATION_LEVELS).toBe(0);
+        expect(lateRegistrationWindow(running(undefined), startedAt + 1)).toEqual({ open: false });
+        expect(lateRegistrationWindow({ status: "registering", options: options(3) }, startedAt + 1)).toEqual({ open: false });
+    });
+});
+
+describe("formatRunningLateRegistration", () => {
+    it("shows the level and closes cleanly", () => {
+        expect(formatRunningLateRegistration(15, { open: true })).toBe("Late registration open until level 15");
+        expect(formatRunningLateRegistration(15, { open: false })).toBe("Late reg closed");
+        expect(formatRunningLateRegistration(0, { open: false })).toBe("");
     });
 });

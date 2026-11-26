@@ -160,7 +160,14 @@ export default function TournamentPage() {
                     <div className="space-y-4">
                         {justRegistered && (
                             <p role="status" className="text-sm text-purple-300 font-bold" data-testid="tournament-register-success">
-                                You&apos;re registered. You can unregister until the tournament starts.
+                                {card?.canUnregister
+                                    ? "You're registered. You can unregister until the tournament starts."
+                                    : "You joined late. This entry cannot be unregistered."}
+                            </p>
+                        )}
+                        {card?.waitingForSeat && (
+                            <p role="status" className="text-sm text-yellow-300 font-bold" data-testid="tournament-waiting-for-seat">
+                                You are registered late and will be seated at the next hand boundary.
                             </p>
                         )}
                         {justUnregistered && !isRegistered && (
@@ -259,6 +266,16 @@ export default function TournamentPage() {
                         {card && (showRegister || isRegistered || card.canUnregister) && (
                             <ExplorerPanel header="Registration">
                                 <div className="p-4 text-sm space-y-3" data-testid="tournament-registration">
+                                    {card.lateRegistrationLabel !== "" && (
+                                        <p className="text-xs text-gray-400" data-testid="tournament-late-registration">
+                                            {card.lateRegistrationLabel}
+                                        </p>
+                                    )}
+                                    {card.lateEntryOpen && (
+                                        <p className="text-xs text-gray-400" data-testid="tournament-late-entry-note">
+                                            The tournament has started. You join with the starting stack and cannot unregister this entry.
+                                        </p>
+                                    )}
                                     <div className="flex justify-between gap-3">
                                         <span className="text-gray-400">Buy-in</span>
                                         <span className="text-white font-medium">{formatUsdc(card.cost.gross)}</span>
@@ -280,14 +297,14 @@ export default function TournamentPage() {
                                         </div>
                                     )}
                                     <div className="flex justify-between gap-3">
-                                        <span className="text-gray-400">{isRegistered ? "Held in escrow (refunded if you unregister)" : "Held in escrow for the prize pool"}</span>
+                                        <span className="text-gray-400">{card.canUnregister ? "Held in escrow (refunded if you unregister)" : "Held in escrow for the prize pool"}</span>
                                         <span className="text-white font-medium" data-testid="tournament-page-escrow">
                                             {formatUsdc(card.cost.net)}
                                         </span>
                                     </div>
                                     {statement && (
                                         <p className="text-xs text-gray-400" data-testid="tournament-escrow-statement">
-                                            {isRegistered ? statement.unregister : statement.register}
+                                            {card.canUnregister ? statement.unregister : statement.register}
                                         </p>
                                     )}
                                     {viewer && (
@@ -315,7 +332,7 @@ export default function TournamentPage() {
                                             {card.registerBlockedReason}
                                         </p>
                                     )}
-                                    {isRegistered && (
+                                    {isRegistered && !card.waitingForSeat && (
                                         <p className="text-xs text-purple-300 font-bold" data-testid="tournament-you-are-in">
                                             You&apos;re registered
                                         </p>
@@ -339,7 +356,7 @@ export default function TournamentPage() {
                                                 className="page-button-primary"
                                                 data-testid="tournament-register"
                                             >
-                                                {actions.busy ? "Waiting for the chain…" : `Register & pay · ${formatUsdc(card.cost.gross)}`}
+                                                {actions.busy ? "Waiting for the chain…" : `${card.lateEntryOpen ? "Late register" : "Register"} & pay · ${formatUsdc(card.cost.gross)}`}
                                             </button>
                                         )}
                                         {card.canUnregister && (

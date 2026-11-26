@@ -103,7 +103,7 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) =
                     </Link>
                 ) : showRegisterLink ? (
                     <Link to={eventUrl} className="page-button-primary" data-testid="tournament-register">
-                        Register · {formatUsdc(card.cost.gross)}
+                        {card.lateEntryOpen ? "Late register" : "Register"} · {formatUsdc(card.cost.gross)}
                     </Link>
                 ) : null}
                 {card.myTable && (
@@ -116,11 +116,15 @@ export const TournamentCard: React.FC<TournamentCardProps> = ({ card, nowMs }) =
                         </span>
                     </>
                 )}
-                {card.isRegistered && !card.myTable && (
+                {card.waitingForSeat ? (
+                    <span className="text-xs text-yellow-300 font-bold" data-testid="tournament-waiting-for-seat">
+                        Waiting for a seat: you are placed at the next hand
+                    </span>
+                ) : card.isRegistered && !card.myTable ? (
                     <span className="text-xs text-purple-300 font-bold" data-testid="tournament-you-are-in">
                         You&apos;re registered
                     </span>
-                )}
+                ) : null}
                 {!card.canRegister && !card.isRegistered && card.registerBlockedReason && card.registerBlockedReason !== "Connect a wallet to register" && (
                     <span className="text-xs text-gray-400 font-bold">{card.registerBlockedReason}</span>
                 )}
