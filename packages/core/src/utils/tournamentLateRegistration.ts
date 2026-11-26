@@ -22,7 +22,15 @@
  * (it also closes at the first paid place and while the final table forms), so
  * the UI must read that from the tournament state rather than recompute it here.
  */
-import { expandBlindLevel, type BlindStructureDTO } from "@block52/poker-vm-sdk";
+import {
+    expandBlindLevel,
+    isTournamentLateRegistrationOpen,
+    tournamentLateRegistrationClosesAt,
+    type BlindStructureDTO,
+    type ResultDTO,
+    type TournamentOptionsDTO,
+    type TournamentStatus
+} from "@block52/poker-vm-sdk";
 import { hasValue, isNullish } from "@block52/ui-sdk/helpers";
 
 /**
@@ -78,4 +86,39 @@ export const tournamentLateRegistrationLabel = (levels: number): string =>
 export const formatTournamentLateRegistration = (levels: number | undefined, closed: boolean): string => {
     if (!hasValue(levels) || !isValidLateRegistrationLevels(levels) || levels <= 0) return "";
     return closed ? "Late reg closed" : `Late reg: until level ${levels}`;
+};
+
+
+/** State needed to ask the SDK whether a running tournament takes late entries. */
+export interface LateRegistrationSubject {
+    status: TournamentStatus;
+    options: TournamentOptionsDTO;
+    startedAt?: number;
+    results?: ResultDTO[];
+}
+
+export interface LateRegistrationWindow {
+    open: boolean;
+    closesAtMs?: number;
+}
+
+/** Use the SDK's engine-mirroring rules for the live registration window. */
+export const lateRegistrationWindow = (t: LateRegistrationSubject, nowMs: number): LateRegistrationWindow => {
+    if (t.status !== "running" || isNullish(t.startedAt)) return { open: false };
+    const closesAtMs = tournamentLateRegistrationClosesAt(t.options, t.startedAt);
+    return {
+        open: isTournamentLateRegistrationOpen(t.options, t.startedAt, t.results ?? [], nowMs),
+        ...(isNullish(closesAtMs) ? {} : { closesAtMs })
+    };
+};
+
+const clockTime = (ms: number): string => new Date(ms).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+/** Label a running event with its cutoff, or indicate that late registration has closed. */
+export const formatRunningLateRegistration = (levels: number | undefined, window: LateRegistrationWindow): string => {
+    if (!hasValue(levels) || !isValidLateRegistrationLevels(levels) || levels <= 0) return "";
+    if (!window.open) return "Late reg closed";
+    return hasValue(window.closesAtMs)
+        ? `Late registration open until level ${levels} · ${clockTime(window.closesAtMs)}`
+        : `Late registration open until level ${levels}`;
 };
