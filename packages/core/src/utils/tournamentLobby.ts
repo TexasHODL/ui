@@ -25,7 +25,7 @@ import {
 import { hasValue, isNullish, isNumber, isRecord, isString } from "@block52/ui-sdk/helpers";
 import { describeAnteSchedule } from "./anteRule";
 import { gameIdFromTableId } from "./tournamentFollow";
-import { formatTournamentLateRegistration } from "./tournamentLateRegistration";
+import { formatRunningLateRegistration, formatTournamentLateRegistration, lateRegistrationWindow } from "./tournamentLateRegistration";
 
 export interface TournamentEntrantView {
     address: string;
@@ -377,8 +377,12 @@ export interface TournamentLobbyCard {
     registerBlockedReason?: string;
     /** Stored custom name when the chain has one. */
     name?: string;
-    /** The lobby's late-registration line, e.g. "Late reg: until level 15" or "Late reg closed"; empty when there is none (ui#1000 item 2). */
+    /** The lobby's late-registration line, including the live cutoff when open. */
     lateRegistrationLabel: string;
+    /** A new entrant can register while the running tournament is in its late window. */
+    lateEntryOpen: boolean;
+    /** This viewer has joined late and is waiting for a table assignment. */
+    waitingForSeat: boolean;
     /** "Antes from level N" or "No antes", from the structure (ui#891). */
     anteLabel: string;
     /**
@@ -448,6 +452,8 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
     const mine = isNullish(viewer) ? undefined : state.entrants.find(e => e.address === viewer);
     const isRegistered = !isNullish(mine) && mine.status !== "unregistered";
     const registering = phase === "open" || phase === "full";
+    const lateWindow = phase === "running" ? lateRegistrationWindow(state, nowMs) : { open: false };
+    const lateEntryOpen = phase === "running" && lateWindow.open;
     const isProjected = state.status === "registering" && phase !== "finished";
     const runnersLeft = state.entrants.filter(e => e.status === "playing").length;
     const winnerAddress = tournamentWinnerAddress(state);
@@ -456,7 +462,7 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
     if (isNullish(viewer)) registerBlockedReason = "Connect a wallet to register";
     else if (isRegistered) registerBlockedReason = "You are registered";
     else if (phase === "full") registerBlockedReason = "The tournament is full";
-    else if (!registering) registerBlockedReason = "Registration is closed";
+    else if (!registering && !lateEntryOpen) registerBlockedReason = "Registration is closed";
 
     // Only a running tournament has a seat to take: the chain leaves the winner's status as "playing"
     // (with their table) after the finish, so the status alone would offer a seat in a finished tournament.
@@ -494,7 +500,12 @@ export function buildTournamentCard(record: TournamentRecord, viewer: string | u
         // (it also closes at the first paid place and while the final table forms),
         // so `closed` must come from the tournament-level SDK helper once it ships;
         // until then the label shows the configured target level while it exists.
-        lateRegistrationLabel: formatTournamentLateRegistration(state.options.lateRegistrationLevels, false),
+        lateRegistrationLabel:
+            phase === "running" || phase === "finished"
+                ? formatRunningLateRegistration(state.options.lateRegistrationLevels, lateWindow)
+                : formatTournamentLateRegistration(state.options.lateRegistrationLevels, false),
+        lateEntryOpen,
+        waitingForSeat: phase === "running" && isRegistered && isNullish(myTable),
         anteLabel: describeAnteSchedule(state.options.blindStructure),
         ...(isNullish(endedAtMs) ? {} : { endedAtMs })
     };
